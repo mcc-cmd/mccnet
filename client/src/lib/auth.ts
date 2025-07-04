@@ -80,15 +80,22 @@ export const useAuth = create<AuthState>()(
           });
 
           if (response.ok) {
-            return true;
-          } else {
-            set({
-              user: null,
-              sessionId: null,
-              isAuthenticated: false,
-            });
-            return false;
+            const data: AuthResponse = await response.json();
+            if (data.success && data.user) {
+              set({
+                user: data.user,
+                isAuthenticated: true,
+              });
+              return true;
+            }
           }
+          
+          set({
+            user: null,
+            sessionId: null,
+            isAuthenticated: false,
+          });
+          return false;
         } catch (error) {
           console.error('Auth check error:', error);
           set({
@@ -111,9 +118,9 @@ export const useApiRequest = () => {
   const sessionId = useAuth((state) => state.sessionId);
 
   const apiRequest = async (url: string, options: RequestInit = {}) => {
-    const headers = {
+    const headers: Record<string, string> = {
       'Content-Type': 'application/json',
-      ...options.headers,
+      ...(options.headers as Record<string, string>),
     };
 
     if (sessionId) {

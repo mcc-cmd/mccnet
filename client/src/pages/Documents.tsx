@@ -163,7 +163,7 @@ export function Documents() {
   const isAdmin = user?.userType === 'admin';
 
   return (
-    <Layout title="서류 관리">
+    <Layout title="접수 관리">
       <div className="space-y-6">
         {/* Header with Upload Button */}
         <div className="flex justify-between items-center">

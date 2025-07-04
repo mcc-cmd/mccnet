@@ -155,16 +155,37 @@ router.get('/api/auth/me', requireAuth, async (req: any, res) => {
   try {
     const session = req.session;
     if (session.userType === 'admin') {
-      res.json({
-        id: session.userId,
-        userType: 'admin'
-      });
+      const admin = await storage.getAdminById(session.userId);
+      if (admin) {
+        res.json({
+          success: true,
+          user: {
+            id: admin.id,
+            name: admin.name,
+            email: admin.email,
+            userType: 'admin'
+          }
+        });
+      } else {
+        res.status(404).json({ error: '사용자를 찾을 수 없습니다.' });
+      }
     } else {
-      res.json({
-        id: session.userId,
-        userType: 'user',
-        dealerId: session.dealerId
-      });
+      const user = await storage.getUserById(session.userId);
+      if (user) {
+        res.json({
+          success: true,
+          user: {
+            id: user.id,
+            name: user.name,
+            email: user.email,
+            userType: 'user',
+            dealerId: user.dealerId,
+            dealerName: user.dealerName
+          }
+        });
+      } else {
+        res.status(404).json({ error: '사용자를 찾을 수 없습니다.' });
+      }
     }
   } catch (error: any) {
     res.status(500).json({ error: error.message });

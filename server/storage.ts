@@ -119,6 +119,8 @@ export interface IStorage {
   deleteSession(sessionId: string): Promise<void>;
   
   // Admin operations
+  getAdminById(id: number): Promise<Admin | null>;
+  getUserById(id: number): Promise<(User & { dealerName: string }) | null>;
   createDealer(data: CreateDealerForm): Promise<Dealer>;
   createUser(data: CreateUserForm): Promise<User>;
   getDealers(): Promise<Dealer[]>;
@@ -200,7 +202,8 @@ class SqliteStorage implements IStorage {
 
   async getSession(sessionId: string): Promise<AuthSession | null> {
     try {
-      const session = db.prepare('SELECT * FROM auth_sessions WHERE id = ? AND expires_at > datetime("now")').get(sessionId) as any;
+      // Use a simpler datetime comparison
+      const session = db.prepare('SELECT * FROM auth_sessions WHERE id = ? AND expires_at > ?').get(sessionId, new Date().toISOString()) as any;
       if (!session) return null;
 
       return {
@@ -212,12 +215,39 @@ class SqliteStorage implements IStorage {
       };
     } catch (error) {
       console.error('Error getting session:', error);
-      throw error;
+      return null; // Return null instead of throwing to prevent crashes
     }
   }
 
   async deleteSession(sessionId: string): Promise<void> {
     db.prepare('DELETE FROM auth_sessions WHERE id = ?').run(sessionId);
+  }
+
+  async getAdminById(id: number): Promise<Admin | null> {
+    const admin = db.prepare('SELECT * FROM admins WHERE id = ?').get(id) as Admin | undefined;
+    return admin || null;
+  }
+
+  async getUserById(id: number): Promise<(User & { dealerName: string }) | null> {
+    const user = db.prepare(`
+      SELECT u.*, d.name as dealer_name
+      FROM users u
+      JOIN dealers d ON u.dealer_id = d.id
+      WHERE u.id = ?
+    `).get(id) as any;
+    
+    if (!user) return null;
+    
+    return {
+      id: user.id,
+      dealerId: user.dealer_id,
+      email: user.email,
+      password: user.password,
+      name: user.name,
+      role: user.role,
+      createdAt: new Date(user.created_at),
+      dealerName: user.dealer_name
+    };
   }
 
   async createDealer(data: CreateDealerForm): Promise<Dealer> {

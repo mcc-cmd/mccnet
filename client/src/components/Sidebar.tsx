@@ -6,13 +6,13 @@ import {
   FileText,
   Calculator,
   BarChart3,
-  Settings,
-  Phone
+  Settings
 } from 'lucide-react';
+import logoImage from '@/assets/logo.png';
 
 const navigation = [
   { name: '대시보드', href: '/dashboard', icon: LayoutDashboard },
-  { name: '서류 관리', href: '/documents', icon: FileText },
+  { name: '접수 관리', href: '/documents', icon: FileText },
   { name: '단가표', href: '/pricing', icon: Calculator },
   { name: '통계', href: '/stats', icon: BarChart3 },
 ];
@@ -52,10 +52,12 @@ export function Sidebar({ isOpen = true, onClose }: SidebarProps) {
           {/* Logo */}
           <div className="flex items-center flex-shrink-0 px-4 py-5">
             <div className="flex items-center">
-              <div className="w-8 h-8 bg-accent rounded-lg flex items-center justify-center">
-                <Phone className="w-5 h-5 text-white" />
-              </div>
-              <h1 className="ml-3 text-xl font-semibold text-white">개통포털</h1>
+              <img 
+                src={logoImage} 
+                alt="MCC네트월드 로고" 
+                className="h-8 w-auto"
+              />
+              <h1 className="ml-3 text-xl font-semibold text-white">MCC네트월드</h1>
             </div>
             {/* Mobile close button */}
             {onClose && (

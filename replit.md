@@ -1,8 +1,8 @@
-# 개통포털 (Telecom Activation Portal) - Replit.md
+# MCC네트월드 접수 포털 (MCC Network World Reception Portal) - Replit.md
 
 ## Overview
 
-This is a document management system built for telecommunications dealers to handle customer activation documents. The application features a React frontend with TypeScript, an Express.js backend, and uses Drizzle ORM with PostgreSQL for data persistence. It includes role-based authentication, file upload capabilities, and administrative functions.
+This is a document management system built for MCC네트월드 telecommunications dealers to handle customer reception documents. The application features a React frontend with TypeScript, an Express.js backend, and uses better-sqlite3 for data persistence. It includes role-based authentication, file upload capabilities, and administrative functions.
 
 ## System Architecture
 
@@ -106,6 +106,10 @@ This is a document management system built for telecommunications dealers to han
 ## Changelog
 - July 04, 2025. Initial setup
 - July 04, 2025. Added activation quantity tracking feature with monthly statistics (접수/개통/취소 counts)
+- July 04, 2025. Fixed login authentication flow by updating auth/me endpoint and adding proper session validation
+- July 04, 2025. Updated branding from "개통포털" to "MCC네트월드 접수 포털" with new logo
+- July 04, 2025. Fixed SQLite RETURNING clause compatibility issues by replacing with separate INSERT/SELECT operations
+- July 04, 2025. Resolved nested anchor tag HTML validation warnings in Sidebar component
 
 ## User Preferences
 

@@ -6,7 +6,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Phone, Loader2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
+import logoImage from '@/assets/logo.png';
 
 export function Login() {
   const [, setLocation] = useLocation();
@@ -48,15 +49,17 @@ export function Login() {
     <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <div className="flex justify-center">
-          <div className="w-12 h-12 bg-accent rounded-lg flex items-center justify-center">
-            <Phone className="w-7 h-7 text-white" />
-          </div>
+          <img 
+            src={logoImage} 
+            alt="MCC네트월드 로고" 
+            className="h-16 w-auto"
+          />
         </div>
         <h2 className="mt-6 text-center text-3xl font-bold text-gray-900">
-          개통포털 로그인
+          MCC네트월드 접수 포털
         </h2>
         <p className="mt-2 text-center text-sm text-gray-600">
-          휴대폰 개통 대리점 전용 포털입니다
+          휴대폰 접수 대리점 전용 포털입니다
         </p>
       </div>
 
