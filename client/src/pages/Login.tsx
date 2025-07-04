@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2 } from 'lucide-react';
-import logoImage from '@/assets/logo.png';
+import logoImage from '@assets/image_1751604187475.png';
 
 export function Login() {
   const [, setLocation] = useLocation();

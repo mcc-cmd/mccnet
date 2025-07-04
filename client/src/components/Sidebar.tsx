@@ -8,7 +8,7 @@ import {
   BarChart3,
   Settings
 } from 'lucide-react';
-import logoImage from '@/assets/logo.png';
+import logoImage from '@assets/image_1751604187475.png';
 
 const navigation = [
   { name: '대시보드', href: '/dashboard', icon: LayoutDashboard },
@@ -58,7 +58,10 @@ export function Sidebar({ isOpen = true, onClose }: SidebarProps) {
                 alt="MCC네트월드 로고" 
                 className="h-8 w-auto"
               />
-              <h1 className="ml-3 text-xl font-semibold text-white">MCC네트월드</h1>
+              <div className="ml-3">
+                <h1 className="text-lg font-semibold text-white leading-tight">MCC네트월드</h1>
+                <p className="text-sm text-gray-200 opacity-90">접수 포털</p>
+              </div>
             </div>
             {/* Mobile close button */}
             {onClose && (
