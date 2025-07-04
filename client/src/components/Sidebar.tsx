@@ -8,7 +8,7 @@ import {
   BarChart3,
   Settings
 } from 'lucide-react';
-import logoImage from '@assets/KakaoTalk_20250626_162541112_1751604312469.png';
+import logoImage from '@assets/KakaoTalk_20250626_162541112-removebg-preview_1751604392501.png';
 
 const navigation = [
   { name: '대시보드', href: '/dashboard', icon: LayoutDashboard },
