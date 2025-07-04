@@ -20,6 +20,17 @@ import type {
 const dbPath = path.join(process.cwd(), 'database.sqlite');
 const db = new Database(dbPath);
 
+// Check if activation_status column exists, if not add it
+try {
+  db.prepare('SELECT activation_status FROM documents LIMIT 1').get();
+} catch (error) {
+  // Column doesn't exist, add it
+  db.exec(`
+    ALTER TABLE documents ADD COLUMN activation_status TEXT DEFAULT '대기' CHECK (activation_status IN ('대기', '개통', '취소'));
+    ALTER TABLE documents ADD COLUMN activated_at DATETIME;
+  `);
+}
+
 // Initialize database tables
 db.exec(`
   CREATE TABLE IF NOT EXISTS admins (
@@ -58,11 +69,13 @@ db.exec(`
     customer_name TEXT NOT NULL,
     customer_phone TEXT NOT NULL,
     status TEXT NOT NULL CHECK (status IN ('접수', '보완필요', '완료')),
+    activation_status TEXT NOT NULL DEFAULT '대기' CHECK (activation_status IN ('대기', '개통', '취소')),
     file_path TEXT NOT NULL,
     file_name TEXT NOT NULL,
     file_size INTEGER NOT NULL,
     uploaded_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    activated_at DATETIME,
     notes TEXT,
     FOREIGN KEY (dealer_id) REFERENCES dealers (id),
     FOREIGN KEY (user_id) REFERENCES users (id)
@@ -90,7 +103,9 @@ db.exec(`
 
   CREATE INDEX IF NOT EXISTS idx_documents_dealer_id ON documents(dealer_id);
   CREATE INDEX IF NOT EXISTS idx_documents_status ON documents(status);
+  CREATE INDEX IF NOT EXISTS idx_documents_activation_status ON documents(activation_status);
   CREATE INDEX IF NOT EXISTS idx_documents_uploaded_at ON documents(uploaded_at);
+  CREATE INDEX IF NOT EXISTS idx_documents_activated_at ON documents(activated_at);
   CREATE INDEX IF NOT EXISTS idx_documents_customer_name ON documents(customer_name);
   CREATE INDEX IF NOT EXISTS idx_auth_sessions_expires_at ON auth_sessions(expires_at);
 `);
@@ -294,8 +309,8 @@ class SqliteStorage implements IStorage {
     const documentNumber = `DOC-${new Date().getFullYear()}-${String(Date.now()).slice(-6)}`;
     
     const result = db.prepare(`
-      INSERT INTO documents (dealer_id, user_id, document_number, customer_name, customer_phone, status, file_path, file_name, file_size, notes)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO documents (dealer_id, user_id, document_number, customer_name, customer_phone, status, activation_status, file_path, file_name, file_size, notes)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       RETURNING *
     `).get(
       data.dealerId,
@@ -304,6 +319,7 @@ class SqliteStorage implements IStorage {
       data.customerName,
       data.customerPhone,
       '접수',
+      '대기',
       data.filePath,
       data.fileName,
       data.fileSize,
@@ -318,11 +334,13 @@ class SqliteStorage implements IStorage {
       customerName: result.customer_name,
       customerPhone: result.customer_phone,
       status: result.status,
+      activationStatus: result.activation_status,
       filePath: result.file_path,
       fileName: result.file_name,
       fileSize: result.file_size,
       uploadedAt: new Date(result.uploaded_at),
       updatedAt: new Date(result.updated_at),
+      activatedAt: result.activated_at ? new Date(result.activated_at) : undefined,
       notes: result.notes
     };
   }
@@ -373,11 +391,13 @@ class SqliteStorage implements IStorage {
       customerName: d.customer_name,
       customerPhone: d.customer_phone,
       status: d.status,
+      activationStatus: d.activation_status || '대기',
       filePath: d.file_path,
       fileName: d.file_name,
       fileSize: d.file_size,
       uploadedAt: new Date(d.uploaded_at),
       updatedAt: new Date(d.updated_at),
+      activatedAt: d.activated_at ? new Date(d.activated_at) : undefined,
       notes: d.notes,
       dealerName: d.dealer_name,
       userName: d.user_name
@@ -385,12 +405,25 @@ class SqliteStorage implements IStorage {
   }
 
   async updateDocumentStatus(id: number, data: UpdateDocumentStatusForm): Promise<Document> {
-    const result = db.prepare(`
+    let updateQuery = `
       UPDATE documents 
       SET status = ?, notes = ?, updated_at = CURRENT_TIMESTAMP
-      WHERE id = ?
-      RETURNING *
-    `).get(data.status, data.notes || null, id) as any;
+    `;
+    let params: any[] = [data.status, data.notes || null];
+
+    if (data.activationStatus) {
+      updateQuery += `, activation_status = ?`;
+      params.push(data.activationStatus);
+      
+      if (data.activationStatus === '개통' || data.activationStatus === '취소') {
+        updateQuery += `, activated_at = CURRENT_TIMESTAMP`;
+      }
+    }
+
+    updateQuery += ` WHERE id = ? RETURNING *`;
+    params.push(id);
+
+    const result = db.prepare(updateQuery).get(...params) as any;
 
     return {
       id: result.id,
@@ -400,11 +433,13 @@ class SqliteStorage implements IStorage {
       customerName: result.customer_name,
       customerPhone: result.customer_phone,
       status: result.status,
+      activationStatus: result.activation_status,
       filePath: result.file_path,
       fileName: result.file_name,
       fileSize: result.file_size,
       uploadedAt: new Date(result.uploaded_at),
       updatedAt: new Date(result.updated_at),
+      activatedAt: result.activated_at ? new Date(result.activated_at) : undefined,
       notes: result.notes
     };
   }
@@ -484,8 +519,10 @@ class SqliteStorage implements IStorage {
     let pendingQuery = 'SELECT COUNT(*) as count FROM documents WHERE status = "접수"';
     let completedQuery = 'SELECT COUNT(*) as count FROM documents WHERE status = "완료"';
     let thisWeekQuery = 'SELECT COUNT(*) as count FROM documents WHERE date(uploaded_at) >= date("now", "-7 days")';
-    
-    const params: any[] = [];
+    let thisMonthQuery = 'SELECT COUNT(*) as count FROM documents WHERE date(uploaded_at) >= date("now", "start of month")';
+    let activatedQuery = 'SELECT COUNT(*) as count FROM documents WHERE activation_status = "개통" AND date(activated_at) >= date("now", "start of month")';
+    let canceledQuery = 'SELECT COUNT(*) as count FROM documents WHERE activation_status = "취소" AND date(activated_at) >= date("now", "start of month")';
+    let pendingActivationsQuery = 'SELECT COUNT(*) as count FROM documents WHERE activation_status = "대기"';
     
     if (dealerId) {
       const dealerFilter = ' WHERE dealer_id = ?';
@@ -495,20 +532,30 @@ class SqliteStorage implements IStorage {
       pendingQuery += dealerFilterAnd;
       completedQuery += dealerFilterAnd;
       thisWeekQuery += dealerFilterAnd;
-      
-      params.push(dealerId, dealerId, dealerId, dealerId);
+      thisMonthQuery += dealerFilterAnd;
+      activatedQuery += dealerFilterAnd;
+      canceledQuery += dealerFilterAnd;
+      pendingActivationsQuery += dealerFilterAnd;
     }
 
     const total = db.prepare(totalQuery).get(dealerId || undefined) as { count: number };
     const pending = db.prepare(pendingQuery).get(dealerId || undefined) as { count: number };
     const completed = db.prepare(completedQuery).get(dealerId || undefined) as { count: number };
     const thisWeek = db.prepare(thisWeekQuery).get(dealerId || undefined) as { count: number };
+    const thisMonth = db.prepare(thisMonthQuery).get(dealerId || undefined) as { count: number };
+    const activated = db.prepare(activatedQuery).get(dealerId || undefined) as { count: number };
+    const canceled = db.prepare(canceledQuery).get(dealerId || undefined) as { count: number };
+    const pendingActivations = db.prepare(pendingActivationsQuery).get(dealerId || undefined) as { count: number };
 
     return {
       totalDocuments: total.count,
       pendingDocuments: pending.count,
       completedDocuments: completed.count,
-      thisWeekSubmissions: thisWeek.count
+      thisWeekSubmissions: thisWeek.count,
+      thisMonthSubmissions: thisMonth.count,
+      activatedCount: activated.count,
+      canceledCount: canceled.count,
+      pendingActivations: pendingActivations.count
     };
   }
 }

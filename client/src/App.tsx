@@ -10,7 +10,7 @@ import { Dashboard } from '@/pages/Dashboard';
 import { Documents } from '@/pages/Documents';
 import { PricingTables } from '@/pages/PricingTables';
 import { AdminPanel } from '@/pages/AdminPanel';
-import { NotFound } from '@/pages/not-found';
+import NotFound from '@/pages/not-found';
 
 const queryClient = new QueryClient({
   defaultOptions: {

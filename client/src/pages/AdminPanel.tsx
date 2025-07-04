@@ -49,6 +49,7 @@ type CreateUserForm = {
 
 type UpdateDocumentStatusForm = {
   status: '접수' | '보완필요' | '완료';
+  activationStatus?: '대기' | '개통' | '취소';
   notes?: string;
 };
 
@@ -112,6 +113,7 @@ export function AdminPanel() {
     resolver: zodResolver(updateDocumentStatusSchema),
     defaultValues: {
       status: '접수',
+      activationStatus: '대기',
       notes: '',
     },
   });
@@ -262,6 +264,7 @@ export function AdminPanel() {
   const openStatusDialog = (document: Document) => {
     setSelectedDocument(document);
     statusForm.setValue('status', document.status);
+    statusForm.setValue('activationStatus', (document as any).activationStatus || '대기');
     statusForm.setValue('notes', document.notes || '');
     setStatusDialogOpen(true);
   };
@@ -274,6 +277,19 @@ export function AdminPanel() {
         return <Badge className="status-badge-completed">완료</Badge>;
       case '보완필요':
         return <Badge className="status-badge-needs-review">보완필요</Badge>;
+      default:
+        return <Badge variant="secondary">{status}</Badge>;
+    }
+  };
+
+  const getActivationStatusBadge = (status: string) => {
+    switch (status) {
+      case '대기':
+        return <Badge variant="outline" className="text-yellow-600 border-yellow-600">대기</Badge>;
+      case '개통':
+        return <Badge variant="outline" className="text-green-600 border-green-600">개통</Badge>;
+      case '취소':
+        return <Badge variant="outline" className="text-red-600 border-red-600">취소</Badge>;
       default:
         return <Badge variant="secondary">{status}</Badge>;
     }
@@ -655,6 +671,9 @@ export function AdminPanel() {
                             상태
                           </th>
                           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            개통상태
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                             업로드일
                           </th>
                           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -679,6 +698,9 @@ export function AdminPanel() {
                                 {getStatusIcon(doc.status)}
                                 {getStatusBadge(doc.status)}
                               </div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              {getActivationStatusBadge((doc as any).activationStatus || '대기')}
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                               {format(new Date(doc.uploadedAt), 'yyyy-MM-dd HH:mm', { locale: ko })}
@@ -746,6 +768,28 @@ export function AdminPanel() {
                                   <SelectItem value="접수">접수</SelectItem>
                                   <SelectItem value="보완필요">보완필요</SelectItem>
                                   <SelectItem value="완료">완료</SelectItem>
+                                </SelectContent>
+                              </Select>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={statusForm.control}
+                          name="activationStatus"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>개통 상태</FormLabel>
+                              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <FormControl>
+                                  <SelectTrigger>
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  <SelectItem value="대기">대기</SelectItem>
+                                  <SelectItem value="개통">개통</SelectItem>
+                                  <SelectItem value="취소">취소</SelectItem>
                                 </SelectContent>
                               </Select>
                               <FormMessage />

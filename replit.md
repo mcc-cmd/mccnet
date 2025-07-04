@@ -105,6 +105,7 @@ This is a document management system built for telecommunications dealers to han
 
 ## Changelog
 - July 04, 2025. Initial setup
+- July 04, 2025. Added activation quantity tracking feature with monthly statistics (접수/개통/취소 counts)
 
 ## User Preferences
 

@@ -37,11 +37,13 @@ export interface Document {
   customerName: string;
   customerPhone: string;
   status: '접수' | '보완필요' | '완료';
+  activationStatus: '대기' | '개통' | '취소';
   filePath: string;
   fileName: string;
   fileSize: number;
   uploadedAt: Date;
   updatedAt: Date;
+  activatedAt?: Date;
   notes?: string;
 }
 
@@ -93,6 +95,7 @@ export const uploadDocumentSchema = z.object({
 
 export const updateDocumentStatusSchema = z.object({
   status: z.enum(['접수', '보완필요', '완료']),
+  activationStatus: z.enum(['대기', '개통', '취소']).optional(),
   notes: z.string().optional(),
 });
 
@@ -123,4 +126,8 @@ export interface DashboardStats {
   pendingDocuments: number;
   completedDocuments: number;
   thisWeekSubmissions: number;
+  thisMonthSubmissions: number;
+  activatedCount: number;
+  canceledCount: number;
+  pendingActivations: number;
 }

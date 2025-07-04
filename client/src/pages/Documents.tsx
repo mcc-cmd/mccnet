@@ -147,6 +147,19 @@ export function Documents() {
     }
   };
 
+  const getActivationStatusBadge = (status: string) => {
+    switch (status) {
+      case '대기':
+        return <Badge variant="outline" className="text-yellow-600 border-yellow-600">대기</Badge>;
+      case '개통':
+        return <Badge variant="outline" className="text-green-600 border-green-600">개통</Badge>;
+      case '취소':
+        return <Badge variant="outline" className="text-red-600 border-red-600">취소</Badge>;
+      default:
+        return <Badge variant="secondary">{status}</Badge>;
+    }
+  };
+
   const isAdmin = user?.userType === 'admin';
 
   return (
@@ -316,6 +329,9 @@ export function Documents() {
                         상태
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        개통상태
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         업로드일
                       </th>
                       {isAdmin && (
@@ -342,6 +358,9 @@ export function Documents() {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           {getStatusBadge(doc.status)}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          {getActivationStatusBadge((doc as any).activationStatus || '대기')}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                           {format(new Date(doc.uploadedAt), 'yyyy-MM-dd HH:mm', { locale: ko })}
