@@ -20,17 +20,6 @@ import type {
 const dbPath = path.join(process.cwd(), 'database.sqlite');
 const db = new Database(dbPath);
 
-// Check if activation_status column exists, if not add it
-try {
-  db.prepare('SELECT activation_status FROM documents LIMIT 1').get();
-} catch (error) {
-  // Column doesn't exist, add it
-  db.exec(`
-    ALTER TABLE documents ADD COLUMN activation_status TEXT DEFAULT '대기' CHECK (activation_status IN ('대기', '개통', '취소'));
-    ALTER TABLE documents ADD COLUMN activated_at DATETIME;
-  `);
-}
-
 // Initialize database tables
 db.exec(`
   CREATE TABLE IF NOT EXISTS admins (
