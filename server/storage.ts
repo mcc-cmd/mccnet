@@ -199,16 +199,21 @@ class SqliteStorage implements IStorage {
   }
 
   async getSession(sessionId: string): Promise<AuthSession | null> {
-    const session = db.prepare('SELECT * FROM auth_sessions WHERE id = ? AND expires_at > datetime("now")').get(sessionId) as any;
-    if (!session) return null;
+    try {
+      const session = db.prepare('SELECT * FROM auth_sessions WHERE id = ? AND expires_at > datetime("now")').get(sessionId) as any;
+      if (!session) return null;
 
-    return {
-      id: session.id,
-      userId: session.user_id,
-      userType: session.user_type,
-      dealerId: session.dealer_id,
-      expiresAt: new Date(session.expires_at)
-    };
+      return {
+        id: session.id,
+        userId: session.user_id,
+        userType: session.user_type,
+        dealerId: session.dealer_id,
+        expiresAt: new Date(session.expires_at)
+      };
+    } catch (error) {
+      console.error('Error getting session:', error);
+      throw error;
+    }
   }
 
   async deleteSession(sessionId: string): Promise<void> {
@@ -216,12 +221,14 @@ class SqliteStorage implements IStorage {
   }
 
   async createDealer(data: CreateDealerForm): Promise<Dealer> {
-    const result = db.prepare('INSERT INTO dealers (name, location, contact_email, contact_phone) VALUES (?, ?, ?, ?) RETURNING *').get(
+    const insertResult = db.prepare('INSERT INTO dealers (name, location, contact_email, contact_phone) VALUES (?, ?, ?, ?)').run(
       data.name,
       data.location,
       data.contactEmail,
       data.contactPhone
-    ) as any;
+    );
+
+    const result = db.prepare('SELECT * FROM dealers WHERE id = ?').get(insertResult.lastInsertRowid) as any;
 
     return {
       id: result.id,
@@ -235,13 +242,15 @@ class SqliteStorage implements IStorage {
 
   async createUser(data: CreateUserForm): Promise<User> {
     const hashedPassword = bcrypt.hashSync(data.password, 10);
-    const result = db.prepare('INSERT INTO users (dealer_id, email, password, name, role) VALUES (?, ?, ?, ?, ?) RETURNING *').get(
+    const insertResult = db.prepare('INSERT INTO users (dealer_id, email, password, name, role) VALUES (?, ?, ?, ?, ?)').run(
       data.dealerId,
       data.email,
       hashedPassword,
       data.name,
       data.role
-    ) as any;
+    );
+
+    const result = db.prepare('SELECT * FROM users WHERE id = ?').get(insertResult.lastInsertRowid) as any;
 
     return {
       id: result.id,
@@ -297,11 +306,10 @@ class SqliteStorage implements IStorage {
   async uploadDocument(data: UploadDocumentForm & { dealerId: number; userId: number; filePath: string; fileName: string; fileSize: number }): Promise<Document> {
     const documentNumber = `DOC-${new Date().getFullYear()}-${String(Date.now()).slice(-6)}`;
     
-    const result = db.prepare(`
+    const insertResult = db.prepare(`
       INSERT INTO documents (dealer_id, user_id, document_number, customer_name, customer_phone, status, activation_status, file_path, file_name, file_size, notes)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      RETURNING *
-    `).get(
+    `).run(
       data.dealerId,
       data.userId,
       documentNumber,
@@ -313,7 +321,9 @@ class SqliteStorage implements IStorage {
       data.fileName,
       data.fileSize,
       data.notes || null
-    ) as any;
+    );
+
+    const result = db.prepare('SELECT * FROM documents WHERE id = ?').get(insertResult.lastInsertRowid) as any;
 
     return {
       id: result.id,
@@ -409,10 +419,11 @@ class SqliteStorage implements IStorage {
       }
     }
 
-    updateQuery += ` WHERE id = ? RETURNING *`;
+    updateQuery += ` WHERE id = ?`;
     params.push(id);
 
-    const result = db.prepare(updateQuery).get(...params) as any;
+    db.prepare(updateQuery).run(...params);
+    const result = db.prepare('SELECT * FROM documents WHERE id = ?').get(id) as any;
 
     return {
       id: result.id,
@@ -449,17 +460,18 @@ class SqliteStorage implements IStorage {
     // Deactivate all previous pricing tables
     db.prepare('UPDATE pricing_tables SET is_active = false').run();
 
-    const result = db.prepare(`
+    const insertResult = db.prepare(`
       INSERT INTO pricing_tables (title, file_name, file_path, file_size, uploaded_by, is_active)
       VALUES (?, ?, ?, ?, ?, true)
-      RETURNING *
-    `).get(
+    `).run(
       data.title,
       data.fileName,
       data.filePath,
       data.fileSize,
       data.uploadedBy
-    ) as any;
+    );
+
+    const result = db.prepare('SELECT * FROM pricing_tables WHERE id = ?').get(insertResult.lastInsertRowid) as any;
 
     return {
       id: result.id,
