@@ -8,7 +8,7 @@ import {
   BarChart3,
   Settings
 } from 'lucide-react';
-import logoImage from '@assets/image_1751604187475.png';
+import logoImage from '@assets/KakaoTalk_20250626_162541112_1751604312469.png';
 
 const navigation = [
   { name: '대시보드', href: '/dashboard', icon: LayoutDashboard },
@@ -51,31 +51,32 @@ export function Sidebar({ isOpen = true, onClose }: SidebarProps) {
       )}>
         <div className="flex flex-col h-full">
           {/* Logo */}
-          <div className="flex items-center flex-shrink-0 px-4 py-5">
-            <div className="flex items-center">
-              <img 
-                src={logoImage} 
-                alt="MCC네트월드 로고" 
-                className="h-8 w-auto"
-              />
-              <div className="ml-3">
-                <h1 className="text-lg font-semibold text-white leading-tight">MCC네트월드</h1>
-                <p className="text-sm text-gray-200 opacity-90">접수 포털</p>
-              </div>
+          <div className="flex flex-col items-center flex-shrink-0 px-4 py-6 border-b border-gray-700">
+            <img 
+              src={logoImage} 
+              alt="MCC네트월드 로고" 
+              className="h-12 w-auto mb-3"
+            />
+            <div className="text-center">
+              <h1 className="text-lg font-semibold text-white leading-tight">MCC네트월드</h1>
+              <p className="text-sm text-gray-300 opacity-90">접수 포털</p>
             </div>
-            {/* Mobile close button */}
-            {onClose && (
+          </div>
+          
+          {/* Mobile close button */}
+          {onClose && (
+            <div className="absolute top-4 right-4 md:hidden">
               <button
                 type="button"
-                className="ml-auto md:hidden text-gray-300 hover:text-white"
+                className="text-gray-300 hover:text-white"
                 onClick={onClose}
               >
                 <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
-            )}
-          </div>
+            </div>
+          )}
 
           {/* Navigation */}
           <nav className="flex-1 px-2 pb-4 space-y-1">

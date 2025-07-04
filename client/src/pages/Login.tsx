@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2 } from 'lucide-react';
-import logoImage from '@assets/image_1751604187475.png';
+import logoImage from '@assets/KakaoTalk_20250626_162541112_1751604312469.png';
 
 export function Login() {
   const [, setLocation] = useLocation();
