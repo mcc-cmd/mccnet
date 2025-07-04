@@ -41,7 +41,7 @@ export function Documents() {
     queryFn: () => {
       const params = new URLSearchParams();
       Object.entries(filters).forEach(([key, value]) => {
-        if (value) params.append(key, value);
+        if (value && value !== 'all') params.append(key, value);
       });
       return apiRequest(`/api/documents?${params}`) as Promise<Document[]>;
     },
@@ -272,7 +272,7 @@ export function Documents() {
                     <SelectValue placeholder="전체 상태" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">전체 상태</SelectItem>
+                    <SelectItem value="all">전체 상태</SelectItem>
                     <SelectItem value="접수">접수</SelectItem>
                     <SelectItem value="보완필요">보완필요</SelectItem>
                     <SelectItem value="완료">완료</SelectItem>

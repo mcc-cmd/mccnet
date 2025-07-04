@@ -8,6 +8,7 @@ import { useAuth } from '@/lib/auth';
 import { Login } from '@/pages/Login';
 import { Dashboard } from '@/pages/Dashboard';
 import { Documents } from '@/pages/Documents';
+import { SubmitApplication } from '@/pages/SubmitApplication';
 import { PricingTables } from '@/pages/PricingTables';
 import { AdminPanel } from '@/pages/AdminPanel';
 import NotFound from '@/pages/not-found';
@@ -32,6 +33,7 @@ function AppRoutes() {
     <Switch>
       <Route path="/" component={() => <Redirect to="/dashboard" />} />
       <Route path="/dashboard" component={Dashboard} />
+      <Route path="/submit" component={SubmitApplication} />
       <Route path="/documents" component={Documents} />
       <Route path="/pricing" component={PricingTables} />
       {user?.userType === 'admin' && (

@@ -12,6 +12,7 @@ import logoImage from '@/assets/logo.png';
 
 const navigation = [
   { name: '대시보드', href: '/dashboard', icon: LayoutDashboard },
+  { name: '접수 신청', href: '/submit', icon: FileText },
   { name: '접수 관리', href: '/documents', icon: FileText },
   { name: '단가표', href: '/pricing', icon: Calculator },
   { name: '통계', href: '/stats', icon: BarChart3 },
