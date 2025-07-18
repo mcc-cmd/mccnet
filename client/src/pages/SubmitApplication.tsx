@@ -56,7 +56,7 @@ export function SubmitApplication() {
       });
 
       // Reset form
-      setFormData({ customerName: '', customerPhone: '', notes: '' });
+      setFormData({ customerName: '', customerPhone: '', workerName: '', notes: '' });
       setSelectedFile(null);
     },
     onError: (error: Error) => {
@@ -84,6 +84,7 @@ export function SubmitApplication() {
     data.append('file', selectedFile);
     data.append('customerName', formData.customerName);
     data.append('customerPhone', formData.customerPhone);
+    data.append('workerName', formData.workerName);
     data.append('notes', formData.notes);
 
     uploadMutation.mutate(data);
@@ -274,7 +275,7 @@ export function SubmitApplication() {
                         </label>
                       </div>
                       <p className="text-xs text-gray-500">
-                        PDF, DOC, DOCX, JPG, PNG 파일만 업로드 가능 (최대 10MB)
+                        PDF, DOC, DOCX, JPG, JPEG, PNG 파일만 업로드 가능 (최대 10MB)
                       </p>
                     </div>
                   )}
@@ -287,7 +288,7 @@ export function SubmitApplication() {
                   type="button"
                   variant="outline"
                   onClick={() => {
-                    setFormData({ customerName: '', customerPhone: '', notes: '' });
+                    setFormData({ customerName: '', customerPhone: '', workerName: '', notes: '' });
                     setSelectedFile(null);
                   }}
                 >
