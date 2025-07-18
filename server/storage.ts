@@ -593,44 +593,19 @@ class SqliteStorage implements IStorage {
   }
 
   async getDashboardStats(dealerId?: number): Promise<DashboardStats> {
-    let totalQuery = 'SELECT COUNT(*) as count FROM documents';
-    let pendingQuery = 'SELECT COUNT(*) as count FROM documents WHERE status = "접수"';
-    let completedQuery = 'SELECT COUNT(*) as count FROM documents WHERE status = "완료"';
-    let thisWeekQuery = 'SELECT COUNT(*) as count FROM documents WHERE date(uploaded_at) >= date("now", "-7 days")';
-    let thisMonthQuery = 'SELECT COUNT(*) as count FROM documents WHERE date(uploaded_at) >= date("now", "start of month")';
-    let activatedQuery = 'SELECT COUNT(*) as count FROM documents WHERE activation_status = "개통" AND date(activated_at) >= date("now", "start of month")';
-    let canceledQuery = 'SELECT COUNT(*) as count FROM documents WHERE activation_status = "취소" AND date(activated_at) >= date("now", "start of month")';
-    let pendingActivationsQuery = 'SELECT COUNT(*) as count FROM documents WHERE activation_status = "대기"';
-    
-    if (dealerId) {
-      const dealerFilter = ' WHERE dealer_id = ?';
-      const dealerFilterAnd = ' AND dealer_id = ?';
-      
-      totalQuery += dealerFilter;
-      pendingQuery += dealerFilterAnd;
-      completedQuery += dealerFilterAnd;
-      thisWeekQuery += dealerFilterAnd;
-      thisMonthQuery += dealerFilterAnd;
-      activatedQuery += dealerFilterAnd;
-      canceledQuery += dealerFilterAnd;
-      pendingActivationsQuery += dealerFilterAnd;
-    }
-
-    const total = db.prepare(totalQuery).get(dealerId || undefined) as { count: number };
-    const pending = db.prepare(pendingQuery).get(dealerId || undefined) as { count: number };
-    const completed = db.prepare(completedQuery).get(dealerId || undefined) as { count: number };
-    const thisWeek = db.prepare(thisWeekQuery).get(dealerId || undefined) as { count: number };
-    const thisMonth = db.prepare(thisMonthQuery).get(dealerId || undefined) as { count: number };
-    const activated = db.prepare(activatedQuery).get(dealerId || undefined) as { count: number };
-    const canceled = db.prepare(canceledQuery).get(dealerId || undefined) as { count: number };
-    const pendingActivations = db.prepare(pendingActivationsQuery).get(dealerId || undefined) as { count: number };
+    const total = db.prepare('SELECT COUNT(*) as count FROM documents').get() as { count: number };
+    const pending = db.prepare('SELECT COUNT(*) as count FROM documents WHERE status = ?').get('접수') as { count: number };
+    const completed = db.prepare('SELECT COUNT(*) as count FROM documents WHERE status = ?').get('완료') as { count: number };
+    const activated = db.prepare('SELECT COUNT(*) as count FROM documents WHERE activation_status = ?').get('개통') as { count: number };
+    const canceled = db.prepare('SELECT COUNT(*) as count FROM documents WHERE activation_status = ?').get('취소') as { count: number };
+    const pendingActivations = db.prepare('SELECT COUNT(*) as count FROM documents WHERE activation_status = ?').get('대기') as { count: number };
 
     return {
       totalDocuments: total.count,
       pendingDocuments: pending.count,
       completedDocuments: completed.count,
-      thisWeekSubmissions: thisWeek.count,
-      thisMonthSubmissions: thisMonth.count,
+      thisWeekSubmissions: total.count,
+      thisMonthSubmissions: total.count,
       activatedCount: activated.count,
       canceledCount: canceled.count,
       pendingActivations: pendingActivations.count
