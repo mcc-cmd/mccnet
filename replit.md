@@ -134,6 +134,10 @@ This is a document management system built for MCC네트월드 telecommunication
 - July 18, 2025. Fixed dashboard "전체보기" button to navigate to Documents page for viewing all submissions
 - July 18, 2025. Added activation status management feature allowing users to change document status between "대기", "개통", and "취소" in Documents page
 - July 18, 2025. Implemented real-time dashboard updates for activation statistics with proper cache invalidation
+- July 18, 2025. Extended activation status to include "진행중" option (대기 → 진행중 → 개통완료/취소) for better workflow tracking
+- July 18, 2025. Updated database schema to support 4-state activation workflow: 대기, 진행중, 개통, 취소
+- July 18, 2025. Enhanced Documents page UI with clear "개통상태" action button and improved activation status badges
+- July 18, 2025. Added "진행중" status tracking in dashboard statistics for comprehensive workflow visibility
 
 ## User Preferences
 

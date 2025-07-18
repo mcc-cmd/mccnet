@@ -202,7 +202,7 @@ export function Documents() {
       case '진행중':
         return <Badge variant="outline" className="text-blue-600 border-blue-600">진행중</Badge>;
       case '개통':
-        return <Badge variant="outline" className="text-green-600 border-green-600">개통</Badge>;
+        return <Badge variant="outline" className="text-green-600 border-green-600">개통완료</Badge>;
       case '취소':
         return <Badge variant="outline" className="text-red-600 border-red-600">취소</Badge>;
       default:
@@ -427,19 +427,23 @@ export function Documents() {
                         )}
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                           <div className="flex space-x-2">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleDownload(doc.id)}
-                            >
-                              <Download className="h-4 w-4" />
-                            </Button>
+                            {doc.filePath && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleDownload(doc.id)}
+                                title="파일 다운로드"
+                              >
+                                <Download className="h-4 w-4" />
+                              </Button>
+                            )}
                             <Button
                               variant="outline"
                               size="sm"
                               onClick={() => handleActivationStatusChange(doc)}
+                              title="개통상태 변경"
                             >
-                              <Settings className="h-4 w-4" />
+                              개통상태
                             </Button>
                             {!isAdmin && (
                               <Button
@@ -447,6 +451,7 @@ export function Documents() {
                                 size="sm"
                                 onClick={() => handleDelete(doc.id)}
                                 disabled={doc.status !== '접수'}
+                                title="서류 삭제"
                               >
                                 삭제
                               </Button>
@@ -489,7 +494,7 @@ export function Documents() {
                   <SelectContent>
                     <SelectItem value="대기">대기</SelectItem>
                     <SelectItem value="진행중">진행중</SelectItem>
-                    <SelectItem value="개통">개통</SelectItem>
+                    <SelectItem value="개통">개통완료</SelectItem>
                     <SelectItem value="취소">취소</SelectItem>
                   </SelectContent>
                 </Select>

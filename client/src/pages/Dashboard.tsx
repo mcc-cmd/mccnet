@@ -211,7 +211,7 @@ export function Dashboard() {
                     stats?.activatedCount || 0
                   )}
                 </div>
-                <div className="text-sm text-green-800 mt-1">개통 완료</div>
+                <div className="text-sm text-green-800 mt-1">개통완료</div>
               </div>
               
               <div className="text-center p-4 bg-red-50 rounded-lg">
