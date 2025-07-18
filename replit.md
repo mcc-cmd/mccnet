@@ -164,6 +164,8 @@ This is a document management system built for MCC네트월드 telecommunication
 - July 18, 2025. Fixed critical worker permission issue by removing duplicate /api/documents route that was preventing workers from accessing all dealer data
 - July 18, 2025. Resolved worker data access restriction: workers and admins now properly view all dealer documents while dealers see only their own data
 - July 18, 2025. Verified complete role-based access control: admins (3 docs), workers (3 docs), dealers (2 docs) with consistent statistics and document listings
+- July 18, 2025. Removed "접수 신청" menu from worker accounts and restricted document upload to dealers only
+- July 18, 2025. Enhanced logo functionality: MCC네트월드 logo now links to dashboard, removed "접수 포털" subtitle text
 
 ## User Preferences
 

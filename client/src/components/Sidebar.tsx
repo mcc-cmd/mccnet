@@ -61,15 +61,16 @@ export function Sidebar({ isOpen = true, onClose }: SidebarProps) {
         <div className="flex flex-col h-full">
           {/* Logo */}
           <div className="flex flex-col items-center flex-shrink-0 px-4 py-6 border-b border-gray-700">
-            <img 
-              src={logoImage} 
-              alt="MCC네트월드 로고" 
-              className="h-12 w-auto mb-3"
-            />
-            <div className="text-center">
-              <h1 className="text-lg font-semibold text-white leading-tight">MCC네트월드</h1>
-              <p className="text-sm text-gray-300 opacity-90">접수 포털</p>
-            </div>
+            <Link href="/dashboard" className="flex flex-col items-center cursor-pointer hover:opacity-80 transition-opacity">
+              <img 
+                src={logoImage} 
+                alt="MCC네트월드 로고" 
+                className="h-12 w-auto mb-3"
+              />
+              <div className="text-center">
+                <h1 className="text-lg font-semibold text-white leading-tight">MCC네트월드</h1>
+              </div>
+            </Link>
           </div>
           
           {/* Mobile close button */}
