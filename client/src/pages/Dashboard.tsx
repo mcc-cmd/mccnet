@@ -362,10 +362,10 @@ export function Dashboard() {
                   <Button
                     variant="outline"
                     className="w-full"
-                    onClick={() => window.location.href = '/pricing'}
+                    onClick={() => window.location.href = '/downloads'}
                   >
                     <Calculator className="mr-2 h-5 w-5" />
-                    단가표 확인
+                    단가표
                   </Button>
                 </div>
               </CardContent>
