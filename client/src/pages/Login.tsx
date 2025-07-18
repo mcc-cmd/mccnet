@@ -120,7 +120,8 @@ export function Login() {
             <div className="mt-6 text-center">
               <div className="text-sm text-gray-500">
                 <p>테스트 계정:</p>
-                <p className="font-mono">admin@portal.com / admin123!</p>
+                <p className="font-mono"><strong>관리자:</strong> admin@portal.com / admin123!</p>
+                <p className="font-mono"><strong>사용자:</strong> user@test.com / password</p>
               </div>
             </div>
           </CardContent>
