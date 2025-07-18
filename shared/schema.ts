@@ -192,3 +192,69 @@ export interface DashboardStats {
   pendingActivations: number;
   inProgressCount: number;
 }
+
+// Service Plans types and schemas
+export interface ServicePlan {
+  id: number;
+  planName: string;
+  carrier: string;
+  planType: string; // 5G, LTE, etc.
+  dataAllowance: string;
+  monthlyFee: number;
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface AdditionalService {
+  id: number;
+  serviceName: string;
+  serviceType: string; // 부가서비스, 결합상품, etc.
+  monthlyFee: number;
+  description?: string;
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface DocumentServicePlan {
+  id: number;
+  documentId: number;
+  servicePlanId: number;
+  additionalServiceIds?: string; // JSON array of service IDs
+  bundleType?: string; // 결합상품 유형
+  paymentType: string; // 선납, 후납
+  registrationFee?: number; // 가입비
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export const createServicePlanSchema = z.object({
+  planName: z.string().min(1, "요금제명을 입력해주세요"),
+  carrier: z.string().min(1, "통신사를 선택해주세요"),
+  planType: z.string().min(1, "요금제 유형을 선택해주세요"),
+  dataAllowance: z.string().min(1, "데이터 허용량을 입력해주세요"),
+  monthlyFee: z.number().min(0, "월 요금을 입력해주세요"),
+  isActive: z.boolean().default(true),
+});
+
+export const createAdditionalServiceSchema = z.object({
+  serviceName: z.string().min(1, "서비스명을 입력해주세요"),
+  serviceType: z.string().min(1, "서비스 유형을 선택해주세요"),
+  monthlyFee: z.number().min(0, "월 요금을 입력해주세요"),
+  description: z.string().optional(),
+  isActive: z.boolean().default(true),
+});
+
+export const createDocumentServicePlanSchema = z.object({
+  documentId: z.number(),
+  servicePlanId: z.number(),
+  additionalServiceIds: z.string().optional(),
+  bundleType: z.string().optional(),
+  paymentType: z.string().min(1, "결제 유형을 선택해주세요"),
+  registrationFee: z.number().optional(),
+});
+
+export type CreateServicePlanForm = z.infer<typeof createServicePlanSchema>;
+export type CreateAdditionalServiceForm = z.infer<typeof createAdditionalServiceSchema>;
+export type CreateDocumentServicePlanForm = z.infer<typeof createDocumentServicePlanSchema>;

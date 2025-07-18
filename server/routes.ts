@@ -13,6 +13,9 @@ import {
   uploadDocumentSchema,
   updateDocumentStatusSchema,
   updateActivationStatusSchema,
+  createServicePlanSchema,
+  createAdditionalServiceSchema,
+  createDocumentServicePlanSchema,
   type AuthResponse
 } from "../shared/schema";
 
@@ -702,6 +705,140 @@ router.post('/api/auth/register/dealer', async (req, res) => {
     res.json(dealer);
   } catch (error: any) {
     res.status(400).json({ error: error.message });
+  }
+});
+
+// Service Plans API Routes
+router.get('/api/service-plans', requireAuth, async (req: any, res) => {
+  try {
+    const { carrier } = req.query;
+    const servicePlans = carrier 
+      ? await storage.getServicePlansByCarrier(carrier)
+      : await storage.getServicePlans();
+    res.json(servicePlans);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.post('/api/service-plans', requireAdmin, async (req: any, res) => {
+  try {
+    const data = createServicePlanSchema.parse(req.body);
+    const servicePlan = await storage.createServicePlan(data);
+    res.json(servicePlan);
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+router.put('/api/service-plans/:id', requireAdmin, async (req: any, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const data = createServicePlanSchema.partial().parse(req.body);
+    const servicePlan = await storage.updateServicePlan(id, data);
+    res.json(servicePlan);
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+router.delete('/api/service-plans/:id', requireAdmin, async (req: any, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    await storage.deleteServicePlan(id);
+    res.json({ success: true });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Additional Services API Routes
+router.get('/api/additional-services', requireAuth, async (req: any, res) => {
+  try {
+    const { serviceType } = req.query;
+    const additionalServices = serviceType 
+      ? await storage.getAdditionalServicesByType(serviceType)
+      : await storage.getAdditionalServices();
+    res.json(additionalServices);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.post('/api/additional-services', requireAdmin, async (req: any, res) => {
+  try {
+    const data = createAdditionalServiceSchema.parse(req.body);
+    const additionalService = await storage.createAdditionalService(data);
+    res.json(additionalService);
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+router.put('/api/additional-services/:id', requireAdmin, async (req: any, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const data = createAdditionalServiceSchema.partial().parse(req.body);
+    const additionalService = await storage.updateAdditionalService(id, data);
+    res.json(additionalService);
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+router.delete('/api/additional-services/:id', requireAdmin, async (req: any, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    await storage.deleteAdditionalService(id);
+    res.json({ success: true });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Document Service Plans API Routes
+router.get('/api/documents/:id/service-plan', requireAuth, async (req: any, res) => {
+  try {
+    const documentId = parseInt(req.params.id);
+    const documentServicePlan = await storage.getDocumentServicePlan(documentId);
+    res.json(documentServicePlan);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.post('/api/documents/:id/service-plan', requireAuth, async (req: any, res) => {
+  try {
+    const documentId = parseInt(req.params.id);
+    const data = createDocumentServicePlanSchema.parse({
+      ...req.body,
+      documentId
+    });
+    const documentServicePlan = await storage.createDocumentServicePlan(data);
+    res.json(documentServicePlan);
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+router.put('/api/documents/:id/service-plan', requireAuth, async (req: any, res) => {
+  try {
+    const documentId = parseInt(req.params.id);
+    const data = createDocumentServicePlanSchema.partial().parse(req.body);
+    const documentServicePlan = await storage.updateDocumentServicePlan(documentId, data);
+    res.json(documentServicePlan);
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+router.delete('/api/documents/:id/service-plan', requireAuth, async (req: any, res) => {
+  try {
+    const documentId = parseInt(req.params.id);
+    await storage.deleteDocumentServicePlan(documentId);
+    res.json({ success: true });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
   }
 });
 

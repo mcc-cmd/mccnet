@@ -18,7 +18,10 @@ import type {
   UploadDocumentForm,
   UpdateDocumentStatusForm,
   DashboardStats,
-  KPDealerInfo
+  KPDealerInfo,
+  ServicePlan,
+  AdditionalService,
+  DocumentServicePlan
 } from '../shared/schema';
 
 const dbPath = path.join(process.cwd(), 'database.sqlite');
@@ -118,6 +121,48 @@ db.exec(`
   CREATE INDEX IF NOT EXISTS idx_documents_activated_at ON documents(activated_at);
   CREATE INDEX IF NOT EXISTS idx_documents_customer_name ON documents(customer_name);
   CREATE INDEX IF NOT EXISTS idx_auth_sessions_expires_at ON auth_sessions(expires_at);
+
+  CREATE TABLE IF NOT EXISTS service_plans (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    plan_name TEXT NOT NULL,
+    carrier TEXT NOT NULL,
+    plan_type TEXT NOT NULL,
+    data_allowance TEXT NOT NULL,
+    monthly_fee INTEGER NOT NULL,
+    is_active BOOLEAN DEFAULT true,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  );
+
+  CREATE TABLE IF NOT EXISTS additional_services (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    service_name TEXT NOT NULL,
+    service_type TEXT NOT NULL,
+    monthly_fee INTEGER NOT NULL,
+    description TEXT,
+    is_active BOOLEAN DEFAULT true,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  );
+
+  CREATE TABLE IF NOT EXISTS document_service_plans (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    document_id INTEGER NOT NULL,
+    service_plan_id INTEGER NOT NULL,
+    additional_service_ids TEXT,
+    bundle_type TEXT,
+    payment_type TEXT NOT NULL,
+    registration_fee INTEGER,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (document_id) REFERENCES documents (id),
+    FOREIGN KEY (service_plan_id) REFERENCES service_plans (id)
+  );
+
+  CREATE INDEX IF NOT EXISTS idx_service_plans_carrier ON service_plans(carrier);
+  CREATE INDEX IF NOT EXISTS idx_service_plans_plan_type ON service_plans(plan_type);
+  CREATE INDEX IF NOT EXISTS idx_additional_services_service_type ON additional_services(service_type);
+  CREATE INDEX IF NOT EXISTS idx_document_service_plans_document_id ON document_service_plans(document_id);
 `);
 
 // Create default admin if none exists
@@ -154,6 +199,73 @@ if (kpInfoExists.count === 0) {
   }
 }
 
+// Create initial service plans if none exist
+const servicePlansExists = db.prepare('SELECT COUNT(*) as count FROM service_plans').get() as { count: number };
+if (servicePlansExists.count === 0) {
+  const servicePlans = [
+    // SK 텔레콤 요금제
+    { plan_name: '5G 언리미티드 플러스', carrier: 'SK텔레콤', plan_type: '5G', data_allowance: '무제한', monthly_fee: 95000 },
+    { plan_name: '5G 언리미티드 레귤러', carrier: 'SK텔레콤', plan_type: '5G', data_allowance: '무제한', monthly_fee: 85000 },
+    { plan_name: '5G 언리미티드 스탠다드', carrier: 'SK텔레콤', plan_type: '5G', data_allowance: '무제한', monthly_fee: 75000 },
+    { plan_name: 'LTE 언리미티드 플러스', carrier: 'SK텔레콤', plan_type: 'LTE', data_allowance: '무제한', monthly_fee: 60000 },
+    { plan_name: 'LTE 언리미티드 레귤러', carrier: 'SK텔레콤', plan_type: 'LTE', data_allowance: '무제한', monthly_fee: 50000 },
+    
+    // KT 요금제
+    { plan_name: '5G 슈퍼플랜', carrier: 'KT', plan_type: '5G', data_allowance: '무제한', monthly_fee: 95000 },
+    { plan_name: '5G 스탠다드', carrier: 'KT', plan_type: '5G', data_allowance: '무제한', monthly_fee: 85000 },
+    { plan_name: '5G 에센셜', carrier: 'KT', plan_type: '5G', data_allowance: '무제한', monthly_fee: 75000 },
+    { plan_name: 'LTE 슈퍼플랜', carrier: 'KT', plan_type: 'LTE', data_allowance: '무제한', monthly_fee: 60000 },
+    { plan_name: 'LTE 스탠다드', carrier: 'KT', plan_type: 'LTE', data_allowance: '무제한', monthly_fee: 50000 },
+    
+    // LG U+ 요금제
+    { plan_name: '5G 시그니처', carrier: 'LG U+', plan_type: '5G', data_allowance: '무제한', monthly_fee: 95000 },
+    { plan_name: '5G 프리미엄', carrier: 'LG U+', plan_type: '5G', data_allowance: '무제한', monthly_fee: 85000 },
+    { plan_name: '5G 스탠다드', carrier: 'LG U+', plan_type: '5G', data_allowance: '무제한', monthly_fee: 75000 },
+    { plan_name: 'LTE 프리미엄', carrier: 'LG U+', plan_type: 'LTE', data_allowance: '무제한', monthly_fee: 60000 },
+    { plan_name: 'LTE 스탠다드', carrier: 'LG U+', plan_type: 'LTE', data_allowance: '무제한', monthly_fee: 50000 },
+  ];
+  
+  for (const plan of servicePlans) {
+    db.prepare('INSERT INTO service_plans (plan_name, carrier, plan_type, data_allowance, monthly_fee, is_active) VALUES (?, ?, ?, ?, ?, ?)').run(
+      plan.plan_name,
+      plan.carrier,
+      plan.plan_type,
+      plan.data_allowance,
+      plan.monthly_fee,
+      1
+    );
+  }
+}
+
+// Create initial additional services if none exist
+const additionalServicesExists = db.prepare('SELECT COUNT(*) as count FROM additional_services').get() as { count: number };
+if (additionalServicesExists.count === 0) {
+  const additionalServices = [
+    { service_name: '넷플릭스 스탠다드', service_type: '부가서비스', monthly_fee: 13500, description: '넷플릭스 스탠다드 이용권' },
+    { service_name: '넷플릭스 프리미엄', service_type: '부가서비스', monthly_fee: 17000, description: '넷플릭스 프리미엄 이용권' },
+    { service_name: '유튜브 프리미엄', service_type: '부가서비스', monthly_fee: 11900, description: '유튜브 프리미엄 이용권' },
+    { service_name: '디즈니+', service_type: '부가서비스', monthly_fee: 9900, description: '디즈니+ 이용권' },
+    { service_name: '웨이브', service_type: '부가서비스', monthly_fee: 10900, description: '웨이브 이용권' },
+    { service_name: '시즌', service_type: '부가서비스', monthly_fee: 8900, description: '시즌 이용권' },
+    { service_name: '인터넷 결합', service_type: '결합상품', monthly_fee: 0, description: '인터넷 결합 할인' },
+    { service_name: 'IPTV 결합', service_type: '결합상품', monthly_fee: 0, description: 'IPTV 결합 할인' },
+    { service_name: '인터넷+IPTV 결합', service_type: '결합상품', monthly_fee: 0, description: '인터넷+IPTV 결합 할인' },
+    { service_name: '무선인터넷', service_type: '부가서비스', monthly_fee: 5500, description: '무선인터넷 서비스' },
+    { service_name: '국제전화', service_type: '부가서비스', monthly_fee: 3300, description: '국제전화 서비스' },
+    { service_name: '음성사서함', service_type: '부가서비스', monthly_fee: 2200, description: '음성사서함 서비스' },
+  ];
+  
+  for (const service of additionalServices) {
+    db.prepare('INSERT INTO additional_services (service_name, service_type, monthly_fee, description, is_active) VALUES (?, ?, ?, ?, ?)').run(
+      service.service_name,
+      service.service_type,
+      service.monthly_fee,
+      service.description,
+      1
+    );
+  }
+}
+
 export interface IStorage {
   // Authentication
   authenticateAdmin(email: string, password: string): Promise<Admin | null>;
@@ -171,6 +283,26 @@ export interface IStorage {
   getKPInfo(kpNumber: string): Promise<KPDealerInfo | null>;
   createKPDealerInfo(data: Omit<KPDealerInfo, 'id' | 'createdAt'>): Promise<KPDealerInfo>;
   getAllKPDealerInfo(): Promise<KPDealerInfo[]>;
+  
+  // Service plans management
+  createServicePlan(data: Omit<ServicePlan, 'id' | 'createdAt' | 'updatedAt'>): Promise<ServicePlan>;
+  getServicePlans(): Promise<ServicePlan[]>;
+  getServicePlansByCarrier(carrier: string): Promise<ServicePlan[]>;
+  updateServicePlan(id: number, data: Partial<Omit<ServicePlan, 'id' | 'createdAt' | 'updatedAt'>>): Promise<ServicePlan>;
+  deleteServicePlan(id: number): Promise<void>;
+  
+  // Additional services management
+  createAdditionalService(data: Omit<AdditionalService, 'id' | 'createdAt' | 'updatedAt'>): Promise<AdditionalService>;
+  getAdditionalServices(): Promise<AdditionalService[]>;
+  getAdditionalServicesByType(serviceType: string): Promise<AdditionalService[]>;
+  updateAdditionalService(id: number, data: Partial<Omit<AdditionalService, 'id' | 'createdAt' | 'updatedAt'>>): Promise<AdditionalService>;
+  deleteAdditionalService(id: number): Promise<void>;
+  
+  // Document service plans management
+  createDocumentServicePlan(data: Omit<DocumentServicePlan, 'id' | 'createdAt' | 'updatedAt'>): Promise<DocumentServicePlan>;
+  getDocumentServicePlan(documentId: number): Promise<DocumentServicePlan | null>;
+  updateDocumentServicePlan(documentId: number, data: Partial<Omit<DocumentServicePlan, 'id' | 'createdAt' | 'updatedAt'>>): Promise<DocumentServicePlan>;
+  deleteDocumentServicePlan(documentId: number): Promise<void>;
   
   // Admin operations
   getAdminById(id: number): Promise<Admin | null>;
@@ -515,6 +647,301 @@ class SqliteStorage implements IStorage {
       isActive: result.is_active,
       createdAt: new Date(result.created_at)
     }));
+  }
+
+  // Service Plans Management
+  async createServicePlan(data: Omit<ServicePlan, 'id' | 'createdAt' | 'updatedAt'>): Promise<ServicePlan> {
+    const result = db.prepare(`
+      INSERT INTO service_plans (plan_name, carrier, plan_type, data_allowance, monthly_fee, is_active)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `).run(data.planName, data.carrier, data.planType, data.dataAllowance, data.monthlyFee, data.isActive ? 1 : 0);
+
+    const servicePlan = db.prepare('SELECT * FROM service_plans WHERE id = ?').get(result.lastInsertRowid) as any;
+    
+    return {
+      id: servicePlan.id,
+      planName: servicePlan.plan_name,
+      carrier: servicePlan.carrier,
+      planType: servicePlan.plan_type,
+      dataAllowance: servicePlan.data_allowance,
+      monthlyFee: servicePlan.monthly_fee,
+      isActive: servicePlan.is_active,
+      createdAt: new Date(servicePlan.created_at),
+      updatedAt: new Date(servicePlan.updated_at)
+    };
+  }
+
+  async getServicePlans(): Promise<ServicePlan[]> {
+    const plans = db.prepare('SELECT * FROM service_plans WHERE is_active = 1 ORDER BY carrier, plan_name').all() as any[];
+    return plans.map(plan => ({
+      id: plan.id,
+      planName: plan.plan_name,
+      carrier: plan.carrier,
+      planType: plan.plan_type,
+      dataAllowance: plan.data_allowance,
+      monthlyFee: plan.monthly_fee,
+      isActive: plan.is_active,
+      createdAt: new Date(plan.created_at),
+      updatedAt: new Date(plan.updated_at)
+    }));
+  }
+
+  async getServicePlansByCarrier(carrier: string): Promise<ServicePlan[]> {
+    const plans = db.prepare('SELECT * FROM service_plans WHERE carrier = ? AND is_active = 1 ORDER BY plan_name').all(carrier) as any[];
+    return plans.map(plan => ({
+      id: plan.id,
+      planName: plan.plan_name,
+      carrier: plan.carrier,
+      planType: plan.plan_type,
+      dataAllowance: plan.data_allowance,
+      monthlyFee: plan.monthly_fee,
+      isActive: plan.is_active,
+      createdAt: new Date(plan.created_at),
+      updatedAt: new Date(plan.updated_at)
+    }));
+  }
+
+  async updateServicePlan(id: number, data: Partial<Omit<ServicePlan, 'id' | 'createdAt' | 'updatedAt'>>): Promise<ServicePlan> {
+    const setParts = [];
+    const values = [];
+
+    if (data.planName !== undefined) {
+      setParts.push('plan_name = ?');
+      values.push(data.planName);
+    }
+    if (data.carrier !== undefined) {
+      setParts.push('carrier = ?');
+      values.push(data.carrier);
+    }
+    if (data.planType !== undefined) {
+      setParts.push('plan_type = ?');
+      values.push(data.planType);
+    }
+    if (data.dataAllowance !== undefined) {
+      setParts.push('data_allowance = ?');
+      values.push(data.dataAllowance);
+    }
+    if (data.monthlyFee !== undefined) {
+      setParts.push('monthly_fee = ?');
+      values.push(data.monthlyFee);
+    }
+    if (data.isActive !== undefined) {
+      setParts.push('is_active = ?');
+      values.push(data.isActive ? 1 : 0);
+    }
+
+    setParts.push('updated_at = CURRENT_TIMESTAMP');
+    values.push(id);
+
+    db.prepare(`UPDATE service_plans SET ${setParts.join(', ')} WHERE id = ?`).run(...values);
+
+    const plan = db.prepare('SELECT * FROM service_plans WHERE id = ?').get(id) as any;
+    return {
+      id: plan.id,
+      planName: plan.plan_name,
+      carrier: plan.carrier,
+      planType: plan.plan_type,
+      dataAllowance: plan.data_allowance,
+      monthlyFee: plan.monthly_fee,
+      isActive: plan.is_active,
+      createdAt: new Date(plan.created_at),
+      updatedAt: new Date(plan.updated_at)
+    };
+  }
+
+  async deleteServicePlan(id: number): Promise<void> {
+    db.prepare('UPDATE service_plans SET is_active = 0 WHERE id = ?').run(id);
+  }
+
+  // Additional Services Management
+  async createAdditionalService(data: Omit<AdditionalService, 'id' | 'createdAt' | 'updatedAt'>): Promise<AdditionalService> {
+    const result = db.prepare(`
+      INSERT INTO additional_services (service_name, service_type, monthly_fee, description, is_active)
+      VALUES (?, ?, ?, ?, ?)
+    `).run(data.serviceName, data.serviceType, data.monthlyFee, data.description || null, data.isActive ? 1 : 0);
+
+    const service = db.prepare('SELECT * FROM additional_services WHERE id = ?').get(result.lastInsertRowid) as any;
+    
+    return {
+      id: service.id,
+      serviceName: service.service_name,
+      serviceType: service.service_type,
+      monthlyFee: service.monthly_fee,
+      description: service.description,
+      isActive: service.is_active,
+      createdAt: new Date(service.created_at),
+      updatedAt: new Date(service.updated_at)
+    };
+  }
+
+  async getAdditionalServices(): Promise<AdditionalService[]> {
+    const services = db.prepare('SELECT * FROM additional_services WHERE is_active = 1 ORDER BY service_type, service_name').all() as any[];
+    return services.map(service => ({
+      id: service.id,
+      serviceName: service.service_name,
+      serviceType: service.service_type,
+      monthlyFee: service.monthly_fee,
+      description: service.description,
+      isActive: service.is_active,
+      createdAt: new Date(service.created_at),
+      updatedAt: new Date(service.updated_at)
+    }));
+  }
+
+  async getAdditionalServicesByType(serviceType: string): Promise<AdditionalService[]> {
+    const services = db.prepare('SELECT * FROM additional_services WHERE service_type = ? AND is_active = 1 ORDER BY service_name').all(serviceType) as any[];
+    return services.map(service => ({
+      id: service.id,
+      serviceName: service.service_name,
+      serviceType: service.service_type,
+      monthlyFee: service.monthly_fee,
+      description: service.description,
+      isActive: service.is_active,
+      createdAt: new Date(service.created_at),
+      updatedAt: new Date(service.updated_at)
+    }));
+  }
+
+  async updateAdditionalService(id: number, data: Partial<Omit<AdditionalService, 'id' | 'createdAt' | 'updatedAt'>>): Promise<AdditionalService> {
+    const setParts = [];
+    const values = [];
+
+    if (data.serviceName !== undefined) {
+      setParts.push('service_name = ?');
+      values.push(data.serviceName);
+    }
+    if (data.serviceType !== undefined) {
+      setParts.push('service_type = ?');
+      values.push(data.serviceType);
+    }
+    if (data.monthlyFee !== undefined) {
+      setParts.push('monthly_fee = ?');
+      values.push(data.monthlyFee);
+    }
+    if (data.description !== undefined) {
+      setParts.push('description = ?');
+      values.push(data.description);
+    }
+    if (data.isActive !== undefined) {
+      setParts.push('is_active = ?');
+      values.push(data.isActive ? 1 : 0);
+    }
+
+    setParts.push('updated_at = CURRENT_TIMESTAMP');
+    values.push(id);
+
+    db.prepare(`UPDATE additional_services SET ${setParts.join(', ')} WHERE id = ?`).run(...values);
+
+    const service = db.prepare('SELECT * FROM additional_services WHERE id = ?').get(id) as any;
+    return {
+      id: service.id,
+      serviceName: service.service_name,
+      serviceType: service.service_type,
+      monthlyFee: service.monthly_fee,
+      description: service.description,
+      isActive: service.is_active,
+      createdAt: new Date(service.created_at),
+      updatedAt: new Date(service.updated_at)
+    };
+  }
+
+  async deleteAdditionalService(id: number): Promise<void> {
+    db.prepare('UPDATE additional_services SET is_active = 0 WHERE id = ?').run(id);
+  }
+
+  // Document Service Plans Management
+  async createDocumentServicePlan(data: Omit<DocumentServicePlan, 'id' | 'createdAt' | 'updatedAt'>): Promise<DocumentServicePlan> {
+    const result = db.prepare(`
+      INSERT INTO document_service_plans (document_id, service_plan_id, additional_service_ids, bundle_type, payment_type, registration_fee)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `).run(
+      data.documentId,
+      data.servicePlanId,
+      data.additionalServiceIds || null,
+      data.bundleType || null,
+      data.paymentType,
+      data.registrationFee || null
+    );
+
+    const docServicePlan = db.prepare('SELECT * FROM document_service_plans WHERE id = ?').get(result.lastInsertRowid) as any;
+    
+    return {
+      id: docServicePlan.id,
+      documentId: docServicePlan.document_id,
+      servicePlanId: docServicePlan.service_plan_id,
+      additionalServiceIds: docServicePlan.additional_service_ids,
+      bundleType: docServicePlan.bundle_type,
+      paymentType: docServicePlan.payment_type,
+      registrationFee: docServicePlan.registration_fee,
+      createdAt: new Date(docServicePlan.created_at),
+      updatedAt: new Date(docServicePlan.updated_at)
+    };
+  }
+
+  async getDocumentServicePlan(documentId: number): Promise<DocumentServicePlan | null> {
+    const docServicePlan = db.prepare('SELECT * FROM document_service_plans WHERE document_id = ?').get(documentId) as any;
+    
+    if (!docServicePlan) return null;
+
+    return {
+      id: docServicePlan.id,
+      documentId: docServicePlan.document_id,
+      servicePlanId: docServicePlan.service_plan_id,
+      additionalServiceIds: docServicePlan.additional_service_ids,
+      bundleType: docServicePlan.bundle_type,
+      paymentType: docServicePlan.payment_type,
+      registrationFee: docServicePlan.registration_fee,
+      createdAt: new Date(docServicePlan.created_at),
+      updatedAt: new Date(docServicePlan.updated_at)
+    };
+  }
+
+  async updateDocumentServicePlan(documentId: number, data: Partial<Omit<DocumentServicePlan, 'id' | 'createdAt' | 'updatedAt'>>): Promise<DocumentServicePlan> {
+    const setParts = [];
+    const values = [];
+
+    if (data.servicePlanId !== undefined) {
+      setParts.push('service_plan_id = ?');
+      values.push(data.servicePlanId);
+    }
+    if (data.additionalServiceIds !== undefined) {
+      setParts.push('additional_service_ids = ?');
+      values.push(data.additionalServiceIds);
+    }
+    if (data.bundleType !== undefined) {
+      setParts.push('bundle_type = ?');
+      values.push(data.bundleType);
+    }
+    if (data.paymentType !== undefined) {
+      setParts.push('payment_type = ?');
+      values.push(data.paymentType);
+    }
+    if (data.registrationFee !== undefined) {
+      setParts.push('registration_fee = ?');
+      values.push(data.registrationFee);
+    }
+
+    setParts.push('updated_at = CURRENT_TIMESTAMP');
+    values.push(documentId);
+
+    db.prepare(`UPDATE document_service_plans SET ${setParts.join(', ')} WHERE document_id = ?`).run(...values);
+
+    const docServicePlan = db.prepare('SELECT * FROM document_service_plans WHERE document_id = ?').get(documentId) as any;
+    return {
+      id: docServicePlan.id,
+      documentId: docServicePlan.document_id,
+      servicePlanId: docServicePlan.service_plan_id,
+      additionalServiceIds: docServicePlan.additional_service_ids,
+      bundleType: docServicePlan.bundle_type,
+      paymentType: docServicePlan.payment_type,
+      registrationFee: docServicePlan.registration_fee,
+      createdAt: new Date(docServicePlan.created_at),
+      updatedAt: new Date(docServicePlan.updated_at)
+    };
+  }
+
+  async deleteDocumentServicePlan(documentId: number): Promise<void> {
+    db.prepare('DELETE FROM document_service_plans WHERE document_id = ?').run(documentId);
   }
 
   async getDealers(): Promise<Dealer[]> {

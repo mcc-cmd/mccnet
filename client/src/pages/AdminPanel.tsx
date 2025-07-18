@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Layout } from '@/components/Layout';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -14,8 +14,8 @@ import { useToast } from '@/hooks/use-toast';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { createDealerSchema, createUserSchema, createAdminSchema, createWorkerSchema, updateDocumentStatusSchema } from '../../../shared/schema';
-import type { Dealer, User, Document, PricingTable } from '../../../shared/schema';
+import { createDealerSchema, createUserSchema, createAdminSchema, createWorkerSchema, updateDocumentStatusSchema, createServicePlanSchema, createAdditionalServiceSchema } from '../../../shared/schema';
+import type { Dealer, User, Document, PricingTable, ServicePlan, AdditionalService } from '../../../shared/schema';
 import { 
   Building2, 
   Users, 
@@ -95,6 +95,8 @@ export function AdminPanel() {
   const [pricingDialogOpen, setPricingDialogOpen] = useState(false);
   const [templateDialogOpen, setTemplateDialogOpen] = useState(false);
   const [statusDialogOpen, setStatusDialogOpen] = useState(false);
+  const [servicePlanDialogOpen, setServicePlanDialogOpen] = useState(false);
+  const [additionalServiceDialogOpen, setAdditionalServiceDialogOpen] = useState(false);
   const [selectedDocument, setSelectedDocument] = useState<Document | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [templateFile, setTemplateFile] = useState<File | null>(null);
@@ -145,6 +147,16 @@ export function AdminPanel() {
     }>>,
   });
 
+  const { data: servicePlans, isLoading: servicePlansLoading } = useQuery({
+    queryKey: ['/api/service-plans'],
+    queryFn: () => apiRequest('/api/service-plans') as Promise<ServicePlan[]>,
+  });
+
+  const { data: additionalServices, isLoading: additionalServicesLoading } = useQuery({
+    queryKey: ['/api/additional-services'],
+    queryFn: () => apiRequest('/api/additional-services') as Promise<AdditionalService[]>,
+  });
+
   // Forms
   const dealerForm = useForm<CreateDealerForm>({
     resolver: zodResolver(createDealerSchema),
@@ -192,6 +204,29 @@ export function AdminPanel() {
       status: '접수',
       activationStatus: '대기',
       notes: '',
+    },
+  });
+
+  const servicePlanForm = useForm({
+    resolver: zodResolver(createServicePlanSchema),
+    defaultValues: {
+      planName: '',
+      carrier: '',
+      planType: '',
+      dataAllowance: '',
+      monthlyFee: 0,
+      isActive: true,
+    },
+  });
+
+  const additionalServiceForm = useForm({
+    resolver: zodResolver(createAdditionalServiceSchema),
+    defaultValues: {
+      serviceName: '',
+      serviceType: '',
+      monthlyFee: 0,
+      description: '',
+      isActive: true,
     },
   });
 
@@ -405,6 +440,60 @@ export function AdminPanel() {
     createWorkerMutation.mutate(data);
   };
 
+  const createServicePlanMutation = useMutation({
+    mutationFn: (data: any) => apiRequest('/api/service-plans', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/service-plans'] });
+      setServicePlanDialogOpen(false);
+      servicePlanForm.reset();
+      toast({
+        title: '성공',
+        description: '요금제가 성공적으로 생성되었습니다.',
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: '오류',
+        description: error.message,
+        variant: 'destructive',
+      });
+    },
+  });
+
+  const createAdditionalServiceMutation = useMutation({
+    mutationFn: (data: any) => apiRequest('/api/additional-services', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/additional-services'] });
+      setAdditionalServiceDialogOpen(false);
+      additionalServiceForm.reset();
+      toast({
+        title: '성공',
+        description: '부가서비스가 성공적으로 생성되었습니다.',
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: '오류',
+        description: error.message,
+        variant: 'destructive',
+      });
+    },
+  });
+
+  const handleCreateServicePlan = (data: any) => {
+    createServicePlanMutation.mutate(data);
+  };
+
+  const handleCreateAdditionalService = (data: any) => {
+    createAdditionalServiceMutation.mutate(data);
+  };
+
   const handleUploadPricing = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -516,7 +605,7 @@ export function AdminPanel() {
 
         {/* Admin Tabs */}
         <Tabs defaultValue="dealers" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-7">
+          <TabsList className="grid w-full grid-cols-8">
             <TabsTrigger value="dealers" className="flex items-center space-x-2">
               <Building2 className="h-4 w-4" />
               <span>대리점</span>
@@ -532,6 +621,10 @@ export function AdminPanel() {
             <TabsTrigger value="documents" className="flex items-center space-x-2">
               <FileText className="h-4 w-4" />
               <span>서류 관리</span>
+            </TabsTrigger>
+            <TabsTrigger value="service-plans" className="flex items-center space-x-2">
+              <Settings className="h-4 w-4" />
+              <span>서비스 플랜</span>
             </TabsTrigger>
             <TabsTrigger value="workers" className="flex items-center space-x-2">
               <TrendingUp className="h-4 w-4" />
@@ -1559,6 +1652,367 @@ export function AdminPanel() {
                 )}
               </CardContent>
             </Card>
+          </TabsContent>
+
+          {/* Service Plans Tab */}
+          <TabsContent value="service-plans">
+            <div className="space-y-6">
+              {/* Service Plans Card */}
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between">
+                  <div>
+                    <CardTitle>요금제 관리</CardTitle>
+                    <CardDescription>
+                      각 통신사의 요금제를 관리할 수 있습니다.
+                    </CardDescription>
+                  </div>
+                  <Dialog open={servicePlanDialogOpen} onOpenChange={setServicePlanDialogOpen}>
+                    <DialogTrigger asChild>
+                      <Button>
+                        <Plus className="mr-2 h-4 w-4" />
+                        요금제 추가
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>새 요금제 추가</DialogTitle>
+                      </DialogHeader>
+                      <Form {...servicePlanForm}>
+                        <form onSubmit={servicePlanForm.handleSubmit(handleCreateServicePlan)} className="space-y-4">
+                          <FormField
+                            control={servicePlanForm.control}
+                            name="planName"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>요금제명</FormLabel>
+                                <FormControl>
+                                  <Input placeholder="요금제명을 입력하세요" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={servicePlanForm.control}
+                            name="carrier"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>통신사</FormLabel>
+                                <Select onValueChange={field.onChange} value={field.value}>
+                                  <FormControl>
+                                    <SelectTrigger>
+                                      <SelectValue placeholder="통신사를 선택하세요" />
+                                    </SelectTrigger>
+                                  </FormControl>
+                                  <SelectContent>
+                                    <SelectItem value="SK텔레콤">SK텔레콤</SelectItem>
+                                    <SelectItem value="KT">KT</SelectItem>
+                                    <SelectItem value="LG U+">LG U+</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={servicePlanForm.control}
+                            name="planType"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>요금제 유형</FormLabel>
+                                <Select onValueChange={field.onChange} value={field.value}>
+                                  <FormControl>
+                                    <SelectTrigger>
+                                      <SelectValue placeholder="요금제 유형을 선택하세요" />
+                                    </SelectTrigger>
+                                  </FormControl>
+                                  <SelectContent>
+                                    <SelectItem value="5G">5G</SelectItem>
+                                    <SelectItem value="LTE">LTE</SelectItem>
+                                    <SelectItem value="3G">3G</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={servicePlanForm.control}
+                            name="dataAllowance"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>데이터 제공량</FormLabel>
+                                <FormControl>
+                                  <Input placeholder="예: 무제한, 100GB" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={servicePlanForm.control}
+                            name="monthlyFee"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>월 요금 (원)</FormLabel>
+                                <FormControl>
+                                  <Input 
+                                    type="number" 
+                                    placeholder="월 요금을 입력하세요"
+                                    {...field}
+                                    onChange={(e) => field.onChange(parseInt(e.target.value))}
+                                  />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <div className="flex justify-end space-x-2">
+                            <Button type="button" variant="outline" onClick={() => setServicePlanDialogOpen(false)}>
+                              취소
+                            </Button>
+                            <Button type="submit" disabled={createServicePlanMutation.isPending}>
+                              {createServicePlanMutation.isPending ? '생성 중...' : '생성'}
+                            </Button>
+                          </div>
+                        </form>
+                      </Form>
+                    </DialogContent>
+                  </Dialog>
+                </CardHeader>
+                <CardContent>
+                  {servicePlansLoading ? (
+                    <div className="text-center py-8">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
+                      <p className="mt-2 text-sm text-gray-500">요금제를 불러오는 중...</p>
+                    </div>
+                  ) : servicePlans && servicePlans.length > 0 ? (
+                    <div className="overflow-x-auto">
+                      <table className="min-w-full divide-y divide-gray-200">
+                        <thead className="bg-gray-50">
+                          <tr>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              요금제명
+                            </th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              통신사
+                            </th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              유형
+                            </th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              데이터
+                            </th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              월 요금
+                            </th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              상태
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody className="bg-white divide-y divide-gray-200">
+                          {servicePlans.map((plan) => (
+                            <tr key={plan.id}>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                {plan.planName}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                {plan.carrier}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                {plan.planType}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                {plan.dataAllowance}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                {plan.monthlyFee.toLocaleString()}원
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap">
+                                <Badge variant={plan.isActive ? "default" : "secondary"}>
+                                  {plan.isActive ? '활성' : '비활성'}
+                                </Badge>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  ) : (
+                    <div className="text-center py-8">
+                      <Settings className="mx-auto h-12 w-12 text-gray-400" />
+                      <h3 className="mt-2 text-sm font-medium text-gray-900">요금제가 없습니다</h3>
+                      <p className="mt-1 text-sm text-gray-500">첫 번째 요금제를 추가해보세요.</p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Additional Services Card */}
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between">
+                  <div>
+                    <CardTitle>부가서비스 관리</CardTitle>
+                    <CardDescription>
+                      각종 부가서비스와 결합상품을 관리할 수 있습니다.
+                    </CardDescription>
+                  </div>
+                  <Dialog open={additionalServiceDialogOpen} onOpenChange={setAdditionalServiceDialogOpen}>
+                    <DialogTrigger asChild>
+                      <Button>
+                        <Plus className="mr-2 h-4 w-4" />
+                        부가서비스 추가
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>새 부가서비스 추가</DialogTitle>
+                      </DialogHeader>
+                      <Form {...additionalServiceForm}>
+                        <form onSubmit={additionalServiceForm.handleSubmit(handleCreateAdditionalService)} className="space-y-4">
+                          <FormField
+                            control={additionalServiceForm.control}
+                            name="serviceName"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>서비스명</FormLabel>
+                                <FormControl>
+                                  <Input placeholder="서비스명을 입력하세요" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={additionalServiceForm.control}
+                            name="serviceType"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>서비스 유형</FormLabel>
+                                <Select onValueChange={field.onChange} value={field.value}>
+                                  <FormControl>
+                                    <SelectTrigger>
+                                      <SelectValue placeholder="서비스 유형을 선택하세요" />
+                                    </SelectTrigger>
+                                  </FormControl>
+                                  <SelectContent>
+                                    <SelectItem value="부가서비스">부가서비스</SelectItem>
+                                    <SelectItem value="결합상품">결합상품</SelectItem>
+                                    <SelectItem value="콘텐츠">콘텐츠</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={additionalServiceForm.control}
+                            name="monthlyFee"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>월 요금 (원)</FormLabel>
+                                <FormControl>
+                                  <Input 
+                                    type="number" 
+                                    placeholder="월 요금을 입력하세요 (할인 서비스는 0)"
+                                    {...field}
+                                    onChange={(e) => field.onChange(parseInt(e.target.value))}
+                                  />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={additionalServiceForm.control}
+                            name="description"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>설명</FormLabel>
+                                <FormControl>
+                                  <Input placeholder="서비스 설명을 입력하세요" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <div className="flex justify-end space-x-2">
+                            <Button type="button" variant="outline" onClick={() => setAdditionalServiceDialogOpen(false)}>
+                              취소
+                            </Button>
+                            <Button type="submit" disabled={createAdditionalServiceMutation.isPending}>
+                              {createAdditionalServiceMutation.isPending ? '생성 중...' : '생성'}
+                            </Button>
+                          </div>
+                        </form>
+                      </Form>
+                    </DialogContent>
+                  </Dialog>
+                </CardHeader>
+                <CardContent>
+                  {additionalServicesLoading ? (
+                    <div className="text-center py-8">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
+                      <p className="mt-2 text-sm text-gray-500">부가서비스를 불러오는 중...</p>
+                    </div>
+                  ) : additionalServices && additionalServices.length > 0 ? (
+                    <div className="overflow-x-auto">
+                      <table className="min-w-full divide-y divide-gray-200">
+                        <thead className="bg-gray-50">
+                          <tr>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              서비스명
+                            </th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              유형
+                            </th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              월 요금
+                            </th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              설명
+                            </th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              상태
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody className="bg-white divide-y divide-gray-200">
+                          {additionalServices.map((service) => (
+                            <tr key={service.id}>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                {service.serviceName}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                {service.serviceType}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                {service.monthlyFee.toLocaleString()}원
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                {service.description}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap">
+                                <Badge variant={service.isActive ? "default" : "secondary"}>
+                                  {service.isActive ? '활성' : '비활성'}
+                                </Badge>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  ) : (
+                    <div className="text-center py-8">
+                      <Settings className="mx-auto h-12 w-12 text-gray-400" />
+                      <h3 className="mt-2 text-sm font-medium text-gray-900">부가서비스가 없습니다</h3>
+                      <p className="mt-1 text-sm text-gray-500">첫 번째 부가서비스를 추가해보세요.</p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
           </TabsContent>
         </Tabs>
       </div>
