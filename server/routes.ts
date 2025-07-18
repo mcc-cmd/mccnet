@@ -57,13 +57,14 @@ const pricingUpload = multer({
     fileSize: 50 * 1024 * 1024, // 50MB
   },
   fileFilter: (req, file, cb) => {
-    const allowedTypes = /xlsx|xls|pdf/;
+    const allowedTypes = /xlsx|xls|pdf|jpg|jpeg/;
     const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
+    const mimetype = /application\/vnd\.ms-excel|application\/vnd\.openxmlformats-officedocument\.spreadsheetml\.sheet|application\/pdf|image\/jpeg|image\/jpg/.test(file.mimetype);
 
-    if (extname) {
+    if (extname && mimetype) {
       return cb(null, true);
     } else {
-      cb(new Error('허용되지 않는 파일 형식입니다. (xlsx, xls, pdf만 가능)'));
+      cb(new Error('허용되지 않는 파일 형식입니다. (xlsx, xls, pdf, jpg, jpeg만 가능)'));
     }
   }
 });

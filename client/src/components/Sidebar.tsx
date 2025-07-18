@@ -6,7 +6,8 @@ import {
   FileText,
   Download,
   BarChart3,
-  Settings
+  Settings,
+  TestTube
 } from 'lucide-react';
 import logoImage from '@assets/KakaoTalk_20250626_162541112-removebg-preview_1751604392501.png';
 
@@ -19,6 +20,7 @@ const navigation = [
 
 const adminNavigation = [
   { name: '관리자 패널', href: '/admin', icon: Settings },
+  { name: '테스트 페이지', href: '/test', icon: TestTube },
 ];
 
 interface SidebarProps {

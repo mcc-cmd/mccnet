@@ -119,6 +119,9 @@ This is a document management system built for MCC네트월드 telecommunication
 - July 18, 2025. Changed worker tracking system to store tracking: renamed workerName to storeName throughout system
 - July 18, 2025. Made file uploads optional for document submission instead of required
 - July 18, 2025. Updated database schema to support nullable file fields and store name tracking
+- July 18, 2025. Extended pricing table upload to support JPG/JPEG files alongside Excel and PDF
+- July 18, 2025. Added dedicated test page for debugging pricing table upload issues with detailed error logging
+- July 18, 2025. Fixed authentication in pricing upload by using proper useAuth.getState().sessionId instead of localStorage
 
 ## User Preferences
 

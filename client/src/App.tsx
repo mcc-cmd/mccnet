@@ -11,6 +11,7 @@ import { Documents } from '@/pages/Documents';
 import { SubmitApplication } from '@/pages/SubmitApplication';
 import { Downloads } from '@/pages/Downloads';
 import { AdminPanel } from '@/pages/AdminPanel';
+import { TestPage } from '@/pages/TestPage';
 import NotFound from '@/pages/not-found';
 
 const queryClient = new QueryClient({
@@ -38,7 +39,10 @@ function AppRoutes() {
       <Route path="/downloads" component={Downloads} />
 
       {user?.userType === 'admin' && (
-        <Route path="/admin" component={AdminPanel} />
+        <>
+          <Route path="/admin" component={AdminPanel} />
+          <Route path="/test" component={TestPage} />
+        </>
       )}
       <Route component={NotFound} />
     </Switch>

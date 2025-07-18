@@ -194,16 +194,17 @@ export function AdminPanel() {
 
   const uploadPricingMutation = useMutation({
     mutationFn: async (data: FormData) => {
+      const sessionId = useAuth.getState().sessionId;
       const response = await fetch('/api/admin/pricing-tables', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('sessionId')}`,
+          'Authorization': `Bearer ${sessionId}`,
         },
         body: data,
       });
       
       if (!response.ok) {
-        const error = await response.json();
+        const error = await response.json().catch(() => ({ error: '업로드에 실패했습니다.' }));
         throw new Error(error.error || '업로드에 실패했습니다.');
       }
       
@@ -965,12 +966,12 @@ export function AdminPanel() {
                         <Input
                           id="pricingFile"
                           type="file"
-                          accept=".xlsx,.xls,.pdf"
+                          accept=".xlsx,.xls,.pdf,.jpg,.jpeg"
                           onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
                           required
                         />
                         <p className="text-xs text-gray-500 mt-1">
-                          Excel 파일(.xlsx, .xls) 또는 PDF 파일만 업로드 가능 (최대 50MB)
+                          Excel 파일(.xlsx, .xls), PDF, JPG, JPEG 파일 업로드 가능 (최대 50MB)
                         </p>
                       </div>
                       <div className="flex justify-end space-x-2">
