@@ -119,7 +119,7 @@ export interface IStorage {
   // Authentication
   authenticateAdmin(email: string, password: string): Promise<Admin | null>;
   authenticateUser(email: string, password: string): Promise<{ user: User; dealer: Dealer } | null>;
-  createSession(userId: number, userType: 'admin' | 'user', dealerId?: number): Promise<string>;
+  createSession(userId: number, userType: 'admin' | 'user', dealerId?: number, userRole?: string): Promise<string>;
   getSession(sessionId: string): Promise<AuthSession | null>;
   deleteSession(sessionId: string): Promise<void>;
   
@@ -199,16 +199,24 @@ class SqliteStorage implements IStorage {
     return { user, dealer };
   }
 
-  async createSession(userId: number, userType: 'admin' | 'user', dealerId?: number): Promise<string> {
+  async createSession(userId: number, userType: 'admin' | 'user', dealerId?: number, userRole?: string): Promise<string> {
     const sessionId = nanoid();
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + 7); // 7 days
 
-    db.prepare('INSERT INTO auth_sessions (id, user_id, user_type, dealer_id, expires_at) VALUES (?, ?, ?, ?, ?)').run(
+    // Add user_role column if it doesn't exist
+    try {
+      db.prepare('ALTER TABLE auth_sessions ADD COLUMN user_role TEXT').run();
+    } catch (e) {
+      // Column already exists
+    }
+
+    db.prepare('INSERT INTO auth_sessions (id, user_id, user_type, dealer_id, user_role, expires_at) VALUES (?, ?, ?, ?, ?, ?)').run(
       sessionId,
       userId,
       userType,
       dealerId || null,
+      userRole || null,
       expiresAt.toISOString()
     );
 
@@ -225,6 +233,7 @@ class SqliteStorage implements IStorage {
         id: session.id,
         userId: session.user_id,
         userType: session.user_type,
+        userRole: session.user_role,
         dealerId: session.dealer_id,
         expiresAt: new Date(session.expires_at)
       };

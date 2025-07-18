@@ -33,6 +33,9 @@ export function Sidebar({ isOpen = true, onClose }: SidebarProps) {
   const { user } = useAuth();
 
   const isAdmin = user?.userType === 'admin';
+  const isWorker = user?.role === 'dealer_worker';
+  
+  // 관리자만 관리자 패널 접근 가능, 근무자는 일반 메뉴만 접근 가능
   const currentNavigation = isAdmin ? [...navigation, ...adminNavigation] : navigation;
 
   return (

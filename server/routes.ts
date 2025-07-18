@@ -161,7 +161,7 @@ router.post('/api/auth/login', async (req, res) => {
     const userResult = await storage.authenticateUser(email, password);
     if (userResult) {
       const { user, dealer } = userResult;
-      const sessionId = await storage.createSession(user.id, 'user', user.dealerId);
+      const sessionId = await storage.createSession(user.id, 'user', user.dealerId, user.role);
       const response: AuthResponse = {
         success: true,
         user: {
@@ -170,7 +170,8 @@ router.post('/api/auth/login', async (req, res) => {
           email: user.email,
           userType: 'user',
           dealerId: user.dealerId,
-          dealerName: dealer.name
+          dealerName: dealer.name,
+          role: user.role
         },
         sessionId
       };
@@ -445,7 +446,8 @@ router.patch('/api/documents/:id/activation', requireAuth, async (req: any, res)
 // User routes
 router.get('/api/dashboard/stats', requireAuth, async (req: any, res) => {
   try {
-    const dealerId = req.session.userType === 'admin' ? undefined : req.session.dealerId;
+    // 관리자와 근무자는 모든 데이터, 판매점은 자신의 데이터만
+    const dealerId = (req.session.userType === 'admin' || req.session.userRole === 'dealer_worker') ? undefined : req.session.dealerId;
     const stats = await storage.getDashboardStats(dealerId);
     res.json(stats);
   } catch (error: any) {
@@ -456,8 +458,23 @@ router.get('/api/dashboard/stats', requireAuth, async (req: any, res) => {
 router.get('/api/documents', requireAuth, async (req: any, res) => {
   try {
     const { status, search, startDate, endDate } = req.query;
-    // 관리자는 모든 문서를, 사용자는 해당 대리점 문서만 조회
-    const dealerId = req.session.userType === 'admin' ? undefined : req.session.dealerId;
+    // 관리자와 근무자는 모든 문서를, 판매점은 해당 대리점 문서만 조회
+    console.log('Session info:', {
+      userType: req.session.userType,
+      userRole: req.session.userRole,
+      dealerId: req.session.dealerId
+    });
+    
+    const isWorker = req.session.userRole === 'dealer_worker';
+    const isAdmin = req.session.userType === 'admin';
+    const dealerId = (isAdmin || isWorker) ? undefined : req.session.dealerId;
+    
+    console.log('Access control:', {
+      isAdmin,
+      isWorker,
+      finalDealerId: dealerId,
+      shouldSeeAll: isAdmin || isWorker
+    });
     
     const documents = await storage.getDocuments(dealerId, {
       status: status as string,
@@ -465,6 +482,8 @@ router.get('/api/documents', requireAuth, async (req: any, res) => {
       startDate: startDate as string,
       endDate: endDate as string
     });
+    
+    console.log('Retrieved documents count:', documents.length);
     res.json(documents);
   } catch (error: any) {
     console.error('Documents API error:', error);

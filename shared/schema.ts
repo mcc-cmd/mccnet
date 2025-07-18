@@ -75,6 +75,7 @@ export interface AuthSession {
   id: string;
   userId: number;
   userType: 'admin' | 'user';
+  userRole?: string;
   dealerId?: number;
   expiresAt: Date;
 }
@@ -138,6 +139,7 @@ export interface AuthResponse {
     userType: 'admin' | 'user';
     dealerId?: number;
     dealerName?: string;
+    role?: string;
   };
   sessionId?: string;
   error?: string;
