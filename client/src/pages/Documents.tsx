@@ -67,10 +67,14 @@ export function Documents() {
     queryFn: () => apiRequest('/api/service-plans') as Promise<any[]>,
   });
 
-  const { data: additionalServices } = useQuery({
-    queryKey: ['/api/additional-services'],
-    queryFn: () => apiRequest('/api/additional-services') as Promise<any[]>,
-  });
+  // 부가서비스 고정 데이터 (필링, 캐치콜, 링투유, 통화중대기, 00700)
+  const additionalServices = [
+    { id: 1, serviceName: '필링', serviceType: '부가서비스', monthlyFee: 3000 },
+    { id: 2, serviceName: '캐치콜', serviceType: '부가서비스', monthlyFee: 2000 },
+    { id: 3, serviceName: '링투유', serviceType: '부가서비스', monthlyFee: 1500 },
+    { id: 4, serviceName: '통화중대기', serviceType: '부가서비스', monthlyFee: 1000 },
+    { id: 5, serviceName: '00700', serviceType: '부가서비스', monthlyFee: 0 }
+  ];
 
   const uploadMutation = useMutation({
     mutationFn: async (data: FormData) => {
@@ -730,22 +734,23 @@ export function Documents() {
 
         {/* Service Plan Dialog */}
         <Dialog open={servicePlanDialogOpen} onOpenChange={setServicePlanDialogOpen}>
-          <DialogContent className="sm:max-w-[600px]" aria-describedby="service-plan-dialog-description">
+          <DialogContent className="sm:max-w-[500px]" aria-describedby="service-plan-dialog-description">
             <DialogHeader>
-              <DialogTitle>요금제 및 부가서비스 선택</DialogTitle>
+              <DialogTitle className="text-xl font-bold">요금제 관리</DialogTitle>
             </DialogHeader>
-            <div id="service-plan-dialog-description" className="text-sm text-gray-600 mb-4">
-              {selectedDocument?.customerName}님의 요금제와 부가서비스를 선택해주세요.
+            <div id="service-plan-dialog-description" className="text-sm text-gray-600 mb-6">
+              <span className="font-medium">{selectedDocument?.customerName}</span>님의 요금제 정보를 입력해주세요.
             </div>
             
-            <form onSubmit={handleServicePlanSubmit} className="space-y-4">
-              <div>
-                <Label htmlFor="servicePlan">요금제 선택</Label>
+            <form onSubmit={handleServicePlanSubmit} className="space-y-6">
+              {/* 요금제 선택 */}
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <Label className="text-lg font-semibold mb-3 block">기본 요금제</Label>
                 <Select 
                   value={servicePlanForm.servicePlanId} 
                   onValueChange={(value) => setServicePlanForm(prev => ({ ...prev, servicePlanId: value }))}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className="h-12">
                     <SelectValue placeholder="요금제를 선택하세요" />
                   </SelectTrigger>
                   <SelectContent>
@@ -758,11 +763,12 @@ export function Documents() {
                 </Select>
               </div>
 
-              <div>
-                <Label>부가서비스 선택 (복수 선택 가능)</Label>
-                <div className="mt-2 space-y-2 max-h-40 overflow-y-auto border rounded p-3">
-                  {additionalServices?.map((service) => (
-                    <div key={service.id} className="flex items-center space-x-2">
+              {/* 부가서비스 선택 */}
+              <div className="bg-blue-50 p-4 rounded-lg">
+                <Label className="text-lg font-semibold mb-3 block">부가서비스</Label>
+                <div className="grid grid-cols-2 gap-3">
+                  {additionalServices.map((service) => (
+                    <div key={service.id} className="flex items-center space-x-3 p-3 bg-white rounded-lg border hover:bg-gray-50">
                       <input
                         type="checkbox"
                         id={`service-${service.id}`}
@@ -780,55 +786,62 @@ export function Documents() {
                             }));
                           }
                         }}
-                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                        className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                       />
-                      <label htmlFor={`service-${service.id}`} className="text-sm text-gray-700">
-                        {service.serviceName} - {service.serviceType} ({service.monthlyFee.toLocaleString()}원)
+                      <label htmlFor={`service-${service.id}`} className="flex-1 cursor-pointer">
+                        <div className="font-medium text-gray-900">{service.serviceName}</div>
+                        <div className="text-sm text-gray-600">{service.monthlyFee.toLocaleString()}원/월</div>
                       </label>
                     </div>
                   ))}
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="registrationFee">가입비 (원)</Label>
-                  <Input
-                    id="registrationFee"
-                    type="number"
-                    value={servicePlanForm.registrationFee}
-                    onChange={(e) => setServicePlanForm(prev => ({ ...prev, registrationFee: parseInt(e.target.value) || 0 }))}
-                    placeholder="가입비를 입력하세요"
-                  />
+              {/* 비용 정보 */}
+              <div className="bg-green-50 p-4 rounded-lg">
+                <Label className="text-lg font-semibold mb-3 block">비용 정보</Label>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="registrationFee" className="text-sm font-medium">가입비</Label>
+                    <Input
+                      id="registrationFee"
+                      type="number"
+                      value={servicePlanForm.registrationFee}
+                      onChange={(e) => setServicePlanForm(prev => ({ ...prev, registrationFee: parseInt(e.target.value) || 0 }))}
+                      placeholder="0"
+                      className="mt-1"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="bundleDiscount" className="text-sm font-medium">결합 할인</Label>
+                    <Input
+                      id="bundleDiscount"
+                      type="number"
+                      value={servicePlanForm.bundleDiscount}
+                      onChange={(e) => setServicePlanForm(prev => ({ ...prev, bundleDiscount: parseInt(e.target.value) || 0 }))}
+                      placeholder="0"
+                      className="mt-1"
+                    />
+                  </div>
                 </div>
-                <div>
-                  <Label htmlFor="bundleDiscount">결합 할인 (원)</Label>
+                <div className="mt-4">
+                  <Label htmlFor="totalMonthlyFee" className="text-sm font-medium">총 월 요금</Label>
                   <Input
-                    id="bundleDiscount"
+                    id="totalMonthlyFee"
                     type="number"
-                    value={servicePlanForm.bundleDiscount}
-                    onChange={(e) => setServicePlanForm(prev => ({ ...prev, bundleDiscount: parseInt(e.target.value) || 0 }))}
-                    placeholder="결합 할인금액을 입력하세요"
+                    value={servicePlanForm.totalMonthlyFee}
+                    onChange={(e) => setServicePlanForm(prev => ({ ...prev, totalMonthlyFee: parseInt(e.target.value) || 0 }))}
+                    placeholder="0"
+                    className="mt-1 text-lg font-bold"
                   />
                 </div>
               </div>
 
-              <div>
-                <Label htmlFor="totalMonthlyFee">총 월 요금 (원)</Label>
-                <Input
-                  id="totalMonthlyFee"
-                  type="number"
-                  value={servicePlanForm.totalMonthlyFee}
-                  onChange={(e) => setServicePlanForm(prev => ({ ...prev, totalMonthlyFee: parseInt(e.target.value) || 0 }))}
-                  placeholder="총 월 요금을 입력하세요"
-                />
-              </div>
-
-              <div className="flex justify-end space-x-2">
+              <div className="flex justify-end space-x-3 pt-4">
                 <Button type="button" variant="outline" onClick={() => setServicePlanDialogOpen(false)}>
                   취소
                 </Button>
-                <Button type="submit">
+                <Button type="submit" className="bg-blue-600 hover:bg-blue-700">
                   저장
                 </Button>
               </div>

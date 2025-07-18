@@ -166,6 +166,8 @@ This is a document management system built for MCC네트월드 telecommunication
 - July 18, 2025. Verified complete role-based access control: admins (3 docs), workers (3 docs), dealers (2 docs) with consistent statistics and document listings
 - July 18, 2025. Removed "접수 신청" menu from worker accounts and restricted document upload to dealers only
 - July 18, 2025. Enhanced logo functionality: MCC네트월드 logo now links to dashboard, removed "접수 포털" subtitle text
+- July 18, 2025. Improved service plan management UI with clean card-based layout and limited additional services to 5 options (필링, 캐치콜, 링투유, 통화중대기, 00700)
+- July 18, 2025. Enhanced Documents page with compressed 2-line table layout for better readability and service plan management for completed activations
 
 ## User Preferences
 
