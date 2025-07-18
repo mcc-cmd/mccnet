@@ -169,7 +169,7 @@ export function Dashboard() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-5">
               <div className="text-center p-4 bg-blue-50 rounded-lg">
                 <div className="text-2xl font-bold text-blue-600">
                   {statsLoading ? (
@@ -179,6 +179,28 @@ export function Dashboard() {
                   )}
                 </div>
                 <div className="text-sm text-blue-800 mt-1">당월 접수</div>
+              </div>
+              
+              <div className="text-center p-4 bg-yellow-50 rounded-lg">
+                <div className="text-2xl font-bold text-yellow-600">
+                  {statsLoading ? (
+                    <Skeleton className="h-8 w-12 mx-auto" />
+                  ) : (
+                    stats?.pendingActivations || 0
+                  )}
+                </div>
+                <div className="text-sm text-yellow-800 mt-1">개통 대기</div>
+              </div>
+              
+              <div className="text-center p-4 bg-orange-50 rounded-lg">
+                <div className="text-2xl font-bold text-orange-600">
+                  {statsLoading ? (
+                    <Skeleton className="h-8 w-12 mx-auto" />
+                  ) : (
+                    stats?.inProgressCount || 0
+                  )}
+                </div>
+                <div className="text-sm text-orange-800 mt-1">진행중</div>
               </div>
               
               <div className="text-center p-4 bg-green-50 rounded-lg">
@@ -201,17 +223,6 @@ export function Dashboard() {
                   )}
                 </div>
                 <div className="text-sm text-red-800 mt-1">취소</div>
-              </div>
-              
-              <div className="text-center p-4 bg-yellow-50 rounded-lg">
-                <div className="text-2xl font-bold text-yellow-600">
-                  {statsLoading ? (
-                    <Skeleton className="h-8 w-12 mx-auto" />
-                  ) : (
-                    stats?.pendingActivations || 0
-                  )}
-                </div>
-                <div className="text-sm text-yellow-800 mt-1">개통 대기</div>
               </div>
             </div>
           </CardContent>

@@ -199,6 +199,8 @@ export function Documents() {
     switch (status) {
       case '대기':
         return <Badge variant="outline" className="text-yellow-600 border-yellow-600">대기</Badge>;
+      case '진행중':
+        return <Badge variant="outline" className="text-blue-600 border-blue-600">진행중</Badge>;
       case '개통':
         return <Badge variant="outline" className="text-green-600 border-green-600">개통</Badge>;
       case '취소':
@@ -486,6 +488,7 @@ export function Documents() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="대기">대기</SelectItem>
+                    <SelectItem value="진행중">진행중</SelectItem>
                     <SelectItem value="개통">개통</SelectItem>
                     <SelectItem value="취소">취소</SelectItem>
                   </SelectContent>

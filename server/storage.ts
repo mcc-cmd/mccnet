@@ -599,6 +599,7 @@ class SqliteStorage implements IStorage {
     const activated = db.prepare('SELECT COUNT(*) as count FROM documents WHERE activation_status = ?').get('개통') as { count: number };
     const canceled = db.prepare('SELECT COUNT(*) as count FROM documents WHERE activation_status = ?').get('취소') as { count: number };
     const pendingActivations = db.prepare('SELECT COUNT(*) as count FROM documents WHERE activation_status = ?').get('대기') as { count: number };
+    const inProgress = db.prepare('SELECT COUNT(*) as count FROM documents WHERE activation_status = ?').get('진행중') as { count: number };
 
     return {
       totalDocuments: total.count,
@@ -608,7 +609,8 @@ class SqliteStorage implements IStorage {
       thisMonthSubmissions: total.count,
       activatedCount: activated.count,
       canceledCount: canceled.count,
-      pendingActivations: pendingActivations.count
+      pendingActivations: pendingActivations.count,
+      inProgressCount: inProgress.count
     };
   }
 

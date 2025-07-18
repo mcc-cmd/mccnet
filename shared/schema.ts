@@ -38,7 +38,7 @@ export interface Document {
   customerPhone: string;
   storeName?: string; // 판매점 이름
   status: '접수' | '보완필요' | '완료';
-  activationStatus: '대기' | '개통' | '취소';
+  activationStatus: '대기' | '진행중' | '개통' | '취소';
   filePath?: string | null;
   fileName?: string | null;
   fileSize?: number | null;
@@ -105,12 +105,12 @@ export const uploadDocumentSchema = z.object({
 
 export const updateDocumentStatusSchema = z.object({
   status: z.enum(['접수', '보완필요', '완료']),
-  activationStatus: z.enum(['대기', '개통', '취소']).optional(),
+  activationStatus: z.enum(['대기', '진행중', '개통', '취소']).optional(),
   notes: z.string().optional(),
 });
 
 export const updateActivationStatusSchema = z.object({
-  activationStatus: z.enum(['대기', '개통', '취소']),
+  activationStatus: z.enum(['대기', '진행중', '개통', '취소']),
   notes: z.string().optional(),
 });
 
@@ -146,4 +146,5 @@ export interface DashboardStats {
   activatedCount: number;
   canceledCount: number;
   pendingActivations: number;
+  inProgressCount: number;
 }
