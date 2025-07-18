@@ -148,6 +148,8 @@ This is a document management system built for MCC네트월드 telecommunication
 - July 18, 2025. Enhanced client-side permission checks to hide/show features based on user roles
 - July 18, 2025. Modified store name field to auto-populate from logged-in user's dealer information instead of manual entry
 - July 18, 2025. Made store name field read-only with automatic assignment based on user's dealer account
+- July 18, 2025. Fixed document upload API issues by correcting multipart/form-data handling and FormData processing
+- July 18, 2025. Updated useApiRequest hook to properly handle FormData uploads without Content-Type header interference
 
 ## User Preferences
 

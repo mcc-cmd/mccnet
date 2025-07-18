@@ -119,9 +119,13 @@ export const useApiRequest = () => {
 
   const apiRequest = async (url: string, options: RequestInit = {}) => {
     const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
       ...(options.headers as Record<string, string>),
     };
+
+    // Only add Content-Type for non-FormData requests
+    if (!(options.body instanceof FormData)) {
+      headers['Content-Type'] = 'application/json';
+    }
 
     if (sessionId) {
       headers['Authorization'] = `Bearer ${sessionId}`;
