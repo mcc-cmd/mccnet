@@ -216,10 +216,9 @@ export function Documents() {
                       type="file"
                       accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
                       onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
-                      required
                     />
                     <p className="text-xs text-gray-500 mt-1">
-                      PDF, 이미지, Word 문서만 업로드 가능 (최대 10MB)
+                      PDF, 이미지, Word 문서만 업로드 가능 (최대 10MB) - 선택사항
                     </p>
                   </div>
                   

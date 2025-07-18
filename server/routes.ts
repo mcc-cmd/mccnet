@@ -91,11 +91,13 @@ const templateUpload = multer({
 // Middleware to check authentication
 const requireAuth = async (req: any, res: any, next: any) => {
   const sessionId = req.headers.authorization?.replace('Bearer ', '');
+  
   if (!sessionId) {
     return res.status(401).json({ error: '인증이 필요합니다.' });
   }
 
   const session = await storage.getSession(sessionId);
+  
   if (!session) {
     return res.status(401).json({ error: '유효하지 않은 세션입니다.' });
   }
