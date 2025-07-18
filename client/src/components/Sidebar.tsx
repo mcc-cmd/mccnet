@@ -15,7 +15,7 @@ const navigation = [
   { name: '대시보드', href: '/dashboard', icon: LayoutDashboard },
   { name: '접수 신청', href: '/submit', icon: FileText },
   { name: '접수 관리', href: '/documents', icon: FileText },
-  { name: '서류 다운로드', href: '/downloads', icon: Download },
+  { name: '서식지 다운로드', href: '/downloads', icon: Download },
 ];
 
 const adminNavigation = [
