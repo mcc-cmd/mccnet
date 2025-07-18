@@ -314,9 +314,9 @@ export function Documents() {
 
         {/* Filters */}
         <Card>
-          <CardContent className="p-4">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div>
+          <CardContent className="p-4 md:p-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="sm:col-span-2 lg:col-span-1">
                 <Label htmlFor="search">검색</Label>
                 <div className="relative">
                   <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
@@ -377,108 +377,185 @@ export function Documents() {
                 <p className="mt-2 text-sm text-gray-500">로딩 중...</p>
               </div>
             ) : documents && documents.length > 0 ? (
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-300">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        접수번호
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        고객명
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        연락처
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        판매점명
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        상태
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        개통상태
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        업로드일
-                      </th>
-                      {isAdmin && (
+              <>
+                {/* Desktop Table View */}
+                <div className="hidden lg:block overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-300">
+                    <thead className="bg-gray-50">
+                      <tr>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          대리점
+                          접수번호
                         </th>
-                      )}
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        작업
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {documents.map((doc) => (
-                      <tr key={doc.id} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                          {doc.documentNumber}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {doc.customerName}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {doc.customerPhone}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {(doc as any).storeName || '-'}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          {getStatusBadge(doc.status)}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          {getActivationStatusBadge((doc as any).activationStatus || '대기')}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {format(new Date(doc.uploadedAt), 'yyyy-MM-dd HH:mm', { locale: ko })}
-                        </td>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          고객명
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          연락처
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          판매점명
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          상태
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          개통상태
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          업로드일
+                        </th>
                         {isAdmin && (
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {(doc as any).dealerName}
-                          </td>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            대리점
+                          </th>
                         )}
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                          <div className="flex space-x-2">
-                            {doc.filePath && (
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          작업
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {documents.map((doc) => (
+                        <tr key={doc.id} className="hover:bg-gray-50">
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                            {doc.documentNumber}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {doc.customerName}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {doc.customerPhone}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {(doc as any).storeName || '-'}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            {getStatusBadge(doc.status)}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            {getActivationStatusBadge((doc as any).activationStatus || '대기')}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {format(new Date(doc.uploadedAt), 'yyyy-MM-dd HH:mm', { locale: ko })}
+                          </td>
+                          {isAdmin && (
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                              {(doc as any).dealerName}
+                            </td>
+                          )}
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                            <div className="flex space-x-2">
+                              {doc.filePath && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleDownload(doc.id)}
+                                  title="파일 다운로드"
+                                >
+                                  <Download className="h-4 w-4" />
+                                </Button>
+                              )}
                               <Button
                                 variant="outline"
                                 size="sm"
-                                onClick={() => handleDownload(doc.id)}
-                                title="파일 다운로드"
+                                onClick={() => handleActivationStatusChange(doc)}
+                                title="개통상태 변경"
                               >
-                                <Download className="h-4 w-4" />
+                                개통상태
                               </Button>
-                            )}
+                              {!isAdmin && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleDelete(doc.id)}
+                                  disabled={doc.status !== '접수'}
+                                  title="서류 삭제"
+                                >
+                                  삭제
+                                </Button>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Mobile Card View */}
+                <div className="lg:hidden space-y-4">
+                  {documents.map((doc) => (
+                    <div key={doc.id} className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
+                      <div className="flex justify-between items-start mb-3">
+                        <div>
+                          <h3 className="text-sm font-medium text-gray-900">{doc.documentNumber}</h3>
+                          <p className="text-sm text-gray-600">{doc.customerName}</p>
+                        </div>
+                        <div className="flex space-x-1">
+                          {getStatusBadge(doc.status)}
+                          {getActivationStatusBadge((doc as any).activationStatus || '대기')}
+                        </div>
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-2 text-sm mb-3">
+                        <div>
+                          <span className="text-gray-500">연락처:</span>
+                          <span className="ml-1 text-gray-900">{doc.customerPhone}</span>
+                        </div>
+                        {(doc as any).storeName && (
+                          <div>
+                            <span className="text-gray-500">판매점:</span>
+                            <span className="ml-1 text-gray-900">{(doc as any).storeName}</span>
+                          </div>
+                        )}
+                        {isAdmin && (
+                          <div className="col-span-2">
+                            <span className="text-gray-500">대리점:</span>
+                            <span className="ml-1 text-gray-900">{(doc as any).dealerName}</span>
+                          </div>
+                        )}
+                      </div>
+                      
+                      <div className="flex justify-between items-center">
+                        <span className="text-xs text-gray-500">
+                          {format(new Date(doc.uploadedAt), 'yyyy-MM-dd HH:mm', { locale: ko })}
+                        </span>
+                        <div className="flex space-x-2">
+                          {doc.filePath && (
                             <Button
                               variant="outline"
                               size="sm"
-                              onClick={() => handleActivationStatusChange(doc)}
-                              title="개통상태 변경"
+                              onClick={() => handleDownload(doc.id)}
+                              title="파일 다운로드"
                             >
-                              개통상태
+                              <Download className="h-4 w-4" />
                             </Button>
-                            {!isAdmin && (
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleDelete(doc.id)}
-                                disabled={doc.status !== '접수'}
-                                title="서류 삭제"
-                              >
-                                삭제
-                              </Button>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                          )}
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleActivationStatusChange(doc)}
+                            title="개통상태 변경"
+                          >
+                            개통상태
+                          </Button>
+                          {!isAdmin && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleDelete(doc.id)}
+                              disabled={doc.status !== '접수'}
+                              title="서류 삭제"
+                            >
+                              삭제
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
             ) : (
               <div className="text-center py-12">
                 <FileText className="mx-auto h-12 w-12 text-gray-400" />
