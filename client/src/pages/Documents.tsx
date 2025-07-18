@@ -161,8 +161,8 @@ export function Documents() {
 
   // Permission check functions
   const canUploadDocuments = () => {
-    // 판매점은 접수만 가능, 관리자와 근무자도 업로드 가능
-    return user?.role === 'dealer_store' || user?.role === 'dealer_worker' || user?.userType === 'admin';
+    // 판매점만 접수 가능, 관리자와 근무자는 업로드 불가 (처리만 담당)
+    return user?.role === 'dealer_store';
   };
 
   const canManageActivationStatus = () => {

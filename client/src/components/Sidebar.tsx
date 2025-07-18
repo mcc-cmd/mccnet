@@ -35,8 +35,13 @@ export function Sidebar({ isOpen = true, onClose }: SidebarProps) {
   const isAdmin = user?.userType === 'admin';
   const isWorker = user?.role === 'dealer_worker';
   
-  // 관리자만 관리자 패널 접근 가능, 근무자는 일반 메뉴만 접근 가능
-  const currentNavigation = isAdmin ? [...navigation, ...adminNavigation] : navigation;
+  // 근무자는 접수 신청 메뉴를 제외한 메뉴만 접근 가능
+  const baseNavigation = isWorker 
+    ? navigation.filter(item => item.name !== '접수 신청')
+    : navigation;
+  
+  // 관리자만 관리자 패널 접근 가능
+  const currentNavigation = isAdmin ? [...baseNavigation, ...adminNavigation] : baseNavigation;
 
   return (
     <>
