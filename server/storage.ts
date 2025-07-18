@@ -12,9 +12,13 @@ import type {
   AuthSession,
   CreateDealerForm,
   CreateUserForm,
+  CreateAdminForm,
+  CreateWorkerForm,
+  CreateDealerAccountForm,
   UploadDocumentForm,
   UpdateDocumentStatusForm,
-  DashboardStats
+  DashboardStats,
+  KPDealerInfo
 } from '../shared/schema';
 
 const dbPath = path.join(process.cwd(), 'database.sqlite');
@@ -36,6 +40,18 @@ db.exec(`
     location TEXT NOT NULL,
     contact_email TEXT NOT NULL,
     contact_phone TEXT NOT NULL,
+    kp_number TEXT UNIQUE,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  );
+
+  CREATE TABLE IF NOT EXISTS kp_dealer_info (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    kp_number TEXT UNIQUE NOT NULL,
+    dealer_name TEXT NOT NULL,
+    location TEXT NOT NULL,
+    contact_email TEXT,
+    contact_phone TEXT,
+    is_active BOOLEAN DEFAULT true,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
   );
 
@@ -105,14 +121,37 @@ db.exec(`
 `);
 
 // Create default admin if none exists
-const adminExists = db.prepare('SELECT COUNT(*) as count FROM admins').get() as { count: number };
+const adminExists = db.prepare('SELECT COUNT(*) as count FROM admin_users').get() as { count: number };
 if (adminExists.count === 0) {
   const hashedPassword = bcrypt.hashSync('admin123!', 10);
-  db.prepare('INSERT INTO admins (email, password, name) VALUES (?, ?, ?)').run(
+  db.prepare('INSERT INTO admin_users (email, password, name) VALUES (?, ?, ?)').run(
     'admin@portal.com',
     hashedPassword,
     '시스템 관리자'
   );
+}
+
+// Create initial KP dealer info if none exists
+const kpInfoExists = db.prepare('SELECT COUNT(*) as count FROM kp_dealer_info').get() as { count: number };
+if (kpInfoExists.count === 0) {
+  const kpData = [
+    { kp_number: 'KP001', dealer_name: '서울중앙점', location: '서울특별시 중구', contact_email: 'seoul@mcc.com', contact_phone: '02-1234-5678' },
+    { kp_number: 'KP002', dealer_name: '부산해운대점', location: '부산광역시 해운대구', contact_email: 'busan@mcc.com', contact_phone: '051-9876-5432' },
+    { kp_number: 'KP003', dealer_name: '대구동성로점', location: '대구광역시 중구', contact_email: 'daegu@mcc.com', contact_phone: '053-5555-1234' },
+    { kp_number: 'KP004', dealer_name: '인천송도점', location: '인천광역시 연수구', contact_email: 'incheon@mcc.com', contact_phone: '032-7777-8888' },
+    { kp_number: 'KP005', dealer_name: '광주상무점', location: '광주광역시 서구', contact_email: 'gwangju@mcc.com', contact_phone: '062-3333-4444' },
+  ];
+  
+  for (const kp of kpData) {
+    db.prepare('INSERT INTO kp_dealer_info (kp_number, dealer_name, location, contact_email, contact_phone, is_active) VALUES (?, ?, ?, ?, ?, ?)').run(
+      kp.kp_number,
+      kp.dealer_name,
+      kp.location,
+      kp.contact_email,
+      kp.contact_phone,
+      1
+    );
+  }
 }
 
 export interface IStorage {
@@ -122,6 +161,16 @@ export interface IStorage {
   createSession(userId: number, userType: 'admin' | 'user', dealerId?: number, userRole?: string): Promise<string>;
   getSession(sessionId: string): Promise<AuthSession | null>;
   deleteSession(sessionId: string): Promise<void>;
+  
+  // Account creation
+  createAdmin(data: CreateAdminForm): Promise<Admin>;
+  createWorker(data: CreateWorkerForm): Promise<User>;
+  createDealerAccount(data: CreateDealerAccountForm): Promise<{ user: User; dealer: Dealer }>;
+  
+  // KP number management
+  getKPInfo(kpNumber: string): Promise<KPDealerInfo | null>;
+  createKPDealerInfo(data: Omit<KPDealerInfo, 'id' | 'createdAt'>): Promise<KPDealerInfo>;
+  getAllKPDealerInfo(): Promise<KPDealerInfo[]>;
   
   // Admin operations
   getAdminById(id: number): Promise<Admin | null>;
@@ -323,6 +372,149 @@ class SqliteStorage implements IStorage {
       role: result.role,
       createdAt: new Date(result.created_at)
     };
+  }
+
+  async createAdmin(data: CreateAdminForm): Promise<Admin> {
+    const hashedPassword = bcrypt.hashSync(data.password, 10);
+    const insertResult = db.prepare('INSERT INTO admin_users (email, password, name) VALUES (?, ?, ?)').run(
+      data.email,
+      hashedPassword,
+      data.name
+    );
+
+    const result = db.prepare('SELECT * FROM admin_users WHERE id = ?').get(insertResult.lastInsertRowid) as any;
+
+    return {
+      id: result.id,
+      email: result.email,
+      password: result.password,
+      name: result.name,
+      createdAt: new Date(result.created_at)
+    };
+  }
+
+  async createWorker(data: CreateWorkerForm): Promise<User> {
+    const hashedPassword = bcrypt.hashSync(data.password, 10);
+    const insertResult = db.prepare('INSERT INTO users (dealer_id, email, password, name, role) VALUES (?, ?, ?, ?, ?)').run(
+      data.dealerId,
+      data.email,
+      hashedPassword,
+      data.name,
+      'dealer_worker'
+    );
+
+    const result = db.prepare('SELECT * FROM users WHERE id = ?').get(insertResult.lastInsertRowid) as any;
+
+    return {
+      id: result.id,
+      dealerId: result.dealer_id,
+      email: result.email,
+      password: result.password,
+      name: result.name,
+      role: result.role,
+      createdAt: new Date(result.created_at)
+    };
+  }
+
+  async createDealerAccount(data: CreateDealerAccountForm, kpInfo: KPDealerInfo): Promise<{ user: User; dealer: Dealer }> {
+    // 판매점 생성
+    const dealerResult = db.prepare('INSERT INTO dealers (name, location, contact_email, contact_phone, kp_number) VALUES (?, ?, ?, ?, ?)').run(
+      kpInfo.dealerName,
+      kpInfo.location,
+      kpInfo.contactEmail || '',
+      kpInfo.contactPhone || '',
+      data.kpNumber
+    );
+    
+    const dealer = db.prepare('SELECT * FROM dealers WHERE id = ?').get(dealerResult.lastInsertRowid) as any;
+    
+    // 판매점 계정 생성
+    const hashedPassword = bcrypt.hashSync(data.password, 10);
+    const userResult = db.prepare('INSERT INTO users (dealer_id, email, password, name, role) VALUES (?, ?, ?, ?, ?)').run(
+      dealer.id,
+      data.email,
+      hashedPassword,
+      data.name,
+      'dealer_store'
+    );
+    
+    const user = db.prepare('SELECT * FROM users WHERE id = ?').get(userResult.lastInsertRowid) as any;
+    
+    return {
+      user: {
+        id: user.id,
+        dealerId: user.dealer_id,
+        email: user.email,
+        password: user.password,
+        name: user.name,
+        role: user.role,
+        createdAt: new Date(user.created_at)
+      },
+      dealer: {
+        id: dealer.id,
+        name: dealer.name,
+        location: dealer.location,
+        contactEmail: dealer.contact_email,
+        contactPhone: dealer.contact_phone,
+        kpNumber: dealer.kp_number,
+        createdAt: new Date(dealer.created_at)
+      }
+    };
+  }
+
+  async getKPInfo(kpNumber: string): Promise<KPDealerInfo | null> {
+    const kpInfo = db.prepare('SELECT * FROM kp_dealer_info WHERE kp_number = ? AND is_active = 1').get(kpNumber) as any;
+    if (!kpInfo) return null;
+    
+    return {
+      id: kpInfo.id,
+      kpNumber: kpInfo.kp_number,
+      dealerName: kpInfo.dealer_name,
+      location: kpInfo.location,
+      contactEmail: kpInfo.contact_email,
+      contactPhone: kpInfo.contact_phone,
+      isActive: kpInfo.is_active,
+      createdAt: new Date(kpInfo.created_at)
+    };
+  }
+
+  async createKPDealerInfo(data: Omit<KPDealerInfo, 'id' | 'createdAt'>): Promise<KPDealerInfo> {
+    const insertResult = db.prepare('INSERT INTO kp_dealer_info (kp_number, dealer_name, location, contact_email, contact_phone, is_active) VALUES (?, ?, ?, ?, ?, ?)').run(
+      data.kpNumber,
+      data.dealerName,
+      data.location,
+      data.contactEmail || null,
+      data.contactPhone || null,
+      data.isActive ? 1 : 0
+    );
+    
+    const result = db.prepare('SELECT * FROM kp_dealer_info WHERE id = ?').get(insertResult.lastInsertRowid) as any;
+    
+    return {
+      id: result.id,
+      kpNumber: result.kp_number,
+      dealerName: result.dealer_name,
+      location: result.location,
+      contactEmail: result.contact_email,
+      contactPhone: result.contact_phone,
+      isActive: result.is_active,
+      createdAt: new Date(result.created_at)
+    };
+  }
+
+  async getAllKPDealerInfo(): Promise<KPDealerInfo[]> {
+    const results = db.prepare('SELECT * FROM kp_dealer_info WHERE is_active = 1 ORDER BY kp_number').all() as any[];
+    
+    return results.map(result => ({
+      id: result.id,
+      kpNumber: result.kp_number,
+      dealerName: result.dealer_name,
+      location: result.location,
+      contactEmail: result.contact_email,
+      contactPhone: result.contact_phone,
+      isActive: result.is_active,
+      createdAt: new Date(result.created_at)
+    }));
   }
 
   async getDealers(): Promise<Dealer[]> {

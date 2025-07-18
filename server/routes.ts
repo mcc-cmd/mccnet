@@ -7,6 +7,9 @@ import {
   loginSchema,
   createDealerSchema,
   createUserSchema,
+  createAdminSchema,
+  createWorkerSchema,
+  createDealerAccountSchema,
   uploadDocumentSchema,
   updateDocumentStatusSchema,
   updateActivationStatusSchema,
@@ -261,6 +264,83 @@ router.post('/api/admin/users', requireAdmin, async (req, res) => {
     res.json(user);
   } catch (error: any) {
     res.status(400).json({ error: error.message });
+  }
+});
+
+// Admin account creation endpoint
+router.post('/api/admin/create-admin', requireAdmin, async (req, res) => {
+  try {
+    const data = createAdminSchema.parse(req.body);
+    const admin = await storage.createAdmin(data);
+    res.json(admin);
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+// Worker account creation endpoint
+router.post('/api/admin/create-worker', requireAdmin, async (req, res) => {
+  try {
+    const data = createWorkerSchema.parse(req.body);
+    const worker = await storage.createWorker(data);
+    res.json(worker);
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+// New account creation routes
+router.post('/api/auth/register/dealer', async (req, res) => {
+  try {
+    const data = createDealerAccountSchema.parse(req.body);
+    const result = await storage.createDealerAccount(data);
+    res.json({ success: true, message: '판매점 계정이 성공적으로 생성되었습니다.' });
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+router.post('/api/admin/create-admin', requireAdmin, async (req, res) => {
+  try {
+    const data = createAdminSchema.parse(req.body);
+    const admin = await storage.createAdmin(data);
+    res.json({ success: true, message: '관리자 계정이 성공적으로 생성되었습니다.' });
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+router.post('/api/admin/create-worker', requireAdmin, async (req, res) => {
+  try {
+    const data = createWorkerSchema.parse(req.body);
+    const worker = await storage.createWorker(data);
+    res.json({ success: true, message: '근무자 계정이 성공적으로 생성되었습니다.' });
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+// KP number validation route
+router.get('/api/kp-info/:kpNumber', async (req, res) => {
+  try {
+    const kpNumber = req.params.kpNumber;
+    const kpInfo = await storage.getKPDealerInfo(kpNumber);
+    if (kpInfo) {
+      res.json(kpInfo);
+    } else {
+      res.status(404).json({ error: '유효하지 않은 KP번호입니다.' });
+    }
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.get('/api/admin/kp-info', requireAdmin, async (req, res) => {
+  try {
+    const kpInfos = await storage.getAllKPDealerInfo();
+    res.json(kpInfos);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
   }
 });
 
@@ -588,6 +668,40 @@ router.get('/api/files/pricing/:id', requireAuth, async (req, res) => {
     res.download(table.filePath, table.fileName);
   } catch (error: any) {
     res.status(500).json({ error: error.message });
+  }
+});
+
+// KP number lookup endpoint
+router.get('/api/kp-info/:kpNumber', async (req, res) => {
+  try {
+    const kpNumber = req.params.kpNumber;
+    const kpInfo = await storage.getKPInfo(kpNumber);
+    if (kpInfo) {
+      res.json(kpInfo);
+    } else {
+      res.status(404).json({ error: 'KP번호를 찾을 수 없습니다.' });
+    }
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Dealer account registration endpoint
+router.post('/api/auth/register/dealer', async (req, res) => {
+  try {
+    const data = createDealerAccountSchema.parse(req.body);
+    
+    // Validate KP number
+    const kpInfo = await storage.getKPInfo(data.kpNumber);
+    if (!kpInfo) {
+      return res.status(400).json({ error: '유효하지 않은 KP번호입니다.' });
+    }
+    
+    // Create dealer account
+    const dealer = await storage.createDealerAccount(data, kpInfo);
+    res.json(dealer);
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
   }
 });
 

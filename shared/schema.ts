@@ -16,6 +16,18 @@ export interface Dealer {
   location: string;
   contactEmail: string;
   contactPhone: string;
+  kpNumber?: string; // KP번호 추가
+  createdAt: Date;
+}
+
+export interface KPDealerInfo {
+  id: number;
+  kpNumber: string;
+  dealerName: string;
+  location: string;
+  contactEmail?: string;
+  contactPhone?: string;
+  isActive: boolean;
   createdAt: Date;
 }
 
@@ -91,6 +103,27 @@ export const createDealerSchema = z.object({
   location: z.string().min(1, "위치를 입력하세요"),
   contactEmail: z.string().email("올바른 이메일을 입력하세요"),
   contactPhone: z.string().min(1, "연락처를 입력하세요"),
+  kpNumber: z.string().optional(),
+});
+
+export const createAdminSchema = z.object({
+  email: z.string().email("올바른 이메일을 입력하세요"),
+  password: z.string().min(6, "비밀번호는 최소 6자 이상이어야 합니다"),
+  name: z.string().min(1, "이름을 입력하세요"),
+});
+
+export const createWorkerSchema = z.object({
+  dealerId: z.number().min(1, "대리점을 선택하세요"),
+  email: z.string().email("올바른 이메일을 입력하세요"),
+  password: z.string().min(6, "비밀번호는 최소 6자 이상이어야 합니다"),
+  name: z.string().min(1, "이름을 입력하세요"),
+});
+
+export const createDealerAccountSchema = z.object({
+  kpNumber: z.string().min(1, "KP번호를 입력하세요"),
+  email: z.string().email("올바른 이메일을 입력하세요"),
+  password: z.string().min(6, "비밀번호는 최소 6자 이상이어야 합니다"),
+  name: z.string().min(1, "이름을 입력하세요"),
 });
 
 export const createUserSchema = z.object({
@@ -125,6 +158,9 @@ export const updateActivationStatusSchema = z.object({
 export type LoginForm = z.infer<typeof loginSchema>;
 export type CreateDealerForm = z.infer<typeof createDealerSchema>;
 export type CreateUserForm = z.infer<typeof createUserSchema>;
+export type CreateAdminForm = z.infer<typeof createAdminSchema>;
+export type CreateWorkerForm = z.infer<typeof createWorkerSchema>;
+export type CreateDealerAccountForm = z.infer<typeof createDealerAccountSchema>;
 export type UploadDocumentForm = z.infer<typeof uploadDocumentSchema>;
 export type UpdateDocumentStatusForm = z.infer<typeof updateDocumentStatusSchema>;
 export type UpdateActivationStatusForm = z.infer<typeof updateActivationStatusSchema>;

@@ -6,17 +6,33 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Loader2 } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Badge } from '@/components/ui/badge';
+import { Loader2, CheckCircle, AlertCircle } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 import logoImage from '@assets/KakaoTalk_20250626_162541112-removebg-preview_1751604392501.png';
 
 export function Login() {
   const [, setLocation] = useLocation();
   const { login } = useAuth();
+  const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [formData, setFormData] = useState({
     email: '',
     password: ''
+  });
+  const [registerData, setRegisterData] = useState({
+    kpNumber: '',
+    email: '',
+    password: '',
+    name: ''
+  });
+  const [kpValidation, setKpValidation] = useState({
+    isValid: false,
+    dealerName: '',
+    location: '',
+    isChecking: false
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -45,6 +61,110 @@ export function Login() {
     }));
   };
 
+  const handleRegisterChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setRegisterData(prev => ({
+      ...prev,
+      [e.target.name]: e.target.value
+    }));
+  };
+
+  const validateKPNumber = async (kpNumber: string) => {
+    if (!kpNumber.trim()) {
+      setKpValidation({ isValid: false, dealerName: '', location: '', isChecking: false });
+      return;
+    }
+
+    setKpValidation(prev => ({ ...prev, isChecking: true }));
+    try {
+      const response = await fetch(`/api/kp-info/${kpNumber}`);
+      if (response.ok) {
+        const kpInfo = await response.json();
+        setKpValidation({
+          isValid: true,
+          dealerName: kpInfo.dealerName,
+          location: kpInfo.location,
+          isChecking: false
+        });
+      } else {
+        setKpValidation({
+          isValid: false,
+          dealerName: '',
+          location: '',
+          isChecking: false
+        });
+      }
+    } catch (error) {
+      setKpValidation({
+        isValid: false,
+        dealerName: '',
+        location: '',
+        isChecking: false
+      });
+    }
+  };
+
+  const handleKPNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setRegisterData(prev => ({
+      ...prev,
+      kpNumber: value
+    }));
+    
+    // Validate KP number after user stops typing
+    if (value.length >= 3) {
+      setTimeout(() => validateKPNumber(value), 500);
+    } else {
+      setKpValidation({ isValid: false, dealerName: '', location: '', isChecking: false });
+    }
+  };
+
+  const handleRegisterSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!kpValidation.isValid) {
+      toast({
+        title: '오류',
+        description: '유효한 KP번호를 입력해주세요.',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    setIsLoading(true);
+    setError('');
+
+    try {
+      const response = await fetch('/api/auth/register/dealer', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(registerData),
+      });
+
+      if (response.ok) {
+        toast({
+          title: '성공',
+          description: '판매점 계정이 성공적으로 생성되었습니다. 로그인해주세요.',
+          variant: 'default'
+        });
+        setRegisterData({ kpNumber: '', email: '', password: '', name: '' });
+        setKpValidation({ isValid: false, dealerName: '', location: '', isChecking: false });
+      } else {
+        const errorData = await response.json();
+        throw new Error(errorData.error || '계정 생성 중 오류가 발생했습니다.');
+      }
+    } catch (err: any) {
+      toast({
+        title: '오류',
+        description: err.message,
+        variant: 'destructive'
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
@@ -66,64 +186,179 @@ export function Login() {
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
         <Card>
           <CardHeader>
-            <CardTitle>로그인</CardTitle>
+            <CardTitle>MCC네트월드 포털</CardTitle>
             <CardDescription>
-              계정 정보를 입력하여 로그인하세요
+              계정 정보를 입력하여 로그인하거나 새 계정을 생성하세요
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-6">
-              {error && (
-                <Alert variant="destructive">
-                  <AlertDescription>{error}</AlertDescription>
-                </Alert>
-              )}
+            <Tabs defaultValue="login" className="w-full">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="login">로그인</TabsTrigger>
+                <TabsTrigger value="register">계정 생성</TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="login" className="mt-4">
+                <form onSubmit={handleSubmit} className="space-y-6">
+                  {error && (
+                    <Alert variant="destructive">
+                      <AlertDescription>{error}</AlertDescription>
+                    </Alert>
+                  )}
 
-              <div>
-                <Label htmlFor="email">이메일</Label>
-                <Input
-                  id="email"
-                  name="email"
-                  type="email"
-                  required
-                  value={formData.email}
-                  onChange={handleChange}
-                  placeholder="이메일을 입력하세요"
-                  className="mt-1"
-                />
-              </div>
+                  <div>
+                    <Label htmlFor="email">이메일</Label>
+                    <Input
+                      id="email"
+                      name="email"
+                      type="email"
+                      required
+                      value={formData.email}
+                      onChange={handleChange}
+                      placeholder="이메일을 입력하세요"
+                      className="mt-1"
+                    />
+                  </div>
 
-              <div>
-                <Label htmlFor="password">비밀번호</Label>
-                <Input
-                  id="password"
-                  name="password"
-                  type="password"
-                  required
-                  value={formData.password}
-                  onChange={handleChange}
-                  placeholder="비밀번호를 입력하세요"
-                  className="mt-1"
-                />
-              </div>
+                  <div>
+                    <Label htmlFor="password">비밀번호</Label>
+                    <Input
+                      id="password"
+                      name="password"
+                      type="password"
+                      required
+                      value={formData.password}
+                      onChange={handleChange}
+                      placeholder="비밀번호를 입력하세요"
+                      className="mt-1"
+                    />
+                  </div>
 
-              <Button
-                type="submit"
-                className="w-full"
-                disabled={isLoading}
-              >
-                {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                로그인
-              </Button>
-            </form>
+                  <Button
+                    type="submit"
+                    className="w-full"
+                    disabled={isLoading}
+                  >
+                    {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    로그인
+                  </Button>
+                </form>
 
-            <div className="mt-6 text-center">
-              <div className="text-sm text-gray-500">
-                <p>테스트 계정:</p>
-                <p className="font-mono"><strong>관리자:</strong> admin@portal.com / admin123!</p>
-                <p className="font-mono"><strong>사용자:</strong> user@test.com / password</p>
-              </div>
-            </div>
+                <div className="mt-6 text-center">
+                  <div className="text-sm text-gray-500">
+                    <p>테스트 계정:</p>
+                    <p className="font-mono"><strong>관리자:</strong> admin@portal.com / admin123!</p>
+                    <p className="font-mono"><strong>사용자:</strong> user@test.com / password</p>
+                  </div>
+                </div>
+              </TabsContent>
+
+              <TabsContent value="register" className="mt-4">
+                <div className="mb-4">
+                  <Alert>
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertDescription>
+                      판매점 계정만 생성할 수 있습니다. 관리자 및 근무자 계정은 관리자에게 문의하세요.
+                    </AlertDescription>
+                  </Alert>
+                </div>
+
+                <form onSubmit={handleRegisterSubmit} className="space-y-6">
+                  <div>
+                    <Label htmlFor="kpNumber">KP번호</Label>
+                    <div className="relative">
+                      <Input
+                        id="kpNumber"
+                        name="kpNumber"
+                        type="text"
+                        required
+                        value={registerData.kpNumber}
+                        onChange={handleKPNumberChange}
+                        placeholder="KP번호를 입력하세요 (예: KP001)"
+                        className="mt-1"
+                      />
+                      {kpValidation.isChecking && (
+                        <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        </div>
+                      )}
+                    </div>
+                    {kpValidation.isValid && (
+                      <div className="mt-2 p-3 bg-green-50 border border-green-200 rounded-md">
+                        <div className="flex items-center space-x-2">
+                          <CheckCircle className="h-4 w-4 text-green-600" />
+                          <Badge variant="outline" className="text-green-700 border-green-300">
+                            유효한 KP번호
+                          </Badge>
+                        </div>
+                        <p className="text-sm text-green-800 mt-1">
+                          <strong>판매점:</strong> {kpValidation.dealerName}
+                        </p>
+                        <p className="text-sm text-green-800">
+                          <strong>위치:</strong> {kpValidation.location}
+                        </p>
+                      </div>
+                    )}
+                    {registerData.kpNumber && !kpValidation.isValid && !kpValidation.isChecking && (
+                      <p className="mt-2 text-sm text-red-600">
+                        유효하지 않은 KP번호입니다.
+                      </p>
+                    )}
+                  </div>
+
+                  <div>
+                    <Label htmlFor="register-name">이름</Label>
+                    <Input
+                      id="register-name"
+                      name="name"
+                      type="text"
+                      required
+                      value={registerData.name}
+                      onChange={handleRegisterChange}
+                      placeholder="이름을 입력하세요"
+                      className="mt-1"
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="register-email">이메일</Label>
+                    <Input
+                      id="register-email"
+                      name="email"
+                      type="email"
+                      required
+                      value={registerData.email}
+                      onChange={handleRegisterChange}
+                      placeholder="이메일을 입력하세요"
+                      className="mt-1"
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="register-password">비밀번호</Label>
+                    <Input
+                      id="register-password"
+                      name="password"
+                      type="password"
+                      required
+                      value={registerData.password}
+                      onChange={handleRegisterChange}
+                      placeholder="비밀번호를 입력하세요 (최소 6자)"
+                      className="mt-1"
+                    />
+                  </div>
+
+                  <Button
+                    type="submit"
+                    className="w-full"
+                    disabled={isLoading || !kpValidation.isValid}
+                  >
+                    {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    계정 생성
+                  </Button>
+                </form>
+              </TabsContent>
+            </Tabs>
           </CardContent>
         </Card>
       </div>

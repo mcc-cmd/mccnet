@@ -14,7 +14,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { createDealerSchema, createUserSchema, updateDocumentStatusSchema } from '../../../shared/schema';
+import { createDealerSchema, createUserSchema, createAdminSchema, createWorkerSchema, updateDocumentStatusSchema } from '../../../shared/schema';
 import type { Dealer, User, Document, PricingTable } from '../../../shared/schema';
 import { 
   Building2, 
@@ -48,6 +48,19 @@ type CreateUserForm = {
   role: 'dealer_store' | 'dealer_worker';
 };
 
+type CreateAdminForm = {
+  email: string;
+  password: string;
+  name: string;
+};
+
+type CreateWorkerForm = {
+  dealerId: number;
+  email: string;
+  password: string;
+  name: string;
+};
+
 type UpdateDocumentStatusForm = {
   status: '접수' | '보완필요' | '완료';
   activationStatus?: '대기' | '개통' | '취소';
@@ -77,6 +90,8 @@ export function AdminPanel() {
   
   const [dealerDialogOpen, setDealerDialogOpen] = useState(false);
   const [userDialogOpen, setUserDialogOpen] = useState(false);
+  const [adminDialogOpen, setAdminDialogOpen] = useState(false);
+  const [workerDialogOpen, setWorkerDialogOpen] = useState(false);
   const [pricingDialogOpen, setPricingDialogOpen] = useState(false);
   const [templateDialogOpen, setTemplateDialogOpen] = useState(false);
   const [statusDialogOpen, setStatusDialogOpen] = useState(false);
@@ -148,7 +163,26 @@ export function AdminPanel() {
       email: '',
       password: '',
       name: '',
-      role: 'dealer_staff',
+      role: 'dealer_store',
+    },
+  });
+
+  const adminForm = useForm<CreateAdminForm>({
+    resolver: zodResolver(createAdminSchema),
+    defaultValues: {
+      email: '',
+      password: '',
+      name: '',
+    },
+  });
+
+  const workerForm = useForm<CreateWorkerForm>({
+    resolver: zodResolver(createWorkerSchema),
+    defaultValues: {
+      dealerId: 0,
+      email: '',
+      password: '',
+      name: '',
     },
   });
 
@@ -197,6 +231,51 @@ export function AdminPanel() {
       toast({
         title: '성공',
         description: '사용자가 성공적으로 생성되었습니다.',
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: '오류',
+        description: error.message,
+        variant: 'destructive',
+      });
+    },
+  });
+
+  const createAdminMutation = useMutation({
+    mutationFn: (data: CreateAdminForm) => apiRequest('/api/admin/create-admin', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+    onSuccess: () => {
+      setAdminDialogOpen(false);
+      adminForm.reset();
+      toast({
+        title: '성공',
+        description: '관리자 계정이 성공적으로 생성되었습니다.',
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: '오류',
+        description: error.message,
+        variant: 'destructive',
+      });
+    },
+  });
+
+  const createWorkerMutation = useMutation({
+    mutationFn: (data: CreateWorkerForm) => apiRequest('/api/admin/create-worker', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/users'] });
+      setWorkerDialogOpen(false);
+      workerForm.reset();
+      toast({
+        title: '성공',
+        description: '근무자 계정이 성공적으로 생성되었습니다.',
       });
     },
     onError: (error: Error) => {
@@ -318,6 +397,14 @@ export function AdminPanel() {
     createUserMutation.mutate(data);
   };
 
+  const handleCreateAdmin = (data: CreateAdminForm) => {
+    createAdminMutation.mutate(data);
+  };
+
+  const handleCreateWorker = (data: CreateWorkerForm) => {
+    createWorkerMutation.mutate(data);
+  };
+
   const handleUploadPricing = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -429,7 +516,7 @@ export function AdminPanel() {
 
         {/* Admin Tabs */}
         <Tabs defaultValue="dealers" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-6">
+          <TabsList className="grid w-full grid-cols-7">
             <TabsTrigger value="dealers" className="flex items-center space-x-2">
               <Building2 className="h-4 w-4" />
               <span>대리점</span>
@@ -437,6 +524,10 @@ export function AdminPanel() {
             <TabsTrigger value="users" className="flex items-center space-x-2">
               <Users className="h-4 w-4" />
               <span>사용자</span>
+            </TabsTrigger>
+            <TabsTrigger value="accounts" className="flex items-center space-x-2">
+              <Plus className="h-4 w-4" />
+              <span>계정 생성</span>
             </TabsTrigger>
             <TabsTrigger value="documents" className="flex items-center space-x-2">
               <FileText className="h-4 w-4" />
@@ -815,6 +906,189 @@ export function AdminPanel() {
                 )}
               </CardContent>
             </Card>
+          </TabsContent>
+
+          {/* Account Creation Tab */}
+          <TabsContent value="accounts">
+            <div className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>관리자 계정 생성</CardTitle>
+                  <CardDescription>
+                    새로운 관리자 계정을 생성합니다. 관리자는 모든 시스템 권한을 가집니다.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex justify-end">
+                    <Dialog open={adminDialogOpen} onOpenChange={setAdminDialogOpen}>
+                      <DialogTrigger asChild>
+                        <Button>
+                          <Plus className="mr-2 h-4 w-4" />
+                          관리자 계정 생성
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent>
+                        <DialogHeader>
+                          <DialogTitle>새 관리자 계정 생성</DialogTitle>
+                        </DialogHeader>
+                        <Form {...adminForm}>
+                          <form onSubmit={adminForm.handleSubmit(handleCreateAdmin)} className="space-y-4">
+                            <FormField
+                              control={adminForm.control}
+                              name="name"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>이름</FormLabel>
+                                  <FormControl>
+                                    <Input placeholder="이름을 입력하세요" {...field} />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            <FormField
+                              control={adminForm.control}
+                              name="email"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>이메일</FormLabel>
+                                  <FormControl>
+                                    <Input type="email" placeholder="이메일을 입력하세요" {...field} />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            <FormField
+                              control={adminForm.control}
+                              name="password"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>비밀번호</FormLabel>
+                                  <FormControl>
+                                    <Input type="password" placeholder="비밀번호를 입력하세요" {...field} />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            <div className="flex justify-end space-x-2">
+                              <Button type="button" variant="outline" onClick={() => setAdminDialogOpen(false)}>
+                                취소
+                              </Button>
+                              <Button type="submit" disabled={createAdminMutation.isPending}>
+                                {createAdminMutation.isPending ? '생성 중...' : '생성'}
+                              </Button>
+                            </div>
+                          </form>
+                        </Form>
+                      </DialogContent>
+                    </Dialog>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>근무자 계정 생성</CardTitle>
+                  <CardDescription>
+                    새로운 근무자 계정을 생성합니다. 근무자는 모든 판매점 데이터를 볼 수 있습니다.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex justify-end">
+                    <Dialog open={workerDialogOpen} onOpenChange={setWorkerDialogOpen}>
+                      <DialogTrigger asChild>
+                        <Button>
+                          <Plus className="mr-2 h-4 w-4" />
+                          근무자 계정 생성
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent>
+                        <DialogHeader>
+                          <DialogTitle>새 근무자 계정 생성</DialogTitle>
+                        </DialogHeader>
+                        <Form {...workerForm}>
+                          <form onSubmit={workerForm.handleSubmit(handleCreateWorker)} className="space-y-4">
+                            <FormField
+                              control={workerForm.control}
+                              name="dealerId"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>소속 대리점</FormLabel>
+                                  <Select onValueChange={(value) => field.onChange(parseInt(value))}>
+                                    <FormControl>
+                                      <SelectTrigger>
+                                        <SelectValue placeholder="소속 대리점을 선택하세요" />
+                                      </SelectTrigger>
+                                    </FormControl>
+                                    <SelectContent>
+                                      {dealers?.map((dealer) => (
+                                        <SelectItem key={dealer.id} value={dealer.id.toString()}>
+                                          {dealer.name}
+                                        </SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            <FormField
+                              control={workerForm.control}
+                              name="name"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>이름</FormLabel>
+                                  <FormControl>
+                                    <Input placeholder="이름을 입력하세요" {...field} />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            <FormField
+                              control={workerForm.control}
+                              name="email"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>이메일</FormLabel>
+                                  <FormControl>
+                                    <Input type="email" placeholder="이메일을 입력하세요" {...field} />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            <FormField
+                              control={workerForm.control}
+                              name="password"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>비밀번호</FormLabel>
+                                  <FormControl>
+                                    <Input type="password" placeholder="비밀번호를 입력하세요" {...field} />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            <div className="flex justify-end space-x-2">
+                              <Button type="button" variant="outline" onClick={() => setWorkerDialogOpen(false)}>
+                                취소
+                              </Button>
+                              <Button type="submit" disabled={createWorkerMutation.isPending}>
+                                {createWorkerMutation.isPending ? '생성 중...' : '생성'}
+                              </Button>
+                            </div>
+                          </form>
+                        </Form>
+                      </DialogContent>
+                    </Dialog>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
           </TabsContent>
 
           {/* Documents Tab */}
