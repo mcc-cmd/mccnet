@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth, useApiRequest } from '@/lib/auth';
 import { Layout } from '@/components/Layout';
@@ -20,9 +20,19 @@ export function SubmitApplication() {
   const [formData, setFormData] = useState({
     customerName: '',
     customerPhone: '',
-    storeName: '',
+    storeName: user?.dealerName || '', // 로그인한 사용자의 대리점명 자동 설정
     notes: ''
   });
+
+  // 사용자 정보가 변경될 때 판매점명 자동 설정
+  useEffect(() => {
+    if (user?.dealerName) {
+      setFormData(prev => ({
+        ...prev,
+        storeName: user.dealerName
+      }));
+    }
+  }, [user?.dealerName]);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [dragActive, setDragActive] = useState(false);
 
@@ -56,7 +66,7 @@ export function SubmitApplication() {
       });
 
       // Reset form
-      setFormData({ customerName: '', customerPhone: '', storeName: '', notes: '' });
+      setFormData({ customerName: '', customerPhone: '', storeName: user?.dealerName || '', notes: '' });
       setSelectedFile(null);
     },
     onError: (error: Error) => {
@@ -190,9 +200,9 @@ export function SubmitApplication() {
                       id="storeName"
                       name="storeName"
                       value={formData.storeName}
-                      onChange={handleInputChange}
-                      placeholder="판매점명을 입력하세요"
-                      className="mt-1"
+                      readOnly
+                      placeholder="자동으로 설정됨"
+                      className="mt-1 bg-gray-50 text-gray-700"
                     />
                   </div>
                 </div>
@@ -283,7 +293,7 @@ export function SubmitApplication() {
                   type="button"
                   variant="outline"
                   onClick={() => {
-                    setFormData({ customerName: '', customerPhone: '', storeName: '', notes: '' });
+                    setFormData({ customerName: '', customerPhone: '', storeName: user?.dealerName || '', notes: '' });
                     setSelectedFile(null);
                   }}
                 >

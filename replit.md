@@ -146,6 +146,8 @@ This is a document management system built for MCC네트월드 telecommunication
 - July 18, 2025. Created worker statistics tab in AdminPanel showing performance rankings and monthly activation counts
 - July 18, 2025. Updated API endpoints with proper middleware for role-based access control and security
 - July 18, 2025. Enhanced client-side permission checks to hide/show features based on user roles
+- July 18, 2025. Modified store name field to auto-populate from logged-in user's dealer information instead of manual entry
+- July 18, 2025. Made store name field read-only with automatic assignment based on user's dealer account
 
 ## User Preferences
 
