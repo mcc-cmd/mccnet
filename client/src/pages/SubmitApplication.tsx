@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
 import { Upload, Loader2, FileText, Phone, User } from 'lucide-react';
@@ -21,6 +22,7 @@ export function SubmitApplication() {
     customerName: '',
     customerPhone: '',
     storeName: user?.dealerName || '', // 로그인한 사용자의 대리점명 자동 설정
+    carrier: '',
     notes: ''
   });
 
@@ -35,6 +37,18 @@ export function SubmitApplication() {
   }, [user?.dealerName]);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [dragActive, setDragActive] = useState(false);
+  
+  // 통신사 목록
+  const carriers = [
+    'SK텔링크', 'SK프리티', 'SK스테이지파이브', 
+    'KT엠모바일', 'KT스테이지파이브', '스카이라이프KT', '코드모바일KT',
+    '미디어로그LG', '헬로모바일LG', '프리티LG', '밸류컴', '스마텔LG', '중고KT'
+  ];
+  
+  // SK 계열사 체크
+  const isSKCarrier = (carrier: string) => {
+    return carrier.startsWith('SK');
+  };
 
   const uploadMutation = useMutation({
     mutationFn: async (data: FormData) => {
@@ -53,7 +67,7 @@ export function SubmitApplication() {
       });
 
       // Reset form
-      setFormData({ customerName: '', customerPhone: '', storeName: user?.dealerName || '', notes: '' });
+      setFormData({ customerName: '', customerPhone: '', storeName: user?.dealerName || '', carrier: '', notes: '' });
       setSelectedFile(null);
     },
     onError: (error: Error) => {
@@ -68,16 +82,44 @@ export function SubmitApplication() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // 파일 업로드는 선택사항으로 변경
+    if (!formData.customerName || !formData.customerPhone) {
+      toast({
+        title: "입력 오류",
+        description: "고객명과 연락처를 입력하세요.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!formData.carrier) {
+      toast({
+        title: "입력 오류",
+        description: "통신사를 선택하세요.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // SK 계열사인 경우 파일 업로드 필수
+    if (isSKCarrier(formData.carrier) && !selectedFile) {
+      toast({
+        title: "입력 오류",
+        description: "SK 계열사 접수 시 서류 업로드는 필수입니다.",
+        variant: "destructive",
+      });
+      return;
+    }
 
     const data = new FormData();
-    if (selectedFile) {
-      data.append('file', selectedFile);
-    }
     data.append('customerName', formData.customerName);
     data.append('customerPhone', formData.customerPhone);
     data.append('storeName', formData.storeName);
+    data.append('carrier', formData.carrier);
     data.append('notes', formData.notes);
+    
+    if (selectedFile) {
+      data.append('file', selectedFile);
+    }
 
     uploadMutation.mutate(data);
   };
@@ -192,6 +234,27 @@ export function SubmitApplication() {
                       className="mt-1 bg-gray-50 text-gray-700"
                     />
                   </div>
+                </div>
+
+                <div>
+                  <Label htmlFor="carrier">통신사 *</Label>
+                  <Select value={formData.carrier} onValueChange={(value) => setFormData(prev => ({ ...prev, carrier: value }))}>
+                    <SelectTrigger className="mt-1">
+                      <SelectValue placeholder="통신사를 선택하세요" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {carriers.map((carrier) => (
+                        <SelectItem key={carrier} value={carrier}>
+                          {carrier}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {formData.carrier && isSKCarrier(formData.carrier) && (
+                    <p className="text-sm text-red-600 mt-1">
+                      * SK 계열사 접수 시 서류 업로드는 필수입니다.
+                    </p>
+                  )}
                 </div>
 
                 <div>

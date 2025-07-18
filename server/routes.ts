@@ -456,6 +456,7 @@ router.get('/api/dashboard/stats', requireAuth, async (req: any, res) => {
 router.get('/api/documents', requireAuth, async (req: any, res) => {
   try {
     const { status, search, startDate, endDate } = req.query;
+    // 관리자는 모든 문서를, 사용자는 해당 대리점 문서만 조회
     const dealerId = req.session.userType === 'admin' ? undefined : req.session.dealerId;
     
     const documents = await storage.getDocuments(dealerId, {

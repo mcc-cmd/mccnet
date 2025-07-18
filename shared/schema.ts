@@ -37,6 +37,7 @@ export interface Document {
   customerName: string;
   customerPhone: string;
   storeName?: string; // 판매점 이름
+  carrier: string; // 통신사
   status: '접수' | '보완필요' | '완료';
   activationStatus: '대기' | '진행중' | '개통' | '취소';
   filePath?: string | null;
@@ -103,6 +104,7 @@ export const uploadDocumentSchema = z.object({
   customerName: z.string().min(1, "고객명을 입력하세요"),
   customerPhone: z.string().min(1, "연락처를 입력하세요"),
   storeName: z.string().optional(),
+  carrier: z.string().min(1, "통신사를 선택하세요"),
   notes: z.string().optional(),
 });
 

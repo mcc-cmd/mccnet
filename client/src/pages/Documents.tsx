@@ -405,6 +405,9 @@ export function Documents() {
                           판매점명
                         </th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          통신사
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                           상태
                         </th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -437,6 +440,9 @@ export function Documents() {
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                             {(doc as any).storeName || '-'}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                            {(doc as any).carrier || '-'}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
                             {getStatusBadge(doc.status)}
@@ -515,6 +521,12 @@ export function Documents() {
                           <div>
                             <span className="text-gray-500">판매점:</span>
                             <span className="ml-1 text-gray-900">{(doc as any).storeName}</span>
+                          </div>
+                        )}
+                        {(doc as any).carrier && (
+                          <div>
+                            <span className="text-gray-500">통신사:</span>
+                            <span className="ml-1 text-gray-900">{(doc as any).carrier}</span>
                           </div>
                         )}
                         {isAdmin && (

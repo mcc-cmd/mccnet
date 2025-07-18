@@ -150,6 +150,12 @@ This is a document management system built for MCC네트월드 telecommunication
 - July 18, 2025. Made store name field read-only with automatic assignment based on user's dealer account
 - July 18, 2025. Fixed document upload API issues by correcting multipart/form-data handling and FormData processing
 - July 18, 2025. Updated useApiRequest hook to properly handle FormData uploads without Content-Type header interference
+- July 18, 2025. Implemented comprehensive carrier selection system with 12 predefined carriers (SK텔링크, SK프리티, SK스테이지파이브, etc.)
+- July 18, 2025. Added mandatory carrier selection field with validation for all document submissions
+- July 18, 2025. Implemented SK carrier-specific requirement: file uploads are mandatory for SK carriers (SK텔링크, SK프리티, SK스테이지파이브)
+- July 18, 2025. Updated database schema to include carrier field with proper migration and data handling
+- July 18, 2025. Enhanced Documents page UI to display carrier information in both desktop table and mobile card views
+- July 18, 2025. Modified admin and worker access permissions to view all documents across all dealers instead of dealer-specific restrictions
 
 ## User Preferences
 
