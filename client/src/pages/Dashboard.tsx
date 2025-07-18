@@ -356,7 +356,7 @@ export function Dashboard() {
                     disabled={!activePricingTable}
                   >
                     <Download className="mr-2 h-5 w-5" />
-                    개통서류 다운로드
+                    서식지 다운로드
                   </Button>
                   
                   <Button
