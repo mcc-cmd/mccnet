@@ -117,6 +117,24 @@ const requireAdmin = async (req: any, res: any, next: any) => {
   });
 };
 
+const requireWorker = async (req: any, res: any, next: any) => {
+  await requireAuth(req, res, () => {
+    if (req.session?.userType !== 'user') {
+      return res.status(403).json({ error: '근무자 권한이 필요합니다.' });
+    }
+    next();
+  });
+};
+
+const requireDealerOrWorker = async (req: any, res: any, next: any) => {
+  await requireAuth(req, res, () => {
+    if (req.session?.userType !== 'user') {
+      return res.status(403).json({ error: '권한이 필요합니다.' });
+    }
+    next();
+  });
+};
+
 // Authentication routes
 router.post('/api/auth/login', async (req, res) => {
   try {
@@ -254,6 +272,16 @@ router.get('/api/admin/users', requireAdmin, async (req, res) => {
   }
 });
 
+// Worker statistics endpoint (admin only)
+router.get('/api/worker-stats', requireAdmin, async (req: any, res) => {
+  try {
+    const stats = await storage.getWorkerStats();
+    res.json(stats);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 router.post('/api/admin/pricing-tables', requireAdmin, pricingUpload.single('file'), async (req: any, res) => {
   try {
     if (!req.file) {
@@ -370,7 +398,7 @@ router.patch('/api/admin/documents/:id/status', requireAdmin, async (req, res) =
   }
 });
 
-router.get('/api/documents', requireAuth, async (req: any, res) => {
+router.get('/api/documents', requireDealerOrWorker, async (req: any, res) => {
   try {
     const { status, search, startDate, endDate } = req.query;
     const dealerId = req.session.userType === 'admin' ? undefined : req.session.dealerId;
@@ -386,7 +414,7 @@ router.get('/api/documents', requireAuth, async (req: any, res) => {
   }
 });
 
-router.delete('/api/documents/:id', requireAuth, async (req: any, res) => {
+router.delete('/api/documents/:id', requireAdmin, async (req: any, res) => {
   try {
     const id = parseInt(req.params.id);
     await storage.deleteDocument(id);
@@ -397,10 +425,16 @@ router.delete('/api/documents/:id', requireAuth, async (req: any, res) => {
 });
 
 // Activation status update endpoint
-router.patch('/api/documents/:id/activation', requireAuth, async (req: any, res) => {
+router.patch('/api/documents/:id/activation', requireDealerOrWorker, async (req: any, res) => {
   try {
     const id = parseInt(req.params.id);
     const data = updateActivationStatusSchema.parse(req.body);
+    
+    // 개통완료 시 근무자 ID 추가
+    if (data.activationStatus === '개통' && req.session.userType === 'user') {
+      data.activatedBy = req.session.userId;
+    }
+    
     const document = await storage.updateDocumentActivationStatus(id, data);
     res.json(document);
   } catch (error: any) {
@@ -436,7 +470,7 @@ router.get('/api/documents', requireAuth, async (req: any, res) => {
   }
 });
 
-router.post('/api/documents', requireAuth, upload.single('file'), async (req: any, res) => {
+router.post('/api/documents', requireDealerOrWorker, upload.single('file'), async (req: any, res) => {
   try {
     if (req.session.userType !== 'user') {
       return res.status(403).json({ error: '사용자만 문서를 업로드할 수 있습니다.' });
@@ -458,7 +492,7 @@ router.post('/api/documents', requireAuth, upload.single('file'), async (req: an
   }
 });
 
-router.delete('/api/documents/:id', requireAuth, async (req: any, res) => {
+router.delete('/api/documents/:id', requireAdmin, async (req: any, res) => {
   try {
     const id = parseInt(req.params.id);
     await storage.deleteDocument(id);

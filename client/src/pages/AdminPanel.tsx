@@ -45,7 +45,7 @@ type CreateUserForm = {
   email: string;
   password: string;
   name: string;
-  role: 'dealer_admin' | 'dealer_staff';
+  role: 'dealer_store' | 'dealer_worker';
 };
 
 type UpdateDocumentStatusForm = {
@@ -442,13 +442,13 @@ export function AdminPanel() {
               <FileText className="h-4 w-4" />
               <span>서류 관리</span>
             </TabsTrigger>
+            <TabsTrigger value="workers" className="flex items-center space-x-2">
+              <TrendingUp className="h-4 w-4" />
+              <span>근무자 통계</span>
+            </TabsTrigger>
             <TabsTrigger value="templates" className="flex items-center space-x-2">
               <Upload className="h-4 w-4" />
               <span>서식지 관리</span>
-            </TabsTrigger>
-            <TabsTrigger value="workers" className="flex items-center space-x-2">
-              <TrendingUp className="h-4 w-4" />
-              <span>판매점 통계</span>
             </TabsTrigger>
             <TabsTrigger value="pricing" className="flex items-center space-x-2">
               <Calculator className="h-4 w-4" />
@@ -668,8 +668,8 @@ export function AdminPanel() {
                                   </SelectTrigger>
                                 </FormControl>
                                 <SelectContent>
-                                  <SelectItem value="dealer_admin">대리점 관리자</SelectItem>
-                                  <SelectItem value="dealer_staff">대리점 직원</SelectItem>
+                                  <SelectItem value="dealer_store">판매점 (읽기 전용)</SelectItem>
+                                  <SelectItem value="dealer_worker">근무자 (개통상태 관리)</SelectItem>
                                 </SelectContent>
                               </Select>
                               <FormMessage />
@@ -730,7 +730,7 @@ export function AdminPanel() {
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                               <Badge variant="secondary">
-                                {user.role === 'dealer_admin' ? '관리자' : '직원'}
+                                {user.role === 'dealer_store' ? '판매점' : '근무자'}
                               </Badge>
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
@@ -746,6 +746,71 @@ export function AdminPanel() {
                     <Users className="mx-auto h-12 w-12 text-gray-400" />
                     <h3 className="mt-2 text-sm font-medium text-gray-900">사용자가 없습니다</h3>
                     <p className="mt-1 text-sm text-gray-500">첫 번째 사용자를 추가해보세요.</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Worker Stats Tab */}
+          <TabsContent value="workers">
+            <Card>
+              <CardHeader>
+                <CardTitle>근무자 통계</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {workerStatsLoading ? (
+                  <div className="text-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-accent mx-auto"></div>
+                  </div>
+                ) : workerStats && workerStats.length > 0 ? (
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full divide-y divide-gray-300">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            근무자명
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            총 개통 건수
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            월 개통 건수
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            순위
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody className="bg-white divide-y divide-gray-200">
+                        {workerStats
+                          .sort((a, b) => b.totalActivations - a.totalActivations)
+                          .map((worker, index) => (
+                            <tr key={worker.workerName} className={index < 3 ? 'bg-green-50' : ''}>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                {worker.workerName}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                {worker.totalActivations}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                {worker.monthlyActivations}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                <Badge variant={index < 3 ? 'default' : 'secondary'}>
+                                  {index + 1}위
+                                </Badge>
+                              </td>
+                            </tr>
+                          ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <TrendingUp className="mx-auto h-12 w-12 text-gray-400" />
+                    <h3 className="mt-2 text-sm font-medium text-gray-900">통계가 없습니다</h3>
+                    <p className="mt-1 text-sm text-gray-500">근무자 통계가 없습니다.</p>
                   </div>
                 )}
               </CardContent>

@@ -141,6 +141,11 @@ This is a document management system built for MCC네트월드 telecommunication
 - July 18, 2025. Fixed JSON parsing error in activation status change API by improving data serialization with proper fetch implementation
 - July 18, 2025. Implemented fully responsive design for Documents page with desktop table view and mobile card layout
 - July 18, 2025. Added responsive breakpoints for filter section to optimize small screen usability
+- July 18, 2025. Implemented comprehensive role-based authentication system with three user types: dealer_store (판매점), dealer_worker (근무자), and admin
+- July 18, 2025. Added permission-based UI controls: dealer_store has read-only access, dealer_worker can manage activation status, admin has full access
+- July 18, 2025. Created worker statistics tab in AdminPanel showing performance rankings and monthly activation counts
+- July 18, 2025. Updated API endpoints with proper middleware for role-based access control and security
+- July 18, 2025. Enhanced client-side permission checks to hide/show features based on user roles
 
 ## User Preferences
 

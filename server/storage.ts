@@ -45,7 +45,7 @@ db.exec(`
     email TEXT UNIQUE NOT NULL,
     password TEXT NOT NULL,
     name TEXT NOT NULL,
-    role TEXT NOT NULL CHECK (role IN ('dealer_admin', 'dealer_staff')),
+    role TEXT NOT NULL CHECK (role IN ('dealer_store', 'dealer_worker')),
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (dealer_id) REFERENCES dealers (id)
   );
@@ -59,16 +59,18 @@ db.exec(`
     customer_phone TEXT NOT NULL,
     store_name TEXT,
     status TEXT NOT NULL CHECK (status IN ('접수', '보완필요', '완료')),
-    activation_status TEXT NOT NULL DEFAULT '대기' CHECK (activation_status IN ('대기', '개통', '취소')),
+    activation_status TEXT NOT NULL DEFAULT '대기' CHECK (activation_status IN ('대기', '진행중', '개통', '취소')),
     file_path TEXT,
     file_name TEXT,
     file_size INTEGER,
     uploaded_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     activated_at DATETIME,
+    activated_by INTEGER,
     notes TEXT,
     FOREIGN KEY (dealer_id) REFERENCES dealers (id),
-    FOREIGN KEY (user_id) REFERENCES users (id)
+    FOREIGN KEY (user_id) REFERENCES users (id),
+    FOREIGN KEY (activated_by) REFERENCES users (id)
   );
 
   CREATE TABLE IF NOT EXISTS document_templates (
@@ -141,7 +143,7 @@ export interface IStorage {
   getDocumentTemplateById(id: number): Promise<any | null>;
   
   // Worker stats
-  getWorkerStats(dealerId?: number): Promise<any[]>;
+  getWorkerStats(dealerId?: number): Promise<WorkerStats[]>;
   
   // Dashboard stats
   getDashboardStats(dealerId?: number): Promise<DashboardStats>;
@@ -491,7 +493,11 @@ class SqliteStorage implements IStorage {
     `;
     let params: any[] = [data.activationStatus, data.notes || null];
 
-    if (data.activationStatus === '개통' || data.activationStatus === '취소') {
+    // 개통완료 시 작업자 ID와 시간 기록
+    if (data.activationStatus === '개통' && data.activatedBy) {
+      updateQuery += `, activated_by = ?, activated_at = CURRENT_TIMESTAMP`;
+      params.push(data.activatedBy);
+    } else if (data.activationStatus === '개통' || data.activationStatus === '취소') {
       updateQuery += `, activated_at = CURRENT_TIMESTAMP`;
     }
 
@@ -517,6 +523,7 @@ class SqliteStorage implements IStorage {
       uploadedAt: new Date(result.uploaded_at),
       updatedAt: new Date(result.updated_at),
       activatedAt: result.activated_at ? new Date(result.activated_at) : undefined,
+      activatedBy: result.activated_by,
       notes: result.notes
     };
   }
@@ -674,30 +681,36 @@ class SqliteStorage implements IStorage {
     };
   }
 
-  async getWorkerStats(dealerId?: number): Promise<any[]> {
+  async getWorkerStats(dealerId?: number): Promise<WorkerStats[]> {
     let query = `
       SELECT 
-        store_name,
+        u.name as worker_name,
+        u.id as worker_id,
+        d.name as dealer_name,
+        d.id as dealer_id,
         COUNT(*) as total_activations,
-        SUM(CASE WHEN date(activated_at) >= date('now', 'start of month') THEN 1 ELSE 0 END) as monthly_activations,
-        dealer_id
-      FROM documents 
-      WHERE activation_status = '개통' AND store_name IS NOT NULL
+        SUM(CASE WHEN date(docs.activated_at) >= date('now', 'start of month') THEN 1 ELSE 0 END) as monthly_activations
+      FROM documents docs
+      JOIN users u ON docs.activated_by = u.id
+      JOIN dealers d ON docs.dealer_id = d.id
+      WHERE docs.activation_status = '개통' AND docs.activated_by IS NOT NULL
     `;
     
     if (dealerId) {
-      query += ' AND dealer_id = ?';
+      query += ' AND docs.dealer_id = ?';
     }
     
-    query += ' GROUP BY store_name, dealer_id ORDER BY monthly_activations DESC';
+    query += ' GROUP BY u.id, u.name, d.id, d.name ORDER BY monthly_activations DESC';
     
-    const results = db.prepare(query).all(dealerId || undefined) as any[];
+    const results = db.prepare(query).all(dealerId ? [dealerId] : []) as any[];
     
     return results.map(r => ({
-      storeName: r.store_name,
+      workerName: r.worker_name,
+      workerId: r.worker_id,
       totalActivations: r.total_activations,
       monthlyActivations: r.monthly_activations,
-      dealerId: r.dealer_id
+      dealerId: r.dealer_id,
+      dealerName: r.dealer_name
     }));
   }
 }

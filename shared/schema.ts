@@ -25,7 +25,7 @@ export interface User {
   email: string;
   password: string;
   name: string;
-  role: 'dealer_admin' | 'dealer_staff';
+  role: 'dealer_store' | 'dealer_worker'; // 판매점/근무자 구분
   createdAt: Date;
 }
 
@@ -45,6 +45,7 @@ export interface Document {
   uploadedAt: Date;
   updatedAt: Date;
   activatedAt?: Date;
+  activatedBy?: number; // 개통완료 처리한 근무자 ID
   notes?: string;
 }
 
@@ -61,10 +62,12 @@ export interface DocumentTemplate {
 }
 
 export interface WorkerStats {
-  storeName: string;
+  workerName: string;
+  workerId: number;
   totalActivations: number;
   monthlyActivations: number;
   dealerId: number;
+  dealerName: string;
 }
 
 export interface AuthSession {
@@ -93,7 +96,7 @@ export const createUserSchema = z.object({
   email: z.string().email("올바른 이메일을 입력하세요"),
   password: z.string().min(6, "비밀번호는 최소 6자 이상이어야 합니다"),
   name: z.string().min(1, "이름을 입력하세요"),
-  role: z.enum(['dealer_admin', 'dealer_staff']),
+  role: z.enum(['dealer_store', 'dealer_worker']),
 });
 
 export const uploadDocumentSchema = z.object({
@@ -112,6 +115,7 @@ export const updateDocumentStatusSchema = z.object({
 export const updateActivationStatusSchema = z.object({
   activationStatus: z.enum(['대기', '진행중', '개통', '취소']),
   notes: z.string().optional(),
+  activatedBy: z.number().optional(), // 개통완료 처리한 근무자 ID
 });
 
 // Type exports

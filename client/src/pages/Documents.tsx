@@ -159,6 +159,15 @@ export function Documents() {
     });
   };
 
+  // Permission check functions
+  const canUploadDocuments = () => {
+    return user?.role === 'dealer_store' || user?.role === 'dealer_worker';
+  };
+
+  const canManageActivationStatus = () => {
+    return user?.role === 'dealer_worker' || user?.userType === 'admin';
+  };
+
   const updateActivationMutation = useMutation({
     mutationFn: async ({ id, data }: { id: number; data: any }) => {
       const sessionId = useAuth.getState().sessionId;
@@ -239,7 +248,7 @@ export function Documents() {
               업로드된 서류를 관리하고 상태를 확인할 수 있습니다.
             </p>
           </div>
-          {!isAdmin && (
+          {canUploadDocuments() && (
             <Dialog open={uploadDialogOpen} onOpenChange={setUploadDialogOpen}>
               <DialogTrigger asChild>
                 <Button>
@@ -531,15 +540,17 @@ export function Documents() {
                               <Download className="h-4 w-4" />
                             </Button>
                           )}
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleActivationStatusChange(doc)}
-                            title="개통상태 변경"
-                          >
-                            개통상태
-                          </Button>
-                          {!isAdmin && (
+                          {canManageActivationStatus() && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleActivationStatusChange(doc)}
+                              title="개통상태 변경"
+                            >
+                              개통상태
+                            </Button>
+                          )}
+                          {user?.userType === 'admin' && (
                             <Button
                               variant="outline"
                               size="sm"
