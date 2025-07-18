@@ -399,21 +399,7 @@ router.patch('/api/admin/documents/:id/status', requireAdmin, async (req, res) =
   }
 });
 
-router.get('/api/documents', requireAuth, async (req: any, res) => {
-  try {
-    const { status, search, startDate, endDate } = req.query;
-    const dealerId = req.session.userType === 'admin' ? undefined : req.session.dealerId;
-    const documents = await storage.getDocuments(dealerId, {
-      status: status as string,
-      search: search as string,
-      startDate: startDate as string,
-      endDate: endDate as string
-    });
-    res.json(documents);
-  } catch (error: any) {
-    res.status(500).json({ error: error.message });
-  }
-});
+
 
 router.delete('/api/documents/:id', requireAdmin, async (req: any, res) => {
   try {
@@ -446,8 +432,11 @@ router.patch('/api/documents/:id/activation', requireAuth, async (req: any, res)
 // User routes
 router.get('/api/dashboard/stats', requireAuth, async (req: any, res) => {
   try {
-    // 관리자와 근무자는 모든 데이터, 판매점은 자신의 데이터만
-    const dealerId = (req.session.userType === 'admin' || req.session.userRole === 'dealer_worker') ? undefined : req.session.dealerId;
+    // 관리자와 근무자는 모든 데이터를 보고, 판매점은 자신의 대리점 데이터만 봄
+    const isWorker = req.session.userRole === 'dealer_worker';
+    const isAdmin = req.session.userType === 'admin';
+    const dealerId = (isAdmin || isWorker) ? undefined : req.session.dealerId;
+    
     const stats = await storage.getDashboardStats(dealerId);
     res.json(stats);
   } catch (error: any) {
@@ -459,22 +448,14 @@ router.get('/api/documents', requireAuth, async (req: any, res) => {
   try {
     const { status, search, startDate, endDate } = req.query;
     // 관리자와 근무자는 모든 문서를, 판매점은 해당 대리점 문서만 조회
-    console.log('Session info:', {
-      userType: req.session.userType,
-      userRole: req.session.userRole,
-      dealerId: req.session.dealerId
-    });
-    
     const isWorker = req.session.userRole === 'dealer_worker';
     const isAdmin = req.session.userType === 'admin';
-    const dealerId = (isAdmin || isWorker) ? undefined : req.session.dealerId;
     
-    console.log('Access control:', {
-      isAdmin,
-      isWorker,
-      finalDealerId: dealerId,
-      shouldSeeAll: isAdmin || isWorker
-    });
+    // 관리자와 근무자는 모든 문서를 볼 수 있도록 dealerId를 undefined로 설정
+    let dealerId = req.session.dealerId; // 기본값: 자신의 dealerId
+    if (isAdmin || isWorker) {
+      dealerId = undefined; // 모든 문서를 볼 수 있도록 설정
+    }
     
     const documents = await storage.getDocuments(dealerId, {
       status: status as string,
@@ -483,7 +464,6 @@ router.get('/api/documents', requireAuth, async (req: any, res) => {
       endDate: endDate as string
     });
     
-    console.log('Retrieved documents count:', documents.length);
     res.json(documents);
   } catch (error: any) {
     console.error('Documents API error:', error);

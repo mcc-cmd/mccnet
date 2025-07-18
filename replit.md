@@ -161,6 +161,9 @@ This is a document management system built for MCC네트월드 telecommunication
 - July 18, 2025. Resolved login authentication issues by standardizing all test account passwords to "password"
 - July 18, 2025. Implemented proper role-based UI controls hiding activation status management from dealer_store users
 - July 18, 2025. Updated API routes to use correct authentication middleware allowing admin access to all dealer data
+- July 18, 2025. Fixed critical worker permission issue by removing duplicate /api/documents route that was preventing workers from accessing all dealer data
+- July 18, 2025. Resolved worker data access restriction: workers and admins now properly view all dealer documents while dealers see only their own data
+- July 18, 2025. Verified complete role-based access control: admins (3 docs), workers (3 docs), dealers (2 docs) with consistent statistics and document listings
 
 ## User Preferences
 

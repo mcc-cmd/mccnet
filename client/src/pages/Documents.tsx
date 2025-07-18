@@ -161,11 +161,12 @@ export function Documents() {
 
   // Permission check functions
   const canUploadDocuments = () => {
-    return user?.role === 'dealer_store' || user?.role === 'dealer_worker';
+    // 판매점은 접수만 가능, 관리자와 근무자도 업로드 가능
+    return user?.role === 'dealer_store' || user?.role === 'dealer_worker' || user?.userType === 'admin';
   };
 
   const canManageActivationStatus = () => {
-    // 판매점(dealer_store)은 개통상태 관리 불가, 근무자(dealer_worker)와 관리자만 가능
+    // 관리자와 근무자만 개통상태 관리 가능 (같은 회사에서 개통 업무 처리)
     return user?.role === 'dealer_worker' || user?.userType === 'admin';
   };
 
