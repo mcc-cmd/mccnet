@@ -225,7 +225,11 @@ export function Dashboard() {
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <CardTitle>서류 접수 내역 (최근 7일)</CardTitle>
-                  <Button variant="link" size="sm">
+                  <Button 
+                    variant="link" 
+                    size="sm"
+                    onClick={() => window.location.href = '/documents'}
+                  >
                     전체보기
                   </Button>
                 </div>
