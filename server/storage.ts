@@ -57,12 +57,12 @@ db.exec(`
     document_number TEXT UNIQUE NOT NULL,
     customer_name TEXT NOT NULL,
     customer_phone TEXT NOT NULL,
-    worker_name TEXT,
+    store_name TEXT,
     status TEXT NOT NULL CHECK (status IN ('접수', '보완필요', '완료')),
     activation_status TEXT NOT NULL DEFAULT '대기' CHECK (activation_status IN ('대기', '개통', '취소')),
-    file_path TEXT NOT NULL,
-    file_name TEXT NOT NULL,
-    file_size INTEGER NOT NULL,
+    file_path TEXT,
+    file_name TEXT,
+    file_size INTEGER,
     uploaded_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     activated_at DATETIME,
@@ -338,11 +338,11 @@ class SqliteStorage implements IStorage {
     }));
   }
 
-  async uploadDocument(data: UploadDocumentForm & { dealerId: number; userId: number; filePath: string; fileName: string; fileSize: number }): Promise<Document> {
+  async uploadDocument(data: UploadDocumentForm & { dealerId: number; userId: number; filePath?: string | null; fileName?: string | null; fileSize?: number | null }): Promise<Document> {
     const documentNumber = `DOC-${new Date().getFullYear()}-${String(Date.now()).slice(-6)}`;
     
     const insertResult = db.prepare(`
-      INSERT INTO documents (dealer_id, user_id, document_number, customer_name, customer_phone, worker_name, status, activation_status, file_path, file_name, file_size, notes)
+      INSERT INTO documents (dealer_id, user_id, document_number, customer_name, customer_phone, store_name, status, activation_status, file_path, file_name, file_size, notes)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).run(
       data.dealerId,
@@ -350,12 +350,12 @@ class SqliteStorage implements IStorage {
       documentNumber,
       data.customerName,
       data.customerPhone,
-      (data as any).workerName || null,
+      data.storeName || null,
       '접수',
       '대기',
-      data.filePath,
-      data.fileName,
-      data.fileSize,
+      data.filePath || null,
+      data.fileName || null,
+      data.fileSize || null,
       data.notes || null
     );
 
@@ -368,7 +368,7 @@ class SqliteStorage implements IStorage {
       documentNumber: result.document_number,
       customerName: result.customer_name,
       customerPhone: result.customer_phone,
-      workerName: result.worker_name,
+      storeName: result.store_name,
       status: result.status,
       activationStatus: result.activation_status,
       filePath: result.file_path,
@@ -426,7 +426,7 @@ class SqliteStorage implements IStorage {
       documentNumber: d.document_number,
       customerName: d.customer_name,
       customerPhone: d.customer_phone,
-      workerName: d.worker_name,
+      storeName: d.store_name,
       status: d.status,
       activationStatus: d.activation_status || '대기',
       filePath: d.file_path,
@@ -470,6 +470,7 @@ class SqliteStorage implements IStorage {
       documentNumber: result.document_number,
       customerName: result.customer_name,
       customerPhone: result.customer_phone,
+      storeName: result.store_name,
       status: result.status,
       activationStatus: result.activation_status,
       filePath: result.file_path,
@@ -661,24 +662,24 @@ class SqliteStorage implements IStorage {
   async getWorkerStats(dealerId?: number): Promise<any[]> {
     let query = `
       SELECT 
-        worker_name,
+        store_name,
         COUNT(*) as total_activations,
         SUM(CASE WHEN date(activated_at) >= date('now', 'start of month') THEN 1 ELSE 0 END) as monthly_activations,
         dealer_id
       FROM documents 
-      WHERE activation_status = '개통' AND worker_name IS NOT NULL
+      WHERE activation_status = '개통' AND store_name IS NOT NULL
     `;
     
     if (dealerId) {
       query += ' AND dealer_id = ?';
     }
     
-    query += ' GROUP BY worker_name, dealer_id ORDER BY monthly_activations DESC';
+    query += ' GROUP BY store_name, dealer_id ORDER BY monthly_activations DESC';
     
     const results = db.prepare(query).all(dealerId || undefined) as any[];
     
     return results.map(r => ({
-      workerName: r.worker_name,
+      storeName: r.store_name,
       totalActivations: r.total_activations,
       monthlyActivations: r.monthly_activations,
       dealerId: r.dealer_id

@@ -116,6 +116,9 @@ This is a document management system built for MCC네트월드 telecommunication
 - July 18, 2025. Added admin-only access restriction to AdminPanel for enhanced security
 - July 18, 2025. Created Downloads page for document templates (가입서류/변경서류) replacing pricing tables
 - July 18, 2025. Fixed navigation routing by removing redundant statistics page and consolidating in AdminPanel
+- July 18, 2025. Changed worker tracking system to store tracking: renamed workerName to storeName throughout system
+- July 18, 2025. Made file uploads optional for document submission instead of required
+- July 18, 2025. Updated database schema to support nullable file fields and store name tracking
 
 ## User Preferences
 

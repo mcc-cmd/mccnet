@@ -308,10 +308,6 @@ router.get('/api/documents', requireAuth, async (req: any, res) => {
 
 router.post('/api/documents', requireAuth, upload.single('file'), async (req: any, res) => {
   try {
-    if (!req.file) {
-      return res.status(400).json({ error: '파일을 선택해주세요.' });
-    }
-
     if (req.session.userType !== 'user') {
       return res.status(403).json({ error: '사용자만 문서를 업로드할 수 있습니다.' });
     }
@@ -321,9 +317,9 @@ router.post('/api/documents', requireAuth, upload.single('file'), async (req: an
       ...data,
       dealerId: req.session.dealerId,
       userId: req.session.userId,
-      filePath: req.file.path,
-      fileName: req.file.originalname,
-      fileSize: req.file.size
+      filePath: req.file?.path || null,
+      fileName: req.file?.originalname || null,
+      fileSize: req.file?.size || null
     });
 
     res.json(document);

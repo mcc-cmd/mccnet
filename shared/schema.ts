@@ -36,12 +36,12 @@ export interface Document {
   documentNumber: string;
   customerName: string;
   customerPhone: string;
-  workerName?: string; // 작업자 이름
+  storeName?: string; // 판매점 이름
   status: '접수' | '보완필요' | '완료';
   activationStatus: '대기' | '개통' | '취소';
-  filePath: string;
-  fileName: string;
-  fileSize: number;
+  filePath?: string | null;
+  fileName?: string | null;
+  fileSize?: number | null;
   uploadedAt: Date;
   updatedAt: Date;
   activatedAt?: Date;
@@ -61,7 +61,7 @@ export interface DocumentTemplate {
 }
 
 export interface WorkerStats {
-  workerName: string;
+  storeName: string;
   totalActivations: number;
   monthlyActivations: number;
   dealerId: number;
@@ -99,6 +99,7 @@ export const createUserSchema = z.object({
 export const uploadDocumentSchema = z.object({
   customerName: z.string().min(1, "고객명을 입력하세요"),
   customerPhone: z.string().min(1, "연락처를 입력하세요"),
+  storeName: z.string().optional(),
   notes: z.string().optional(),
 });
 

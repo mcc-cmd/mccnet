@@ -369,7 +369,7 @@ export function AdminPanel() {
             </TabsTrigger>
             <TabsTrigger value="workers" className="flex items-center space-x-2">
               <TrendingUp className="h-4 w-4" />
-              <span>작업자 통계</span>
+              <span>판매점 통계</span>
             </TabsTrigger>
             <TabsTrigger value="pricing" className="flex items-center space-x-2">
               <Calculator className="h-4 w-4" />
@@ -862,10 +862,10 @@ export function AdminPanel() {
               <CardHeader>
                 <CardTitle className="flex items-center">
                   <TrendingUp className="mr-2 h-5 w-5" />
-                  작업자 성과 통계
+                  판매점 성과 통계
                 </CardTitle>
                 <p className="text-sm text-gray-500">
-                  작업자별 개통 실적과 월별 통계를 확인할 수 있습니다.
+                  판매점별 개통 실적과 월별 통계를 확인할 수 있습니다.
                 </p>
               </CardHeader>
               <CardContent>
@@ -878,14 +878,14 @@ export function AdminPanel() {
                   <div className="space-y-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                       {workerStats.map((stat, index) => (
-                        <div key={`${stat.workerName}-${stat.dealerId}`} className="border rounded-lg p-4 bg-white">
+                        <div key={`${stat.storeName}-${stat.dealerId}`} className="border rounded-lg p-4 bg-white">
                           <div className="flex items-center justify-between mb-3">
                             <div className="flex items-center space-x-3">
                               <div className="w-10 h-10 rounded-full bg-accent text-white flex items-center justify-center font-medium">
-                                {stat.workerName.charAt(0)}
+                                {stat.storeName.charAt(0)}
                               </div>
                               <div>
-                                <h4 className="font-medium text-gray-900">{stat.workerName}</h4>
+                                <h4 className="font-medium text-gray-900">{stat.storeName}</h4>
                                 <p className="text-sm text-gray-500">
                                   {dealers?.find(d => d.id === stat.dealerId)?.name || '대리점 정보 없음'}
                                 </p>
@@ -926,7 +926,7 @@ export function AdminPanel() {
                 ) : (
                   <div className="text-center py-8">
                     <TrendingUp className="mx-auto h-12 w-12 text-gray-400" />
-                    <h3 className="mt-2 text-sm font-medium text-gray-900">작업자 통계가 없습니다</h3>
+                    <h3 className="mt-2 text-sm font-medium text-gray-900">판매점 통계가 없습니다</h3>
                     <p className="mt-1 text-sm text-gray-500">개통 완료된 서류가 있어야 통계가 표시됩니다.</p>
                   </div>
                 )}

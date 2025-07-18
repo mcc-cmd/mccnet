@@ -326,7 +326,7 @@ export function Documents() {
                         연락처
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        작업자
+                        판매점명
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         상태
@@ -360,7 +360,7 @@ export function Documents() {
                           {doc.customerPhone}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {(doc as any).workerName || '-'}
+                          {(doc as any).storeName || '-'}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           {getStatusBadge(doc.status)}

@@ -20,7 +20,7 @@ export function SubmitApplication() {
   const [formData, setFormData] = useState({
     customerName: '',
     customerPhone: '',
-    workerName: '',
+    storeName: '',
     notes: ''
   });
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -56,7 +56,7 @@ export function SubmitApplication() {
       });
 
       // Reset form
-      setFormData({ customerName: '', customerPhone: '', workerName: '', notes: '' });
+      setFormData({ customerName: '', customerPhone: '', storeName: '', notes: '' });
       setSelectedFile(null);
     },
     onError: (error: Error) => {
@@ -71,20 +71,15 @@ export function SubmitApplication() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!selectedFile) {
-      toast({
-        title: "파일을 선택해주세요",
-        description: "접수할 서류를 업로드해주세요.",
-        variant: "destructive",
-      });
-      return;
-    }
+    // 파일 업로드는 선택사항으로 변경
 
     const data = new FormData();
-    data.append('file', selectedFile);
+    if (selectedFile) {
+      data.append('file', selectedFile);
+    }
     data.append('customerName', formData.customerName);
     data.append('customerPhone', formData.customerPhone);
-    data.append('workerName', formData.workerName);
+    data.append('storeName', formData.storeName);
     data.append('notes', formData.notes);
 
     uploadMutation.mutate(data);
@@ -190,13 +185,13 @@ export function SubmitApplication() {
                   </div>
                   
                   <div>
-                    <Label htmlFor="workerName">작업자명</Label>
+                    <Label htmlFor="storeName">판매점명</Label>
                     <Input
-                      id="workerName"
-                      name="workerName"
-                      value={formData.workerName}
+                      id="storeName"
+                      name="storeName"
+                      value={formData.storeName}
                       onChange={handleInputChange}
-                      placeholder="작업자명을 입력하세요"
+                      placeholder="판매점명을 입력하세요"
                       className="mt-1"
                     />
                   </div>
@@ -220,7 +215,7 @@ export function SubmitApplication() {
               <div className="space-y-4">
                 <h3 className="text-lg font-medium text-gray-900 flex items-center">
                   <Upload className="mr-2 h-4 w-4" />
-                  서류 업로드
+                  서류 업로드 (선택사항)
                 </h3>
                 
                 <div
@@ -288,7 +283,7 @@ export function SubmitApplication() {
                   type="button"
                   variant="outline"
                   onClick={() => {
-                    setFormData({ customerName: '', customerPhone: '', workerName: '', notes: '' });
+                    setFormData({ customerName: '', customerPhone: '', storeName: '', notes: '' });
                     setSelectedFile(null);
                   }}
                 >
@@ -296,7 +291,7 @@ export function SubmitApplication() {
                 </Button>
                 <Button
                   type="submit"
-                  disabled={uploadMutation.isPending || !selectedFile}
+                  disabled={uploadMutation.isPending}
                 >
                   {uploadMutation.isPending && (
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
