@@ -38,23 +38,10 @@ export function SubmitApplication() {
 
   const uploadMutation = useMutation({
     mutationFn: async (data: FormData) => {
-      const sessionId = localStorage.getItem('auth-storage') ? 
-        JSON.parse(localStorage.getItem('auth-storage')!)?.state?.sessionId : null;
-      
-      const response = await fetch('/api/documents/upload', {
+      return apiRequest('/api/documents', {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${sessionId}`
-        },
         body: data,
       });
-      
-      if (!response.ok) {
-        const error = await response.json().catch(() => ({ error: '업로드에 실패했습니다.' }));
-        throw new Error(error.error || '업로드에 실패했습니다.');
-      }
-      
-      return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/documents'] });

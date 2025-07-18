@@ -472,9 +472,11 @@ router.get('/api/documents', requireAuth, async (req: any, res) => {
 
 router.post('/api/documents', requireDealerOrWorker, upload.single('file'), async (req: any, res) => {
   try {
-    if (req.session.userType !== 'user') {
-      return res.status(403).json({ error: '사용자만 문서를 업로드할 수 있습니다.' });
-    }
+    console.log('Document upload request:', {
+      body: req.body,
+      file: req.file,
+      session: req.session
+    });
 
     const data = uploadDocumentSchema.parse(req.body);
     const document = await storage.uploadDocument({
@@ -486,8 +488,10 @@ router.post('/api/documents', requireDealerOrWorker, upload.single('file'), asyn
       fileSize: req.file?.size || null
     });
 
+    console.log('Document uploaded successfully:', document);
     res.json(document);
   } catch (error: any) {
+    console.error('Document upload error:', error);
     res.status(400).json({ error: error.message });
   }
 });
