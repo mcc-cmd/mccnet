@@ -4,7 +4,7 @@ import { cn } from '@/lib/utils';
 import {
   LayoutDashboard,
   FileText,
-  Calculator,
+  Download,
   BarChart3,
   Settings
 } from 'lucide-react';
@@ -14,11 +14,11 @@ const navigation = [
   { name: '대시보드', href: '/dashboard', icon: LayoutDashboard },
   { name: '접수 신청', href: '/submit', icon: FileText },
   { name: '접수 관리', href: '/documents', icon: FileText },
-  { name: '단가표', href: '/pricing', icon: Calculator },
-  { name: '통계', href: '/stats', icon: BarChart3 },
+  { name: '서류 다운로드', href: '/downloads', icon: Download },
 ];
 
 const adminNavigation = [
+  { name: '통계', href: '/stats', icon: BarChart3 },
   { name: '관리자 패널', href: '/admin', icon: Settings },
 ];
 

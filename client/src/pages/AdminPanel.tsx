@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { useApiRequest } from '@/lib/auth';
+import { useApiRequest, useAuth } from '@/lib/auth';
 import { useToast } from '@/hooks/use-toast';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -54,9 +54,25 @@ type UpdateDocumentStatusForm = {
 };
 
 export function AdminPanel() {
+  const { user } = useAuth();
   const apiRequest = useApiRequest();
   const queryClient = useQueryClient();
   const { toast } = useToast();
+
+  // Admin-only access check
+  if (user?.userType !== 'admin') {
+    return (
+      <Layout title="접근 권한 없음">
+        <div className="flex items-center justify-center min-h-96">
+          <div className="text-center">
+            <AlertTriangle className="mx-auto h-12 w-12 text-yellow-400 mb-4" />
+            <h2 className="text-xl font-semibold text-gray-900 mb-2">접근 권한이 없습니다</h2>
+            <p className="text-gray-600">관리자만 접근할 수 있는 페이지입니다.</p>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
   
   const [dealerDialogOpen, setDealerDialogOpen] = useState(false);
   const [userDialogOpen, setUserDialogOpen] = useState(false);
@@ -85,6 +101,16 @@ export function AdminPanel() {
   const { data: pricingTables } = useQuery({
     queryKey: ['/api/pricing-tables'],
     queryFn: () => apiRequest('/api/pricing-tables') as Promise<PricingTable[]>,
+  });
+
+  const { data: workerStats, isLoading: workerStatsLoading } = useQuery({
+    queryKey: ['/api/worker-stats'],
+    queryFn: () => apiRequest('/api/worker-stats') as Promise<Array<{
+      workerName: string;
+      totalActivations: number;
+      monthlyActivations: number;
+      dealerId: number;
+    }>>,
   });
 
   // Forms
@@ -327,7 +353,7 @@ export function AdminPanel() {
 
         {/* Admin Tabs */}
         <Tabs defaultValue="dealers" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="dealers" className="flex items-center space-x-2">
               <Building2 className="h-4 w-4" />
               <span>대리점</span>
@@ -339,6 +365,10 @@ export function AdminPanel() {
             <TabsTrigger value="documents" className="flex items-center space-x-2">
               <FileText className="h-4 w-4" />
               <span>서류 관리</span>
+            </TabsTrigger>
+            <TabsTrigger value="workers" className="flex items-center space-x-2">
+              <TrendingUp className="h-4 w-4" />
+              <span>작업자 통계</span>
             </TabsTrigger>
             <TabsTrigger value="pricing" className="flex items-center space-x-2">
               <Calculator className="h-4 w-4" />
@@ -823,6 +853,84 @@ export function AdminPanel() {
                 )}
               </DialogContent>
             </Dialog>
+          </TabsContent>
+
+          {/* Worker Statistics Tab */}
+          <TabsContent value="workers">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <TrendingUp className="mr-2 h-5 w-5" />
+                  작업자 성과 통계
+                </CardTitle>
+                <p className="text-sm text-gray-500">
+                  작업자별 개통 실적과 월별 통계를 확인할 수 있습니다.
+                </p>
+              </CardHeader>
+              <CardContent>
+                {workerStatsLoading ? (
+                  <div className="text-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-accent mx-auto"></div>
+                    <p className="mt-2 text-sm text-gray-500">통계 로딩 중...</p>
+                  </div>
+                ) : workerStats && workerStats.length > 0 ? (
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {workerStats.map((stat, index) => (
+                        <div key={`${stat.workerName}-${stat.dealerId}`} className="border rounded-lg p-4 bg-white">
+                          <div className="flex items-center justify-between mb-3">
+                            <div className="flex items-center space-x-3">
+                              <div className="w-10 h-10 rounded-full bg-accent text-white flex items-center justify-center font-medium">
+                                {stat.workerName.charAt(0)}
+                              </div>
+                              <div>
+                                <h4 className="font-medium text-gray-900">{stat.workerName}</h4>
+                                <p className="text-sm text-gray-500">
+                                  {dealers?.find(d => d.id === stat.dealerId)?.name || '대리점 정보 없음'}
+                                </p>
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <p className="text-xs text-gray-500">순위</p>
+                              <p className="text-lg font-bold text-accent">#{index + 1}</p>
+                            </div>
+                          </div>
+                          
+                          <div className="space-y-2">
+                            <div className="flex justify-between items-center">
+                              <span className="text-sm text-gray-600">이번 달 개통:</span>
+                              <span className="font-semibold text-green-600">{stat.monthlyActivations}건</span>
+                            </div>
+                            <div className="flex justify-between items-center">
+                              <span className="text-sm text-gray-600">총 개통:</span>
+                              <span className="font-semibold text-gray-900">{stat.totalActivations}건</span>
+                            </div>
+                          </div>
+                          
+                          <div className="mt-3 pt-3 border-t">
+                            <div className="w-full bg-gray-200 rounded-full h-2">
+                              <div 
+                                className="bg-accent h-2 rounded-full" 
+                                style={{ 
+                                  width: `${Math.min((stat.monthlyActivations / Math.max(...workerStats.map(s => s.monthlyActivations))) * 100, 100)}%` 
+                                }}
+                              ></div>
+                            </div>
+                            <p className="text-xs text-gray-500 mt-1 text-center">월별 성과 비율</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <TrendingUp className="mx-auto h-12 w-12 text-gray-400" />
+                    <h3 className="mt-2 text-sm font-medium text-gray-900">작업자 통계가 없습니다</h3>
+                    <p className="mt-1 text-sm text-gray-500">개통 완료된 서류가 있어야 통계가 표시됩니다.</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </TabsContent>
 
           {/* Pricing Tab */}

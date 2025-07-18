@@ -36,6 +36,7 @@ export interface Document {
   documentNumber: string;
   customerName: string;
   customerPhone: string;
+  workerName?: string; // 작업자 이름
   status: '접수' | '보완필요' | '완료';
   activationStatus: '대기' | '개통' | '취소';
   filePath: string;
@@ -47,15 +48,23 @@ export interface Document {
   notes?: string;
 }
 
-export interface PricingTable {
+export interface DocumentTemplate {
   id: number;
   title: string;
   fileName: string;
   filePath: string;
   fileSize: number;
+  category: '가입서류' | '변경서류';
   uploadedBy: number; // admin id
   uploadedAt: Date;
   isActive: boolean;
+}
+
+export interface WorkerStats {
+  workerName: string;
+  totalActivations: number;
+  monthlyActivations: number;
+  dealerId: number;
 }
 
 export interface AuthSession {

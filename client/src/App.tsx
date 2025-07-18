@@ -9,7 +9,7 @@ import { Login } from '@/pages/Login';
 import { Dashboard } from '@/pages/Dashboard';
 import { Documents } from '@/pages/Documents';
 import { SubmitApplication } from '@/pages/SubmitApplication';
-import { PricingTables } from '@/pages/PricingTables';
+import { Downloads } from '@/pages/Downloads';
 import { AdminPanel } from '@/pages/AdminPanel';
 import NotFound from '@/pages/not-found';
 
@@ -35,7 +35,10 @@ function AppRoutes() {
       <Route path="/dashboard" component={Dashboard} />
       <Route path="/submit" component={SubmitApplication} />
       <Route path="/documents" component={Documents} />
-      <Route path="/pricing" component={PricingTables} />
+      <Route path="/downloads" component={Downloads} />
+      {user?.userType === 'admin' && (
+        <Route path="/stats" component={() => <div>통계 페이지 (개발 중)</div>} />
+      )}
       {user?.userType === 'admin' && (
         <Route path="/admin" component={AdminPanel} />
       )}

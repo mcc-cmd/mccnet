@@ -20,6 +20,7 @@ export function SubmitApplication() {
   const [formData, setFormData] = useState({
     customerName: '',
     customerPhone: '',
+    workerName: '',
     notes: ''
   });
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -159,7 +160,7 @@ export function SubmitApplication() {
                   고객 정보
                 </h3>
                 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
                     <Label htmlFor="customerName">고객명 *</Label>
                     <Input
@@ -183,6 +184,18 @@ export function SubmitApplication() {
                       onChange={handleInputChange}
                       required
                       placeholder="010-0000-0000"
+                      className="mt-1"
+                    />
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="workerName">작업자명</Label>
+                    <Input
+                      id="workerName"
+                      name="workerName"
+                      value={formData.workerName}
+                      onChange={handleInputChange}
+                      placeholder="작업자명을 입력하세요"
                       className="mt-1"
                     />
                   </div>

@@ -351,10 +351,41 @@ router.get('/api/pricing-tables', requireAuth, async (req, res) => {
   }
 });
 
-router.get('/api/pricing-tables/active', requireAuth, async (req, res) => {
+// Document templates routes
+router.get('/api/document-templates', requireAuth, async (req, res) => {
   try {
-    const table = await storage.getActivePricingTable();
-    res.json(table);
+    const templates = await storage.getDocumentTemplates();
+    res.json(templates);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.get('/api/document-templates/:id/download', requireAuth, async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const template = await storage.getDocumentTemplateById(id);
+    
+    if (!template) {
+      return res.status(404).json({ error: '파일을 찾을 수 없습니다.' });
+    }
+
+    if (!fs.existsSync(template.filePath)) {
+      return res.status(404).json({ error: '파일이 존재하지 않습니다.' });
+    }
+
+    res.download(template.filePath, template.fileName);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Worker stats route
+router.get('/api/worker-stats', requireAuth, async (req: any, res) => {
+  try {
+    const dealerId = req.session.userType === 'admin' ? undefined : req.session.dealerId;
+    const stats = await storage.getWorkerStats(dealerId);
+    res.json(stats);
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }
