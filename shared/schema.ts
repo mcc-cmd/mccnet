@@ -60,6 +60,12 @@ export interface Document {
   activatedAt?: Date;
   activatedBy?: number; // 개통완료 처리한 근무자 ID
   notes?: string;
+  // 개통 완료 후 플랜 정보
+  servicePlanId?: number;
+  additionalServiceIds?: string; // JSON 배열 형태로 저장
+  registrationFee?: number;
+  bundleDiscount?: number;
+  totalMonthlyFee?: number;
 }
 
 export interface DocumentTemplate {

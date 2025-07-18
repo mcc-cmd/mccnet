@@ -118,6 +118,8 @@ db.exec(`
   CREATE INDEX IF NOT EXISTS idx_documents_status ON documents(status);
   CREATE INDEX IF NOT EXISTS idx_documents_activation_status ON documents(activation_status);
   CREATE INDEX IF NOT EXISTS idx_documents_uploaded_at ON documents(uploaded_at);
+  
+
   CREATE INDEX IF NOT EXISTS idx_documents_activated_at ON documents(activated_at);
   CREATE INDEX IF NOT EXISTS idx_documents_customer_name ON documents(customer_name);
   CREATE INDEX IF NOT EXISTS idx_auth_sessions_expires_at ON auth_sessions(expires_at);

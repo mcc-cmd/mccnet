@@ -41,6 +41,15 @@ export function Documents() {
     activationStatus: '',
     notes: ''
   });
+  
+  const [servicePlanDialogOpen, setServicePlanDialogOpen] = useState(false);
+  const [servicePlanForm, setServicePlanForm] = useState({
+    servicePlanId: '',
+    additionalServiceIds: [] as string[],
+    registrationFee: 0,
+    bundleDiscount: 0,
+    totalMonthlyFee: 0
+  });
 
   const { data: documents, isLoading } = useQuery({
     queryKey: ['/api/documents', filters],
@@ -51,6 +60,16 @@ export function Documents() {
       });
       return apiRequest(`/api/documents?${params}`) as Promise<Document[]>;
     },
+  });
+
+  const { data: servicePlans } = useQuery({
+    queryKey: ['/api/service-plans'],
+    queryFn: () => apiRequest('/api/service-plans') as Promise<any[]>,
+  });
+
+  const { data: additionalServices } = useQuery({
+    queryKey: ['/api/additional-services'],
+    queryFn: () => apiRequest('/api/additional-services') as Promise<any[]>,
   });
 
   const uploadMutation = useMutation({
@@ -238,6 +257,43 @@ export function Documents() {
   };
 
   const isAdmin = user?.userType === 'admin';
+
+  const openServicePlanDialog = (doc: Document) => {
+    setSelectedDocument(doc);
+    setServicePlanForm({
+      servicePlanId: (doc as any).servicePlanId?.toString() || '',
+      additionalServiceIds: (doc as any).additionalServiceIds ? JSON.parse((doc as any).additionalServiceIds) : [],
+      registrationFee: (doc as any).registrationFee || 0,
+      bundleDiscount: (doc as any).bundleDiscount || 0,
+      totalMonthlyFee: (doc as any).totalMonthlyFee || 0
+    });
+    setServicePlanDialogOpen(true);
+  };
+
+  const handleServicePlanSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!selectedDocument) return;
+    
+    const data = {
+      servicePlanId: parseInt(servicePlanForm.servicePlanId),
+      additionalServiceIds: JSON.stringify(servicePlanForm.additionalServiceIds),
+      registrationFee: servicePlanForm.registrationFee,
+      bundleDiscount: servicePlanForm.bundleDiscount,
+      totalMonthlyFee: servicePlanForm.totalMonthlyFee
+    };
+    
+    // API 호출 - 나중에 구현
+    console.log('Service plan data:', data);
+    
+    toast({
+      title: "성공",
+      description: "요금제 정보가 저장되었습니다.",
+    });
+    
+    setServicePlanDialogOpen(false);
+    setSelectedDocument(null);
+  };
 
   return (
     <Layout title="접수 관리">
@@ -482,6 +538,16 @@ export function Documents() {
                                   개통상태
                                 </Button>
                               )}
+                              {(doc as any).activationStatus === '개통' && canManageActivationStatus() && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => openServicePlanDialog(doc)}
+                                  title="요금제 선택"
+                                >
+                                  요금제
+                                </Button>
+                              )}
                               {isAdmin && (
                                 <Button
                                   variant="outline"
@@ -564,6 +630,16 @@ export function Documents() {
                               title="개통상태 변경"
                             >
                               개통상태
+                            </Button>
+                          )}
+                          {(doc as any).activationStatus === '개통' && canManageActivationStatus() && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => openServicePlanDialog(doc)}
+                              title="요금제 선택"
+                            >
+                              요금제
                             </Button>
                           )}
                           {user?.userType === 'admin' && (
@@ -649,6 +725,114 @@ export function Documents() {
                 </Button>
               </div>
             </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Service Plan Dialog */}
+        <Dialog open={servicePlanDialogOpen} onOpenChange={setServicePlanDialogOpen}>
+          <DialogContent className="sm:max-w-[600px]" aria-describedby="service-plan-dialog-description">
+            <DialogHeader>
+              <DialogTitle>요금제 및 부가서비스 선택</DialogTitle>
+            </DialogHeader>
+            <div id="service-plan-dialog-description" className="text-sm text-gray-600 mb-4">
+              {selectedDocument?.customerName}님의 요금제와 부가서비스를 선택해주세요.
+            </div>
+            
+            <form onSubmit={handleServicePlanSubmit} className="space-y-4">
+              <div>
+                <Label htmlFor="servicePlan">요금제 선택</Label>
+                <Select 
+                  value={servicePlanForm.servicePlanId} 
+                  onValueChange={(value) => setServicePlanForm(prev => ({ ...prev, servicePlanId: value }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="요금제를 선택하세요" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {servicePlans?.map((plan) => (
+                      <SelectItem key={plan.id} value={plan.id.toString()}>
+                        {plan.planName} - {plan.carrier} ({plan.monthlyFee.toLocaleString()}원)
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label>부가서비스 선택 (복수 선택 가능)</Label>
+                <div className="mt-2 space-y-2 max-h-40 overflow-y-auto border rounded p-3">
+                  {additionalServices?.map((service) => (
+                    <div key={service.id} className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        id={`service-${service.id}`}
+                        checked={servicePlanForm.additionalServiceIds.includes(service.id.toString())}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setServicePlanForm(prev => ({
+                              ...prev,
+                              additionalServiceIds: [...prev.additionalServiceIds, service.id.toString()]
+                            }));
+                          } else {
+                            setServicePlanForm(prev => ({
+                              ...prev,
+                              additionalServiceIds: prev.additionalServiceIds.filter(id => id !== service.id.toString())
+                            }));
+                          }
+                        }}
+                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      />
+                      <label htmlFor={`service-${service.id}`} className="text-sm text-gray-700">
+                        {service.serviceName} - {service.serviceType} ({service.monthlyFee.toLocaleString()}원)
+                      </label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="registrationFee">가입비 (원)</Label>
+                  <Input
+                    id="registrationFee"
+                    type="number"
+                    value={servicePlanForm.registrationFee}
+                    onChange={(e) => setServicePlanForm(prev => ({ ...prev, registrationFee: parseInt(e.target.value) || 0 }))}
+                    placeholder="가입비를 입력하세요"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="bundleDiscount">결합 할인 (원)</Label>
+                  <Input
+                    id="bundleDiscount"
+                    type="number"
+                    value={servicePlanForm.bundleDiscount}
+                    onChange={(e) => setServicePlanForm(prev => ({ ...prev, bundleDiscount: parseInt(e.target.value) || 0 }))}
+                    placeholder="결합 할인금액을 입력하세요"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <Label htmlFor="totalMonthlyFee">총 월 요금 (원)</Label>
+                <Input
+                  id="totalMonthlyFee"
+                  type="number"
+                  value={servicePlanForm.totalMonthlyFee}
+                  onChange={(e) => setServicePlanForm(prev => ({ ...prev, totalMonthlyFee: parseInt(e.target.value) || 0 }))}
+                  placeholder="총 월 요금을 입력하세요"
+                />
+              </div>
+
+              <div className="flex justify-end space-x-2">
+                <Button type="button" variant="outline" onClick={() => setServicePlanDialogOpen(false)}>
+                  취소
+                </Button>
+                <Button type="submit">
+                  저장
+                </Button>
+              </div>
+            </form>
           </DialogContent>
         </Dialog>
       </div>
