@@ -109,12 +109,18 @@ export const updateDocumentStatusSchema = z.object({
   notes: z.string().optional(),
 });
 
+export const updateActivationStatusSchema = z.object({
+  activationStatus: z.enum(['대기', '개통', '취소']),
+  notes: z.string().optional(),
+});
+
 // Type exports
 export type LoginForm = z.infer<typeof loginSchema>;
 export type CreateDealerForm = z.infer<typeof createDealerSchema>;
 export type CreateUserForm = z.infer<typeof createUserSchema>;
 export type UploadDocumentForm = z.infer<typeof uploadDocumentSchema>;
 export type UpdateDocumentStatusForm = z.infer<typeof updateDocumentStatusSchema>;
+export type UpdateActivationStatusForm = z.infer<typeof updateActivationStatusSchema>;
 
 // API response types
 export interface AuthResponse {

@@ -12,7 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { useApiRequest, useAuth } from '@/lib/auth';
 import { useToast } from '@/hooks/use-toast';
 import type { Document } from '../../../shared/schema';
-import { FileText, Upload, Search, Download, Calendar } from 'lucide-react';
+import { FileText, Upload, Search, Download, Calendar, Settings } from 'lucide-react';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
 
@@ -35,6 +35,12 @@ export function Documents() {
     notes: ''
   });
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [activationDialogOpen, setActivationDialogOpen] = useState(false);
+  const [selectedDocument, setSelectedDocument] = useState<Document | null>(null);
+  const [activationForm, setActivationForm] = useState({
+    activationStatus: '',
+    notes: ''
+  });
 
   const { data: documents, isLoading } = useQuery({
     queryKey: ['/api/documents', filters],
@@ -134,6 +140,47 @@ export function Documents() {
       deleteMutation.mutate(documentId);
     }
   };
+
+  const handleActivationStatusChange = (doc: Document) => {
+    setSelectedDocument(doc);
+    setActivationForm({
+      activationStatus: (doc as any).activationStatus || '대기',
+      notes: ''
+    });
+    setActivationDialogOpen(true);
+  };
+
+  const handleActivationSubmit = () => {
+    if (!selectedDocument) return;
+    
+    updateActivationMutation.mutate({
+      id: selectedDocument.id,
+      data: activationForm
+    });
+  };
+
+  const updateActivationMutation = useMutation({
+    mutationFn: ({ id, data }: { id: number; data: any }) => 
+      apiRequest(`/api/documents/${id}/activation`, { method: 'PATCH', body: data }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/documents'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/dashboard/stats'] });
+      setActivationDialogOpen(false);
+      setSelectedDocument(null);
+      setActivationForm({ activationStatus: '', notes: '' });
+      toast({
+        title: "성공",
+        description: "개통 상태가 변경되었습니다.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "오류",
+        description: error.message || "개통 상태 변경 중 오류가 발생했습니다.",
+        variant: "destructive",
+      });
+    },
+  });
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -385,6 +432,13 @@ export function Documents() {
                             >
                               <Download className="h-4 w-4" />
                             </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleActivationStatusChange(doc)}
+                            >
+                              <Settings className="h-4 w-4" />
+                            </Button>
                             {!isAdmin && (
                               <Button
                                 variant="outline"
@@ -413,6 +467,59 @@ export function Documents() {
             )}
           </CardContent>
         </Card>
+
+        {/* Activation Status Dialog */}
+        <Dialog open={activationDialogOpen} onOpenChange={setActivationDialogOpen}>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle>개통 상태 변경</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="activationStatus">개통 상태</Label>
+                <Select
+                  value={activationForm.activationStatus}
+                  onValueChange={(value) => setActivationForm(prev => ({ ...prev, activationStatus: value }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="개통 상태를 선택하세요" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="대기">대기</SelectItem>
+                    <SelectItem value="개통">개통</SelectItem>
+                    <SelectItem value="취소">취소</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div>
+                <Label htmlFor="notes">메모</Label>
+                <Textarea
+                  id="notes"
+                  placeholder="변경 사유나 메모를 입력하세요..."
+                  value={activationForm.notes}
+                  onChange={(e) => setActivationForm(prev => ({ ...prev, notes: e.target.value }))}
+                  rows={3}
+                />
+              </div>
+              
+              <div className="flex justify-end space-x-2">
+                <Button 
+                  variant="outline" 
+                  onClick={() => setActivationDialogOpen(false)}
+                >
+                  취소
+                </Button>
+                <Button 
+                  onClick={handleActivationSubmit}
+                  disabled={!activationForm.activationStatus || updateActivationMutation.isPending}
+                >
+                  {updateActivationMutation.isPending ? '처리 중...' : '변경'}
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </Layout>
   );

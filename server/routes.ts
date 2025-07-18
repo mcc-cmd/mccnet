@@ -9,6 +9,7 @@ import {
   createUserSchema,
   uploadDocumentSchema,
   updateDocumentStatusSchema,
+  updateActivationStatusSchema,
   type AuthResponse
 } from "../shared/schema";
 
@@ -392,6 +393,18 @@ router.delete('/api/documents/:id', requireAuth, async (req: any, res) => {
     res.json({ success: true });
   } catch (error: any) {
     res.status(500).json({ error: error.message });
+  }
+});
+
+// Activation status update endpoint
+router.patch('/api/documents/:id/activation', requireAuth, async (req: any, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const data = updateActivationStatusSchema.parse(req.body);
+    const document = await storage.updateDocumentActivationStatus(id, data);
+    res.json(document);
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
   }
 });
 

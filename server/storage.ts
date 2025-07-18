@@ -132,6 +132,7 @@ export interface IStorage {
   uploadDocument(data: UploadDocumentForm & { dealerId: number; userId: number; filePath: string; fileName: string; fileSize: number }): Promise<Document>;
   getDocuments(dealerId?: number, filters?: { status?: string; search?: string; startDate?: string; endDate?: string }): Promise<Array<Document & { dealerName: string; userName: string }>>;
   updateDocumentStatus(id: number, data: UpdateDocumentStatusForm): Promise<Document>;
+  updateDocumentActivationStatus(id: number, data: any): Promise<Document>;
   deleteDocument(id: number): Promise<void>;
   
   // Document templates
@@ -455,6 +456,43 @@ class SqliteStorage implements IStorage {
       if (data.activationStatus === '개통' || data.activationStatus === '취소') {
         updateQuery += `, activated_at = CURRENT_TIMESTAMP`;
       }
+    }
+
+    updateQuery += ` WHERE id = ?`;
+    params.push(id);
+
+    db.prepare(updateQuery).run(...params);
+    const result = db.prepare('SELECT * FROM documents WHERE id = ?').get(id) as any;
+
+    return {
+      id: result.id,
+      dealerId: result.dealer_id,
+      userId: result.user_id,
+      documentNumber: result.document_number,
+      customerName: result.customer_name,
+      customerPhone: result.customer_phone,
+      storeName: result.store_name,
+      status: result.status,
+      activationStatus: result.activation_status,
+      filePath: result.file_path,
+      fileName: result.file_name,
+      fileSize: result.file_size,
+      uploadedAt: new Date(result.uploaded_at),
+      updatedAt: new Date(result.updated_at),
+      activatedAt: result.activated_at ? new Date(result.activated_at) : undefined,
+      notes: result.notes
+    };
+  }
+
+  async updateDocumentActivationStatus(id: number, data: any): Promise<Document> {
+    let updateQuery = `
+      UPDATE documents 
+      SET activation_status = ?, notes = ?, updated_at = CURRENT_TIMESTAMP
+    `;
+    let params: any[] = [data.activationStatus, data.notes || null];
+
+    if (data.activationStatus === '개통' || data.activationStatus === '취소') {
+      updateQuery += `, activated_at = CURRENT_TIMESTAMP`;
     }
 
     updateQuery += ` WHERE id = ?`;
