@@ -22,7 +22,7 @@ const db = new Database(dbPath);
 
 // Initialize database tables
 db.exec(`
-  CREATE TABLE IF NOT EXISTS admins (
+  CREATE TABLE IF NOT EXISTS admin_users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     email TEXT UNIQUE NOT NULL,
     password TEXT NOT NULL,
@@ -152,11 +152,17 @@ export interface IStorage {
 
 class SqliteStorage implements IStorage {
   async authenticateAdmin(email: string, password: string): Promise<Admin | null> {
-    const admin = db.prepare('SELECT * FROM admins WHERE email = ?').get(email) as Admin | undefined;
+    const admin = db.prepare('SELECT * FROM admin_users WHERE email = ?').get(email) as Admin | undefined;
     if (!admin || !bcrypt.compareSync(password, admin.password)) {
       return null;
     }
-    return admin;
+    return {
+      id: admin.id,
+      email: admin.email,
+      password: admin.password,
+      name: admin.name,
+      createdAt: admin.createdAt
+    };
   }
 
   async authenticateUser(email: string, password: string): Promise<{ user: User; dealer: Dealer } | null> {
@@ -233,8 +239,16 @@ class SqliteStorage implements IStorage {
   }
 
   async getAdminById(id: number): Promise<Admin | null> {
-    const admin = db.prepare('SELECT * FROM admins WHERE id = ?').get(id) as Admin | undefined;
-    return admin || null;
+    const admin = db.prepare('SELECT * FROM admin_users WHERE id = ?').get(id) as Admin | undefined;
+    if (!admin) return null;
+    
+    return {
+      id: admin.id,
+      email: admin.email,
+      password: admin.password,
+      name: admin.name,
+      createdAt: admin.createdAt
+    };
   }
 
   async getUserById(id: number): Promise<(User & { dealerName: string }) | null> {

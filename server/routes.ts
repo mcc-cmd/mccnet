@@ -398,7 +398,7 @@ router.patch('/api/admin/documents/:id/status', requireAdmin, async (req, res) =
   }
 });
 
-router.get('/api/documents', requireDealerOrWorker, async (req: any, res) => {
+router.get('/api/documents', requireAuth, async (req: any, res) => {
   try {
     const { status, search, startDate, endDate } = req.query;
     const dealerId = req.session.userType === 'admin' ? undefined : req.session.dealerId;
@@ -425,12 +425,12 @@ router.delete('/api/documents/:id', requireAdmin, async (req: any, res) => {
 });
 
 // Activation status update endpoint
-router.patch('/api/documents/:id/activation', requireDealerOrWorker, async (req: any, res) => {
+router.patch('/api/documents/:id/activation', requireAuth, async (req: any, res) => {
   try {
     const id = parseInt(req.params.id);
     const data = updateActivationStatusSchema.parse(req.body);
     
-    // 개통완료 시 근무자 ID 추가
+    // 개통완료 시 근무자 ID 추가 (관리자 제외)
     if (data.activationStatus === '개통' && req.session.userType === 'user') {
       data.activatedBy = req.session.userId;
     }
@@ -467,6 +467,7 @@ router.get('/api/documents', requireAuth, async (req: any, res) => {
     });
     res.json(documents);
   } catch (error: any) {
+    console.error('Documents API error:', error);
     res.status(500).json({ error: error.message });
   }
 });

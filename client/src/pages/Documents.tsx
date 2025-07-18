@@ -165,6 +165,7 @@ export function Documents() {
   };
 
   const canManageActivationStatus = () => {
+    // 판매점(dealer_store)은 개통상태 관리 불가, 근무자(dealer_worker)와 관리자만 가능
     return user?.role === 'dealer_worker' || user?.userType === 'admin';
   };
 
@@ -470,15 +471,17 @@ export function Documents() {
                                   <Download className="h-4 w-4" />
                                 </Button>
                               )}
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleActivationStatusChange(doc)}
-                                title="개통상태 변경"
-                              >
-                                개통상태
-                              </Button>
-                              {!isAdmin && (
+                              {canManageActivationStatus() && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleActivationStatusChange(doc)}
+                                  title="개통상태 변경"
+                                >
+                                  개통상태
+                                </Button>
+                              )}
+                              {isAdmin && (
                                 <Button
                                   variant="outline"
                                   size="sm"
