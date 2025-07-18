@@ -160,8 +160,24 @@ export function Documents() {
   };
 
   const updateActivationMutation = useMutation({
-    mutationFn: ({ id, data }: { id: number; data: any }) => 
-      apiRequest(`/api/documents/${id}/activation`, { method: 'PATCH', body: data }),
+    mutationFn: async ({ id, data }: { id: number; data: any }) => {
+      const sessionId = useAuth.getState().sessionId;
+      const response = await fetch(`/api/documents/${id}/activation`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${sessionId}`,
+        },
+        body: JSON.stringify(data),
+      });
+      
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({ error: '개통 상태 변경에 실패했습니다.' }));
+        throw new Error(error.error || '개통 상태 변경에 실패했습니다.');
+      }
+      
+      return response.json();
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/documents'] });
       queryClient.invalidateQueries({ queryKey: ['/api/dashboard/stats'] });
@@ -477,10 +493,13 @@ export function Documents() {
 
         {/* Activation Status Dialog */}
         <Dialog open={activationDialogOpen} onOpenChange={setActivationDialogOpen}>
-          <DialogContent className="sm:max-w-[425px]">
+          <DialogContent className="sm:max-w-[425px]" aria-describedby="activation-dialog-description">
             <DialogHeader>
               <DialogTitle>개통 상태 변경</DialogTitle>
             </DialogHeader>
+            <div id="activation-dialog-description" className="text-sm text-gray-600 mb-4">
+              선택된 문서의 개통 상태를 변경할 수 있습니다.
+            </div>
             <div className="space-y-4">
               <div>
                 <Label htmlFor="activationStatus">개통 상태</Label>
