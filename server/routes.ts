@@ -291,6 +291,29 @@ router.get('/api/pricing-tables/active', requireAuth, async (req, res) => {
   }
 });
 
+// Document upload route
+router.post('/api/documents', requireAuth, upload.single('file'), async (req: any, res) => {
+  try {
+    if (req.session.userType !== 'user') {
+      return res.status(403).json({ error: '사용자만 문서를 업로드할 수 있습니다.' });
+    }
+
+    const data = uploadDocumentSchema.parse(req.body);
+    const document = await storage.uploadDocument({
+      ...data,
+      dealerId: req.session.dealerId,
+      userId: req.session.userId,
+      filePath: req.file?.path || null,
+      fileName: req.file?.originalname || null,
+      fileSize: req.file?.size || null
+    });
+
+    res.json(document);
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
 // Document template upload route
 router.post('/api/admin/document-templates', requireAdmin, templateUpload.single('file'), async (req: any, res) => {
   try {
@@ -341,6 +364,32 @@ router.patch('/api/admin/documents/:id/status', requireAdmin, async (req, res) =
     res.json(document);
   } catch (error: any) {
     res.status(400).json({ error: error.message });
+  }
+});
+
+router.get('/api/documents', requireAuth, async (req: any, res) => {
+  try {
+    const { status, search, startDate, endDate } = req.query;
+    const dealerId = req.session.userType === 'admin' ? undefined : req.session.dealerId;
+    const documents = await storage.getDocuments(dealerId, {
+      status: status as string,
+      search: search as string,
+      startDate: startDate as string,
+      endDate: endDate as string
+    });
+    res.json(documents);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.delete('/api/documents/:id', requireAuth, async (req: any, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    await storage.deleteDocument(id);
+    res.json({ success: true });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
   }
 });
 

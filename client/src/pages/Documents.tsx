@@ -49,16 +49,17 @@ export function Documents() {
 
   const uploadMutation = useMutation({
     mutationFn: async (data: FormData) => {
+      const sessionId = useAuth.getState().sessionId;
       const response = await fetch('/api/documents', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${user?.userType === 'admin' ? '' : localStorage.getItem('sessionId')}`,
+          'Authorization': `Bearer ${sessionId}`,
         },
         body: data,
       });
       
       if (!response.ok) {
-        const error = await response.json();
+        const error = await response.json().catch(() => ({ error: '업로드에 실패했습니다.' }));
         throw new Error(error.error || '업로드에 실패했습니다.');
       }
       
