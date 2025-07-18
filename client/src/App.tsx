@@ -36,9 +36,7 @@ function AppRoutes() {
       <Route path="/submit" component={SubmitApplication} />
       <Route path="/documents" component={Documents} />
       <Route path="/downloads" component={Downloads} />
-      {user?.userType === 'admin' && (
-        <Route path="/stats" component={() => <div>통계 페이지 (개발 중)</div>} />
-      )}
+
       {user?.userType === 'admin' && (
         <Route path="/admin" component={AdminPanel} />
       )}

@@ -111,6 +111,11 @@ This is a document management system built for MCC네트월드 telecommunication
 - July 04, 2025. Fixed SQLite RETURNING clause compatibility issues by replacing with separate INSERT/SELECT operations
 - July 04, 2025. Resolved nested anchor tag HTML validation warnings in Sidebar component
 - July 04, 2025. Updated branding with new MCC네트월드 logo and teal color scheme matching company identity
+- July 18, 2025. Added worker name tracking system with database schema updates
+- July 18, 2025. Implemented worker statistics in AdminPanel with performance rankings and monthly metrics
+- July 18, 2025. Added admin-only access restriction to AdminPanel for enhanced security
+- July 18, 2025. Created Downloads page for document templates (가입서류/변경서류) replacing pricing tables
+- July 18, 2025. Fixed navigation routing by removing redundant statistics page and consolidating in AdminPanel
 
 ## User Preferences
 

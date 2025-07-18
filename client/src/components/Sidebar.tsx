@@ -18,7 +18,6 @@ const navigation = [
 ];
 
 const adminNavigation = [
-  { name: '통계', href: '/stats', icon: BarChart3 },
   { name: '관리자 패널', href: '/admin', icon: Settings },
 ];
 
