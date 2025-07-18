@@ -156,6 +156,11 @@ This is a document management system built for MCC네트월드 telecommunication
 - July 18, 2025. Updated database schema to include carrier field with proper migration and data handling
 - July 18, 2025. Enhanced Documents page UI to display carrier information in both desktop table and mobile card views
 - July 18, 2025. Modified admin and worker access permissions to view all documents across all dealers instead of dealer-specific restrictions
+- July 18, 2025. Fixed dealer permission system to ensure each dealer sees only their own data in dashboard statistics and document listings
+- July 18, 2025. Updated getDashboardStats function to properly filter by dealerId for dealer-specific statistics
+- July 18, 2025. Resolved login authentication issues by standardizing all test account passwords to "password"
+- July 18, 2025. Implemented proper role-based UI controls hiding activation status management from dealer_store users
+- July 18, 2025. Updated API routes to use correct authentication middleware allowing admin access to all dealer data
 
 ## User Preferences
 

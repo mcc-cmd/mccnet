@@ -617,13 +617,21 @@ class SqliteStorage implements IStorage {
   }
 
   async getDashboardStats(dealerId?: number): Promise<DashboardStats> {
-    const total = db.prepare('SELECT COUNT(*) as count FROM documents').get() as { count: number };
-    const pending = db.prepare('SELECT COUNT(*) as count FROM documents WHERE status = ?').get('접수') as { count: number };
-    const completed = db.prepare('SELECT COUNT(*) as count FROM documents WHERE status = ?').get('완료') as { count: number };
-    const activated = db.prepare('SELECT COUNT(*) as count FROM documents WHERE activation_status = ?').get('개통') as { count: number };
-    const canceled = db.prepare('SELECT COUNT(*) as count FROM documents WHERE activation_status = ?').get('취소') as { count: number };
-    const pendingActivations = db.prepare('SELECT COUNT(*) as count FROM documents WHERE activation_status = ?').get('대기') as { count: number };
-    const inProgress = db.prepare('SELECT COUNT(*) as count FROM documents WHERE activation_status = ?').get('진행중') as { count: number };
+    let whereClause = '';
+    let params: any[] = [];
+    
+    if (dealerId) {
+      whereClause = ' WHERE dealer_id = ?';
+      params = [dealerId];
+    }
+
+    const total = db.prepare(`SELECT COUNT(*) as count FROM documents${whereClause}`).get(...params) as { count: number };
+    const pending = db.prepare(`SELECT COUNT(*) as count FROM documents${whereClause}${dealerId ? ' AND' : ' WHERE'} status = ?`).get(...params, '접수') as { count: number };
+    const completed = db.prepare(`SELECT COUNT(*) as count FROM documents${whereClause}${dealerId ? ' AND' : ' WHERE'} status = ?`).get(...params, '완료') as { count: number };
+    const activated = db.prepare(`SELECT COUNT(*) as count FROM documents${whereClause}${dealerId ? ' AND' : ' WHERE'} activation_status = ?`).get(...params, '개통') as { count: number };
+    const canceled = db.prepare(`SELECT COUNT(*) as count FROM documents${whereClause}${dealerId ? ' AND' : ' WHERE'} activation_status = ?`).get(...params, '취소') as { count: number };
+    const pendingActivations = db.prepare(`SELECT COUNT(*) as count FROM documents${whereClause}${dealerId ? ' AND' : ' WHERE'} activation_status = ?`).get(...params, '대기') as { count: number };
+    const inProgress = db.prepare(`SELECT COUNT(*) as count FROM documents${whereClause}${dealerId ? ' AND' : ' WHERE'} activation_status = ?`).get(...params, '진행중') as { count: number };
 
     return {
       totalDocuments: total.count,
