@@ -946,6 +946,57 @@ class SqliteStorage implements IStorage {
     db.prepare('DELETE FROM document_service_plans WHERE document_id = ?').run(documentId);
   }
 
+  // Direct service plan update in documents table
+  async updateDocumentServicePlanDirect(id: number, data: { servicePlanId?: number | null; additionalServiceIds?: string; registrationFee?: number | null; bundleDiscount?: number | null; totalMonthlyFee?: number | null }): Promise<Document> {
+    const query = `
+      UPDATE documents 
+      SET service_plan_id = ?, 
+          additional_service_ids = ?, 
+          registration_fee = ?, 
+          bundle_discount = ?, 
+          total_monthly_fee = ?,
+          updated_at = CURRENT_TIMESTAMP
+      WHERE id = ?
+    `;
+    
+    db.prepare(query).run(
+      data.servicePlanId || null, 
+      data.additionalServiceIds || null, 
+      data.registrationFee || null, 
+      data.bundleDiscount || null, 
+      data.totalMonthlyFee || null, 
+      id
+    );
+    
+    // 업데이트된 문서 정보 반환
+    const document = db.prepare('SELECT * FROM documents WHERE id = ?').get(id) as any;
+    return {
+      id: document.id,
+      dealerId: document.dealer_id,
+      userId: document.user_id,
+      documentNumber: document.document_number,
+      customerName: document.customer_name,
+      customerPhone: document.customer_phone,
+      storeName: document.store_name,
+      carrier: document.carrier,
+      status: document.status,
+      activationStatus: document.activation_status,
+      filePath: document.file_path,
+      fileName: document.file_name,
+      fileSize: document.file_size,
+      uploadedAt: new Date(document.uploaded_at),
+      updatedAt: new Date(document.updated_at),
+      activatedAt: document.activated_at ? new Date(document.activated_at) : null,
+      activatedBy: document.activated_by,
+      notes: document.notes,
+      servicePlanId: document.service_plan_id,
+      additionalServiceIds: document.additional_service_ids,
+      registrationFee: document.registration_fee,
+      bundleDiscount: document.bundle_discount,
+      totalMonthlyFee: document.total_monthly_fee
+    };
+  }
+
   async getDealers(): Promise<Dealer[]> {
     const dealers = db.prepare('SELECT * FROM dealers ORDER BY name').all() as any[];
     return dealers.map(d => ({

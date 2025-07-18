@@ -274,29 +274,57 @@ export function Documents() {
     setServicePlanDialogOpen(true);
   };
 
+  const servicePlanMutation = useMutation({
+    mutationFn: async (data: any) => {
+      const sessionId = useAuth.getState().sessionId;
+      const response = await fetch(`/api/documents/${selectedDocument?.id}/service-plan`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${sessionId}`,
+        },
+        body: JSON.stringify(data),
+      });
+      
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({ error: '요금제 정보 저장에 실패했습니다.' }));
+        throw new Error(error.error || '요금제 정보 저장에 실패했습니다.');
+      }
+      
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/documents'] });
+      setServicePlanDialogOpen(false);
+      setSelectedDocument(null);
+      toast({
+        title: "성공",
+        description: "요금제 정보가 저장되었습니다.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "오류",
+        description: error.message || "요금제 정보 저장 중 오류가 발생했습니다.",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleServicePlanSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!selectedDocument) return;
     
     const data = {
-      servicePlanId: parseInt(servicePlanForm.servicePlanId),
+      servicePlanId: servicePlanForm.servicePlanId || null,
       additionalServiceIds: JSON.stringify(servicePlanForm.additionalServiceIds),
       registrationFee: servicePlanForm.registrationFee,
       bundleDiscount: servicePlanForm.bundleDiscount,
       totalMonthlyFee: servicePlanForm.totalMonthlyFee
     };
     
-    // API 호출 - 나중에 구현
-    console.log('Service plan data:', data);
-    
-    toast({
-      title: "성공",
-      description: "요금제 정보가 저장되었습니다.",
-    });
-    
-    setServicePlanDialogOpen(false);
-    setSelectedDocument(null);
+    servicePlanMutation.mutate(data);
   };
 
   return (
@@ -476,6 +504,9 @@ export function Documents() {
                           개통상태
                         </th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          요금제정보
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                           업로드일
                         </th>
                         {isAdmin && (
@@ -511,6 +542,29 @@ export function Documents() {
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
                             {getActivationStatusBadge((doc as any).activationStatus || '대기')}
+                          </td>
+                          <td className="px-6 py-4 text-sm text-gray-700">
+                            {(doc as any).activationStatus === '개통' ? (
+                              <div className="space-y-1">
+                                {(doc as any).servicePlanName && (
+                                  <div className="font-medium text-blue-600">
+                                    {(doc as any).servicePlanName}
+                                  </div>
+                                )}
+                                {(doc as any).additionalServices && (
+                                  <div className="text-xs text-gray-500">
+                                    부가: {(doc as any).additionalServices}
+                                  </div>
+                                )}
+                                {(doc as any).totalMonthlyFee && (
+                                  <div className="text-xs font-medium text-green-600">
+                                    월 {(doc as any).totalMonthlyFee.toLocaleString()}원
+                                  </div>
+                                )}
+                              </div>
+                            ) : (
+                              <span className="text-gray-400">-</span>
+                            )}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                             {format(new Date(doc.uploadedAt), 'yyyy-MM-dd HH:mm', { locale: ko })}
@@ -607,6 +661,28 @@ export function Documents() {
                           <div className="col-span-2">
                             <span className="text-gray-500">대리점:</span>
                             <span className="ml-1 text-gray-900">{(doc as any).dealerName}</span>
+                          </div>
+                        )}
+                        {(doc as any).activationStatus === '개통' && (
+                          <div className="col-span-2">
+                            <span className="text-gray-500">요금제:</span>
+                            <div className="ml-1 mt-1 space-y-1">
+                              {(doc as any).servicePlanName && (
+                                <div className="text-sm font-medium text-blue-600">
+                                  {(doc as any).servicePlanName}
+                                </div>
+                              )}
+                              {(doc as any).additionalServices && (
+                                <div className="text-xs text-gray-500">
+                                  부가: {(doc as any).additionalServices}
+                                </div>
+                              )}
+                              {(doc as any).totalMonthlyFee && (
+                                <div className="text-xs font-medium text-green-600">
+                                  월 {(doc as any).totalMonthlyFee.toLocaleString()}원
+                                </div>
+                              )}
+                            </div>
                           </div>
                         )}
                       </div>
@@ -841,8 +917,8 @@ export function Documents() {
                 <Button type="button" variant="outline" onClick={() => setServicePlanDialogOpen(false)}>
                   취소
                 </Button>
-                <Button type="submit" className="bg-blue-600 hover:bg-blue-700">
-                  저장
+                <Button type="submit" className="bg-blue-600 hover:bg-blue-700" disabled={servicePlanMutation.isPending}>
+                  {servicePlanMutation.isPending ? '저장 중...' : '저장'}
                 </Button>
               </div>
             </form>
