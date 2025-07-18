@@ -253,6 +253,25 @@ router.post('/api/admin/pricing-tables', requireAdmin, pricingUpload.single('fil
   }
 });
 
+// Pricing table routes
+router.get('/api/pricing-tables', requireAuth, async (req, res) => {
+  try {
+    const pricingTables = await storage.getPricingTables();
+    res.json(pricingTables);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.get('/api/pricing-tables/active', requireAuth, async (req, res) => {
+  try {
+    const activePricingTable = await storage.getActivePricingTable();
+    res.json(activePricingTable);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 router.get('/api/admin/documents', requireAdmin, async (req, res) => {
   try {
     const { status, search, startDate, endDate } = req.query;
