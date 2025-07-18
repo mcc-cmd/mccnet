@@ -78,10 +78,14 @@ export function AdminPanel() {
   const [dealerDialogOpen, setDealerDialogOpen] = useState(false);
   const [userDialogOpen, setUserDialogOpen] = useState(false);
   const [pricingDialogOpen, setPricingDialogOpen] = useState(false);
+  const [templateDialogOpen, setTemplateDialogOpen] = useState(false);
   const [statusDialogOpen, setStatusDialogOpen] = useState(false);
   const [selectedDocument, setSelectedDocument] = useState<Document | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [templateFile, setTemplateFile] = useState<File | null>(null);
   const [pricingTitle, setPricingTitle] = useState('');
+  const [templateTitle, setTemplateTitle] = useState('');
+  const [templateCategory, setTemplateCategory] = useState<'가입서류' | '변경서류'>('가입서류');
 
   // Queries
   const { data: dealers, isLoading: dealersLoading } = useQuery({
@@ -102,6 +106,18 @@ export function AdminPanel() {
   const { data: pricingTables } = useQuery({
     queryKey: ['/api/pricing-tables'],
     queryFn: () => apiRequest('/api/pricing-tables') as Promise<PricingTable[]>,
+  });
+
+  const { data: documentTemplates } = useQuery({
+    queryKey: ['/api/document-templates'],
+    queryFn: () => apiRequest('/api/document-templates') as Promise<Array<{
+      id: number;
+      title: string;
+      fileName: string;
+      fileSize: number;
+      category: string;
+      uploadedAt: Date;
+    }>>,
   });
 
   const { data: workerStats, isLoading: workerStatsLoading } = useQuery({
@@ -229,6 +245,32 @@ export function AdminPanel() {
     },
   });
 
+  const uploadTemplateMutation = useMutation({
+    mutationFn: (formData: FormData) => 
+      apiRequest('/api/admin/document-templates', {
+        method: 'POST',
+        body: formData,
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/document-templates'] });
+      setTemplateDialogOpen(false);
+      setTemplateFile(null);
+      setTemplateTitle('');
+      setTemplateCategory('가입서류');
+      toast({
+        title: '성공',
+        description: '서식지가 성공적으로 업로드되었습니다.',
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: '오류',
+        description: error.message,
+        variant: 'destructive',
+      });
+    },
+  });
+
   const updateDocumentStatusMutation = useMutation({
     mutationFn: ({ id, data }: { id: number; data: UpdateDocumentStatusForm }) => 
       apiRequest(`/api/admin/documents/${id}/status`, {
@@ -281,6 +323,26 @@ export function AdminPanel() {
     formData.append('title', pricingTitle || selectedFile.name);
 
     uploadPricingMutation.mutate(formData);
+  };
+
+  const handleUploadTemplate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!templateFile) {
+      toast({
+        title: '오류',
+        description: '파일을 선택해주세요.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append('file', templateFile);
+    formData.append('title', templateTitle || templateFile.name);
+    formData.append('category', templateCategory);
+
+    uploadTemplateMutation.mutate(formData);
   };
 
   const handleUpdateStatus = (data: UpdateDocumentStatusForm) => {
@@ -355,7 +417,7 @@ export function AdminPanel() {
 
         {/* Admin Tabs */}
         <Tabs defaultValue="dealers" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-5">
+          <TabsList className="grid w-full grid-cols-6">
             <TabsTrigger value="dealers" className="flex items-center space-x-2">
               <Building2 className="h-4 w-4" />
               <span>대리점</span>
@@ -367,6 +429,10 @@ export function AdminPanel() {
             <TabsTrigger value="documents" className="flex items-center space-x-2">
               <FileText className="h-4 w-4" />
               <span>서류 관리</span>
+            </TabsTrigger>
+            <TabsTrigger value="templates" className="flex items-center space-x-2">
+              <Upload className="h-4 w-4" />
+              <span>서식지 관리</span>
             </TabsTrigger>
             <TabsTrigger value="workers" className="flex items-center space-x-2">
               <TrendingUp className="h-4 w-4" />
@@ -929,6 +995,118 @@ export function AdminPanel() {
                     <TrendingUp className="mx-auto h-12 w-12 text-gray-400" />
                     <h3 className="mt-2 text-sm font-medium text-gray-900">판매점 통계가 없습니다</h3>
                     <p className="mt-1 text-sm text-gray-500">개통 완료된 서류가 있어야 통계가 표시됩니다.</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Document Templates Tab */}
+          <TabsContent value="templates">
+            <Card>
+              <CardHeader>
+                <CardTitle>서식지 관리</CardTitle>
+                <Dialog open={templateDialogOpen} onOpenChange={setTemplateDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button>
+                      <Upload className="mr-2 h-4 w-4" />
+                      서식지 업로드
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>새 서식지 업로드</DialogTitle>
+                    </DialogHeader>
+                    <form onSubmit={handleUploadTemplate} className="space-y-4">
+                      <div>
+                        <Label htmlFor="templateTitle">제목</Label>
+                        <Input
+                          id="templateTitle"
+                          value={templateTitle}
+                          onChange={(e) => setTemplateTitle(e.target.value)}
+                          placeholder="서식지 제목을 입력하세요"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="templateCategory">카테고리</Label>
+                        <Select value={templateCategory} onValueChange={(value: '가입서류' | '변경서류') => setTemplateCategory(value)}>
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="가입서류">가입서류</SelectItem>
+                            <SelectItem value="변경서류">변경서류</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label htmlFor="templateFile">파일</Label>
+                        <Input
+                          id="templateFile"
+                          type="file"
+                          accept=".pdf,.doc,.docx,.xlsx,.xls"
+                          onChange={(e) => setTemplateFile(e.target.files?.[0] || null)}
+                          required
+                        />
+                        <p className="text-xs text-gray-500 mt-1">
+                          PDF, DOC, DOCX, XLSX, XLS 파일 업로드 가능 (최대 10MB)
+                        </p>
+                      </div>
+                      <div className="flex justify-end space-x-2">
+                        <Button type="button" variant="outline" onClick={() => setTemplateDialogOpen(false)}>
+                          취소
+                        </Button>
+                        <Button type="submit" disabled={uploadTemplateMutation.isPending}>
+                          {uploadTemplateMutation.isPending ? '업로드 중...' : '업로드'}
+                        </Button>
+                      </div>
+                    </form>
+                  </DialogContent>
+                </Dialog>
+              </CardHeader>
+              <CardContent>
+                {documentTemplates && documentTemplates.length > 0 ? (
+                  <div className="space-y-4">
+                    {['가입서류', '변경서류'].map((category) => {
+                      const categoryTemplates = documentTemplates.filter(t => t.category === category);
+                      if (categoryTemplates.length === 0) return null;
+                      
+                      return (
+                        <div key={category} className="space-y-3">
+                          <h4 className="font-medium text-gray-900 border-b pb-2">{category}</h4>
+                          {categoryTemplates.map((template) => (
+                            <div key={template.id} className="border rounded-lg p-4">
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center space-x-4">
+                                  <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
+                                    <FileText className="w-5 h-5 text-blue-600" />
+                                  </div>
+                                  <div>
+                                    <h4 className="font-medium text-gray-900">{template.title}</h4>
+                                    <p className="text-sm text-gray-500">
+                                      {format(new Date(template.uploadedAt), 'yyyy-MM-dd HH:mm', { locale: ko })}
+                                    </p>
+                                  </div>
+                                </div>
+                                <Button
+                                  variant="outline"
+                                  onClick={() => window.open(`/api/document-templates/${template.id}/download`, '_blank')}
+                                >
+                                  <Download className="w-4 h-4 mr-2" />
+                                  다운로드
+                                </Button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <FileText className="mx-auto h-12 w-12 text-gray-400" />
+                    <h3 className="mt-2 text-sm font-medium text-gray-900">서식지가 없습니다</h3>
+                    <p className="mt-1 text-sm text-gray-500">첫 번째 서식지를 업로드해보세요.</p>
                   </div>
                 )}
               </CardContent>

@@ -69,6 +69,25 @@ const pricingUpload = multer({
   }
 });
 
+// Configure multer for document template uploads
+const templateUpload = multer({
+  dest: path.join(process.cwd(), 'uploads', 'templates'),
+  limits: {
+    fileSize: 10 * 1024 * 1024, // 10MB
+  },
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = /pdf|doc|docx|xlsx|xls/;
+    const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
+    const mimetype = /application\/pdf|application\/msword|application\/vnd\.openxmlformats-officedocument\.wordprocessingml\.document|application\/vnd\.ms-excel|application\/vnd\.openxmlformats-officedocument\.spreadsheetml\.sheet/.test(file.mimetype);
+
+    if (extname && mimetype) {
+      return cb(null, true);
+    } else {
+      cb(new Error('허용되지 않는 파일 형식입니다. (pdf, doc, docx, xlsx, xls만 가능)'));
+    }
+  }
+});
+
 // Middleware to check authentication
 const requireAuth = async (req: any, res: any, next: any) => {
   const sessionId = req.headers.authorization?.replace('Bearer ', '');
@@ -269,6 +288,33 @@ router.get('/api/pricing-tables/active', requireAuth, async (req, res) => {
     res.json(activePricingTable);
   } catch (error: any) {
     res.status(500).json({ error: error.message });
+  }
+});
+
+// Document template upload route
+router.post('/api/admin/document-templates', requireAdmin, templateUpload.single('file'), async (req: any, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: '파일을 선택해주세요.' });
+    }
+
+    const { title, category } = req.body;
+    if (!category || !['가입서류', '변경서류'].includes(category)) {
+      return res.status(400).json({ error: '올바른 카테고리를 선택해주세요.' });
+    }
+
+    const template = await storage.uploadDocumentTemplate({
+      title: title || req.file.originalname,
+      category,
+      filePath: req.file.path,
+      fileName: req.file.originalname,
+      fileSize: req.file.size,
+      uploadedBy: req.session.userId
+    });
+
+    res.json(template);
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
   }
 });
 
