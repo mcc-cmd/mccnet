@@ -1044,12 +1044,12 @@ export function AdminPanel() {
                         <Input
                           id="templateFile"
                           type="file"
-                          accept=".pdf,.doc,.docx,.xlsx,.xls"
+                          accept=".pdf,.doc,.docx,.xlsx,.xls,.jpg,.jpeg,.png,.gif,.bmp,.tiff,.webp"
                           onChange={(e) => setTemplateFile(e.target.files?.[0] || null)}
                           required
                         />
                         <p className="text-xs text-gray-500 mt-1">
-                          PDF, DOC, DOCX, XLSX, XLS 파일 업로드 가능 (최대 10MB)
+                          PDF, DOC, DOCX, XLSX, XLS, JPG, JPEG, PNG, GIF, BMP, TIFF, WEBP 파일 업로드 가능 (최대 10MB)
                         </p>
                       </div>
                       <div className="flex justify-end space-x-2">

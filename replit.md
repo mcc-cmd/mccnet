@@ -127,6 +127,7 @@ This is a document management system built for MCC네트월드 telecommunication
 - July 18, 2025. Changed UI labels: "서류 다운로드" → "서식지 다운로드", "단가표 확인" → "단가표", "개통서류 다운로드" → "서식지 다운로드"
 - July 18, 2025. Added document template upload functionality in AdminPanel with category-based organization (가입서류/변경서류)
 - July 18, 2025. Implemented template upload API endpoint with proper file validation for PDF, DOC, DOCX, XLSX, XLS formats
+- July 18, 2025. Extended document template upload to support all image formats (JPG, JPEG, PNG, GIF, BMP, TIFF, WEBP) alongside existing document formats
 
 ## User Preferences
 
