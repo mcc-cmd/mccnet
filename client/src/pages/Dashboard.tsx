@@ -62,9 +62,8 @@ export function Dashboard() {
   };
 
   const handleDownloadPricing = async () => {
-    if (activePricingTable) {
-      window.open(`/api/files/pricing/${activePricingTable.id}`, '_blank');
-    }
+    // Navigate to downloads page instead of downloading pricing table directly
+    window.location.href = '/downloads';
   };
 
   return (
@@ -353,7 +352,6 @@ export function Dashboard() {
                     variant="outline"
                     className="w-full"
                     onClick={handleDownloadPricing}
-                    disabled={!activePricingTable}
                   >
                     <Download className="mr-2 h-5 w-5" />
                     서식지 다운로드
