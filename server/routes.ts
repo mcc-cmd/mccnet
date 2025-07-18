@@ -73,7 +73,7 @@ const pricingUpload = multer({
 const templateUpload = multer({
   dest: path.join(process.cwd(), 'uploads', 'templates'),
   limits: {
-    fileSize: 10 * 1024 * 1024, // 10MB
+    fileSize: 50 * 1024 * 1024, // 50MB
   },
   fileFilter: (req, file, cb) => {
     const allowedTypes = /pdf|doc|docx|xlsx|xls|jpg|jpeg|png|gif|bmp|tiff|webp/;

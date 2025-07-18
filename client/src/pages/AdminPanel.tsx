@@ -246,11 +246,23 @@ export function AdminPanel() {
   });
 
   const uploadTemplateMutation = useMutation({
-    mutationFn: (formData: FormData) => 
-      apiRequest('/api/admin/document-templates', {
+    mutationFn: async (data: FormData) => {
+      const sessionId = useAuth.getState().sessionId;
+      const response = await fetch('/api/admin/document-templates', {
         method: 'POST',
-        body: formData,
-      }),
+        headers: {
+          'Authorization': `Bearer ${sessionId}`,
+        },
+        body: data,
+      });
+      
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({ error: '업로드에 실패했습니다.' }));
+        throw new Error(error.error || '업로드에 실패했습니다.');
+      }
+      
+      return response.json();
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/document-templates'] });
       setTemplateDialogOpen(false);
@@ -1049,7 +1061,7 @@ export function AdminPanel() {
                           required
                         />
                         <p className="text-xs text-gray-500 mt-1">
-                          PDF, DOC, DOCX, XLSX, XLS, JPG, JPEG, PNG, GIF, BMP, TIFF, WEBP 파일 업로드 가능 (최대 10MB)
+                          PDF, DOC, DOCX, XLSX, XLS, JPG, JPEG, PNG, GIF, BMP, TIFF, WEBP 파일 업로드 가능 (최대 50MB)
                         </p>
                       </div>
                       <div className="flex justify-end space-x-2">

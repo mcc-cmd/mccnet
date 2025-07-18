@@ -128,6 +128,7 @@ This is a document management system built for MCC네트월드 telecommunication
 - July 18, 2025. Added document template upload functionality in AdminPanel with category-based organization (가입서류/변경서류)
 - July 18, 2025. Implemented template upload API endpoint with proper file validation for PDF, DOC, DOCX, XLSX, XLS formats
 - July 18, 2025. Extended document template upload to support all image formats (JPG, JPEG, PNG, GIF, BMP, TIFF, WEBP) alongside existing document formats
+- July 18, 2025. Fixed "request entity too large" error by increasing Express body parser limit and multer file size limit to 50MB
 
 ## User Preferences
 
