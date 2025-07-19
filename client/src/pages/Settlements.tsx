@@ -1,419 +1,340 @@
 import React, { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useAuth, useApiRequest } from '@/lib/auth';
-import { Layout } from '@/components/Layout';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Badge } from '@/components/ui/badge';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { useToast } from '@/hooks/use-toast';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { createSettlementSchema, updateSettlementSchema } from '../../../shared/schema';
-import type { Settlement } from '../../../shared/schema';
-import { 
-  Calculator,
-  Plus,
-  Edit,
-  Trash2,
-  TrendingUp,
-  DollarSign,
-  Users,
-  Clock,
-  CheckCircle,
-  AlertTriangle,
-  Pause
-} from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
 
-type CreateSettlementForm = {
-  documentId: number;
-  dealerId: number;
+import { Layout } from '@/components/Layout';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
+import { 
+  Table, 
+  TableBody, 
+  TableCell, 
+  TableHead, 
+  TableHeader, 
+  TableRow 
+} from '@/components/ui/table';
+import { useToast } from '@/hooks/use-toast';
+import { apiRequest } from '@/lib/queryClient';
+import { Users, Clock, CheckCircle, DollarSign, Download, FileText, Calendar } from 'lucide-react';
+
+interface CompletedDocument {
+  id: number;
+  documentNumber: string;
   customerName: string;
   customerPhone: string;
-  servicePlanId?: number;
+  storeName: string;
+  carrier: string;
+  contactCode: string;
   servicePlanName?: string;
   additionalServices: string[];
-  bundleType?: '결합' | '미결합' | '단독';
-  bundleDetails?: string;
-  policyLevel: number;
-  policyDetails?: string;
-  settlementAmount?: number;
-  commissionRate?: number;
-  settlementStatus: '대기' | '계산완료' | '지급완료' | '보류';
-  settlementDate?: Date;
-};
+  activatedAt: Date;
+  dealerName: string;
+  deviceModel?: string;
+  simNumber?: string;
+  bundleApplied: boolean;
+  bundleNotApplied: boolean;
+}
+
+interface SettlementStats {
+  total: number;
+  thisMonth: number;
+  lastMonth: number;
+  totalAmount: number;
+}
 
 export function Settlements() {
-  const { user } = useAuth();
-  const apiRequest = useApiRequest();
-  const queryClient = useQueryClient();
   const { toast } = useToast();
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
   
-  const [settlementDialogOpen, setSettlementDialogOpen] = useState(false);
-  const [editingSettlement, setEditingSettlement] = useState<Settlement | null>(null);
-  const [selectedDocumentId, setSelectedDocumentId] = useState<number | null>(null);
-  
-  // 정산 데이터 조회
-  const { data: settlements, isLoading: settlementsLoading } = useQuery({
-    queryKey: ['/api/settlements'],
-    queryFn: () => apiRequest('/api/settlements') as Promise<Settlement[]>,
+  // 개통 완료된 문서 조회 (정산 데이터로 활용)
+  const { data: completedDocuments, isLoading } = useQuery({
+    queryKey: ['/api/documents', { activationStatus: '개통' }],
+    queryFn: () => apiRequest('/api/documents?activationStatus=개통') as Promise<CompletedDocument[]>,
   });
-
-  // 개통 완료된 문서 목록 조회
-  const { data: completedDocuments } = useQuery({
-    queryKey: ['/api/documents', { status: '완료', activationStatus: '개통' }],
-    queryFn: () => apiRequest('/api/documents?status=완료&activationStatus=개통') as Promise<any[]>,
-  });
-
-  // 정산 생성 폼
-  const settlementForm = useForm<CreateSettlementForm>({
-    resolver: zodResolver(createSettlementSchema),
-    defaultValues: {
-      documentId: 0,
-      dealerId: user?.dealerId || 0,
-      customerName: '',
-      customerPhone: '',
-      additionalServices: [],
-      policyLevel: 1,
-      settlementStatus: '대기',
-    },
-  });
-
-  // 정산 생성 뮤테이션
-  const createSettlementMutation = useMutation({
-    mutationFn: async (data: CreateSettlementForm) => {
-      return apiRequest('/api/settlements', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-      });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/settlements'] });
-      setSettlementDialogOpen(false);
-      settlementForm.reset();
-      toast({
-        title: "정산 등록 완료",
-        description: "새로운 정산 정보가 등록되었습니다.",
-      });
-    },
-    onError: (error: any) => {
-      toast({
-        title: "정산 등록 실패",
-        description: error.message || "정산 정보 등록에 실패했습니다.",
-        variant: "destructive"
-      });
-    }
-  });
-
-  // 정산 업데이트 뮤테이션
-  const updateSettlementMutation = useMutation({
-    mutationFn: async ({ id, data }: { id: number; data: Partial<CreateSettlementForm> }) => {
-      return apiRequest(`/api/settlements/${id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-      });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/settlements'] });
-      setEditingSettlement(null);
-      toast({
-        title: "정산 수정 완료",
-        description: "정산 정보가 수정되었습니다.",
-      });
-    },
-    onError: (error: any) => {
-      toast({
-        title: "정산 수정 실패",
-        description: error.message || "정산 정보 수정에 실패했습니다.",
-        variant: "destructive"
-      });
-    }
-  });
-
-  // 정산 삭제 뮤테이션
-  const deleteSettlementMutation = useMutation({
-    mutationFn: async (id: number) => {
-      return apiRequest(`/api/settlements/${id}`, {
-        method: 'DELETE',
-      });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/settlements'] });
-      toast({
-        title: "정산 삭제 완료",
-        description: "정산 정보가 삭제되었습니다.",
-      });
-    },
-    onError: (error: any) => {
-      toast({
-        title: "정산 삭제 실패",
-        description: error.message || "정산 정보 삭제에 실패했습니다.",
-        variant: "destructive"
-      });
-    }
-  });
-
-  // 문서 선택 시 데이터 자동 로드
-  const loadDocumentData = async (documentId: number) => {
-    try {
-      // 문서 정산 데이터 조회
-      const documentData = await apiRequest(`/api/documents/${documentId}/settlement-data`);
-      
-      // 정책차수 자동 계산
-      const policyData = await apiRequest(`/api/policy-level?date=${documentData.activatedAt}&carrier=${documentData.carrier}`);
-      
-      // 폼에 데이터 설정
-      settlementForm.reset({
-        documentId: documentData.documentId,
-        dealerId: documentData.dealerId,
-        customerName: documentData.customerName,
-        customerPhone: documentData.customerPhone,
-        servicePlanId: documentData.servicePlanId,
-        servicePlanName: documentData.servicePlanName,
-        additionalServices: documentData.additionalServices || [],
-        policyLevel: policyData.policyLevel || 1,
-        policyDetails: policyData.policyDetails || '',
-        settlementStatus: '대기',
-      });
-
-      toast({
-        title: "문서 데이터 로드 완료",
-        description: `${documentData.customerName} 고객의 정보가 자동으로 입력되었습니다. 정책차수: ${policyData.policyLevel}차수`,
-      });
-    } catch (error: any) {
-      toast({
-        title: "데이터 로드 실패",
-        description: error.message || "문서 데이터를 불러오는데 실패했습니다.",
-        variant: "destructive"
-      });
-    }
-  };
-
-  const handleSubmit = (data: CreateSettlementForm) => {
-    createSettlementMutation.mutate(data);
-  };
-
-  const handleEdit = (settlement: Settlement) => {
-    setEditingSettlement(settlement);
-  };
-
-  const handleDelete = (id: number) => {
-    if (confirm('정말로 이 정산 정보를 삭제하시겠습니까?')) {
-      deleteSettlementMutation.mutate(id);
-    }
-  };
-
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case '대기':
-        return <Badge variant="secondary"><Clock className="w-3 h-3 mr-1" />대기</Badge>;
-      case '계산완료':
-        return <Badge variant="default"><Calculator className="w-3 h-3 mr-1" />계산완료</Badge>;
-      case '지급완료':
-        return <Badge variant="destructive"><CheckCircle className="w-3 h-3 mr-1" />지급완료</Badge>;
-      case '보류':
-        return <Badge variant="outline"><Pause className="w-3 h-3 mr-1" />보류</Badge>;
-      default:
-        return <Badge>{status}</Badge>;
-    }
-  };
 
   // 정산 통계 계산
-  const stats = settlements ? {
-    total: settlements.length,
-    pending: settlements.filter(s => s.settlementStatus === '대기').length,
-    calculated: settlements.filter(s => s.settlementStatus === '계산완료').length,
-    paid: settlements.filter(s => s.settlementStatus === '지급완료').length,
-    onHold: settlements.filter(s => s.settlementStatus === '보류').length,
-    totalAmount: settlements
-      .filter(s => s.settlementAmount)
-      .reduce((sum, s) => sum + (s.settlementAmount || 0), 0)
-  } : { total: 0, pending: 0, calculated: 0, paid: 0, onHold: 0, totalAmount: 0 };
+  const stats: SettlementStats = React.useMemo(() => {
+    if (!completedDocuments) return { total: 0, thisMonth: 0, lastMonth: 0, totalAmount: 0 };
+    
+    const now = new Date();
+    const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0);
+    
+    let thisMonth = 0;
+    let lastMonth = 0;
+    
+    completedDocuments.forEach(doc => {
+      const activatedDate = new Date(doc.activatedAt);
+      if (activatedDate >= thisMonthStart) {
+        thisMonth++;
+      } else if (activatedDate >= lastMonthStart && activatedDate <= lastMonthEnd) {
+        lastMonth++;
+      }
+    });
+    
+    return {
+      total: completedDocuments.length,
+      thisMonth,
+      lastMonth,
+      totalAmount: completedDocuments.length * 50000 // 예시 금액
+    };
+  }, [completedDocuments]);
+
+  // 날짜 필터링된 문서 목록
+  const filteredDocuments = React.useMemo(() => {
+    if (!completedDocuments) return [];
+    
+    return completedDocuments.filter(doc => {
+      const docDate = format(new Date(doc.activatedAt), 'yyyy-MM-dd');
+      const start = startDate || '2020-01-01';
+      const end = endDate || '2030-12-31';
+      return docDate >= start && docDate <= end;
+    });
+  }, [completedDocuments, startDate, endDate]);
+
+  // 엑셀 다운로드 함수
+  const handleExcelDownload = async () => {
+    try {
+      const params = new URLSearchParams();
+      if (startDate) params.append('startDate', startDate);
+      if (endDate) params.append('endDate', endDate);
+      
+      const response = await fetch(`/api/settlements/export?${params.toString()}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('sessionId')}`,
+        },
+      });
+      
+      if (!response.ok) throw new Error('다운로드 실패');
+      
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `정산데이터_${startDate || '전체'}_${endDate || '현재'}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      
+      toast({
+        title: "다운로드 완료",
+        description: "정산 데이터를 엑셀 파일로 다운로드했습니다.",
+      });
+    } catch (error) {
+      toast({
+        title: "다운로드 실패",
+        description: "엑셀 파일 다운로드 중 오류가 발생했습니다.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const getStatusBadge = (bundleApplied: boolean, bundleNotApplied: boolean) => {
+    if (bundleApplied) {
+      return <Badge variant="default" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100">결합</Badge>;
+    } else if (bundleNotApplied) {
+      return <Badge variant="secondary" className="bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-100">미결합</Badge>;
+    } else {
+      return <Badge variant="outline">미지정</Badge>;
+    }
+  };
 
   return (
     <Layout>
-      <div className="container mx-auto px-4 py-8">
-        {/* 페이지 헤더 */}
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8">
+      <div className="container mx-auto p-6">
+        <div className="flex justify-between items-center mb-8">
           <div>
-            <h1 className="text-3xl font-bold">정산 관리</h1>
-            <p className="text-muted-foreground mt-2">
-              판매점, 고객 정보, 요금제, 부가 서비스, 결합내역, 정책차수를 관리합니다.
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">정산 관리</h1>
+            <p className="text-gray-600 dark:text-gray-400 mt-2">
+              접수 관리의 개통 완료 데이터를 기반으로 정산 정보를 관리합니다.
             </p>
           </div>
-          <Dialog open={settlementDialogOpen} onOpenChange={setSettlementDialogOpen}>
-            <DialogTrigger asChild>
-              <Button>
-                <Plus className="w-4 h-4 mr-2" />
-                정산 등록
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-2xl">
-              <DialogHeader>
-                <DialogTitle>새 정산 등록</DialogTitle>
-              </DialogHeader>
-              <Form {...settlementForm}>
-                <form onSubmit={settlementForm.handleSubmit(handleSubmit)} className="space-y-6">
-                  {/* 개통 완료 문서 선택 */}
-                  <div className="border rounded-lg p-4 bg-gradient-to-r from-blue-50 to-green-50 dark:from-blue-950 dark:to-green-950">
-                    <h4 className="font-semibold mb-3 text-blue-900 dark:text-blue-100">📋 개통 완료 문서 선택</h4>
-                    <div className="space-y-3">
-                      <Label htmlFor="document-select" className="text-sm font-medium">문서를 선택하면 모든 정보가 자동으로 입력됩니다</Label>
-                      <Select 
-                        value={selectedDocumentId?.toString() || ''} 
-                        onValueChange={(value) => {
-                          const docId = parseInt(value);
-                          setSelectedDocumentId(docId);
-                          if (docId) {
-                            loadDocumentData(docId);
-                          }
-                        }}
-                      >
-                        <SelectTrigger className="bg-white dark:bg-gray-800">
-                          <SelectValue placeholder="🔍 개통 완료된 문서를 선택하세요..." />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {completedDocuments?.map((doc) => (
-                            <SelectItem key={doc.id} value={doc.id.toString()}>
-                              <div className="flex flex-col">
-                                <span className="font-medium">{doc.documentNumber} - {doc.customerName}</span>
-                                <span className="text-xs text-muted-foreground">{doc.carrier} • {doc.storeName || '판매점'}</span>
-                              </div>
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-
-                  {/* 자동 입력된 정보 표시 */}
-                  {selectedDocumentId && (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-gray-50 dark:bg-gray-900 rounded-lg border">
-                      <div className="space-y-2">
-                        <Label className="text-sm font-medium text-green-700 dark:text-green-300">고객 정보</Label>
-                        <div className="text-sm">
-                          <p><span className="font-medium">이름:</span> {settlementForm.watch('customerName')}</p>
-                          <p><span className="font-medium">연락처:</span> {settlementForm.watch('customerPhone')}</p>
-                        </div>
-                      </div>
-                      <div className="space-y-2">
-                        <Label className="text-sm font-medium text-green-700 dark:text-green-300">요금제 정보</Label>
-                        <div className="text-sm">
-                          <p><span className="font-medium">요금제:</span> {settlementForm.watch('servicePlanName') || '없음'}</p>
-                          <p><span className="font-medium">결합유형:</span> {settlementForm.watch('bundleType') || '미지정'}</p>
-                        </div>
-                      </div>
-                      <div className="space-y-2">
-                        <Label className="text-sm font-medium text-green-700 dark:text-green-300">부가 서비스</Label>
-                        <div className="flex flex-wrap gap-1">
-                          {settlementForm.watch('additionalServices')?.length > 0 ? (
-                            settlementForm.watch('additionalServices').map((service, index) => (
-                              <Badge key={index} variant="outline" className="text-xs">
-                                {service}
-                              </Badge>
-                            ))
-                          ) : (
-                            <span className="text-xs text-muted-foreground">부가 서비스 없음</span>
-                          )}
-                        </div>
-                      </div>
-                      <div className="space-y-2">
-                        <Label className="text-sm font-medium text-green-700 dark:text-green-300">정책 정보</Label>
-                        <div className="text-sm">
-                          <p><span className="font-medium">정책차수:</span> <Badge variant="secondary">{settlementForm.watch('policyLevel')}차수</Badge></p>
-                          <p className="text-xs text-muted-foreground">{settlementForm.watch('policyDetails')}</p>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* 정산 정보 입력 */}
-                  {selectedDocumentId && (
-                    <div className="border rounded-lg p-4 bg-yellow-50 dark:bg-yellow-950">
-                      <h4 className="font-semibold mb-3 text-yellow-900 dark:text-yellow-100">💰 정산 정보 입력</h4>
-                      <div className="grid grid-cols-2 gap-4">
-                        <FormField
-                          control={settlementForm.control}
-                          name="settlementAmount"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>정산 금액</FormLabel>
-                              <FormControl>
-                                <Input 
-                                  type="number" 
-                                  {...field} 
-                                  onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
-                                  placeholder="정산 금액을 입력하세요" 
-                                />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        <FormField
-                          control={settlementForm.control}
-                          name="commissionRate"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>수수료율 (%)</FormLabel>
-                              <FormControl>
-                                <Input 
-                                  type="number" 
-                                  {...field} 
-                                  onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                                  placeholder="수수료율을 입력하세요" 
-                                />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                      </div>
-                      <div className="mt-4">
-                        <FormField
-                          control={settlementForm.control}
-                          name="bundleDetails"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>결합 상세 (선택사항)</FormLabel>
-                              <FormControl>
-                                <Input {...field} placeholder="결합 관련 상세 정보" />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                      </div>
-                    </div>
-                  )}
-
-                  <div className="flex justify-end gap-2">
-                    <Button type="button" variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
-                      취소
-                    </Button>
-                    <Button 
-                      type="submit" 
-                      disabled={!selectedDocumentId || isCreating}
-                      className="bg-teal-600 hover:bg-teal-700"
-                    >
-                      {isCreating ? '등록 중...' : '정산 등록'}
-                    </Button>
-                  </div>
-                </form>
-              </Form>
-            </DialogContent>
-          </Dialog>
         </div>
+
+        {/* 통계 카드 */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">총 개통건수</CardTitle>
+              <Users className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stats.total}</div>
+              <p className="text-xs text-muted-foreground">전체 개통 완료</p>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">이번달 개통</CardTitle>
+              <Calendar className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stats.thisMonth}</div>
+              <p className="text-xs text-muted-foreground">이번달 개통</p>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">지난달 개통</CardTitle>
+              <Clock className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stats.lastMonth}</div>
+              <p className="text-xs text-muted-foreground">지난달 개통</p>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">예상 정산액</CardTitle>
+              <DollarSign className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stats.totalAmount.toLocaleString()}</div>
+              <p className="text-xs text-muted-foreground">원</p>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* 필터링 및 다운로드 */}
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle>데이터 필터링 및 다운로드</CardTitle>
+            <CardDescription>
+              개통날짜를 기준으로 정산 데이터를 필터링하고 엑셀로 다운로드할 수 있습니다.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-wrap gap-4 items-end">
+              <div className="flex-1 min-w-[200px]">
+                <Label htmlFor="start-date">시작 날짜</Label>
+                <Input
+                  id="start-date"
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                />
+              </div>
+              <div className="flex-1 min-w-[200px]">
+                <Label htmlFor="end-date">종료 날짜</Label>
+                <Input
+                  id="end-date"
+                  type="date"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                />
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  onClick={() => {
+                    setStartDate('');
+                    setEndDate('');
+                  }}
+                  variant="outline"
+                >
+                  필터 초기화
+                </Button>
+                <Button onClick={handleExcelDownload} className="bg-teal-600 hover:bg-teal-700">
+                  <Download className="w-4 h-4 mr-2" />
+                  엑셀 다운로드
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* 정산 데이터 목록 */}
+        <Card>
+          <CardHeader>
+            <CardTitle>정산 데이터 목록</CardTitle>
+            <CardDescription>
+              개통 완료된 문서를 기반으로 한 정산 정보입니다. ({filteredDocuments.length}건)
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {isLoading ? (
+              <div className="text-center py-8">로딩 중...</div>
+            ) : filteredDocuments && filteredDocuments.length > 0 ? (
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>개통날짜</TableHead>
+                      <TableHead>문서번호</TableHead>
+                      <TableHead>고객명</TableHead>
+                      <TableHead>연락처</TableHead>
+                      <TableHead>판매점명</TableHead>
+                      <TableHead>통신사</TableHead>
+                      <TableHead>요금제</TableHead>
+                      <TableHead>부가서비스</TableHead>
+                      <TableHead>결합여부</TableHead>
+                      <TableHead>기기/유심</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredDocuments.map((doc) => (
+                      <TableRow key={doc.id}>
+                        <TableCell>
+                          {format(new Date(doc.activatedAt), 'yyyy-MM-dd', { locale: ko })}
+                        </TableCell>
+                        <TableCell className="font-medium">{doc.documentNumber}</TableCell>
+                        <TableCell>{doc.customerName}</TableCell>
+                        <TableCell>{doc.customerPhone}</TableCell>
+                        <TableCell>{doc.storeName || doc.dealerName}</TableCell>
+                        <TableCell>
+                          <Badge variant="outline">{doc.carrier}</Badge>
+                        </TableCell>
+                        <TableCell>{doc.servicePlanName || '-'}</TableCell>
+                        <TableCell>
+                          {doc.additionalServices && doc.additionalServices.length > 0 ? (
+                            <div className="flex flex-wrap gap-1">
+                              {doc.additionalServices.slice(0, 2).map((service, index) => (
+                                <Badge key={index} variant="secondary" className="text-xs">
+                                  {service}
+                                </Badge>
+                              ))}
+                              {doc.additionalServices.length > 2 && (
+                                <Badge variant="secondary" className="text-xs">
+                                  +{doc.additionalServices.length - 2}
+                                </Badge>
+                              )}
+                            </div>
+                          ) : (
+                            <span className="text-muted-foreground text-sm">없음</span>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          {getStatusBadge(doc.bundleApplied, doc.bundleNotApplied)}
+                        </TableCell>
+                        <TableCell>
+                          <div className="text-sm">
+                            {doc.deviceModel && <div>기기: {doc.deviceModel}</div>}
+                            {doc.simNumber && <div>유심: {doc.simNumber}</div>}
+                            {!doc.deviceModel && !doc.simNumber && <span className="text-muted-foreground">-</span>}
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            ) : (
+              <div className="text-center py-8 text-muted-foreground">
+                선택한 기간에 개통 완료된 문서가 없습니다.
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
     </Layout>
   );

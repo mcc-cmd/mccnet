@@ -1426,4 +1426,64 @@ router.post('/api/settlements/bulk-from-activated', requireAuth, async (req: any
   }
 });
 
+// 정산 데이터 엑셀 다운로드
+router.get('/api/settlements/export', requireAuth, async (req: any, res) => {
+  try {
+    const { startDate, endDate } = req.query;
+    const user = req.user;
+    
+    // 관리자와 근무자는 모든 문서를, 판매점은 해당 대리점 문서만 조회
+    const isWorker = req.session.userRole === 'dealer_worker';
+    const isAdmin = req.session.userType === 'admin';
+    
+    let dealerId = req.session.dealerId;
+    if (isAdmin || isWorker) {
+      dealerId = undefined; // 모든 문서를 볼 수 있도록 설정
+    }
+    
+    // 개통 완료된 문서 조회
+    const documents = await storage.getDocuments(dealerId, {
+      activationStatus: '개통',
+      startDate: startDate as string,
+      endDate: endDate as string
+    });
+    
+    // 엑셀 데이터 생성
+    const XLSX = await import('xlsx');
+    const workbook = XLSX.utils.book_new();
+    
+    const excelData = documents.map(doc => ({
+      '개통날짜': doc.activatedAt ? format(new Date(doc.activatedAt), 'yyyy-MM-dd') : '',
+      '문서번호': doc.documentNumber,
+      '고객명': doc.customerName,
+      '연락처': doc.customerPhone,
+      '판매점명': doc.storeName || doc.dealerName,
+      '통신사': doc.carrier,
+      '접점코드': doc.contactCode || '',
+      '요금제': doc.servicePlanName || '',
+      '부가서비스': doc.additionalServices ? doc.additionalServices.join(', ') : '',
+      '결합여부': doc.bundleApplied ? '결합' : (doc.bundleNotApplied ? '미결합' : '미지정'),
+      '기기모델': doc.deviceModel || '',
+      '유심번호': doc.simNumber || '',
+      '비고': doc.notes || ''
+    }));
+    
+    const worksheet = XLSX.utils.json_to_sheet(excelData);
+    XLSX.utils.book_append_sheet(workbook, worksheet, '정산데이터');
+    
+    // 엑셀 파일 생성
+    const buffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
+    
+    const filename = `정산데이터_${startDate || '전체'}_${endDate || '현재'}.xlsx`;
+    
+    res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(filename)}"`);
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.send(buffer);
+    
+  } catch (error: any) {
+    console.error('Settlement export error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 export default router;

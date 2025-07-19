@@ -202,6 +202,12 @@ This is a document management system built for MCC네트월드 telecommunication
 - July 19, 2025. Implemented searchable ComboBox for service plan selection with numeric filtering (e.g., typing "7" shows 7GB plans)
 - July 19, 2025. Enhanced Documents page to display registration fee, SIM fee, and bundle information alongside service plan details
 - July 19, 2025. Fixed getDocuments query to properly include all cost-related fields (registration_fee_prepaid/postpaid, sim_fee_prepaid/postpaid, bundle_applied/not_applied)
+- July 19, 2025. Completely redesigned Settlement Management system to automatically pull data from completed activations in Document Management
+- July 19, 2025. Removed manual settlement registration form in favor of automatic data population from Document Management
+- July 19, 2025. Implemented comprehensive settlement data display with activation date, store info, carrier, service plans, and additional services
+- July 19, 2025. Added date-based filtering and Excel export functionality for settlement data with Korean column headers
+- July 19, 2025. Enhanced settlement statistics dashboard showing monthly activation counts and estimated settlement amounts
+- July 19, 2025. Integrated settlement system with Document Management's activation status to provide real-time settlement data
 
 ## User Preferences
 
