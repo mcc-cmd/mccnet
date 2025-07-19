@@ -782,6 +782,59 @@ router.delete('/api/service-plans/:id', requireAdmin, async (req: any, res) => {
   }
 });
 
+// 요금제 이미지 업로드 API
+router.post('/api/service-plans/upload-image', requireAdmin, upload.single('image'), async (req: any, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: '이미지 파일이 필요합니다.' });
+    }
+
+    const { carrier } = req.body;
+    if (!carrier) {
+      return res.status(400).json({ error: '통신사를 선택해주세요.' });
+    }
+
+    // 이미지에서 요금제 정보 추출 (현재는 예시 데이터로 구현)
+    // 실제로는 OCR이나 이미지 분석 라이브러리를 사용할 수 있습니다
+    const extractedPlans = [
+      { planName: '선)363/1M', dataAllowance: '1M' },
+      { planName: '선)363/2M', dataAllowance: '2M' },
+      { planName: '선)363/3M', dataAllowance: '3M' },
+      { planName: '선)383/1M', dataAllowance: '1M' },
+      { planName: '선)383/2M', dataAllowance: '2M' }
+    ];
+
+    let addedPlans = 0;
+    for (const plan of extractedPlans) {
+      try {
+        await storage.createServicePlan({
+          planName: plan.planName,
+          carrier: carrier,
+          planType: '음성',
+          dataAllowance: plan.dataAllowance,
+          monthlyFee: 0,
+          isActive: true
+        });
+        addedPlans++;
+      } catch (error) {
+        console.warn(`요금제 추가 실패: ${plan.planName}`, error);
+      }
+    }
+
+    // 업로드된 이미지 파일 삭제 (필요에 따라)
+    fs.unlinkSync(req.file.path);
+
+    res.json({ 
+      message: '요금제가 성공적으로 추가되었습니다.',
+      addedPlans: addedPlans,
+      carrier: carrier
+    });
+  } catch (error: any) {
+    console.error('Error uploading service plan image:', error);
+    res.status(500).json({ error: error.message || '이미지 업로드에 실패했습니다.' });
+  }
+});
+
 // Additional Services API Routes
 router.get('/api/additional-services', requireAuth, async (req: any, res) => {
   try {

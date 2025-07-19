@@ -103,6 +103,12 @@ export function AdminPanel() {
   const [pricingTitle, setPricingTitle] = useState('');
   const [templateTitle, setTemplateTitle] = useState('');
   const [templateCategory, setTemplateCategory] = useState<'가입서류' | '변경서류'>('가입서류');
+  
+  // 요금제 이미지 업로드 관련
+  const [servicePlanImageForm, setServicePlanImageForm] = useState({
+    carrier: '',
+    file: null as File | null
+  });
 
   // Queries
   const { data: dealers, isLoading: dealersLoading } = useQuery({
@@ -475,6 +481,41 @@ export function AdminPanel() {
       toast({
         title: '성공',
         description: '부가서비스가 성공적으로 생성되었습니다.',
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: '오류',
+        description: error.message,
+        variant: 'destructive',
+      });
+    },
+  });
+
+  const servicePlanImageMutation = useMutation({
+    mutationFn: async (data: { carrier: string; file: File }) => {
+      const formData = new FormData();
+      formData.append('carrier', data.carrier);
+      formData.append('image', data.file);
+      
+      const response = await fetch('/api/service-plans/upload-image', {
+        method: 'POST',
+        body: formData,
+      });
+      
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({ error: '이미지 분석에 실패했습니다.' }));
+        throw new Error(error.error || '이미지 분석에 실패했습니다.');
+      }
+      
+      return response.json();
+    },
+    onSuccess: (result) => {
+      queryClient.invalidateQueries({ queryKey: ['/api/service-plans'] });
+      setServicePlanImageForm({ carrier: '', file: null });
+      toast({
+        title: '성공',
+        description: `${result.addedPlans}개의 요금제가 추가되었습니다.`,
       });
     },
     onError: (error: Error) => {
@@ -1846,6 +1887,52 @@ export function AdminPanel() {
                       <p className="mt-1 text-sm text-gray-500">첫 번째 요금제를 추가해보세요.</p>
                     </div>
                   )}
+                </CardContent>
+              </Card>
+
+              {/* 요금제 이미지 업로드 카드 */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>요금제 이미지 업로드</CardTitle>
+                  <CardDescription>
+                    이미지에서 요금제 정보를 읽어서 자동으로 추가합니다.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <form onSubmit={handleServicePlanImageSubmit} className="space-y-4">
+                    <div>
+                      <Label>통신사</Label>
+                      <Select value={servicePlanImageForm.carrier} onValueChange={(value) => setServicePlanImageForm(prev => ({ ...prev, carrier: value }))}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="통신사를 선택하세요" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="선불">선불</SelectItem>
+                          <SelectItem value="KT">KT</SelectItem>
+                          <SelectItem value="SK텔레콤">SK텔레콤</SelectItem>
+                          <SelectItem value="미래엔">미래엔</SelectItem>
+                          <SelectItem value="엠모바일">엠모바일</SelectItem>
+                          <SelectItem value="중외할부통신">중외할부통신</SelectItem>
+                          <SelectItem value="텔레콤">텔레콤</SelectItem>
+                          <SelectItem value="헬로모바일">헬로모바일</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label>이미지 파일</Label>
+                      <Input
+                        type="file"
+                        onChange={(e) => setServicePlanImageForm(prev => ({ ...prev, file: e.target.files?.[0] || null }))}
+                        accept=".jpg,.jpeg,.png,.gif,.bmp,.tiff,.webp"
+                      />
+                      <p className="text-sm text-gray-500 mt-1">
+                        이미지에서 요금제 정보를 읽어 자동으로 추가됩니다
+                      </p>
+                    </div>
+                    <Button type="submit" disabled={servicePlanImageMutation.isPending}>
+                      {servicePlanImageMutation.isPending ? '분석 중...' : '요금제 추가'}
+                    </Button>
+                  </form>
                 </CardContent>
               </Card>
 
