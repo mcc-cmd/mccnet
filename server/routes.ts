@@ -911,6 +911,80 @@ router.post('/api/dealers/:id/contact-codes', requireAdmin, async (req: any, res
   }
 });
 
+// 접점 코드 엑셀 업로드
+router.post('/api/admin/contact-codes/upload', requireAdmin, upload.single('file'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: '파일을 선택해주세요.' });
+    }
+
+    // XLSX 라이브러리를 사용하여 엑셀 파일 읽기
+    const XLSX = await import('xlsx');
+    const workbook = XLSX.readFile(req.file.path);
+    const sheetName = workbook.SheetNames[0];
+    const worksheet = workbook.Sheets[sheetName];
+    const data = XLSX.utils.sheet_to_json(worksheet, { header: 1 }) as any[][];
+
+    // 첫 번째 행은 헤더로 건너뛰기
+    const rows = data.slice(1);
+    
+    // 처리된 대리점 수
+    let processedCount = 0;
+
+    for (const row of rows) {
+      const [dealerName, ...carrierCodes] = row;
+      
+      if (!dealerName) continue;
+
+      // 대리점 이름으로 찾기 (기존 대리점 또는 새로 생성할 대리점)
+      let dealer = await storage.findDealerByName(dealerName.toString().trim());
+      
+      // 대리점이 없으면 새로 생성
+      if (!dealer) {
+        dealer = await storage.createDealer({
+          name: dealerName.toString().trim(),
+          location: '자동생성',
+          contactEmail: `${dealerName.toString().trim().replace(/\s+/g, '')}@auto.com`,
+          contactPhone: '000-0000-0000'
+        });
+      }
+
+      // 통신사별 접점 코드 매핑
+      const contactCodes = [
+        { carrierId: 'sk-tellink', carrierName: 'SK텔링크', contactCode: carrierCodes[0] || '' },
+        { carrierId: 'sk-pretty', carrierName: 'SK프리티', contactCode: carrierCodes[1] || '' },
+        { carrierId: 'sk-stage5', carrierName: 'SK스테이지파이브', contactCode: carrierCodes[2] || '' },
+        { carrierId: 'kt-telecom', carrierName: 'KT', contactCode: carrierCodes[3] || '' },
+        { carrierId: 'kt-emobile', carrierName: 'KT엠모바일', contactCode: carrierCodes[4] || '' },
+        { carrierId: 'kt-codemore', carrierName: 'KT코드모바일', contactCode: carrierCodes[5] || '' },
+        { carrierId: 'lg-hellomobile', carrierName: 'LG헬로모바일', contactCode: carrierCodes[6] || '' },
+        { carrierId: 'lg-uplus', carrierName: '미디어로그', contactCode: carrierCodes[7] || '' },
+        { carrierId: 'mvno-emobile', carrierName: 'KT스테이지파이브', contactCode: carrierCodes[8] || '' },
+        { carrierId: 'mvno-future', carrierName: 'LG밸류컴', contactCode: carrierCodes[9] || '' },
+        { carrierId: 'mvno-china', carrierName: '중고KT', contactCode: carrierCodes[10] || '' },
+        { carrierId: 'mvno-prepaid', carrierName: 'LG스마텔', contactCode: carrierCodes[11] || '' },
+      ];
+
+      // 접점 코드 업데이트
+      await storage.updateDealerContactCodes(dealer.id, contactCodes);
+      processedCount++;
+    }
+
+    // 임시 파일 삭제
+    const fs = await import('fs');
+    fs.unlinkSync(req.file.path);
+
+    res.json({ 
+      message: `${processedCount}개 대리점의 접점 코드가 성공적으로 업데이트되었습니다.`,
+      processedCount 
+    });
+
+  } catch (error: any) {
+    console.error('Contact codes excel upload error:', error);
+    res.status(500).json({ error: '엑셀 파일 처리에 실패했습니다.' });
+  }
+});
+
 // Service Plans management routes (admin only)
 
 router.post('/api/service-plans', requireAdmin, async (req: any, res) => {

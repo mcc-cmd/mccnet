@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Layout } from '@/components/Layout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -74,20 +74,20 @@ type ContactCode = {
   contactCode: string;
 };
 
-// 12개 통신사 리스트
+// 통신사 리스트 (업데이트됨)
 const CARRIERS = [
   { id: 'sk-tellink', name: 'SK텔링크' },
   { id: 'sk-pretty', name: 'SK프리티' },
   { id: 'sk-stage5', name: 'SK스테이지파이브' },
-  { id: 'kt-telecom', name: 'KT텔레콤' },
-  { id: 'kt-skylife', name: 'KT스카이라이프' },
-  { id: 'kt-pcom', name: 'KT피콤' },
+  { id: 'kt-telecom', name: 'KT' },
+  { id: 'kt-emobile', name: 'KT엠모바일' },
+  { id: 'kt-codemore', name: 'KT코드모바일' },
   { id: 'lg-hellomobile', name: 'LG헬로모바일' },
-  { id: 'lg-uplus', name: 'LG유플러스' },
-  { id: 'mvno-emobile', name: 'MVNO(엠모바일)' },
-  { id: 'mvno-future', name: 'MVNO(미래엔)' },
-  { id: 'mvno-china', name: 'MVNO(중국외국인)' },
-  { id: 'mvno-prepaid', name: 'MVNO(선불폰)' },
+  { id: 'lg-uplus', name: '미디어로그' },
+  { id: 'mvno-emobile', name: 'KT스테이지파이브' },
+  { id: 'mvno-future', name: 'LG밸류컴' },
+  { id: 'mvno-china', name: '중고KT' },
+  { id: 'mvno-prepaid', name: 'LG스마텔' },
 ];
 
 function ContactCodeManagement({ dealer }: { dealer: Dealer }) {
@@ -281,6 +281,9 @@ export function AdminPanel() {
   // 엑셀 다운로드 관련
   const [exportStartDate, setExportStartDate] = useState('');
   const [exportEndDate, setExportEndDate] = useState('');
+  
+  // 엑셀 업로드 관련 상태
+  const excelFileInputRef = useRef<HTMLInputElement>(null);
 
   // Queries
   const { data: dealers, isLoading: dealersLoading } = useQuery({
@@ -632,6 +635,48 @@ export function AdminPanel() {
   const handleDeleteUser = async (userId: number) => {
     if (confirm('정말로 이 사용자를 삭제하시겠습니까?')) {
       deleteUserMutation.mutate(userId);
+    }
+  };
+
+  // 엑셀 업로드 뮤테이션
+  const excelUploadMutation = useMutation({
+    mutationFn: async (file: File) => {
+      const formData = new FormData();
+      formData.append('file', file);
+      
+      return apiRequest('/api/admin/contact-codes/upload', {
+        method: 'POST',
+        body: formData,
+      });
+    },
+    onSuccess: () => {
+      toast({
+        title: "업로드 완료",
+        description: "접점 코드가 성공적으로 업로드되었습니다.",
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/dealers'] });
+      // 모든 대리점의 접점 코드 쿼리를 무효화
+      dealers?.forEach(dealer => {
+        queryClient.invalidateQueries({ queryKey: [`/api/dealers/${dealer.id}/contact-codes`] });
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "업로드 실패",
+        description: error.message || "접점 코드 업로드에 실패했습니다.",
+        variant: "destructive"
+      });
+    }
+  });
+
+  const handleExcelUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      excelUploadMutation.mutate(file);
+    }
+    // 파일 입력 초기화
+    if (excelFileInputRef.current) {
+      excelFileInputRef.current.value = '';
     }
   };
 
@@ -1104,11 +1149,30 @@ export function AdminPanel() {
           {/* Contact Codes Tab */}
           <TabsContent value="contact-codes">
             <Card>
-              <CardHeader>
-                <CardTitle>접점 코드 관리</CardTitle>
-                <CardDescription>
-                  대리점별 통신사 접점 코드를 설정하여 자동으로 서류에 할당되도록 관리합니다.
-                </CardDescription>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <div>
+                  <CardTitle>접점 코드 관리</CardTitle>
+                  <CardDescription>
+                    대리점별 통신사 접점 코드를 설정하여 자동으로 서류에 할당되도록 관리합니다.
+                  </CardDescription>
+                </div>
+                <div className="space-x-2">
+                  <input
+                    ref={excelFileInputRef}
+                    type="file"
+                    accept=".xlsx,.xls"
+                    onChange={handleExcelUpload}
+                    className="hidden"
+                  />
+                  <Button
+                    variant="outline"
+                    onClick={() => excelFileInputRef.current?.click()}
+                    disabled={excelUploadMutation.isPending}
+                  >
+                    <Upload className="mr-2 h-4 w-4" />
+                    {excelUploadMutation.isPending ? '업로드 중...' : '엑셀 업로드'}
+                  </Button>
+                </div>
               </CardHeader>
               <CardContent>
                 {dealers && dealers.length > 0 ? (

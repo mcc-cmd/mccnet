@@ -38,11 +38,11 @@ export function SubmitApplication() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [dragActive, setDragActive] = useState(false);
   
-  // 통신사 목록
+  // 통신사 목록 (업데이트됨)
   const carriers = [
     'SK텔링크', 'SK프리티', 'SK스테이지파이브', 
-    'KT엠모바일', 'KT스테이지파이브', '스카이라이프KT', '코드모바일KT',
-    '미디어로그LG', '헬로모바일LG', '프리티LG', '밸류컴', '스마텔LG', '중고KT'
+    'KT', 'KT엠모바일', 'KT코드모바일',
+    'LG헬로모바일', '미디어로그', 'KT스테이지파이브', 'LG밸류컴', '중고KT', 'LG스마텔'
   ];
   
   // SK 계열사 체크

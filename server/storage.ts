@@ -1619,6 +1619,23 @@ class SqliteStorage implements IStorage {
     const stmt = db.prepare('DELETE FROM users WHERE id = ?');
     stmt.run(userId);
   }
+
+  async findDealerByName(name: string): Promise<Dealer | null> {
+    const stmt = db.prepare('SELECT * FROM dealers WHERE name = ?');
+    const dealer = stmt.get(name) as any;
+    
+    if (!dealer) return null;
+    
+    return {
+      id: dealer.id,
+      name: dealer.name,
+      location: dealer.location,
+      contactEmail: dealer.contact_email,
+      contactPhone: dealer.contact_phone,
+      createdAt: new Date(dealer.created_at),
+      updatedAt: new Date(dealer.updated_at)
+    };
+  }
 }
 
 export const storage = new SqliteStorage();
