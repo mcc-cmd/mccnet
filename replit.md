@@ -174,6 +174,8 @@ This is a document management system built for MCC네트월드 telecommunication
 - July 19, 2025. Database reinitialized with real service plan data from Excel file, test accounts recreated with standardized passwords
 - July 19, 2025. Enhanced supplement memo system: workers can add detailed notes when marking documents as "보완필요", dealers can view these notes prominently in orange boxes
 - July 19, 2025. Cleaned up service plan display in UI by removing redundant " - carrier (fee)" suffix, showing only clean plan names (e.g., "카K)Z Mini + 밀리의 서재" instead of "카K)Z Mini + 밀리의 서재 - KT (0원)")
+- July 19, 2025. Enhanced supplement memo system: workers can add detailed notes when marking documents as "보완필요", dealers can view these notes prominently in orange boxes
+- July 19, 2025. Fixed duplicate service plan names by adding unique identifiers to "미)이동의즐거움 K" plans (K-1, K-2, K-3, K-4) for proper distinction in UI selection
 
 ## User Preferences
 
