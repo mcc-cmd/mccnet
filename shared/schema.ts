@@ -190,6 +190,9 @@ export const updateActivationStatusSchema = z.object({
   supplementNotes: z.string().optional(), // 보완 상세 내용
   activatedBy: z.number().optional(), // 개통완료 처리한 근무자 ID
   supplementRequiredBy: z.number().optional(), // 보완 요청한 근무자 ID
+  deviceModel: z.string().optional(), // 기기모델
+  simNumber: z.string().optional(), // 유심번호
+  subscriptionNumber: z.string().optional(), // 가입번호/계약번호
 });
 
 // Type exports

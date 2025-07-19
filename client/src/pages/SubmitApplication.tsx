@@ -23,7 +23,6 @@ export function SubmitApplication() {
     customerPhone: '',
     storeName: user?.dealerName || '', // 로그인한 사용자의 대리점명 자동 설정
     carrier: '',
-    subscriptionNumber: '', // 가입번호/계약번호 추가
     notes: ''
   });
 
@@ -43,7 +42,7 @@ export function SubmitApplication() {
   const carriers = [
     'SK텔링크', 'SK프리티', 'SK스테이지파이브', 
     'KT', 'KT엠모바일', 'KT코드모바일',
-    'LG헬로모바일', '미디어로그', 'KT스테이지파이브', 'LG밸류컴', '중고KT', 'LG스마텔'
+    'LG헬로모바일', 'LG미디어로그', 'KT스테이지파이브', 'LG밸류컴', 'LG스마텔', 'LG프리티', '스카이라이프KT'
   ];
   
   // SK 계열사 체크
@@ -68,7 +67,7 @@ export function SubmitApplication() {
       });
 
       // Reset form
-      setFormData({ customerName: '', customerPhone: '', storeName: user?.dealerName || '', carrier: '', subscriptionNumber: '', notes: '' });
+      setFormData({ customerName: '', customerPhone: '', storeName: user?.dealerName || '', carrier: '', notes: '' });
       setSelectedFile(null);
     },
     onError: (error: Error) => {
@@ -259,20 +258,7 @@ export function SubmitApplication() {
                     )}
                   </div>
                   
-                  <div>
-                    <Label htmlFor="subscriptionNumber">가입번호/계약번호</Label>
-                    <Input
-                      id="subscriptionNumber"
-                      name="subscriptionNumber"
-                      value={formData.subscriptionNumber}
-                      onChange={handleInputChange}
-                      placeholder="가입번호 또는 계약번호를 입력하세요"
-                      className="mt-1"
-                    />
-                    <p className="text-sm text-gray-500 mt-1">
-                      개통 완료 후 가입번호나 계약번호를 입력하세요
-                    </p>
-                  </div>
+
                 </div>
 
                 <div>

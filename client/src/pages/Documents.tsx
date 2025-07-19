@@ -42,7 +42,10 @@ export function Documents() {
   const [activationForm, setActivationForm] = useState({
     activationStatus: '',
     notes: '',
-    supplementNotes: ''
+    supplementNotes: '',
+    deviceModel: '',
+    simNumber: '',
+    subscriptionNumber: ''
   });
   
   const [servicePlanDialogOpen, setServicePlanDialogOpen] = useState(false);
@@ -205,7 +208,10 @@ export function Documents() {
     setActivationForm({
       activationStatus: (doc as any).activationStatus || '대기',
       notes: '',
-      supplementNotes: ''
+      supplementNotes: '',
+      deviceModel: (doc as any).deviceModel || '',
+      simNumber: (doc as any).simNumber || '',
+      subscriptionNumber: (doc as any).subscriptionNumber || ''
     });
     setActivationDialogOpen(true);
   };
@@ -254,7 +260,7 @@ export function Documents() {
       queryClient.invalidateQueries({ queryKey: ['/api/dashboard/stats'] });
       setActivationDialogOpen(false);
       setSelectedDocument(null);
-      setActivationForm({ activationStatus: '', notes: '', supplementNotes: '' });
+      setActivationForm({ activationStatus: '', notes: '', supplementNotes: '', deviceModel: '', simNumber: '', subscriptionNumber: '' });
       toast({
         title: "성공",
         description: "개통 상태가 변경되었습니다.",
@@ -959,6 +965,42 @@ export function Documents() {
                   rows={3}
                 />
               </div>
+              
+              {/* 개통완료 시 가입번호/계약번호 입력 */}
+              {activationForm.activationStatus === '개통' && (
+                <div className="bg-blue-50 p-4 rounded-lg space-y-4">
+                  <h4 className="font-medium text-blue-900">개통 정보 입력</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="deviceModel">기기모델</Label>
+                      <Input
+                        id="deviceModel"
+                        placeholder="기기모델을 입력하세요"
+                        value={activationForm.deviceModel || ''}
+                        onChange={(e) => setActivationForm(prev => ({ ...prev, deviceModel: e.target.value }))}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="simNumber">유심번호</Label>
+                      <Input
+                        id="simNumber"
+                        placeholder="유심번호를 입력하세요"
+                        value={activationForm.simNumber || ''}
+                        onChange={(e) => setActivationForm(prev => ({ ...prev, simNumber: e.target.value }))}
+                      />
+                    </div>
+                    <div className="md:col-span-2">
+                      <Label htmlFor="subscriptionNumber">가입번호/계약번호</Label>
+                      <Input
+                        id="subscriptionNumber"
+                        placeholder="가입번호 또는 계약번호를 입력하세요"
+                        value={activationForm.subscriptionNumber || ''}
+                        onChange={(e) => setActivationForm(prev => ({ ...prev, subscriptionNumber: e.target.value }))}
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
               
               {/* 보완 내용 - 보완필요와 개통완료 상태에서 모두 작성 가능 */}
               {(activationForm.activationStatus === '보완필요' || activationForm.activationStatus === '개통') && (

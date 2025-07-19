@@ -138,7 +138,7 @@ export function CompletedActivations() {
                         <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">고객명</th>
                         <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">연락처</th>
                         <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">통신사</th>
-                        <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">요금제</th>
+                        <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">요금제 정보</th>
                         <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">개통일</th>
                         <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">상태</th>
                       </tr>
@@ -151,7 +151,53 @@ export function CompletedActivations() {
                           <td className="px-3 py-2 text-sm text-gray-900">{doc.customerPhone}</td>
                           <td className="px-3 py-2 text-sm text-gray-900">{doc.carrier}</td>
                           <td className="px-3 py-2 text-sm text-gray-900">
-                            {(doc as any).planName || '미선택'}
+                            <div className="space-y-1">
+                              {/* 요금제 정보 */}
+                              {(doc as any).servicePlanName ? (
+                                <div className="font-medium text-blue-600 text-xs">
+                                  {(doc as any).servicePlanName}
+                                </div>
+                              ) : (
+                                <span className="text-gray-400">미선택</span>
+                              )}
+                              
+                              {/* 부가서비스 */}
+                              {(doc as any).additionalServices && (
+                                <div className="text-xs text-gray-500">
+                                  부가: {(doc as any).additionalServices}
+                                </div>
+                              )}
+                              
+                              {/* 가입비/유심비/결합 정보 */}
+                              {((doc as any).registrationFeePrepaid || (doc as any).registrationFeePostpaid || 
+                                (doc as any).simFeePrepaid || (doc as any).simFeePostpaid ||
+                                (doc as any).bundleApplied || (doc as any).bundleNotApplied) && (
+                                <div className="text-xs text-gray-600 space-y-0.5">
+                                  {((doc as any).registrationFeePrepaid || (doc as any).registrationFeePostpaid) && (
+                                    <div>
+                                      가입비: {(doc as any).registrationFeePrepaid ? '선납' : ''}{(doc as any).registrationFeePrepaid && (doc as any).registrationFeePostpaid ? '/' : ''}{(doc as any).registrationFeePostpaid ? '후납' : ''}
+                                    </div>
+                                  )}
+                                  {((doc as any).simFeePrepaid || (doc as any).simFeePostpaid) && (
+                                    <div>
+                                      유심비: {(doc as any).simFeePrepaid ? '선납' : ''}{(doc as any).simFeePrepaid && (doc as any).simFeePostpaid ? '/' : ''}{(doc as any).simFeePostpaid ? '후납' : ''}
+                                    </div>
+                                  )}
+                                  {((doc as any).bundleApplied || (doc as any).bundleNotApplied) && (
+                                    <div>
+                                      결합: {(doc as any).bundleApplied ? '적용' : ''}{(doc as any).bundleApplied && (doc as any).bundleNotApplied ? '/' : ''}{(doc as any).bundleNotApplied ? '미적용' : ''}
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+                              
+                              {/* 월 요금 */}
+                              {(doc as any).totalMonthlyFee && (
+                                <div className="text-xs font-medium text-green-600">
+                                  월 {(doc as any).totalMonthlyFee.toLocaleString()}원
+                                </div>
+                              )}
+                            </div>
                           </td>
                           <td className="px-3 py-2 text-sm text-gray-500">
                             {doc.activatedAt ? format(new Date(doc.activatedAt), 'yyyy-MM-dd', { locale: ko }) : '-'}
@@ -180,7 +226,58 @@ export function CompletedActivations() {
                         <div className="space-y-1 text-sm">
                           <p><span className="font-medium">연락처:</span> {doc.customerPhone}</p>
                           <p><span className="font-medium">통신사:</span> {doc.carrier}</p>
-                          <p><span className="font-medium">요금제:</span> {(doc as any).planName || '미선택'}</p>
+                          
+                          {/* 요금제 정보 */}
+                          <div>
+                            <span className="font-medium">요금제:</span>
+                            {(doc as any).servicePlanName ? (
+                              <div className="mt-1 space-y-1">
+                                <div className="font-medium text-blue-600 text-sm">
+                                  {(doc as any).servicePlanName}
+                                </div>
+                                
+                                {/* 부가서비스 */}
+                                {(doc as any).additionalServices && (
+                                  <div className="text-sm text-gray-500">
+                                    부가: {(doc as any).additionalServices}
+                                  </div>
+                                )}
+                                
+                                {/* 가입비/유심비/결합 정보 */}
+                                {((doc as any).registrationFeePrepaid || (doc as any).registrationFeePostpaid || 
+                                  (doc as any).simFeePrepaid || (doc as any).simFeePostpaid ||
+                                  (doc as any).bundleApplied || (doc as any).bundleNotApplied) && (
+                                  <div className="text-sm text-gray-600 space-y-0.5">
+                                    {((doc as any).registrationFeePrepaid || (doc as any).registrationFeePostpaid) && (
+                                      <div>
+                                        가입비: {(doc as any).registrationFeePrepaid ? '선납' : ''}{(doc as any).registrationFeePrepaid && (doc as any).registrationFeePostpaid ? '/' : ''}{(doc as any).registrationFeePostpaid ? '후납' : ''}
+                                      </div>
+                                    )}
+                                    {((doc as any).simFeePrepaid || (doc as any).simFeePostpaid) && (
+                                      <div>
+                                        유심비: {(doc as any).simFeePrepaid ? '선납' : ''}{(doc as any).simFeePrepaid && (doc as any).simFeePostpaid ? '/' : ''}{(doc as any).simFeePostpaid ? '후납' : ''}
+                                      </div>
+                                    )}
+                                    {((doc as any).bundleApplied || (doc as any).bundleNotApplied) && (
+                                      <div>
+                                        결합: {(doc as any).bundleApplied ? '적용' : ''}{(doc as any).bundleApplied && (doc as any).bundleNotApplied ? '/' : ''}{(doc as any).bundleNotApplied ? '미적용' : ''}
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
+                                
+                                {/* 월 요금 */}
+                                {(doc as any).totalMonthlyFee && (
+                                  <div className="text-sm font-medium text-green-600">
+                                    월 {(doc as any).totalMonthlyFee.toLocaleString()}원
+                                  </div>
+                                )}
+                              </div>
+                            ) : (
+                              <span className="text-gray-400"> 미선택</span>
+                            )}
+                          </div>
+                          
                           <p><span className="font-medium">개통일:</span> {doc.activatedAt ? format(new Date(doc.activatedAt), 'yyyy-MM-dd', { locale: ko }) : '-'}</p>
                         </div>
                       </div>

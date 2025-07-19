@@ -225,6 +225,10 @@ This is a document management system built for MCC네트월드 telecommunication
 - July 19, 2025. Implemented work locking: only assigned worker can process their claimed documents
 - July 19, 2025. Restricted settlements management to admin-only access for enhanced security
 - July 19, 2025. Added admin override permissions: administrators can modify all documents regardless of worker assignment locks
+- July 19, 2025. Enhanced CompletedActivations page to display complete service plan information including rates, additional services, registration fees, SIM fees, and bundle options
+- July 19, 2025. Updated carrier list: removed "중고KT", changed "미디어로그" to "LG미디어로그", added "스카이라이프KT" and "LG프리티"
+- July 19, 2025. Moved subscription/contract number fields from application form to activation completion workflow for worker input
+- July 19, 2025. Added device model, SIM number, and subscription number fields to activation completion process
 
 ## User Preferences
 

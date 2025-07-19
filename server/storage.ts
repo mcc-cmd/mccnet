@@ -1430,12 +1430,22 @@ class SqliteStorage implements IStorage {
       params.push(data.supplementNotes || null, data.supplementRequiredBy || null);
     }
 
-    // 개통완료 시 작업자 ID와 시간 기록
+    // 개통완료 시 작업자 ID와 시간 기록, 그리고 기기/유심/가입번호 정보
     if (data.activationStatus === '개통' && data.activatedBy) {
       updateQuery += `, activated_by = ?, activated_at = CURRENT_TIMESTAMP`;
       params.push(data.activatedBy);
     } else if (data.activationStatus === '개통' || data.activationStatus === '취소') {
       updateQuery += `, activated_at = CURRENT_TIMESTAMP`;
+    }
+    
+    // 개통완료 시 기기/유심/가입번호 정보 업데이트
+    if (data.activationStatus === '개통') {
+      updateQuery += `, device_model = ?, sim_number = ?, subscription_number = ?`;
+      params.push(
+        data.deviceModel || null,
+        data.simNumber || null,
+        data.subscriptionNumber || null
+      );
     }
 
     updateQuery += ` WHERE id = ?`;
