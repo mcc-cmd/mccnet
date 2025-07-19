@@ -560,11 +560,15 @@ export function AdminPanel() {
   // 엑셀 다운로드 mutation
   const exportMutation = useMutation({
     mutationFn: async () => {
+      const sessionId = useAuth.getState().sessionId;
+      const headers: Record<string, string> = {};
+      if (sessionId) {
+        headers['Authorization'] = `Bearer ${sessionId}`;
+      }
+      
       const response = await fetch(`/api/admin/export/activated-documents?startDate=${exportStartDate}&endDate=${exportEndDate}`, {
         method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers,
         credentials: 'include',
       });
       

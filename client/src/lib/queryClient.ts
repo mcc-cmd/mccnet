@@ -13,7 +13,16 @@ export async function apiRequest(
   data?: unknown | undefined,
 ): Promise<Response> {
   // Get session ID from auth store
-  const sessionId = JSON.parse(localStorage.getItem('auth-store') || '{}')?.state?.sessionId;
+  let sessionId = null;
+  try {
+    const authStore = localStorage.getItem('auth-store');
+    if (authStore) {
+      const parsed = JSON.parse(authStore);
+      sessionId = parsed?.state?.sessionId || null;
+    }
+  } catch (e) {
+    console.warn('Failed to parse auth store:', e);
+  }
   
   const headers: Record<string, string> = {};
   if (data && !(data instanceof FormData)) {
@@ -41,7 +50,16 @@ export const getQueryFn: <T>(options: {
   ({ on401: unauthorizedBehavior }) =>
   async ({ queryKey }) => {
     // Get session ID from auth store
-    const sessionId = JSON.parse(localStorage.getItem('auth-store') || '{}')?.state?.sessionId;
+    let sessionId = null;
+    try {
+      const authStore = localStorage.getItem('auth-store');
+      if (authStore) {
+        const parsed = JSON.parse(authStore);
+        sessionId = parsed?.state?.sessionId || null;
+      }
+    } catch (e) {
+      console.warn('Failed to parse auth store:', e);
+    }
     
     const headers: Record<string, string> = {};
     if (sessionId) {
