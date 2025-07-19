@@ -113,6 +113,7 @@ const requireAuth = async (req: any, res: any, next: any) => {
   }
 
   req.session = session;
+  req.user = session; // Add user property for compatibility
   next();
 };
 
