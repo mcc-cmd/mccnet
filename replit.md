@@ -198,6 +198,10 @@ This is a document management system built for MCC네트월드 telecommunication
 - July 19, 2025. Fixed client-server authentication by adding Authorization header with Bearer token to all API requests
 - July 19, 2025. Updated XLSX import to use ES module syntax and successfully tested Excel export functionality (17KB test file generated)
 - July 19, 2025. Confirmed complete Excel export system working with proper Korean column headers and data mapping
+- July 19, 2025. Updated service plan database with 301 real plans from Excel file (선불폰, 중국외국인, 미래엔, 엠모바일, KT텔레콤, SK텔레콤, 텔레콤, 헬로모바일, 기타)
+- July 19, 2025. Implemented searchable ComboBox for service plan selection with numeric filtering (e.g., typing "7" shows 7GB plans)
+- July 19, 2025. Enhanced Documents page to display registration fee, SIM fee, and bundle information alongside service plan details
+- July 19, 2025. Fixed getDocuments query to properly include all cost-related fields (registration_fee_prepaid/postpaid, sim_fee_prepaid/postpaid, bundle_applied/not_applied)
 
 ## User Preferences
 
