@@ -182,6 +182,9 @@ This is a document management system built for MCC네트월드 telecommunication
 - July 19, 2025. Successfully imported 300 service plans from Excel file with automatic carrier classification (선불폰, 중국외국인, 미래엔, KT텔레콤, 엠모바일, 기타)
 - July 19, 2025. Implemented comprehensive service plan management with carrier-specific categorization and data allowance extraction from plan names
 - July 19, 2025. Enhanced cost information system with SIM fee prepaid/postpaid options alongside existing registration fee and bundle checkboxes
+- July 19, 2025. Fixed supplement memo visibility for dealers by enhancing UI with prominent orange boxes and icons in both desktop and mobile views
+- July 19, 2025. Corrected service plan information display by adding proper LEFT JOIN with service_plans table in getDocuments query
+- July 19, 2025. Created comprehensive test accounts: 2 test dealers (테스트판매점1/2) with 6 user accounts (2 store managers + 4 workers) for testing purposes
 
 ## User Preferences
 
