@@ -20,10 +20,13 @@ export async function apiRequest(
   // Get session ID from auth store
   let sessionId = null;
   try {
-    const authStore = localStorage.getItem('auth-store');
+    const authStore = localStorage.getItem('auth-storage');
     if (authStore) {
       const parsed = JSON.parse(authStore);
       sessionId = parsed?.state?.sessionId || null;
+      console.log('Retrieved sessionId from auth-storage:', sessionId ? 'exists' : 'missing');
+    } else {
+      console.warn('No auth-storage found in localStorage');
     }
   } catch (e) {
     console.warn('Failed to parse auth store:', e);
@@ -62,7 +65,7 @@ export const getQueryFn: <T>(options: {
     // Get session ID from auth store
     let sessionId = null;
     try {
-      const authStore = localStorage.getItem('auth-store');
+      const authStore = localStorage.getItem('auth-storage');
       if (authStore) {
         const parsed = JSON.parse(authStore);
         sessionId = parsed?.state?.sessionId || null;

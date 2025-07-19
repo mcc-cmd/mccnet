@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { format } from 'date-fns';
+import { format, isValid } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -188,11 +188,57 @@ export function Settlements() {
     },
   });
 
+  // 체크박스 상호 배타적 처리 핸들러
+  const handleRegistrationFeeChange = (field: 'registrationFeePrepaid' | 'registrationFeePostpaid', checked: boolean) => {
+    if (checked) {
+      if (field === 'registrationFeePrepaid') {
+        form.setValue('registrationFeePrepaid', true);
+        form.setValue('registrationFeePostpaid', false);
+      } else {
+        form.setValue('registrationFeePrepaid', false);
+        form.setValue('registrationFeePostpaid', true);
+      }
+    } else {
+      form.setValue(field, false);
+    }
+  };
+
+  const handleSimFeeChange = (field: 'simFeePrepaid' | 'simFeePostpaid', checked: boolean) => {
+    if (checked) {
+      if (field === 'simFeePrepaid') {
+        form.setValue('simFeePrepaid', true);
+        form.setValue('simFeePostpaid', false);
+      } else {
+        form.setValue('simFeePrepaid', false);
+        form.setValue('simFeePostpaid', true);
+      }
+    } else {
+      form.setValue(field, false);
+    }
+  };
+
+  const handleBundleChange = (field: 'bundleApplied' | 'bundleNotApplied', checked: boolean) => {
+    if (checked) {
+      if (field === 'bundleApplied') {
+        form.setValue('bundleApplied', true);
+        form.setValue('bundleNotApplied', false);
+      } else {
+        form.setValue('bundleApplied', false);
+        form.setValue('bundleNotApplied', true);
+      }
+    } else {
+      form.setValue(field, false);
+    }
+  };
+
   // 수기 정산 등록 mutation
   const createManualSettlement = useMutation({
     mutationFn: async (data: ManualSettlementForm) => {
+      console.log('Submitting manual settlement:', data);
       const response = await apiRequest('POST', '/api/settlements/manual', data);
-      return response.json();
+      const result = await response.json();
+      console.log('Manual settlement response:', result);
+      return result;
     },
     onSuccess: () => {
       toast({
@@ -242,11 +288,17 @@ export function Settlements() {
     
     allCompletedDocuments.forEach(doc => {
       if (doc.activatedAt) {
-        const activatedDate = new Date(doc.activatedAt);
-        if (activatedDate >= thisMonthStart) {
-          thisMonth++;
-        } else if (activatedDate >= lastMonthStart && activatedDate <= lastMonthEnd) {
-          lastMonth++;
+        try {
+          const activatedDate = new Date(doc.activatedAt);
+          if (!isNaN(activatedDate.getTime())) {
+            if (activatedDate >= thisMonthStart) {
+              thisMonth++;
+            } else if (activatedDate >= lastMonthStart && activatedDate <= lastMonthEnd) {
+              lastMonth++;
+            }
+          }
+        } catch (e) {
+          console.warn('Invalid date:', doc.activatedAt);
         }
       }
     });
@@ -502,12 +554,7 @@ export function Settlements() {
                                 <input
                                   type="checkbox"
                                   checked={field.value}
-                                  onChange={(e) => {
-                                    field.onChange(e.target.checked);
-                                    if (e.target.checked) {
-                                      form.setValue('bundleNotApplied', false);
-                                    }
-                                  }}
+                                  onChange={(e) => handleBundleChange('bundleApplied', e.target.checked)}
                                   className="rounded border-gray-300"
                                 />
                               </FormControl>
@@ -526,12 +573,7 @@ export function Settlements() {
                                 <input
                                   type="checkbox"
                                   checked={field.value}
-                                  onChange={(e) => {
-                                    field.onChange(e.target.checked);
-                                    if (e.target.checked) {
-                                      form.setValue('registrationFeePostpaid', false);
-                                    }
-                                  }}
+                                  onChange={(e) => handleRegistrationFeeChange('registrationFeePrepaid', e.target.checked)}
                                   className="rounded border-gray-300"
                                 />
                               </FormControl>
@@ -550,12 +592,7 @@ export function Settlements() {
                                 <input
                                   type="checkbox"
                                   checked={field.value}
-                                  onChange={(e) => {
-                                    field.onChange(e.target.checked);
-                                    if (e.target.checked) {
-                                      form.setValue('simFeePostpaid', false);
-                                    }
-                                  }}
+                                  onChange={(e) => handleSimFeeChange('simFeePrepaid', e.target.checked)}
                                   className="rounded border-gray-300"
                                 />
                               </FormControl>
@@ -576,12 +613,7 @@ export function Settlements() {
                                 <input
                                   type="checkbox"
                                   checked={field.value}
-                                  onChange={(e) => {
-                                    field.onChange(e.target.checked);
-                                    if (e.target.checked) {
-                                      form.setValue('bundleApplied', false);
-                                    }
-                                  }}
+                                  onChange={(e) => handleBundleChange('bundleNotApplied', e.target.checked)}
                                   className="rounded border-gray-300"
                                 />
                               </FormControl>
@@ -600,12 +632,7 @@ export function Settlements() {
                                 <input
                                   type="checkbox"
                                   checked={field.value}
-                                  onChange={(e) => {
-                                    field.onChange(e.target.checked);
-                                    if (e.target.checked) {
-                                      form.setValue('registrationFeePrepaid', false);
-                                    }
-                                  }}
+                                  onChange={(e) => handleRegistrationFeeChange('registrationFeePostpaid', e.target.checked)}
                                   className="rounded border-gray-300"
                                 />
                               </FormControl>
@@ -624,12 +651,7 @@ export function Settlements() {
                                 <input
                                   type="checkbox"
                                   checked={field.value}
-                                  onChange={(e) => {
-                                    field.onChange(e.target.checked);
-                                    if (e.target.checked) {
-                                      form.setValue('simFeePrepaid', false);
-                                    }
-                                  }}
+                                  onChange={(e) => handleSimFeeChange('simFeePostpaid', e.target.checked)}
                                   className="rounded border-gray-300"
                                 />
                               </FormControl>
@@ -808,7 +830,14 @@ export function Settlements() {
                     {completedDocuments.map((doc) => (
                       <TableRow key={doc.id}>
                         <TableCell>
-                          {format(new Date(doc.activatedAt), 'yyyy-MM-dd', { locale: ko })}
+                          {doc.activatedAt ? (() => {
+                            try {
+                              const date = new Date(doc.activatedAt);
+                              return isValid(date) ? format(date, 'yyyy-MM-dd', { locale: ko }) : '-';
+                            } catch (e) {
+                              return '-';
+                            }
+                          })() : '-'}
                         </TableCell>
                         <TableCell className="font-medium">{doc.documentNumber}</TableCell>
                         <TableCell>{doc.customerName}</TableCell>
