@@ -8,11 +8,13 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { useApiRequest, useAuth } from '@/lib/auth';
 import { useToast } from '@/hooks/use-toast';
 import type { Document } from '../../../shared/schema';
-import { FileText, Upload, Search, Download, Calendar, Settings } from 'lucide-react';
+import { FileText, Upload, Search, Download, Calendar, Settings, Check, ChevronsUpDown } from 'lucide-react';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
 
@@ -44,6 +46,8 @@ export function Documents() {
   });
   
   const [servicePlanDialogOpen, setServicePlanDialogOpen] = useState(false);
+  const [servicePlanComboboxOpen, setServicePlanComboboxOpen] = useState(false);
+  const [servicePlanSearchValue, setServicePlanSearchValue] = useState('');
   const [servicePlanForm, setServicePlanForm] = useState({
     servicePlanId: '',
     additionalServiceIds: [] as string[],
@@ -921,21 +925,64 @@ export function Documents() {
               {/* 요금제 선택 */}
               <div className="bg-gray-50 p-4 rounded-lg">
                 <Label className="text-lg font-semibold mb-3 block">기본 요금제</Label>
-                <Select 
-                  value={servicePlanForm.servicePlanId} 
-                  onValueChange={(value) => setServicePlanForm(prev => ({ ...prev, servicePlanId: value }))}
-                >
-                  <SelectTrigger className="h-12">
-                    <SelectValue placeholder="요금제를 선택하세요" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {servicePlans?.map((plan) => (
-                      <SelectItem key={plan.id} value={plan.id.toString()}>
-                        {plan.planName}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Popover open={servicePlanComboboxOpen} onOpenChange={setServicePlanComboboxOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      aria-expanded={servicePlanComboboxOpen}
+                      className="w-full h-12 justify-between text-left font-normal"
+                    >
+                      {servicePlanForm.servicePlanId
+                        ? servicePlans?.find((plan) => plan.id.toString() === servicePlanForm.servicePlanId)?.planName
+                        : "요금제를 선택하세요"}
+                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-full p-0" align="start">
+                    <Command>
+                      <CommandInput 
+                        placeholder="숫자나 요금제명으로 검색하세요..." 
+                        value={servicePlanSearchValue}
+                        onValueChange={setServicePlanSearchValue}
+                      />
+                      <CommandEmpty>검색 결과가 없습니다.</CommandEmpty>
+                      <CommandList className="max-h-64">
+                        <CommandGroup>
+                          {servicePlans?.filter((plan) => {
+                            if (!servicePlanSearchValue) return true;
+                            
+                            const searchLower = servicePlanSearchValue.toLowerCase();
+                            const planNameLower = plan.planName.toLowerCase();
+                            
+                            // 숫자로 시작하는 검색어는 데이터 용량이나 숫자와 매칭
+                            if (/^\d/.test(searchLower)) {
+                              // GB, MB 등의 용량 검색 지원
+                              return planNameLower.includes(searchLower + 'gb') || 
+                                     planNameLower.includes(searchLower + 'mb') ||
+                                     planNameLower.includes(searchLower);
+                            }
+                            
+                            // 일반 텍스트 검색
+                            return planNameLower.includes(searchLower);
+                          }).map((plan) => (
+                            <CommandItem
+                              key={plan.id}
+                              value={plan.planName}
+                              onSelect={() => {
+                                setServicePlanForm(prev => ({ ...prev, servicePlanId: plan.id.toString() }));
+                                setServicePlanComboboxOpen(false);
+                                setServicePlanSearchValue('');
+                              }}
+                            >
+                              {plan.planName}
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
               </div>
 
               {/* 부가서비스 선택 */}
