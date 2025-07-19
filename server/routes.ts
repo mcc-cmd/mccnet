@@ -373,6 +373,18 @@ router.get('/api/admin/users', requireAdmin, async (req, res) => {
   }
 });
 
+// Delete user
+router.delete('/api/admin/users/:id', requireAdmin, async (req, res) => {
+  try {
+    const userId = parseInt(req.params.id);
+    await storage.deleteUser(userId);
+    res.json({ message: 'User deleted successfully' });
+  } catch (error: any) {
+    console.error('Delete user error:', error);
+    res.status(500).json({ message: error.message || 'Failed to delete user' });
+  }
+});
+
 // Worker statistics endpoint (admin only)
 router.get('/api/worker-stats', requireAdmin, async (req: any, res) => {
   try {

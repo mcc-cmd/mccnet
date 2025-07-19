@@ -28,7 +28,8 @@ import {
   CheckCircle,
   Clock,
   AlertTriangle,
-  TrendingUp
+  TrendingUp,
+  Trash2
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
@@ -105,7 +106,7 @@ function ContactCodeManagement({ dealer }: { dealer: Dealer }) {
 
   // 초기 데이터 설정
   React.useEffect(() => {
-    if (dealerContactCodes) {
+    if (dealerContactCodes && dealerContactCodes.length > 0) {
       setContactCodes(dealerContactCodes);
       setTempContactCodes(dealerContactCodes);
     } else {
@@ -222,9 +223,7 @@ function ContactCodeManagement({ dealer }: { dealer: Dealer }) {
               />
             ) : (
               <div className="p-2 bg-gray-50 rounded text-sm min-h-[36px] flex items-center">
-                {code.contactCode || (
-                  <span className="text-gray-400">미설정</span>
-                )}
+                {code.contactCode || '미설정'}
               </div>
             )}
           </div>
@@ -232,7 +231,7 @@ function ContactCodeManagement({ dealer }: { dealer: Dealer }) {
       </div>
     </div>
   );
-}
+};
 
 export function AdminPanel() {
   const { user } = useAuth();
@@ -609,6 +608,31 @@ export function AdminPanel() {
 
   const handleCreateUser = (data: CreateUserForm) => {
     createUserMutation.mutate(data);
+  };
+
+  // 사용자 삭제 함수
+  const deleteUserMutation = useMutation({
+    mutationFn: (userId: number) => apiRequest(`/api/admin/users/${userId}`, { method: 'DELETE' }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/users'] });
+      toast({
+        title: "삭제 완료",
+        description: "사용자가 성공적으로 삭제되었습니다.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "삭제 실패",
+        description: error.message || "사용자 삭제에 실패했습니다.",
+        variant: "destructive"
+      });
+    }
+  });
+
+  const handleDeleteUser = async (userId: number) => {
+    if (confirm('정말로 이 사용자를 삭제하시겠습니까?')) {
+      deleteUserMutation.mutate(userId);
+    }
   };
 
   const handleCreateAdmin = (data: CreateAdminForm) => {
@@ -1244,6 +1268,9 @@ export function AdminPanel() {
                           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                             생성일
                           </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            관리
+                          </th>
                         </tr>
                       </thead>
                       <tbody className="bg-white divide-y divide-gray-200">
@@ -1265,6 +1292,16 @@ export function AdminPanel() {
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                               {format(new Date(user.createdAt), 'yyyy-MM-dd', { locale: ko })}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleDeleteUser(user.id)}
+                                className="text-red-600 hover:text-red-700"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
                             </td>
                           </tr>
                         ))}

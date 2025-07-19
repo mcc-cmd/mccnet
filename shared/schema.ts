@@ -132,7 +132,11 @@ export const contactCodeSchema = z.object({
 
 export const updateDealerContactCodesSchema = z.object({
   dealerId: z.number().min(1, "대리점을 선택하세요"),
-  contactCodes: z.array(contactCodeSchema).min(1, "최소 1개 이상의 접점 코드를 입력하세요"),
+  contactCodes: z.array(z.object({
+    carrierId: z.string(),
+    carrierName: z.string(),
+    contactCode: z.string()
+  })),
 });
 
 export const createAdminSchema = z.object({

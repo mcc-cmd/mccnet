@@ -1614,6 +1614,11 @@ class SqliteStorage implements IStorage {
       dealerName: r.dealer_name
     }));
   }
+
+  async deleteUser(userId: number): Promise<void> {
+    const stmt = db.prepare('DELETE FROM users WHERE id = ?');
+    stmt.run(userId);
+  }
 }
 
 export const storage = new SqliteStorage();
