@@ -2,7 +2,12 @@ import { QueryClient, QueryFunction } from "@tanstack/react-query";
 
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
-    const text = (await res.text()) || res.statusText;
+    let text = res.statusText;
+    try {
+      text = (await res.text()) || res.statusText;
+    } catch (e) {
+      console.warn('Failed to read response text:', e);
+    }
     throw new Error(`${res.status}: ${text}`);
   }
 }
@@ -32,15 +37,20 @@ export async function apiRequest(
     headers["Authorization"] = `Bearer ${sessionId}`;
   }
 
-  const res = await fetch(url, {
-    method,
-    headers,
-    body: data instanceof FormData ? data : (data ? JSON.stringify(data) : undefined),
-    credentials: "include",
-  });
+  try {
+    const res = await fetch(url, {
+      method,
+      headers,
+      body: data instanceof FormData ? data : (data ? JSON.stringify(data) : undefined),
+      credentials: "include",
+    });
 
-  await throwIfResNotOk(res);
-  return res;
+    await throwIfResNotOk(res);
+    return res;
+  } catch (error) {
+    console.error('Fetch request failed:', error);
+    throw error;
+  }
 }
 
 type UnauthorizedBehavior = "returnNull" | "throw";

@@ -44,7 +44,7 @@ import {
 } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
-import { Users, Clock, CheckCircle, DollarSign, Download, FileText, Calendar, Plus, Search } from 'lucide-react';
+import { Users, Clock, CheckCircle, Download, FileText, Calendar, Plus, Search } from 'lucide-react';
 
 interface CompletedDocument {
   id: number;
@@ -136,17 +136,14 @@ export function Settlements() {
       try {
         const response = await apiRequest('GET', `/api/documents?${params.toString()}`);
         console.log('API Response status:', response.status);
-        if (!response.ok) {
-          throw new Error(`API request failed: ${response.status}`);
-        }
         const data = await response.json() as CompletedDocument[];
         console.log('Received completed documents:', data);
         console.log('Data length:', data?.length);
         console.log('Is array:', Array.isArray(data));
-        return data;
+        return data || [];
       } catch (error) {
         console.error('API Request failed:', error);
-        throw error;
+        return [];
       }
     },
   });
@@ -219,10 +216,16 @@ export function Settlements() {
   const { data: allCompletedDocuments } = useQuery({
     queryKey: ['/api/documents', { activationStatus: '개통' }],
     queryFn: async () => {
-      const params = new URLSearchParams();
-      params.append('activationStatus', '개통');
-      const response = await apiRequest('GET', `/api/documents?${params.toString()}`);
-      return response.json() as Promise<CompletedDocument[]>;
+      try {
+        const params = new URLSearchParams();
+        params.append('activationStatus', '개통');
+        const response = await apiRequest('GET', `/api/documents?${params.toString()}`);
+        const data = await response.json() as CompletedDocument[];
+        return data || [];
+      } catch (error) {
+        console.error('Failed to fetch all completed documents:', error);
+        return [];
+      }
     },
   });
 
@@ -252,7 +255,7 @@ export function Settlements() {
       total: allCompletedDocuments.length,
       thisMonth,
       lastMonth,
-      totalAmount: allCompletedDocuments.length * 50000 // 예시 금액
+      totalAmount: 0 // 예상 정산액 제거
     };
   }, [allCompletedDocuments]);
 
@@ -677,7 +680,7 @@ export function Settlements() {
         </div>
 
         {/* 통계 카드 */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">총 개통건수</CardTitle>
@@ -708,17 +711,6 @@ export function Settlements() {
             <CardContent>
               <div className="text-2xl font-bold">{stats.lastMonth}</div>
               <p className="text-xs text-muted-foreground">지난달 개통</p>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">예상 정산액</CardTitle>
-              <DollarSign className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.totalAmount.toLocaleString()}</div>
-              <p className="text-xs text-muted-foreground">원</p>
             </CardContent>
           </Card>
         </div>
