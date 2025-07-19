@@ -58,7 +58,8 @@ export function Documents() {
     bundleApplied: false, // 결합
     bundleNotApplied: false, // 미결합
     deviceModel: '',
-    simNumber: ''
+    simNumber: '',
+    subscriptionNumber: ''
   });
 
   const { data: documents, isLoading } = useQuery({
@@ -749,6 +750,12 @@ export function Documents() {
                           <div>
                             <span className="text-gray-500">통신사:</span>
                             <span className="ml-1 text-gray-900">{(doc as any).carrier}</span>
+                          </div>
+                        )}
+                        {(doc as any).subscriptionNumber && (
+                          <div>
+                            <span className="text-gray-500">가입번호:</span>
+                            <span className="ml-1 text-gray-900 font-mono text-xs">{(doc as any).subscriptionNumber}</span>
                           </div>
                         )}
                         {isAdmin && (

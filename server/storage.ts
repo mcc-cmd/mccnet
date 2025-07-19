@@ -1105,10 +1105,10 @@ class SqliteStorage implements IStorage {
         store_name, carrier, contact_code, status, activation_status, 
         file_path, file_name, file_size, notes, service_plan_id,
         additional_service_ids, activated_at, device_model, sim_number,
-        bundle_applied, bundle_not_applied, registration_fee_prepaid,
-        registration_fee_postpaid, sim_fee_prepaid, sim_fee_postpaid
+        subscription_number, bundle_applied, bundle_not_applied, 
+        registration_fee_prepaid, registration_fee_postpaid, sim_fee_prepaid, sim_fee_postpaid
       )
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).run(
       data.dealerId,
       data.userId,
@@ -1129,6 +1129,7 @@ class SqliteStorage implements IStorage {
       data.activatedAt ? data.activatedAt.toISOString() : null,
       data.deviceModel || null,
       data.simNumber || null,
+      data.subscriptionNumber || null,
       data.bundleApplied ? 1 : 0,
       data.bundleNotApplied ? 1 : 0,
       data.registrationFeePrepaid ? 1 : 0,
@@ -1203,7 +1204,7 @@ class SqliteStorage implements IStorage {
              d.registration_fee_prepaid, d.registration_fee_postpaid,
              d.sim_fee_prepaid, d.sim_fee_postpaid,
              d.bundle_applied, d.bundle_not_applied,
-             d.device_model, d.sim_number, d.total_monthly_fee,
+             d.device_model, d.sim_number, d.subscription_number, d.total_monthly_fee,
              d.additional_service_ids
       FROM documents d
       JOIN dealers ON d.dealer_id = dealers.id
@@ -1287,7 +1288,8 @@ class SqliteStorage implements IStorage {
       bundleApplied: Boolean(d.bundle_applied),
       bundleNotApplied: Boolean(d.bundle_not_applied),
       deviceModel: d.device_model,
-      simNumber: d.sim_number
+      simNumber: d.sim_number,
+      subscriptionNumber: d.subscription_number
     }));
   }
 
@@ -1322,7 +1324,7 @@ class SqliteStorage implements IStorage {
         dealers.name as dealerName,
         d.carrier,
         sp.plan_name as servicePlanName,
-        d.customer_phone as subscriptionNumber,
+        d.subscription_number as subscriptionNumber,
         d.additional_service_ids,
         CASE 
           WHEN d.device_model IS NOT NULL AND d.sim_number IS NOT NULL 
@@ -1445,7 +1447,8 @@ class SqliteStorage implements IStorage {
       bundleApplied: Boolean(result.bundle_applied),
       bundleNotApplied: Boolean(result.bundle_not_applied),
       deviceModel: result.device_model,
-      simNumber: result.sim_number
+      simNumber: result.sim_number,
+      subscriptionNumber: result.subscription_number
     };
   }
 
@@ -1509,7 +1512,8 @@ class SqliteStorage implements IStorage {
       bundleApplied: Boolean(result.bundle_applied),
       bundleNotApplied: Boolean(result.bundle_not_applied),
       deviceModel: result.device_model,
-      simNumber: result.sim_number
+      simNumber: result.sim_number,
+      subscriptionNumber: result.subscription_number
     };
   }
 

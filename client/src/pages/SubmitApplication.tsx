@@ -23,6 +23,7 @@ export function SubmitApplication() {
     customerPhone: '',
     storeName: user?.dealerName || '', // 로그인한 사용자의 대리점명 자동 설정
     carrier: '',
+    subscriptionNumber: '', // 가입번호/계약번호 추가
     notes: ''
   });
 
@@ -67,7 +68,7 @@ export function SubmitApplication() {
       });
 
       // Reset form
-      setFormData({ customerName: '', customerPhone: '', storeName: user?.dealerName || '', carrier: '', notes: '' });
+      setFormData({ customerName: '', customerPhone: '', storeName: user?.dealerName || '', carrier: '', subscriptionNumber: '', notes: '' });
       setSelectedFile(null);
     },
     onError: (error: Error) => {
@@ -236,25 +237,42 @@ export function SubmitApplication() {
                   </div>
                 </div>
 
-                <div>
-                  <Label htmlFor="carrier">통신사 *</Label>
-                  <Select value={formData.carrier} onValueChange={(value) => setFormData(prev => ({ ...prev, carrier: value }))}>
-                    <SelectTrigger className="mt-1">
-                      <SelectValue placeholder="통신사를 선택하세요" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {carriers.map((carrier) => (
-                        <SelectItem key={carrier} value={carrier}>
-                          {carrier}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  {formData.carrier && isSKCarrier(formData.carrier) && (
-                    <p className="text-sm text-red-600 mt-1">
-                      * SK 계열사 접수 시 서류 업로드는 필수입니다.
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="carrier">통신사 *</Label>
+                    <Select value={formData.carrier} onValueChange={(value) => setFormData(prev => ({ ...prev, carrier: value }))}>
+                      <SelectTrigger className="mt-1">
+                        <SelectValue placeholder="통신사를 선택하세요" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {carriers.map((carrier) => (
+                          <SelectItem key={carrier} value={carrier}>
+                            {carrier}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {formData.carrier && isSKCarrier(formData.carrier) && (
+                      <p className="text-sm text-red-600 mt-1">
+                        * SK 계열사 접수 시 서류 업로드는 필수입니다.
+                      </p>
+                    )}
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="subscriptionNumber">가입번호/계약번호</Label>
+                    <Input
+                      id="subscriptionNumber"
+                      name="subscriptionNumber"
+                      value={formData.subscriptionNumber}
+                      onChange={handleInputChange}
+                      placeholder="가입번호 또는 계약번호를 입력하세요"
+                      className="mt-1"
+                    />
+                    <p className="text-sm text-gray-500 mt-1">
+                      개통 완료 후 가입번호나 계약번호를 입력하세요
                     </p>
-                  )}
+                  </div>
                 </div>
 
                 <div>

@@ -580,7 +580,8 @@ router.patch('/api/documents/:id/service-plan', requireAuth, async (req: any, re
       bundleApplied: bundleApplied || false,
       bundleNotApplied: bundleNotApplied || false,
       deviceModel: deviceModel || null,
-      simNumber: simNumber || null
+      simNumber: simNumber || null,
+      subscriptionNumber: req.body.subscriptionNumber || null
     });
     
     console.log('Service plan updated successfully:', document.id);
@@ -1539,6 +1540,7 @@ router.post('/api/settlements/manual', requireAuth, async (req: any, res) => {
       activatedAt: new Date(data.activatedAt),
       deviceModel: data.deviceModel,
       simNumber: data.simNumber,
+      subscriptionNumber: data.subscriptionNumber,
       bundleApplied: data.bundleApplied,
       bundleNotApplied: data.bundleNotApplied,
       registrationFeePrepaid: data.registrationFeePrepaid,

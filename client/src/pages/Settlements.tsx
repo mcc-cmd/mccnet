@@ -61,6 +61,7 @@ interface CompletedDocument {
   userName?: string;
   deviceModel?: string;
   simNumber?: string;
+  subscriptionNumber?: string;
   bundleApplied: boolean;
   bundleNotApplied: boolean;
   dealerId: number;
@@ -102,6 +103,7 @@ const manualSettlementSchema = z.object({
   servicePlanId: z.number().optional(),
   additionalServices: z.array(z.string()).optional(),
   activatedAt: z.string().min(1, '개통날짜를 입력해주세요'),
+  subscriptionNumber: z.string().optional(),
   deviceModel: z.string().optional(),
   simNumber: z.string().optional(),
   bundleApplied: z.boolean().default(false),
@@ -177,6 +179,7 @@ export function Settlements() {
       activatedAt: '',
       deviceModel: '',
       simNumber: '',
+      subscriptionNumber: '',
       notes: '',
       additionalServices: [],
       bundleApplied: false,
@@ -512,7 +515,20 @@ export function Settlements() {
                     )}
                   />
 
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-3 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="subscriptionNumber"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>가입번호/계약번호</FormLabel>
+                          <FormControl>
+                            <Input placeholder="가입번호 또는 계약번호를 입력하세요" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
                     <FormField
                       control={form.control}
                       name="deviceModel"
@@ -823,6 +839,7 @@ export function Settlements() {
                       <TableHead>요금제</TableHead>
                       <TableHead>부가서비스</TableHead>
                       <TableHead>결합여부</TableHead>
+                      <TableHead>가입번호</TableHead>
                       <TableHead>기기/유심</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -875,6 +892,11 @@ export function Settlements() {
                         </TableCell>
                         <TableCell>
                           {getStatusBadge(doc.bundleApplied, doc.bundleNotApplied)}
+                        </TableCell>
+                        <TableCell>
+                          <span className="text-sm font-mono">
+                            {doc.subscriptionNumber || '-'}
+                          </span>
                         </TableCell>
                         <TableCell>
                           <div className="text-sm">

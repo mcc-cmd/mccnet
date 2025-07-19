@@ -76,6 +76,7 @@ export interface Document {
   // 단말기 정보
   deviceModel?: string; // 단말기 기종
   simNumber?: string; // 유심번호
+  subscriptionNumber?: string; // 가입번호/계약번호
 }
 
 export interface DocumentTemplate {
@@ -172,6 +173,7 @@ export const uploadDocumentSchema = z.object({
   customerPhone: z.string().min(1, "연락처를 입력하세요"),
   storeName: z.string().optional(),
   carrier: z.string().min(1, "통신사를 선택하세요"),
+  subscriptionNumber: z.string().optional(),
   notes: z.string().optional(),
 });
 
