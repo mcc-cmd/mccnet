@@ -301,6 +301,8 @@ export type CreateServicePlanForm = z.infer<typeof createServicePlanSchema>;
 export type CreateAdditionalServiceForm = z.infer<typeof createAdditionalServiceSchema>;
 export type CreateDocumentServicePlanForm = z.infer<typeof createDocumentServicePlanSchema>;
 
+
+
 // 정산 카테고리 인터페이스
 export interface Settlement {
   id: number;
@@ -338,7 +340,7 @@ export interface Settlement {
   updatedAt: Date;
 }
 
-// 정산 생성 스키마
+// 정산 스키마
 export const createSettlementSchema = z.object({
   documentId: z.number(),
   dealerId: z.number(),
@@ -357,10 +359,8 @@ export const createSettlementSchema = z.object({
   settlementDate: z.date().optional(),
 });
 
-// 정산 업데이트 스키마
 export const updateSettlementSchema = createSettlementSchema.partial();
 
-export type CreateSettlementForm = z.infer<typeof createSettlementSchema>;
-export type UpdateSettlementForm = z.infer<typeof updateSettlementSchema>;
+
 
 

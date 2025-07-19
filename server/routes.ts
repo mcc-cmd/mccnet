@@ -1005,7 +1005,7 @@ router.get('/api/settlements', requireAuth, async (req: any, res) => {
     let dealerId = undefined;
     
     // 판매점 사용자는 자신의 대리점 데이터만 조회
-    if (user.role === 'dealer_store' || user.role === 'dealer_worker') {
+    if (user.userType === 'dealer') {
       dealerId = user.dealerId;
     }
     
@@ -1228,6 +1228,93 @@ router.delete('/api/documents/:id/service-plan', requireAuth, async (req: any, r
     await storage.deleteDocumentServicePlan(documentId);
     res.json({ success: true });
   } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// 접수 문서를 정산으로 전환
+router.post('/api/settlements/from-document/:documentId', requireAuth, async (req: any, res) => {
+  try {
+    const documentId = parseInt(req.params.documentId);
+    const document = await storage.getDocument(documentId);
+    
+    if (!document) {
+      return res.status(404).json({ error: '접수 문서를 찾을 수 없습니다.' });
+    }
+
+    // 접수 문서 데이터를 정산 형태로 변환
+    const settlementData = {
+      documentId: document.id,
+      dealerId: document.dealerId,
+      customerName: document.customerName,
+      customerPhone: document.phoneNumber,
+      servicePlanId: document.servicePlanId,
+      servicePlanName: document.servicePlan?.planName,
+      additionalServices: document.additionalServices || [],
+      bundleType: document.bundleApplied ? '결합' : '미결합',
+      bundleDetails: document.bundleNotApplied ? '미결합 사유: ' + document.bundleNotApplied : undefined,
+      policyLevel: 1,
+      settlementStatus: '대기' as const,
+      settlementAmount: 0,
+      commissionRate: 0
+    };
+
+    const settlement = await storage.createSettlement(settlementData);
+    res.json(settlement);
+  } catch (error: any) {
+    console.error('Create settlement from document error:', error);
+    res.status(400).json({ error: error.message });
+  }
+});
+
+// 개통 완료된 문서들을 일괄 정산 생성
+router.post('/api/settlements/bulk-from-activated', requireAuth, async (req: any, res) => {
+  try {
+    const user = req.user;
+    let dealerId = undefined;
+    
+    // 판매점 사용자는 자신의 대리점 데이터만 처리
+    if (user.userType === 'dealer') {
+      dealerId = user.dealerId;
+    }
+
+    const activatedDocuments = await storage.getDocuments({
+      dealerId,
+      activationStatus: '개통'
+    });
+
+    const settlements = [];
+    for (const document of activatedDocuments) {
+      // 이미 정산 데이터가 있는지 확인
+      const existingSettlement = await storage.getSettlementByDocumentId(document.id);
+      if (existingSettlement) continue;
+
+      const settlementData = {
+        documentId: document.id,
+        dealerId: document.dealerId,
+        customerName: document.customerName,
+        customerPhone: document.phoneNumber,
+        servicePlanId: document.servicePlanId,
+        servicePlanName: document.servicePlan?.planName,
+        additionalServices: document.additionalServices || [],
+        bundleType: document.bundleApplied ? '결합' : '미결합',
+        bundleDetails: document.bundleNotApplied ? '미결합 사유: ' + document.bundleNotApplied : undefined,
+        policyLevel: 1,
+        settlementStatus: '대기' as const,
+        settlementAmount: 0,
+        commissionRate: 0
+      };
+
+      const settlement = await storage.createSettlement(settlementData);
+      settlements.push(settlement);
+    }
+
+    res.json({ 
+      message: `${settlements.length}건의 정산 데이터가 생성되었습니다.`,
+      settlements 
+    });
+  } catch (error: any) {
+    console.error('Bulk create settlements error:', error);
     res.status(500).json({ error: error.message });
   }
 });

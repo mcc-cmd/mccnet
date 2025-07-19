@@ -14,7 +14,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { useApiRequest, useAuth } from '@/lib/auth';
 import { useToast } from '@/hooks/use-toast';
 import type { Document } from '../../../shared/schema';
-import { FileText, Upload, Search, Download, Calendar, Settings, Check, ChevronsUpDown } from 'lucide-react';
+import { FileText, Upload, Search, Download, Calendar, Settings, Check, ChevronsUpDown, Calculator } from 'lucide-react';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
 
@@ -146,6 +146,24 @@ export function Documents() {
         variant: 'destructive',
       });
     },
+  });
+
+  // 일괄 정산 생성 뮤테이션
+  const bulkCreateSettlementMutation = useMutation({
+    mutationFn: () => apiRequest('/api/settlements/bulk-from-activated', { method: 'POST' }),
+    onSuccess: (data: any) => {
+      toast({
+        title: "정산 생성 완료",
+        description: data.message || "개통 완료된 문서들이 정산으로 변환되었습니다.",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "정산 생성 실패",
+        description: error.message || "일괄 정산 생성에 실패했습니다.",
+        variant: "destructive"
+      });
+    }
   });
 
   const handleUpload = async (e: React.FormEvent) => {
