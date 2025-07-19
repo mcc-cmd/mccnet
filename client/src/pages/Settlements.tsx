@@ -53,15 +53,37 @@ interface CompletedDocument {
   customerPhone: string;
   storeName: string;
   carrier: string;
-  contactCode: string;
+  contactCode?: string;
   servicePlanName?: string;
-  additionalServices: string[];
-  activatedAt: Date;
+  additionalServices?: string | string[];
+  activatedAt: string;
   dealerName: string;
+  userName?: string;
   deviceModel?: string;
   simNumber?: string;
   bundleApplied: boolean;
   bundleNotApplied: boolean;
+  dealerId: number;
+  userId: number;
+  status: string;
+  activationStatus: string;
+  filePath?: string;
+  fileName?: string;
+  fileSize?: number;
+  uploadedAt: string;
+  updatedAt: string;
+  activatedBy?: string;
+  notes?: string;
+  supplementNotes?: string;
+  supplementRequiredBy?: string;
+  supplementRequiredAt?: string;
+  servicePlanId?: number;
+  additionalServiceIds?: string;
+  totalMonthlyFee?: number;
+  registrationFeePrepaid?: boolean;
+  registrationFeePostpaid?: boolean;
+  simFeePrepaid?: boolean;
+  simFeePostpaid?: boolean;
 }
 
 interface SettlementStats {
@@ -110,8 +132,22 @@ export function Settlements() {
       if (startDate) params.append('startDate', startDate);
       if (endDate) params.append('endDate', endDate);
       if (searchQuery) params.append('search', searchQuery);
-      const response = await apiRequest('GET', `/api/documents?${params.toString()}`);
-      return response.json() as Promise<CompletedDocument[]>;
+      console.log('Fetching completed documents with params:', params.toString());
+      try {
+        const response = await apiRequest('GET', `/api/documents?${params.toString()}`);
+        console.log('API Response status:', response.status);
+        if (!response.ok) {
+          throw new Error(`API request failed: ${response.status}`);
+        }
+        const data = await response.json() as CompletedDocument[];
+        console.log('Received completed documents:', data);
+        console.log('Data length:', data?.length);
+        console.log('Is array:', Array.isArray(data));
+        return data;
+      } catch (error) {
+        console.error('API Request failed:', error);
+        throw error;
+      }
     },
   });
 
@@ -759,7 +795,7 @@ export function Settlements() {
           <CardContent>
             {isLoading ? (
               <div className="text-center py-8">로딩 중...</div>
-            ) : completedDocuments && completedDocuments.length > 0 ? (
+            ) : completedDocuments && Array.isArray(completedDocuments) && completedDocuments.length > 0 ? (
               <div className="overflow-x-auto">
                 <Table>
                   <TableHeader>
@@ -791,16 +827,24 @@ export function Settlements() {
                         </TableCell>
                         <TableCell>{doc.servicePlanName || '-'}</TableCell>
                         <TableCell>
-                          {doc.additionalServices && doc.additionalServices.length > 0 ? (
+                          {doc.additionalServices ? (
                             <div className="flex flex-wrap gap-1">
-                              {doc.additionalServices.slice(0, 2).map((service, index) => (
-                                <Badge key={index} variant="secondary" className="text-xs">
-                                  {service}
-                                </Badge>
-                              ))}
-                              {doc.additionalServices.length > 2 && (
+                              {typeof doc.additionalServices === 'string' ? (
+                                doc.additionalServices.split(', ').slice(0, 2).map((service, index) => (
+                                  <Badge key={index} variant="secondary" className="text-xs">
+                                    {service}
+                                  </Badge>
+                                ))
+                              ) : (
+                                doc.additionalServices.slice(0, 2).map((service, index) => (
+                                  <Badge key={index} variant="secondary" className="text-xs">
+                                    {service}
+                                  </Badge>
+                                ))
+                              )}
+                              {((typeof doc.additionalServices === 'string' ? doc.additionalServices.split(', ').length : doc.additionalServices.length) > 2) && (
                                 <Badge variant="secondary" className="text-xs">
-                                  +{doc.additionalServices.length - 2}
+                                  +{(typeof doc.additionalServices === 'string' ? doc.additionalServices.split(', ').length : doc.additionalServices.length) - 2}
                                 </Badge>
                               )}
                             </div>
@@ -825,7 +869,7 @@ export function Settlements() {
               </div>
             ) : (
               <div className="text-center py-8 text-muted-foreground">
-                선택한 기간에 개통 완료된 문서가 없습니다.
+                {completedDocuments ? `개통 완료된 문서가 없습니다. (${JSON.stringify(completedDocuments)})` : '데이터를 불러오는 중...'}
               </div>
             )}
           </CardContent>

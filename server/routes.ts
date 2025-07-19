@@ -2,6 +2,7 @@ import { Router } from "express";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
+import * as XLSX from 'xlsx';
 import { storage } from "./storage";
 import {
   loginSchema,
@@ -626,9 +627,19 @@ router.get('/api/documents', requireAuth, async (req: any, res) => {
       dealerId = undefined; // 모든 문서를 볼 수 있도록 설정
     }
     
+    // 한국어 디코딩 처리
+    let decodedActivationStatus = activationStatus as string;
+    if (decodedActivationStatus) {
+      try {
+        decodedActivationStatus = decodeURIComponent(decodedActivationStatus);
+      } catch (e) {
+        console.log('Failed to decode activationStatus, using original:', decodedActivationStatus);
+      }
+    }
+    
     const documents = await storage.getDocuments(dealerId, {
       status: status as string,
-      activationStatus: activationStatus as string,
+      activationStatus: decodedActivationStatus,
       search: search as string,
       startDate: startDate as string,
       endDate: endDate as string
@@ -1496,27 +1507,13 @@ router.get('/api/settlements/export', requireAuth, async (req: any, res) => {
 });
 
 // 수기 정산 등록 API
-router.post('/api/settlements/manual', async (req: any, res) => {
+router.post('/api/settlements/manual', requireAuth, async (req: any, res) => {
   try {
     console.log('Manual settlement request:', req.body);
-    
-    // 인증 확인
-    const authHeader = req.headers.authorization;
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return res.status(401).json({ error: '인증이 필요합니다.' });
-    }
-    
-    const sessionId = authHeader.substring(7);
-    const session = sessionStore.get(sessionId);
-    
-    if (!session) {
-      return res.status(401).json({ error: '유효하지 않은 세션입니다.' });
-    }
-    
     console.log('Session data:', { 
-      userId: session.userId, 
-      dealerId: session.dealerId, 
-      userType: session.userType 
+      userId: req.session.userId, 
+      dealerId: req.session.dealerId, 
+      userType: req.session.userType 
     });
     
     const data = req.body;
@@ -1529,8 +1526,8 @@ router.post('/api/settlements/manual', async (req: any, res) => {
     
     // 수기 정산 데이터를 documents 테이블에 삽입
     const manualDocument = {
-      dealerId: session.dealerId || 1, // 기본값 설정
-      userId: session.userId,
+      dealerId: req.session.dealerId || 1, // 기본값 설정
+      userId: req.session.userId,
       documentNumber,
       customerName: data.customerName,
       customerPhone: data.customerPhone,
@@ -1555,7 +1552,9 @@ router.post('/api/settlements/manual', async (req: any, res) => {
       isManualEntry: true // 수기 입력 구분을 위한 플래그
     };
     
+    console.log('Creating manual document:', manualDocument);
     const createdDocument = await storage.uploadDocument(manualDocument);
+    console.log('Manual document created successfully:', createdDocument.id);
     
     res.json({
       success: true,
