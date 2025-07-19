@@ -1,7 +1,10 @@
 import React, { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 
 import { Layout } from '@/components/Layout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -9,6 +12,28 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogHeader, 
+  DialogTitle, 
+  DialogTrigger 
+} from '@/components/ui/dialog';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { 
   Table, 
   TableBody, 
@@ -19,7 +44,7 @@ import {
 } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
-import { Users, Clock, CheckCircle, DollarSign, Download, FileText, Calendar } from 'lucide-react';
+import { Users, Clock, CheckCircle, DollarSign, Download, FileText, Calendar, Plus, Search } from 'lucide-react';
 
 interface CompletedDocument {
   id: number;
@@ -46,13 +71,107 @@ interface SettlementStats {
   totalAmount: number;
 }
 
+// 수기 정산 등록 스키마
+const manualSettlementSchema = z.object({
+  customerName: z.string().min(1, '고객명을 입력해주세요'),
+  customerPhone: z.string().min(1, '연락처를 입력해주세요'),
+  storeName: z.string().min(1, '판매점을 입력해주세요'),
+  carrier: z.string().min(1, '통신사를 선택해주세요'),
+  servicePlanId: z.number().optional(),
+  additionalServices: z.array(z.string()).optional(),
+  activatedAt: z.string().min(1, '개통날짜를 입력해주세요'),
+  deviceModel: z.string().optional(),
+  simNumber: z.string().optional(),
+  bundleApplied: z.boolean().default(false),
+  bundleNotApplied: z.boolean().default(false),
+  registrationFeePrepaid: z.boolean().default(false),
+  registrationFeePostpaid: z.boolean().default(false),
+  simFeePrepaid: z.boolean().default(false),
+  simFeePostpaid: z.boolean().default(false),
+  notes: z.string().optional(),
+});
+
+type ManualSettlementForm = z.infer<typeof manualSettlementSchema>;
+
 export function Settlements() {
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [manualDialogOpen, setManualDialogOpen] = useState(false);
   
   // 개통 완료된 문서 조회 (정산 데이터로 활용)
-  const { data: completedDocuments, isLoading } = useQuery({
+  const { data: completedDocuments, isLoading, refetch } = useQuery({
+    queryKey: ['/api/documents', { activationStatus: '개통', startDate, endDate, search: searchQuery }],
+    queryFn: async () => {
+      const params = new URLSearchParams({ activationStatus: '개통' });
+      if (startDate) params.append('startDate', startDate);
+      if (endDate) params.append('endDate', endDate);
+      if (searchQuery) params.append('search', searchQuery);
+      const response = await apiRequest('GET', `/api/documents?${params.toString()}`);
+      return response.json() as Promise<CompletedDocument[]>;
+    },
+  });
+
+  // 서비스 플랜 조회
+  const { data: servicePlans } = useQuery({
+    queryKey: ['/api/service-plans'],
+    queryFn: async () => {
+      const response = await apiRequest('GET', '/api/service-plans');
+      return response.json();
+    },
+  });
+
+  // 부가 서비스 조회
+  const { data: additionalServices } = useQuery({
+    queryKey: ['/api/additional-services'],
+    queryFn: async () => {
+      const response = await apiRequest('GET', '/api/additional-services');
+      return response.json();
+    },
+  });
+
+  // 수기 정산 등록 폼
+  const form = useForm<ManualSettlementForm>({
+    resolver: zodResolver(manualSettlementSchema),
+    defaultValues: {
+      additionalServices: [],
+      bundleApplied: false,
+      bundleNotApplied: false,
+      registrationFeePrepaid: false,
+      registrationFeePostpaid: false,
+      simFeePrepaid: false,
+      simFeePostpaid: false,
+    },
+  });
+
+  // 수기 정산 등록 mutation
+  const createManualSettlement = useMutation({
+    mutationFn: async (data: ManualSettlementForm) => {
+      const response = await apiRequest('POST', '/api/settlements/manual', data);
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "정산 등록 완료",
+        description: "수기 정산이 성공적으로 등록되었습니다.",
+      });
+      setManualDialogOpen(false);
+      form.reset();
+      queryClient.invalidateQueries({ queryKey: ['/api/documents'] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "등록 실패",
+        description: error.message || "정산 등록 중 오류가 발생했습니다.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // 정산 통계 계산 (전체 개통 완료 데이터 기준)
+  const { data: allCompletedDocuments } = useQuery({
     queryKey: ['/api/documents', { activationStatus: '개통' }],
     queryFn: async () => {
       const params = new URLSearchParams({ activationStatus: '개통' });
@@ -61,9 +180,8 @@ export function Settlements() {
     },
   });
 
-  // 정산 통계 계산
   const stats: SettlementStats = React.useMemo(() => {
-    if (!completedDocuments) return { total: 0, thisMonth: 0, lastMonth: 0, totalAmount: 0 };
+    if (!allCompletedDocuments) return { total: 0, thisMonth: 0, lastMonth: 0, totalAmount: 0 };
     
     const now = new Date();
     const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -73,34 +191,41 @@ export function Settlements() {
     let thisMonth = 0;
     let lastMonth = 0;
     
-    completedDocuments.forEach(doc => {
-      const activatedDate = new Date(doc.activatedAt);
-      if (activatedDate >= thisMonthStart) {
-        thisMonth++;
-      } else if (activatedDate >= lastMonthStart && activatedDate <= lastMonthEnd) {
-        lastMonth++;
+    allCompletedDocuments.forEach(doc => {
+      if (doc.activatedAt) {
+        const activatedDate = new Date(doc.activatedAt);
+        if (activatedDate >= thisMonthStart) {
+          thisMonth++;
+        } else if (activatedDate >= lastMonthStart && activatedDate <= lastMonthEnd) {
+          lastMonth++;
+        }
       }
     });
     
     return {
-      total: completedDocuments.length,
+      total: allCompletedDocuments.length,
       thisMonth,
       lastMonth,
-      totalAmount: completedDocuments.length * 50000 // 예시 금액
+      totalAmount: allCompletedDocuments.length * 50000 // 예시 금액
     };
-  }, [completedDocuments]);
+  }, [allCompletedDocuments]);
 
-  // 날짜 필터링된 문서 목록
-  const filteredDocuments = React.useMemo(() => {
-    if (!completedDocuments) return [];
-    
-    return completedDocuments.filter(doc => {
-      const docDate = format(new Date(doc.activatedAt), 'yyyy-MM-dd');
-      const start = startDate || '2020-01-01';
-      const end = endDate || '2030-12-31';
-      return docDate >= start && docDate <= end;
-    });
-  }, [completedDocuments, startDate, endDate]);
+  // 검색 실행
+  const handleSearch = () => {
+    refetch();
+  };
+
+  // 필터 초기화
+  const handleClearFilters = () => {
+    setStartDate('');
+    setEndDate('');
+    setSearchQuery('');
+  };
+
+  // 수기 정산 등록 제출
+  const onSubmit = (data: ManualSettlementForm) => {
+    createManualSettlement.mutate(data);
+  };
 
   // 엑셀 다운로드 함수
   const handleExcelDownload = async () => {
@@ -156,6 +281,320 @@ export function Settlements() {
               접수 관리의 개통 완료 데이터를 기반으로 정산 정보를 관리합니다.
             </p>
           </div>
+          <Dialog open={manualDialogOpen} onOpenChange={setManualDialogOpen}>
+            <DialogTrigger asChild>
+              <Button className="bg-teal-600 hover:bg-teal-700">
+                <Plus className="w-4 h-4 mr-2" />
+                수기 정산 등록
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>수기 정산 등록</DialogTitle>
+              </DialogHeader>
+              <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="customerName"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>고객명 *</FormLabel>
+                          <FormControl>
+                            <Input placeholder="고객명을 입력하세요" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="customerPhone"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>고객 연락처 *</FormLabel>
+                          <FormControl>
+                            <Input placeholder="연락처를 입력하세요" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="storeName"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>판매점 *</FormLabel>
+                          <FormControl>
+                            <Input placeholder="판매점을 입력하세요" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="carrier"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>통신사 *</FormLabel>
+                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="통신사를 선택하세요" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="SK텔링크">SK텔링크</SelectItem>
+                              <SelectItem value="SK프리티">SK프리티</SelectItem>
+                              <SelectItem value="SK스테이지파이브">SK스테이지파이브</SelectItem>
+                              <SelectItem value="KT엠모바일">KT엠모바일</SelectItem>
+                              <SelectItem value="KT프리즈">KT프리즈</SelectItem>
+                              <SelectItem value="헬로모바일">헬로모바일</SelectItem>
+                              <SelectItem value="헬로모바일LG">헬로모바일LG</SelectItem>
+                              <SelectItem value="미래엔">미래엔</SelectItem>
+                              <SelectItem value="중국외국인">중국외국인</SelectItem>
+                              <SelectItem value="선불">선불</SelectItem>
+                              <SelectItem value="기타">기타</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  <FormField
+                    control={form.control}
+                    name="activatedAt"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>개통날짜 *</FormLabel>
+                        <FormControl>
+                          <Input type="date" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="servicePlanId"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>요금제</FormLabel>
+                        <Select onValueChange={(value) => field.onChange(value ? parseInt(value) : undefined)}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="요금제를 선택하세요" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {servicePlans?.map((plan: any) => (
+                              <SelectItem key={plan.id} value={plan.id.toString()}>
+                                {plan.planName}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="deviceModel"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>기기모델</FormLabel>
+                          <FormControl>
+                            <Input placeholder="기기모델을 입력하세요" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="simNumber"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>유심번호</FormLabel>
+                          <FormControl>
+                            <Input placeholder="유심번호를 입력하세요" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  <div className="space-y-3">
+                    <Label>부가 등록 여부</Label>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <FormField
+                          control={form.control}
+                          name="bundleApplied"
+                          render={({ field }) => (
+                            <FormItem className="flex flex-row items-center space-x-3 space-y-0">
+                              <FormControl>
+                                <input
+                                  type="checkbox"
+                                  checked={field.value}
+                                  onChange={field.onChange}
+                                  className="rounded border-gray-300"
+                                />
+                              </FormControl>
+                              <div className="space-y-1 leading-none">
+                                <FormLabel>결합 적용</FormLabel>
+                              </div>
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="registrationFeePrepaid"
+                          render={({ field }) => (
+                            <FormItem className="flex flex-row items-center space-x-3 space-y-0">
+                              <FormControl>
+                                <input
+                                  type="checkbox"
+                                  checked={field.value}
+                                  onChange={field.onChange}
+                                  className="rounded border-gray-300"
+                                />
+                              </FormControl>
+                              <div className="space-y-1 leading-none">
+                                <FormLabel>가입비 선납</FormLabel>
+                              </div>
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="simFeePrepaid"
+                          render={({ field }) => (
+                            <FormItem className="flex flex-row items-center space-x-3 space-y-0">
+                              <FormControl>
+                                <input
+                                  type="checkbox"
+                                  checked={field.value}
+                                  onChange={field.onChange}
+                                  className="rounded border-gray-300"
+                                />
+                              </FormControl>
+                              <div className="space-y-1 leading-none">
+                                <FormLabel>유심비 선납</FormLabel>
+                              </div>
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <FormField
+                          control={form.control}
+                          name="bundleNotApplied"
+                          render={({ field }) => (
+                            <FormItem className="flex flex-row items-center space-x-3 space-y-0">
+                              <FormControl>
+                                <input
+                                  type="checkbox"
+                                  checked={field.value}
+                                  onChange={field.onChange}
+                                  className="rounded border-gray-300"
+                                />
+                              </FormControl>
+                              <div className="space-y-1 leading-none">
+                                <FormLabel>결합 미적용</FormLabel>
+                              </div>
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="registrationFeePostpaid"
+                          render={({ field }) => (
+                            <FormItem className="flex flex-row items-center space-x-3 space-y-0">
+                              <FormControl>
+                                <input
+                                  type="checkbox"
+                                  checked={field.value}
+                                  onChange={field.onChange}
+                                  className="rounded border-gray-300"
+                                />
+                              </FormControl>
+                              <div className="space-y-1 leading-none">
+                                <FormLabel>가입비 후납</FormLabel>
+                              </div>
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="simFeePostpaid"
+                          render={({ field }) => (
+                            <FormItem className="flex flex-row items-center space-x-3 space-y-0">
+                              <FormControl>
+                                <input
+                                  type="checkbox"
+                                  checked={field.value}
+                                  onChange={field.onChange}
+                                  className="rounded border-gray-300"
+                                />
+                              </FormControl>
+                              <div className="space-y-1 leading-none">
+                                <FormLabel>유심비 후납</FormLabel>
+                              </div>
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <FormField
+                    control={form.control}
+                    name="notes"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>정산 금액</FormLabel>
+                        <FormControl>
+                          <Input placeholder="정산 금액을 입력하세요" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <div className="flex justify-end space-x-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setManualDialogOpen(false)}
+                    >
+                      취소
+                    </Button>
+                    <Button
+                      type="submit"
+                      className="bg-teal-600 hover:bg-teal-700"
+                      disabled={createManualSettlement.isPending}
+                    >
+                      {createManualSettlement.isPending ? '등록 중...' : '등록'}
+                    </Button>
+                  </div>
+                </form>
+              </Form>
+            </DialogContent>
+          </Dialog>
         </div>
 
         {/* 통계 카드 */}
@@ -233,12 +672,26 @@ export function Settlements() {
                   onChange={(e) => setEndDate(e.target.value)}
                 />
               </div>
+              <div className="flex-1 min-w-[200px]">
+                <Label htmlFor="search-query">검색 (고객명/문서번호)</Label>
+                <Input
+                  id="search-query"
+                  type="text"
+                  placeholder="검색어를 입력하세요"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+              </div>
               <div className="flex gap-2">
                 <Button
-                  onClick={() => {
-                    setStartDate('');
-                    setEndDate('');
-                  }}
+                  onClick={handleSearch}
+                  className="bg-blue-600 hover:bg-blue-700"
+                >
+                  <Search className="w-4 h-4 mr-2" />
+                  검색
+                </Button>
+                <Button
+                  onClick={handleClearFilters}
                   variant="outline"
                 >
                   필터 초기화
@@ -257,13 +710,13 @@ export function Settlements() {
           <CardHeader>
             <CardTitle>정산 데이터 목록</CardTitle>
             <CardDescription>
-              개통 완료된 문서를 기반으로 한 정산 정보입니다. ({filteredDocuments.length}건)
+              개통 완료된 문서를 기반으로 한 정산 정보입니다. ({completedDocuments?.length || 0}건)
             </CardDescription>
           </CardHeader>
           <CardContent>
             {isLoading ? (
               <div className="text-center py-8">로딩 중...</div>
-            ) : filteredDocuments && filteredDocuments.length > 0 ? (
+            ) : completedDocuments && completedDocuments.length > 0 ? (
               <div className="overflow-x-auto">
                 <Table>
                   <TableHeader>
@@ -281,7 +734,7 @@ export function Settlements() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredDocuments.map((doc) => (
+                    {completedDocuments.map((doc) => (
                       <TableRow key={doc.id}>
                         <TableCell>
                           {format(new Date(doc.activatedAt), 'yyyy-MM-dd', { locale: ko })}

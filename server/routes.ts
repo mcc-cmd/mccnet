@@ -1486,4 +1486,57 @@ router.get('/api/settlements/export', requireAuth, async (req: any, res) => {
   }
 });
 
+// 수기 정산 등록 API
+router.post('/api/settlements/manual', requireAuth, async (req: any, res) => {
+  try {
+    const data = req.body;
+    
+    // 문서번호 생성 (MANUAL-YYYY-XXXXXX 형식)
+    const now = new Date();
+    const year = now.getFullYear();
+    const randomNum = Math.floor(Math.random() * 900000) + 100000;
+    const documentNumber = `MANUAL-${year}-${randomNum}`;
+    
+    // 수기 정산 데이터를 documents 테이블에 삽입
+    const manualDocument = {
+      dealerId: req.session.dealerId || 1, // 기본값 설정
+      userId: req.session.userId,
+      documentNumber,
+      customerName: data.customerName,
+      customerPhone: data.customerPhone,
+      storeName: data.storeName,
+      carrier: data.carrier,
+      servicePlanId: data.servicePlanId,
+      additionalServices: data.additionalServices || [],
+      activationStatus: '개통',
+      activatedAt: new Date(data.activatedAt),
+      deviceModel: data.deviceModel,
+      simNumber: data.simNumber,
+      bundleApplied: data.bundleApplied,
+      bundleNotApplied: data.bundleNotApplied,
+      registrationFeePrepaid: data.registrationFeePrepaid,
+      registrationFeePostpaid: data.registrationFeePostpaid,
+      simFeePrepaid: data.simFeePrepaid,
+      simFeePostpaid: data.simFeePostpaid,
+      status: '접수',
+      createdAt: now,
+      updatedAt: now,
+      notes: data.notes,
+      isManualEntry: true // 수기 입력 구분을 위한 플래그
+    };
+    
+    const createdDocument = await storage.createDocument(manualDocument);
+    
+    res.json({
+      success: true,
+      document: createdDocument,
+      message: '수기 정산이 성공적으로 등록되었습니다.'
+    });
+    
+  } catch (error: any) {
+    console.error('Manual settlement creation error:', error);
+    res.status(500).json({ error: error.message || '수기 정산 등록 중 오류가 발생했습니다.' });
+  }
+});
+
 export default router;
