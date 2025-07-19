@@ -587,6 +587,28 @@ export function Documents() {
                                       부가: {(doc as any).additionalServices}
                                     </div>
                                   )}
+                                  {/* 가입비/유심비/결합 정보 */}
+                                  {((doc as any).registrationFeePrepaid || (doc as any).registrationFeePostpaid || 
+                                    (doc as any).simFeePrepaid || (doc as any).simFeePostpaid ||
+                                    (doc as any).bundleApplied || (doc as any).bundleNotApplied) && (
+                                    <div className="text-xs text-gray-600 space-y-0.5">
+                                      {((doc as any).registrationFeePrepaid || (doc as any).registrationFeePostpaid) && (
+                                        <div>
+                                          가입비: {(doc as any).registrationFeePrepaid ? '선납' : ''}{(doc as any).registrationFeePrepaid && (doc as any).registrationFeePostpaid ? '/' : ''}{(doc as any).registrationFeePostpaid ? '후납' : ''}
+                                        </div>
+                                      )}
+                                      {((doc as any).simFeePrepaid || (doc as any).simFeePostpaid) && (
+                                        <div>
+                                          유심비: {(doc as any).simFeePrepaid ? '선납' : ''}{(doc as any).simFeePrepaid && (doc as any).simFeePostpaid ? '/' : ''}{(doc as any).simFeePostpaid ? '후납' : ''}
+                                        </div>
+                                      )}
+                                      {((doc as any).bundleApplied || (doc as any).bundleNotApplied) && (
+                                        <div>
+                                          결합: {(doc as any).bundleApplied ? '적용' : ''}{(doc as any).bundleApplied && (doc as any).bundleNotApplied ? '/' : ''}{(doc as any).bundleNotApplied ? '미적용' : ''}
+                                        </div>
+                                      )}
+                                    </div>
+                                  )}
                                   {(doc as any).totalMonthlyFee && (
                                     <div className="text-xs font-medium text-green-600">
                                       월 {(doc as any).totalMonthlyFee.toLocaleString()}원
@@ -718,6 +740,31 @@ export function Documents() {
                               {(doc as any).additionalServices && (
                                 <div className="text-xs text-gray-500">
                                   부가: {(doc as any).additionalServices}
+                                </div>
+                              )}
+                              {/* 가입비/유심비/결합 정보 */}
+                              {((doc as any).registrationFeePrepaid || (doc as any).registrationFeePostpaid || 
+                                (doc as any).simFeePrepaid || (doc as any).simFeePostpaid ||
+                                (doc as any).bundleApplied || (doc as any).bundleNotApplied) && (
+                                <div className="text-xs text-gray-600 space-y-0.5 bg-gray-50 p-2 rounded">
+                                  {((doc as any).registrationFeePrepaid || (doc as any).registrationFeePostpaid) && (
+                                    <div className="flex">
+                                      <span className="font-medium w-12">가입비:</span>
+                                      <span>{(doc as any).registrationFeePrepaid ? '선납' : ''}{(doc as any).registrationFeePrepaid && (doc as any).registrationFeePostpaid ? '/' : ''}{(doc as any).registrationFeePostpaid ? '후납' : ''}</span>
+                                    </div>
+                                  )}
+                                  {((doc as any).simFeePrepaid || (doc as any).simFeePostpaid) && (
+                                    <div className="flex">
+                                      <span className="font-medium w-12">유심비:</span>
+                                      <span>{(doc as any).simFeePrepaid ? '선납' : ''}{(doc as any).simFeePrepaid && (doc as any).simFeePostpaid ? '/' : ''}{(doc as any).simFeePostpaid ? '후납' : ''}</span>
+                                    </div>
+                                  )}
+                                  {((doc as any).bundleApplied || (doc as any).bundleNotApplied) && (
+                                    <div className="flex">
+                                      <span className="font-medium w-12">결합:</span>
+                                      <span>{(doc as any).bundleApplied ? '적용' : ''}{(doc as any).bundleApplied && (doc as any).bundleNotApplied ? '/' : ''}{(doc as any).bundleNotApplied ? '미적용' : ''}</span>
+                                    </div>
+                                  )}
                                 </div>
                               )}
                               {(doc as any).totalMonthlyFee && (
