@@ -361,6 +361,9 @@ export const createSettlementSchema = z.object({
 
 export const updateSettlementSchema = createSettlementSchema.partial();
 
+export type CreateSettlementForm = z.infer<typeof createSettlementSchema>;
+export type UpdateSettlementForm = z.infer<typeof updateSettlementSchema>;
+
 
 
 

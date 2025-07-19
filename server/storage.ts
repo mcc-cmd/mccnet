@@ -356,7 +356,8 @@ export interface IStorage {
   
   // Document operations
   uploadDocument(data: UploadDocumentForm & { dealerId: number; userId: number; filePath: string; fileName: string; fileSize: number }): Promise<Document>;
-  getDocuments(dealerId?: number, filters?: { status?: string; search?: string; startDate?: string; endDate?: string }): Promise<Array<Document & { dealerName: string; userName: string }>>;
+  getDocument(id: number): Promise<Document | null>;
+  getDocuments(dealerId?: number, filters?: { status?: string; activationStatus?: string; search?: string; startDate?: string; endDate?: string }): Promise<Array<Document & { dealerName: string; userName: string }>>;
   updateDocumentStatus(id: number, data: UpdateDocumentStatusForm): Promise<Document>;
   updateDocumentActivationStatus(id: number, data: any): Promise<Document>;
   deleteDocument(id: number): Promise<void>;
@@ -1436,6 +1437,58 @@ class SqliteStorage implements IStorage {
       }
     }
     db.prepare('DELETE FROM documents WHERE id = ?').run(id);
+  }
+
+  async getDocument(id: number): Promise<Document | null> {
+    const result = db.prepare(`
+      SELECT d.*, dealers.name as dealer_name, u.name as user_name, sp.plan_name
+      FROM documents d
+      JOIN dealers ON d.dealer_id = dealers.id
+      JOIN users u ON d.user_id = u.id
+      LEFT JOIN service_plans sp ON d.service_plan_id = sp.id
+      WHERE d.id = ?
+    `).get(id) as any;
+
+    if (!result) return null;
+
+    return {
+      id: result.id,
+      dealerId: result.dealer_id,
+      userId: result.user_id,
+      documentNumber: result.document_number,
+      customerName: result.customer_name,
+      customerPhone: result.customer_phone,
+      storeName: result.store_name,
+      carrier: result.carrier,
+      contactCode: result.contact_code,
+      status: result.status,
+      activationStatus: result.activation_status || '대기',
+      filePath: result.file_path,
+      fileName: result.file_name,
+      fileSize: result.file_size,
+      uploadedAt: new Date(result.uploaded_at),
+      updatedAt: new Date(result.updated_at),
+      activatedAt: result.activated_at ? new Date(result.activated_at) : undefined,
+      activatedBy: result.activated_by,
+      notes: result.notes,
+      supplementNotes: result.supplement_notes,
+      supplementRequiredBy: result.supplement_required_by,
+      supplementRequiredAt: result.supplement_required_at ? new Date(result.supplement_required_at) : undefined,
+      dealerName: result.dealer_name,
+      userName: result.user_name,
+      servicePlanId: result.service_plan_id,
+      servicePlanName: result.plan_name,
+      additionalServiceIds: result.additional_service_ids,
+      totalMonthlyFee: result.total_monthly_fee,
+      registrationFeePrepaid: Boolean(result.registration_fee_prepaid),
+      registrationFeePostpaid: Boolean(result.registration_fee_postpaid),
+      simFeePrepaid: Boolean(result.sim_fee_prepaid),
+      simFeePostpaid: Boolean(result.sim_fee_postpaid),
+      bundleApplied: Boolean(result.bundle_applied),
+      bundleNotApplied: Boolean(result.bundle_not_applied),
+      deviceModel: result.device_model,
+      simNumber: result.sim_number
+    };
   }
 
   async uploadPricingTable(data: { title: string; filePath: string; fileName: string; fileSize: number; uploadedBy: number }): Promise<PricingTable> {

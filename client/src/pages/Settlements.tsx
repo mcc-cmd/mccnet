@@ -263,12 +263,12 @@ export function Settlements() {
                 <DialogTitle>새 정산 등록</DialogTitle>
               </DialogHeader>
               <Form {...settlementForm}>
-                <form onSubmit={settlementForm.handleSubmit(handleSubmit)} className="space-y-4">
-                  {/* 문서 선택 섹션 */}
-                  <div className="border rounded-lg p-4 bg-blue-50 dark:bg-blue-950">
-                    <h4 className="font-medium mb-3 text-blue-900 dark:text-blue-100">📋 접수 관리에서 데이터 불러오기</h4>
+                <form onSubmit={settlementForm.handleSubmit(handleSubmit)} className="space-y-6">
+                  {/* 개통 완료 문서 선택 */}
+                  <div className="border rounded-lg p-4 bg-gradient-to-r from-blue-50 to-green-50 dark:from-blue-950 dark:to-green-950">
+                    <h4 className="font-semibold mb-3 text-blue-900 dark:text-blue-100">📋 개통 완료 문서 선택</h4>
                     <div className="space-y-3">
-                      <Label htmlFor="document-select">개통 완료된 문서 선택</Label>
+                      <Label htmlFor="document-select" className="text-sm font-medium">문서를 선택하면 모든 정보가 자동으로 입력됩니다</Label>
                       <Select 
                         value={selectedDocumentId?.toString() || ''} 
                         onValueChange={(value) => {
@@ -279,213 +279,134 @@ export function Settlements() {
                           }
                         }}
                       >
-                        <SelectTrigger>
-                          <SelectValue placeholder="개통 완료된 문서를 선택하세요" />
+                        <SelectTrigger className="bg-white dark:bg-gray-800">
+                          <SelectValue placeholder="🔍 개통 완료된 문서를 선택하세요..." />
                         </SelectTrigger>
                         <SelectContent>
                           {completedDocuments?.map((doc) => (
                             <SelectItem key={doc.id} value={doc.id.toString()}>
-                              {doc.documentNumber} - {doc.customerName} ({doc.carrier})
+                              <div className="flex flex-col">
+                                <span className="font-medium">{doc.documentNumber} - {doc.customerName}</span>
+                                <span className="text-xs text-muted-foreground">{doc.carrier} • {doc.storeName || '판매점'}</span>
+                              </div>
                             </SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
-                      <p className="text-sm text-muted-foreground">
-                        문서를 선택하면 개통날짜, 판매점정보, 통신사, 요금제, 부가서비스 정보가 자동으로 입력되고 정책차수가 계산됩니다.
-                      </p>
                     </div>
                   </div>
 
-                  {/* 기본 정보 */}
-                  <div className="grid grid-cols-2 gap-4">
-                    <FormField
-                      control={settlementForm.control}
-                      name="customerName"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>고객명</FormLabel>
-                          <FormControl>
-                            <Input {...field} placeholder="고객명을 입력하세요" readOnly />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={settlementForm.control}
-                      name="customerPhone"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>고객 연락처</FormLabel>
-                          <FormControl>
-                            <Input {...field} placeholder="연락처를 입력하세요" readOnly />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                  
-                  {/* 요금제 정보 */}
-                  <div className="grid grid-cols-2 gap-4">
-                    <FormField
-                      control={settlementForm.control}
-                      name="servicePlanName"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>요금제명</FormLabel>
-                          <FormControl>
-                            <Input {...field} placeholder="요금제명" readOnly />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={settlementForm.control}
-                      name="bundleType"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>결합 유형</FormLabel>
-                          <Select onValueChange={field.onChange} defaultValue={field.value}>
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="결합 유형 선택" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              <SelectItem value="결합">결합</SelectItem>
-                              <SelectItem value="미결합">미결합</SelectItem>
-                              <SelectItem value="단독">단독</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-
-                  {/* 부가 서비스 표시 */}
-                  <div className="space-y-2">
-                    <Label>부가 가입 내용</Label>
-                    <div className="p-3 border rounded-md bg-gray-50 dark:bg-gray-800 min-h-[60px]">
-                      {settlementForm.watch('additionalServices')?.length > 0 ? (
-                        <div className="flex flex-wrap gap-2">
-                          {settlementForm.watch('additionalServices').map((service, index) => (
-                            <Badge key={index} variant="secondary">
-                              {service}
-                            </Badge>
-                          ))}
+                  {/* 자동 입력된 정보 표시 */}
+                  {selectedDocumentId && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-gray-50 dark:bg-gray-900 rounded-lg border">
+                      <div className="space-y-2">
+                        <Label className="text-sm font-medium text-green-700 dark:text-green-300">고객 정보</Label>
+                        <div className="text-sm">
+                          <p><span className="font-medium">이름:</span> {settlementForm.watch('customerName')}</p>
+                          <p><span className="font-medium">연락처:</span> {settlementForm.watch('customerPhone')}</p>
                         </div>
-                      ) : (
-                        <p className="text-muted-foreground text-sm">부가 서비스 정보가 없습니다</p>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <FormField
-                      control={settlementForm.control}
-                      name="policyLevel"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>정책차수 (자동계산)</FormLabel>
-                          <FormControl>
-                            <Input 
-                              type="number" 
-                              {...field} 
-                              onChange={(e) => field.onChange(parseInt(e.target.value) || 1)}
-                              placeholder="정책차수 (자동계산됨)" 
-                              className="bg-yellow-50 dark:bg-yellow-950"
-                              readOnly
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <div className="space-y-2">
-                      <Label>정책 상세</Label>
-                      <div className="p-3 border rounded-md bg-green-50 dark:bg-green-950 min-h-[40px]">
-                        <p className="text-sm text-green-800 dark:text-green-200">
-                          {settlementForm.watch('policyDetails') || '정책 상세 정보가 자동으로 표시됩니다'}
-                        </p>
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-sm font-medium text-green-700 dark:text-green-300">요금제 정보</Label>
+                        <div className="text-sm">
+                          <p><span className="font-medium">요금제:</span> {settlementForm.watch('servicePlanName') || '없음'}</p>
+                          <p><span className="font-medium">결합유형:</span> {settlementForm.watch('bundleType') || '미지정'}</p>
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-sm font-medium text-green-700 dark:text-green-300">부가 서비스</Label>
+                        <div className="flex flex-wrap gap-1">
+                          {settlementForm.watch('additionalServices')?.length > 0 ? (
+                            settlementForm.watch('additionalServices').map((service, index) => (
+                              <Badge key={index} variant="outline" className="text-xs">
+                                {service}
+                              </Badge>
+                            ))
+                          ) : (
+                            <span className="text-xs text-muted-foreground">부가 서비스 없음</span>
+                          )}
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-sm font-medium text-green-700 dark:text-green-300">정책 정보</Label>
+                        <div className="text-sm">
+                          <p><span className="font-medium">정책차수:</span> <Badge variant="secondary">{settlementForm.watch('policyLevel')}차수</Badge></p>
+                          <p className="text-xs text-muted-foreground">{settlementForm.watch('policyDetails')}</p>
+                        </div>
                       </div>
                     </div>
-                  </div>
+                  )}
 
-                  <div className="grid grid-cols-2 gap-4">
-                    <FormField
-                      control={settlementForm.control}
-                      name="settlementAmount"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>정산 금액</FormLabel>
-                          <FormControl>
-                            <Input 
-                              type="number" 
-                              {...field} 
-                              onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
-                              placeholder="정산 금액을 입력하세요" 
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
+                  {/* 정산 정보 입력 */}
+                  {selectedDocumentId && (
+                    <div className="border rounded-lg p-4 bg-yellow-50 dark:bg-yellow-950">
+                      <h4 className="font-semibold mb-3 text-yellow-900 dark:text-yellow-100">💰 정산 정보 입력</h4>
+                      <div className="grid grid-cols-2 gap-4">
+                        <FormField
+                          control={settlementForm.control}
+                          name="settlementAmount"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>정산 금액</FormLabel>
+                              <FormControl>
+                                <Input 
+                                  type="number" 
+                                  {...field} 
+                                  onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                                  placeholder="정산 금액을 입력하세요" 
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={settlementForm.control}
+                          name="commissionRate"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>수수료율 (%)</FormLabel>
+                              <FormControl>
+                                <Input 
+                                  type="number" 
+                                  {...field} 
+                                  onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                                  placeholder="수수료율을 입력하세요" 
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                      <div className="mt-4">
+                        <FormField
+                          control={settlementForm.control}
+                          name="bundleDetails"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>결합 상세 (선택사항)</FormLabel>
+                              <FormControl>
+                                <Input {...field} placeholder="결합 관련 상세 정보" />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                    </div>
+                  )}
 
-                  <div className="grid grid-cols-2 gap-4">
-                    <FormField
-                      control={settlementForm.control}
-                      name="commissionRate"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>수수료율 (%)</FormLabel>
-                          <FormControl>
-                            <Input 
-                              type="number" 
-                              step="0.1"
-                              {...field} 
-                              onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                              placeholder="수수료율을 입력하세요" 
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={settlementForm.control}
-                      name="settlementStatus"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>정산 상태</FormLabel>
-                          <Select onValueChange={field.onChange} defaultValue={field.value}>
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="정산 상태 선택" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              <SelectItem value="대기">대기</SelectItem>
-                              <SelectItem value="계산완료">계산완료</SelectItem>
-                              <SelectItem value="지급완료">지급완료</SelectItem>
-                              <SelectItem value="보류">보류</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-
-                  <div className="flex justify-end space-x-2 pt-4">
-                    <Button type="button" variant="outline" onClick={() => setSettlementDialogOpen(false)}>
+                  <div className="flex justify-end gap-2">
+                    <Button type="button" variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
                       취소
                     </Button>
-                    <Button type="submit" disabled={createSettlementMutation.isPending}>
-                      {createSettlementMutation.isPending ? '등록 중...' : '등록'}
+                    <Button 
+                      type="submit" 
+                      disabled={!selectedDocumentId || isCreating}
+                      className="bg-teal-600 hover:bg-teal-700"
+                    >
+                      {isCreating ? '등록 중...' : '정산 등록'}
                     </Button>
                   </div>
                 </form>
@@ -493,128 +414,6 @@ export function Settlements() {
             </DialogContent>
           </Dialog>
         </div>
-
-        {/* 통계 카드 */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">전체 정산</CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.total}</div>
-              <p className="text-xs text-muted-foreground">건</p>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">대기 중</CardTitle>
-              <Clock className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.pending}</div>
-              <p className="text-xs text-muted-foreground">건</p>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">지급 완료</CardTitle>
-              <CheckCircle className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.paid}</div>
-              <p className="text-xs text-muted-foreground">건</p>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">총 정산액</CardTitle>
-              <DollarSign className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.totalAmount.toLocaleString()}</div>
-              <p className="text-xs text-muted-foreground">원</p>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* 정산 목록 */}
-        <Card>
-          <CardHeader>
-            <CardTitle>정산 목록</CardTitle>
-            <CardDescription>
-              등록된 정산 정보를 관리할 수 있습니다.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {settlementsLoading ? (
-              <div className="text-center py-8">로딩 중...</div>
-            ) : settlements && settlements.length > 0 ? (
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>고객명</TableHead>
-                      <TableHead>연락처</TableHead>
-                      <TableHead>요금제</TableHead>
-                      <TableHead>결합유형</TableHead>
-                      <TableHead>정책차수</TableHead>
-                      <TableHead>정산금액</TableHead>
-                      <TableHead>수수료율</TableHead>
-                      <TableHead>상태</TableHead>
-                      <TableHead>등록일</TableHead>
-                      <TableHead>관리</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {settlements.map((settlement) => (
-                      <TableRow key={settlement.id}>
-                        <TableCell>{settlement.customerName}</TableCell>
-                        <TableCell>{settlement.customerPhone}</TableCell>
-                        <TableCell>{settlement.servicePlanName || '-'}</TableCell>
-                        <TableCell>{settlement.bundleType || '-'}</TableCell>
-                        <TableCell>{settlement.policyLevel}</TableCell>
-                        <TableCell>{settlement.settlementAmount?.toLocaleString() || '-'}원</TableCell>
-                        <TableCell>{settlement.commissionRate || '-'}%</TableCell>
-                        <TableCell>{getStatusBadge(settlement.settlementStatus)}</TableCell>
-                        <TableCell>
-                          {format(new Date(settlement.createdAt), 'yyyy-MM-dd', { locale: ko })}
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex space-x-2">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleEdit(settlement)}
-                            >
-                              <Edit className="w-3 h-3" />
-                            </Button>
-                            {user?.role === 'admin' && (
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleDelete(settlement.id)}
-                              >
-                                <Trash2 className="w-3 h-3" />
-                              </Button>
-                            )}
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            ) : (
-              <div className="text-center py-8 text-muted-foreground">
-                등록된 정산 정보가 없습니다.
-              </div>
-            )}
-          </CardContent>
-        </Card>
       </div>
     </Layout>
   );
