@@ -193,6 +193,8 @@ This is a document management system built for MCC네트월드 telecommunication
 - July 19, 2025. Added Excel export functionality for activated documents with date range selection in AdminPanel
 - July 19, 2025. Implemented comprehensive Excel export API with proper Korean column headers (개통일, 요청점, 고객명, 개통번호, 접점코드, 판매점명, 유형, 요금제, 가입번호, 부가, 유심모델/번호)
 - July 19, 2025. Enhanced additional services display by implementing server-side service ID to name mapping for proper Excel export and UI display
+- July 19, 2025. Fixed authentication system by creating admin account and updating all test account passwords to "password"
+- July 19, 2025. Verified login functionality working correctly for all user types (admin, dealers, workers)
 
 ## User Preferences
 
