@@ -173,7 +173,7 @@ This is a document management system built for MCC네트월드 telecommunication
 - July 19, 2025. Optimized table layout for one-screen viewing: reduced column widths, decreased padding, minimized font sizes, and implemented horizontal button layout
 - July 19, 2025. Database reinitialized with real service plan data from Excel file, test accounts recreated with standardized passwords
 - July 19, 2025. Enhanced supplement memo system: workers can add detailed notes when marking documents as "보완필요", dealers can view these notes prominently in orange boxes
-- July 19, 2025. Cleaned up service plan names by removing carrier prefixes (선), 미), 엠), etc.) for cleaner display while keeping carrier information in separate field
+- July 19, 2025. Cleaned up service plan display in UI by removing redundant " - carrier (fee)" suffix, showing only clean plan names (e.g., "카K)Z Mini + 밀리의 서재" instead of "카K)Z Mini + 밀리의 서재 - KT (0원)")
 
 ## User Preferences
 

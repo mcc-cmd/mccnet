@@ -883,7 +883,7 @@ export function Documents() {
                   <SelectContent>
                     {servicePlans?.map((plan) => (
                       <SelectItem key={plan.id} value={plan.id.toString()}>
-                        {plan.planName} - {plan.carrier} ({plan.monthlyFee.toLocaleString()}원)
+                        {plan.planName}
                       </SelectItem>
                     ))}
                   </SelectContent>
