@@ -54,7 +54,10 @@ export function Settlements() {
   // 개통 완료된 문서 조회 (정산 데이터로 활용)
   const { data: completedDocuments, isLoading } = useQuery({
     queryKey: ['/api/documents', { activationStatus: '개통' }],
-    queryFn: () => apiRequest('/api/documents?activationStatus=개통') as Promise<CompletedDocument[]>,
+    queryFn: async () => {
+      const response = await apiRequest('GET', '/api/documents?activationStatus=개통');
+      return response.json() as Promise<CompletedDocument[]>;
+    },
   });
 
   // 정산 통계 계산
@@ -105,12 +108,7 @@ export function Settlements() {
       if (startDate) params.append('startDate', startDate);
       if (endDate) params.append('endDate', endDate);
       
-      const response = await fetch(`/api/settlements/export?${params.toString()}`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('sessionId')}`,
-        },
-      });
+      const response = await apiRequest('GET', `/api/settlements/export?${params.toString()}`);
       
       if (!response.ok) throw new Error('다운로드 실패');
       
