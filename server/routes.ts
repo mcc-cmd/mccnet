@@ -141,6 +141,22 @@ const requireDealerOrWorker = async (req: any, res: any, next: any) => {
   });
 };
 
+// Public Service Plans API (before auth routes)
+router.get('/api/service-plans', async (req: any, res) => {
+  try {
+    console.log('Service plans API called - public endpoint');
+    const { carrier } = req.query;
+    const servicePlans = carrier 
+      ? await storage.getServicePlansByCarrier(carrier)
+      : await storage.getServicePlans();
+    console.log(`Found ${servicePlans.length} service plans`);
+    res.json(servicePlans);
+  } catch (error: any) {
+    console.error('Service plans error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Authentication routes
 router.post('/api/auth/login', async (req, res) => {
   try {
@@ -842,18 +858,7 @@ router.post('/api/auth/register/dealer', async (req, res) => {
   }
 });
 
-// Service Plans API Routes
-router.get('/api/service-plans', requireAuth, async (req: any, res) => {
-  try {
-    const { carrier } = req.query;
-    const servicePlans = carrier 
-      ? await storage.getServicePlansByCarrier(carrier)
-      : await storage.getServicePlans();
-    res.json(servicePlans);
-  } catch (error: any) {
-    res.status(500).json({ error: error.message });
-  }
-});
+// Service Plans management routes (admin only)
 
 router.post('/api/service-plans', requireAdmin, async (req: any, res) => {
   try {
