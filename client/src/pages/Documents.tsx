@@ -570,7 +570,8 @@ export function Documents() {
                           </td>
                           <td className="px-1 py-1 text-xs text-gray-700">
                             <div className="space-y-1">
-                              {(doc as any).activationStatus === '개통' ? (
+                              {/* 요금제 정보 - 모든 상태에서 표시 */}
+                              {((doc as any).servicePlanName || (doc as any).additionalServices) ? (
                                 <div className="space-y-0.5">
                                   {(doc as any).servicePlanName && (
                                     <div className="font-medium text-blue-600 text-xs truncate">
@@ -640,7 +641,7 @@ export function Documents() {
                                   title="개통상태 변경"
                                   className="h-5 px-1 text-xs"
                                 >
-                                  개통
+                                  개통상태
                                 </Button>
                               )}
                               {(doc as any).activationStatus === '개통' && canManageActivationStatus() && (
@@ -700,7 +701,8 @@ export function Documents() {
                             <span className="ml-1 text-gray-900">{(doc as any).dealerName}</span>
                           </div>
                         )}
-                        {(doc as any).activationStatus === '개통' && (
+                        {/* 요금제 정보 - 모든 상태에서 표시 */}
+                        {((doc as any).servicePlanName || (doc as any).additionalServices) && (
                           <div className="col-span-2">
                             <span className="text-gray-500">요금제:</span>
                             <div className="ml-1 mt-1 space-y-1">
@@ -855,18 +857,33 @@ export function Documents() {
                 />
               </div>
               
-              {activationForm.activationStatus === '보완필요' && (
+              {/* 보완 내용 - 보완필요와 개통완료 상태에서 모두 작성 가능 */}
+              {(activationForm.activationStatus === '보완필요' || activationForm.activationStatus === '개통') && (
                 <div>
-                  <Label htmlFor="supplementNotes">보완 상세 내용</Label>
+                  <Label htmlFor="supplementNotes">
+                    {activationForm.activationStatus === '보완필요' ? '보완 상세 내용' : '추가 메모 (판매점 확인용)'}
+                  </Label>
                   <Textarea
                     id="supplementNotes"
-                    placeholder="판매점에서 확인할 보완 내용을 자세히 입력하세요..."
+                    placeholder={
+                      activationForm.activationStatus === '보완필요' 
+                        ? "판매점에서 확인할 보완 내용을 자세히 입력하세요..."
+                        : "판매점에서 확인할 추가 정보나 특이사항을 입력하세요..."
+                    }
                     value={activationForm.supplementNotes}
                     onChange={(e) => setActivationForm(prev => ({ ...prev, supplementNotes: e.target.value }))}
                     rows={4}
-                    className="border-orange-200 focus:border-orange-400"
+                    className={
+                      activationForm.activationStatus === '보완필요'
+                        ? "border-orange-200 focus:border-orange-400"
+                        : "border-blue-200 focus:border-blue-400"
+                    }
                   />
-                  <div className="text-xs text-orange-600 mt-1">
+                  <div className={`text-xs mt-1 ${
+                    activationForm.activationStatus === '보완필요' 
+                      ? 'text-orange-600' 
+                      : 'text-blue-600'
+                  }`}>
                     이 내용은 판매점에서 확인할 수 있습니다.
                   </div>
                 </div>

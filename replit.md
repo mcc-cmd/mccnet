@@ -185,6 +185,10 @@ This is a document management system built for MCC네트월드 telecommunication
 - July 19, 2025. Fixed supplement memo visibility for dealers by enhancing UI with prominent orange boxes and icons in both desktop and mobile views
 - July 19, 2025. Corrected service plan information display by adding proper LEFT JOIN with service_plans table in getDocuments query
 - July 19, 2025. Created comprehensive test accounts: 2 test dealers (테스트판매점1/2) with 6 user accounts (2 store managers + 4 workers) for testing purposes
+- July 19, 2025. Fixed supplement memo validation schema errors by adding "보완필요" status and supplementNotes field to updateActivationStatusSchema
+- July 19, 2025. Updated database schema constraints to allow "보완필요" activation status in addition to existing states
+- July 19, 2025. Enhanced Documents page to show service plan and additional service information for all activation states, not just completed ones
+- July 19, 2025. Modified activation status dialog to allow supplement notes for both "보완필요" and "개통완료" states with different styling and placeholders
 
 ## User Preferences
 
