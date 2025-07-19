@@ -568,41 +568,47 @@ export function Documents() {
                             {getActivationStatusBadge((doc as any).activationStatus || '대기')}
                           </td>
                           <td className="px-1 py-1 text-xs text-gray-700">
-                            {(doc as any).activationStatus === '개통' ? (
-                              <div className="space-y-0.5">
-                                {(doc as any).servicePlanName && (
-                                  <div className="font-medium text-blue-600 text-xs truncate">
-                                    {(doc as any).servicePlanName}
-                                  </div>
-                                )}
-                                {(doc as any).additionalServices && (
-                                  <div className="text-xs text-gray-500 truncate">
-                                    부가: {(doc as any).additionalServices}
-                                  </div>
-                                )}
-                                {(doc as any).totalMonthlyFee && (
-                                  <div className="text-xs font-medium text-green-600">
-                                    월 {(doc as any).totalMonthlyFee.toLocaleString()}원
-                                  </div>
-                                )}
-                              </div>
-                            ) : (
-                              <div>
-                                <span className="text-gray-400">-</span>
-                                {/* 보완 메모 표시 */}
-                                {(doc as any).supplementNotes && (
-                                  <div className="mt-1 p-2 bg-orange-50 border border-orange-200 rounded text-xs">
-                                    <div className="font-medium text-orange-700 mb-1">보완요청</div>
-                                    <div className="text-orange-800 text-xs leading-tight">
-                                      {(doc as any).supplementNotes.length > 50 
-                                        ? `${(doc as any).supplementNotes.substring(0, 50)}...` 
-                                        : (doc as any).supplementNotes
-                                      }
+                            <div className="space-y-1">
+                              {(doc as any).activationStatus === '개통' ? (
+                                <div className="space-y-0.5">
+                                  {(doc as any).servicePlanName && (
+                                    <div className="font-medium text-blue-600 text-xs truncate">
+                                      {(doc as any).servicePlanName}
                                     </div>
+                                  )}
+                                  {(doc as any).additionalServices && (
+                                    <div className="text-xs text-gray-500 truncate">
+                                      부가: {(doc as any).additionalServices}
+                                    </div>
+                                  )}
+                                  {(doc as any).totalMonthlyFee && (
+                                    <div className="text-xs font-medium text-green-600">
+                                      월 {(doc as any).totalMonthlyFee.toLocaleString()}원
+                                    </div>
+                                  )}
+                                </div>
+                              ) : (
+                                <span className="text-gray-400">-</span>
+                              )}
+                              
+                              {/* 보완 메모 표시 - 모든 상태에서 표시 */}
+                              {(doc as any).supplementNotes && (
+                                <div className="p-2 bg-orange-50 border-l-4 border-orange-400 rounded-r text-xs">
+                                  <div className="font-bold text-orange-800 mb-1">📝 보완 요청</div>
+                                  <div className="text-orange-700 leading-tight">
+                                    {(doc as any).supplementNotes.length > 80 
+                                      ? `${(doc as any).supplementNotes.substring(0, 80)}...` 
+                                      : (doc as any).supplementNotes
+                                    }
                                   </div>
-                                )}
-                              </div>
-                            )}
+                                  {(doc as any).supplementRequiredAt && (
+                                    <div className="text-orange-600 mt-1 text-xs">
+                                      요청일: {format(new Date((doc as any).supplementRequiredAt), 'MM-dd HH:mm', { locale: ko })}
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+                            </div>
                           </td>
                           <td className="px-1 py-1 text-xs text-gray-500 truncate">
                             {format(new Date(doc.uploadedAt), 'MM-dd HH:mm', { locale: ko })}
@@ -723,19 +729,26 @@ export function Documents() {
                           </div>
                         )}
                         
-                        {/* 보완 메모 표시 */}
-                        {(doc as any).supplementNotes && (
-                          <div className="col-span-2 mt-2 p-3 bg-orange-50 border border-orange-200 rounded-lg">
-                            <div className="text-xs font-medium text-orange-700 mb-1">보완 요청 사항</div>
-                            <div className="text-sm text-orange-800">{(doc as any).supplementNotes}</div>
-                            {(doc as any).supplementRequiredAt && (
-                              <div className="text-xs text-orange-600 mt-1">
-                                {format(new Date((doc as any).supplementRequiredAt), 'yyyy-MM-dd HH:mm', { locale: ko })}
-                              </div>
-                            )}
-                          </div>
-                        )}
                       </div>
+
+                      {/* 보완 메모 표시 - 더 눈에 띄게 */}
+                      {(doc as any).supplementNotes && (
+                        <div className="mt-3 p-4 bg-gradient-to-r from-orange-50 to-red-50 border-l-4 border-orange-500 rounded-r-lg shadow-sm">
+                          <div className="flex items-center mb-2">
+                            <span className="text-lg mr-2">📋</span>
+                            <div className="text-sm font-bold text-orange-800">보완 요청 사항</div>
+                          </div>
+                          <div className="text-sm text-orange-900 bg-white p-3 rounded border border-orange-200">
+                            {(doc as any).supplementNotes}
+                          </div>
+                          {(doc as any).supplementRequiredAt && (
+                            <div className="text-xs text-orange-600 mt-2 flex items-center">
+                              <span className="mr-1">⏰</span>
+                              요청일: {format(new Date((doc as any).supplementRequiredAt), 'yyyy-MM-dd HH:mm', { locale: ko })}
+                            </div>
+                          )}
+                        </div>
+                      )}
                       
                       <div className="flex justify-between items-center">
                         <span className="text-xs text-gray-500">

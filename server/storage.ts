@@ -1145,10 +1145,11 @@ class SqliteStorage implements IStorage {
 
   async getDocuments(dealerId?: number, filters?: { status?: string; search?: string; startDate?: string; endDate?: string }): Promise<Array<Document & { dealerName: string; userName: string }>> {
     let query = `
-      SELECT d.*, dealers.name as dealer_name, u.name as user_name
+      SELECT d.*, dealers.name as dealer_name, u.name as user_name, sp.plan_name
       FROM documents d
       JOIN dealers ON d.dealer_id = dealers.id
       JOIN users u ON d.user_id = u.id
+      LEFT JOIN service_plans sp ON d.service_plan_id = sp.id
       WHERE 1=1
     `;
     let params: any[] = [];
@@ -1208,6 +1209,8 @@ class SqliteStorage implements IStorage {
       servicePlanId: d.service_plan_id,
       servicePlanName: d.plan_name,
       additionalServiceIds: d.additional_service_ids,
+      additionalServices: d.additional_services,
+      totalMonthlyFee: d.total_monthly_fee,
       registrationFeePrepaid: Boolean(d.registration_fee_prepaid),
       registrationFeePostpaid: Boolean(d.registration_fee_postpaid),
       simFeePrepaid: Boolean(d.sim_fee_prepaid),
