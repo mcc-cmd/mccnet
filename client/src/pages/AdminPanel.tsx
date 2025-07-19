@@ -473,6 +473,26 @@ export function AdminPanel() {
     },
   });
 
+  const deleteServicePlanMutation = useMutation({
+    mutationFn: (id: number) => apiRequest(`/api/service-plans/${id}`, {
+      method: 'DELETE',
+    }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/service-plans'] });
+      toast({
+        title: '성공',
+        description: '요금제가 성공적으로 삭제되었습니다.',
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: '오류',
+        description: error.message,
+        variant: 'destructive',
+      });
+    },
+  });
+
   const createAdditionalServiceMutation = useMutation({
     mutationFn: (data: any) => apiRequest('/api/additional-services', {
       method: 'POST',
@@ -533,6 +553,12 @@ export function AdminPanel() {
 
   const handleCreateServicePlan = (data: any) => {
     createServicePlanMutation.mutate(data);
+  };
+
+  const handleDeleteServicePlan = (id: number) => {
+    if (confirm('정말로 이 요금제를 삭제하시겠습니까?')) {
+      deleteServicePlanMutation.mutate(id);
+    }
   };
 
   const handleCreateAdditionalService = (data: any) => {
@@ -1948,6 +1974,9 @@ export function AdminPanel() {
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                               상태
                             </th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              관리
+                            </th>
                           </tr>
                         </thead>
                         <tbody className="bg-white divide-y divide-gray-200">
@@ -1972,6 +2001,15 @@ export function AdminPanel() {
                                 <Badge variant={plan.isActive ? "default" : "secondary"}>
                                   {plan.isActive ? '활성' : '비활성'}
                                 </Badge>
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                <Button
+                                  variant="destructive"
+                                  size="sm"
+                                  onClick={() => handleDeleteServicePlan(plan.id)}
+                                >
+                                  삭제
+                                </Button>
                               </td>
                             </tr>
                           ))}
