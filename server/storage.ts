@@ -1636,6 +1636,191 @@ class SqliteStorage implements IStorage {
       updatedAt: new Date(dealer.updated_at)
     };
   }
+
+  // 정산 관리 메서드들
+  async createSettlement(data: any): Promise<any> {
+    const stmt = db.prepare(`
+      INSERT INTO settlements (
+        document_id, dealer_id, customer_name, customer_phone,
+        service_plan_id, service_plan_name, additional_services,
+        bundle_type, bundle_details, policy_level, policy_details,
+        settlement_amount, commission_rate, settlement_status, settlement_date
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `);
+    
+    const result = stmt.run(
+      data.documentId,
+      data.dealerId,
+      data.customerName,
+      data.customerPhone,
+      data.servicePlanId || null,
+      data.servicePlanName || null,
+      JSON.stringify(data.additionalServices || []),
+      data.bundleType || null,
+      data.bundleDetails || null,
+      data.policyLevel || 1,
+      data.policyDetails || null,
+      data.settlementAmount || null,
+      data.commissionRate || null,
+      data.settlementStatus || '대기',
+      data.settlementDate ? Math.floor(data.settlementDate.getTime() / 1000) : null
+    );
+
+    return this.getSettlement(result.lastInsertRowid as number);
+  }
+
+  async getSettlement(id: number): Promise<any> {
+    const stmt = db.prepare(`
+      SELECT s.*, d.name as dealer_name, sp.plan_name
+      FROM settlements s
+      LEFT JOIN dealers d ON s.dealer_id = d.id
+      LEFT JOIN service_plans sp ON s.service_plan_id = sp.id
+      WHERE s.id = ?
+    `);
+    
+    const settlement = stmt.get(id) as any;
+    if (!settlement) return null;
+    
+    return {
+      id: settlement.id,
+      documentId: settlement.document_id,
+      dealerId: settlement.dealer_id,
+      dealerName: settlement.dealer_name,
+      customerName: settlement.customer_name,
+      customerPhone: settlement.customer_phone,
+      servicePlanId: settlement.service_plan_id,
+      servicePlanName: settlement.service_plan_name || settlement.plan_name,
+      additionalServices: JSON.parse(settlement.additional_services || '[]'),
+      bundleType: settlement.bundle_type,
+      bundleDetails: settlement.bundle_details,
+      policyLevel: settlement.policy_level,
+      policyDetails: settlement.policy_details,
+      settlementAmount: settlement.settlement_amount,
+      commissionRate: settlement.commission_rate,
+      settlementStatus: settlement.settlement_status,
+      settlementDate: settlement.settlement_date ? new Date(settlement.settlement_date * 1000) : null,
+      createdAt: new Date(settlement.created_at * 1000),
+      updatedAt: new Date(settlement.updated_at * 1000)
+    };
+  }
+
+  async getSettlements(dealerId?: number): Promise<any[]> {
+    let query = `
+      SELECT s.*, d.name as dealer_name, sp.plan_name
+      FROM settlements s
+      LEFT JOIN dealers d ON s.dealer_id = d.id
+      LEFT JOIN service_plans sp ON s.service_plan_id = sp.id
+    `;
+    let params: any[] = [];
+    
+    if (dealerId) {
+      query += ' WHERE s.dealer_id = ?';
+      params.push(dealerId);
+    }
+    
+    query += ' ORDER BY s.created_at DESC';
+    
+    const stmt = db.prepare(query);
+    const settlements = stmt.all(...params) as any[];
+    
+    return settlements.map(s => ({
+      id: s.id,
+      documentId: s.document_id,
+      dealerId: s.dealer_id,
+      dealerName: s.dealer_name,
+      customerName: s.customer_name,
+      customerPhone: s.customer_phone,
+      servicePlanId: s.service_plan_id,
+      servicePlanName: s.service_plan_name || s.plan_name,
+      additionalServices: JSON.parse(s.additional_services || '[]'),
+      bundleType: s.bundle_type,
+      bundleDetails: s.bundle_details,
+      policyLevel: s.policy_level,
+      policyDetails: s.policy_details,
+      settlementAmount: s.settlement_amount,
+      commissionRate: s.commission_rate,
+      settlementStatus: s.settlement_status,
+      settlementDate: s.settlement_date ? new Date(s.settlement_date * 1000) : null,
+      createdAt: new Date(s.created_at * 1000),
+      updatedAt: new Date(s.updated_at * 1000)
+    }));
+  }
+
+  async updateSettlement(id: number, data: any): Promise<any> {
+    const updateFields = [];
+    const params = [];
+    
+    if (data.customerName !== undefined) {
+      updateFields.push('customer_name = ?');
+      params.push(data.customerName);
+    }
+    if (data.customerPhone !== undefined) {
+      updateFields.push('customer_phone = ?');
+      params.push(data.customerPhone);
+    }
+    if (data.servicePlanId !== undefined) {
+      updateFields.push('service_plan_id = ?');
+      params.push(data.servicePlanId);
+    }
+    if (data.servicePlanName !== undefined) {
+      updateFields.push('service_plan_name = ?');
+      params.push(data.servicePlanName);
+    }
+    if (data.additionalServices !== undefined) {
+      updateFields.push('additional_services = ?');
+      params.push(JSON.stringify(data.additionalServices));
+    }
+    if (data.bundleType !== undefined) {
+      updateFields.push('bundle_type = ?');
+      params.push(data.bundleType);
+    }
+    if (data.bundleDetails !== undefined) {
+      updateFields.push('bundle_details = ?');
+      params.push(data.bundleDetails);
+    }
+    if (data.policyLevel !== undefined) {
+      updateFields.push('policy_level = ?');
+      params.push(data.policyLevel);
+    }
+    if (data.policyDetails !== undefined) {
+      updateFields.push('policy_details = ?');
+      params.push(data.policyDetails);
+    }
+    if (data.settlementAmount !== undefined) {
+      updateFields.push('settlement_amount = ?');
+      params.push(data.settlementAmount);
+    }
+    if (data.commissionRate !== undefined) {
+      updateFields.push('commission_rate = ?');
+      params.push(data.commissionRate);
+    }
+    if (data.settlementStatus !== undefined) {
+      updateFields.push('settlement_status = ?');
+      params.push(data.settlementStatus);
+    }
+    if (data.settlementDate !== undefined) {
+      updateFields.push('settlement_date = ?');
+      params.push(data.settlementDate ? Math.floor(data.settlementDate.getTime() / 1000) : null);
+    }
+    
+    updateFields.push('updated_at = ?');
+    params.push(Math.floor(Date.now() / 1000));
+    params.push(id);
+    
+    const stmt = db.prepare(`
+      UPDATE settlements 
+      SET ${updateFields.join(', ')}
+      WHERE id = ?
+    `);
+    
+    stmt.run(...params);
+    return this.getSettlement(id);
+  }
+
+  async deleteSettlement(id: number): Promise<void> {
+    const stmt = db.prepare('DELETE FROM settlements WHERE id = ?');
+    stmt.run(id);
+  }
 }
 
 export const storage = new SqliteStorage();

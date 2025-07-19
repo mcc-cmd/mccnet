@@ -11,6 +11,7 @@ import { Documents } from '@/pages/Documents';
 import { SubmitApplication } from '@/pages/SubmitApplication';
 import { Downloads } from '@/pages/Downloads';
 import { AdminPanel } from '@/pages/AdminPanel';
+import { Settlements } from '@/pages/Settlements';
 import { TestPage } from '@/pages/TestPage';
 import NotFound from '@/pages/not-found';
 
@@ -37,6 +38,7 @@ function AppRoutes() {
       <Route path="/submit" component={SubmitApplication} />
       <Route path="/documents" component={Documents} />
       <Route path="/downloads" component={Downloads} />
+      <Route path="/settlements" component={Settlements} />
 
       {user?.userType === 'admin' && (
         <>

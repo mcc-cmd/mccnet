@@ -301,4 +301,66 @@ export type CreateServicePlanForm = z.infer<typeof createServicePlanSchema>;
 export type CreateAdditionalServiceForm = z.infer<typeof createAdditionalServiceSchema>;
 export type CreateDocumentServicePlanForm = z.infer<typeof createDocumentServicePlanSchema>;
 
+// 정산 카테고리 인터페이스
+export interface Settlement {
+  id: number;
+  documentId: number;
+  dealerId: number;
+  dealerName?: string;
+  
+  // 고객 정보
+  customerName: string;
+  customerPhone: string;
+  
+  // 요금제 정보
+  servicePlanId?: number;
+  servicePlanName?: string;
+  
+  // 부가 서비스 정보
+  additionalServices: string[];
+  
+  // 결합 내역
+  bundleType?: '결합' | '미결합' | '단독';
+  bundleDetails?: string;
+  
+  // 정책차수
+  policyLevel: number;
+  policyDetails?: string;
+  
+  // 정산 정보
+  settlementAmount?: number; // 정산 금액 (원 단위)
+  commissionRate?: number; // 수수료율 (%)
+  settlementStatus: '대기' | '계산완료' | '지급완료' | '보류';
+  
+  // 정산 일자
+  settlementDate?: Date;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+// 정산 생성 스키마
+export const createSettlementSchema = z.object({
+  documentId: z.number(),
+  dealerId: z.number(),
+  customerName: z.string().min(1, "고객명을 입력해주세요"),
+  customerPhone: z.string().min(1, "고객 연락처를 입력해주세요"),
+  servicePlanId: z.number().optional(),
+  servicePlanName: z.string().optional(),
+  additionalServices: z.array(z.string()).default([]),
+  bundleType: z.enum(['결합', '미결합', '단독']).optional(),
+  bundleDetails: z.string().optional(),
+  policyLevel: z.number().min(1).default(1),
+  policyDetails: z.string().optional(),
+  settlementAmount: z.number().optional(),
+  commissionRate: z.number().optional(),
+  settlementStatus: z.enum(['대기', '계산완료', '지급완료', '보류']).default('대기'),
+  settlementDate: z.date().optional(),
+});
+
+// 정산 업데이트 스키마
+export const updateSettlementSchema = createSettlementSchema.partial();
+
+export type CreateSettlementForm = z.infer<typeof createSettlementSchema>;
+export type UpdateSettlementForm = z.infer<typeof updateSettlementSchema>;
+
 

@@ -17,6 +17,8 @@ import {
   createAdditionalServiceSchema,
   createDocumentServicePlanSchema,
   updateDealerContactCodesSchema,
+  createSettlementSchema,
+  updateSettlementSchema,
   type AuthResponse
 } from "../shared/schema";
 
@@ -982,6 +984,75 @@ router.post('/api/admin/contact-codes/upload', requireAdmin, upload.single('file
   } catch (error: any) {
     console.error('Contact codes excel upload error:', error);
     res.status(500).json({ error: '엑셀 파일 처리에 실패했습니다.' });
+  }
+});
+
+// 정산 관리 라우트들
+router.post('/api/settlements', requireAuth, async (req: any, res) => {
+  try {
+    const data = createSettlementSchema.parse(req.body);
+    const settlement = await storage.createSettlement(data);
+    res.json(settlement);
+  } catch (error: any) {
+    console.error('Create settlement error:', error);
+    res.status(400).json({ error: error.message });
+  }
+});
+
+router.get('/api/settlements', requireAuth, async (req: any, res) => {
+  try {
+    const user = req.user;
+    let dealerId = undefined;
+    
+    // 판매점 사용자는 자신의 대리점 데이터만 조회
+    if (user.role === 'dealer_store' || user.role === 'dealer_worker') {
+      dealerId = user.dealerId;
+    }
+    
+    const settlements = await storage.getSettlements(dealerId);
+    res.json(settlements);
+  } catch (error: any) {
+    console.error('Get settlements error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.get('/api/settlements/:id', requireAuth, async (req: any, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const settlement = await storage.getSettlement(id);
+    
+    if (!settlement) {
+      return res.status(404).json({ error: '정산 데이터를 찾을 수 없습니다.' });
+    }
+    
+    res.json(settlement);
+  } catch (error: any) {
+    console.error('Get settlement error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.put('/api/settlements/:id', requireAuth, async (req: any, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const data = updateSettlementSchema.parse(req.body);
+    const settlement = await storage.updateSettlement(id, data);
+    res.json(settlement);
+  } catch (error: any) {
+    console.error('Update settlement error:', error);
+    res.status(400).json({ error: error.message });
+  }
+});
+
+router.delete('/api/settlements/:id', requireAdmin, async (req: any, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    await storage.deleteSettlement(id);
+    res.json({ success: true });
+  } catch (error: any) {
+    console.error('Delete settlement error:', error);
+    res.status(500).json({ error: error.message });
   }
 });
 

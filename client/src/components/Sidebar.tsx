@@ -7,7 +7,8 @@ import {
   Download,
   BarChart3,
   Settings,
-  TestTube
+  TestTube,
+  Calculator
 } from 'lucide-react';
 import logoImage from '@assets/KakaoTalk_20250626_162541112-removebg-preview_1751604392501.png';
 
@@ -16,6 +17,7 @@ const navigation = [
   { name: '접수 신청', href: '/submit', icon: FileText },
   { name: '접수 관리', href: '/documents', icon: FileText },
   { name: '서식지 다운로드', href: '/downloads', icon: Download },
+  { name: '정산 관리', href: '/settlements', icon: Calculator },
 ];
 
 const adminNavigation = [
