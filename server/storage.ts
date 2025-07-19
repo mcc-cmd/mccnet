@@ -1209,7 +1209,7 @@ class SqliteStorage implements IStorage {
       servicePlanId: d.service_plan_id,
       servicePlanName: d.plan_name,
       additionalServiceIds: d.additional_service_ids,
-      additionalServices: d.additional_services,
+      additionalServices: this.getAdditionalServiceNames(d.additional_service_ids),
       totalMonthlyFee: d.total_monthly_fee,
       registrationFeePrepaid: Boolean(d.registration_fee_prepaid),
       registrationFeePostpaid: Boolean(d.registration_fee_postpaid),
@@ -1220,6 +1220,27 @@ class SqliteStorage implements IStorage {
       deviceModel: d.device_model,
       simNumber: d.sim_number
     }));
+  }
+
+  // 부가서비스 이름 가져오기 헬퍼 함수
+  private getAdditionalServiceNames(additionalServiceIds: string | null): string | null {
+    if (!additionalServiceIds) return null;
+    
+    try {
+      const serviceIds = JSON.parse(additionalServiceIds) as string[];
+      const serviceMap: { [key: string]: string } = {
+        '1': '필링',
+        '2': '캐치콜', 
+        '3': '링투유',
+        '4': '통화중대기',
+        '5': '00700'
+      };
+      
+      const serviceNames = serviceIds.map(id => serviceMap[id]).filter(Boolean);
+      return serviceNames.length > 0 ? serviceNames.join(', ') : null;
+    } catch {
+      return null;
+    }
   }
 
   async updateDocumentStatus(id: number, data: UpdateDocumentStatusForm): Promise<Document> {
