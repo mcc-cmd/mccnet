@@ -535,6 +535,24 @@ export function AdminPanel() {
     createAdditionalServiceMutation.mutate(data);
   };
 
+  const handleServicePlanImageSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!servicePlanImageForm.carrier || !servicePlanImageForm.file) {
+      toast({
+        title: '오류',
+        description: '통신사와 파일을 모두 선택해주세요.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    servicePlanImageMutation.mutate({
+      carrier: servicePlanImageForm.carrier,
+      file: servicePlanImageForm.file
+    });
+  };
+
   const handleUploadPricing = async (e: React.FormEvent) => {
     e.preventDefault();
     
