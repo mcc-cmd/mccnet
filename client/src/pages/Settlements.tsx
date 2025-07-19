@@ -55,7 +55,8 @@ export function Settlements() {
   const { data: completedDocuments, isLoading } = useQuery({
     queryKey: ['/api/documents', { activationStatus: '개통' }],
     queryFn: async () => {
-      const response = await apiRequest('GET', '/api/documents?activationStatus=개통');
+      const params = new URLSearchParams({ activationStatus: '개통' });
+      const response = await apiRequest('GET', `/api/documents?${params.toString()}`);
       return response.json() as Promise<CompletedDocument[]>;
     },
   });

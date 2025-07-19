@@ -1179,7 +1179,7 @@ class SqliteStorage implements IStorage {
     return matchingCode ? matchingCode.contactCode : null;
   }
 
-  async getDocuments(dealerId?: number, filters?: { status?: string; search?: string; startDate?: string; endDate?: string }): Promise<Array<Document & { dealerName: string; userName: string }>> {
+  async getDocuments(dealerId?: number, filters?: { status?: string; activationStatus?: string; search?: string; startDate?: string; endDate?: string }): Promise<Array<Document & { dealerName: string; userName: string }>> {
     let query = `
       SELECT d.*, dealers.name as dealer_name, u.name as user_name, sp.plan_name,
              d.registration_fee_prepaid, d.registration_fee_postpaid,
