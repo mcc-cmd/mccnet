@@ -189,6 +189,10 @@ This is a document management system built for MCC네트월드 telecommunication
 - July 19, 2025. Updated database schema constraints to allow "보완필요" activation status in addition to existing states
 - July 19, 2025. Enhanced Documents page to show service plan and additional service information for all activation states, not just completed ones
 - July 19, 2025. Modified activation status dialog to allow supplement notes for both "보완필요" and "개통완료" states with different styling and placeholders
+- July 19, 2025. Removed activation status change functionality from AdminPanel document management tab as requested
+- July 19, 2025. Added Excel export functionality for activated documents with date range selection in AdminPanel
+- July 19, 2025. Implemented comprehensive Excel export API with proper Korean column headers (개통일, 요청점, 고객명, 개통번호, 접점코드, 판매점명, 유형, 요금제, 가입번호, 부가, 유심모델/번호)
+- July 19, 2025. Enhanced additional services display by implementing server-side service ID to name mapping for proper Excel export and UI display
 
 ## User Preferences
 

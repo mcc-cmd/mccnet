@@ -109,6 +109,10 @@ export function AdminPanel() {
     carrier: '',
     file: null as File | null
   });
+  
+  // 엑셀 다운로드 관련
+  const [exportStartDate, setExportStartDate] = useState('');
+  const [exportEndDate, setExportEndDate] = useState('');
 
   // Queries
   const { data: dealers, isLoading: dealersLoading } = useQuery({
@@ -551,6 +555,59 @@ export function AdminPanel() {
       carrier: servicePlanImageForm.carrier,
       file: servicePlanImageForm.file
     });
+  };
+
+  // 엑셀 다운로드 mutation
+  const exportMutation = useMutation({
+    mutationFn: async () => {
+      const response = await fetch(`/api/admin/export/activated-documents?startDate=${exportStartDate}&endDate=${exportEndDate}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+      });
+      
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({ error: '엑셀 파일 생성에 실패했습니다.' }));
+        throw new Error(error.error || '엑셀 파일 생성에 실패했습니다.');
+      }
+      
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `개통서류_${exportStartDate}_${exportEndDate}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    },
+    onSuccess: () => {
+      toast({
+        title: '성공',
+        description: '엑셀 파일이 다운로드되었습니다.',
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: '오류',
+        description: error.message,
+        variant: 'destructive',
+      });
+    },
+  });
+
+  const handleExportActivatedDocuments = () => {
+    if (!exportStartDate || !exportEndDate) {
+      toast({
+        title: '오류',
+        description: '시작일과 종료일을 선택해주세요.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    exportMutation.mutate();
   };
 
   const handleUploadPricing = async (e: React.FormEvent) => {
@@ -1247,7 +1304,33 @@ export function AdminPanel() {
           <TabsContent value="documents">
             <Card>
               <CardHeader>
-                <CardTitle>서류 관리</CardTitle>
+                <div className="flex justify-between items-center">
+                  <CardTitle>서류 관리</CardTitle>
+                  <div className="flex space-x-2">
+                    <Input
+                      type="date"
+                      value={exportStartDate}
+                      onChange={(e) => setExportStartDate(e.target.value)}
+                      placeholder="시작일"
+                      className="w-40"
+                    />
+                    <Input
+                      type="date"
+                      value={exportEndDate}
+                      onChange={(e) => setExportEndDate(e.target.value)}
+                      placeholder="종료일"
+                      className="w-40"
+                    />
+                    <Button 
+                      onClick={handleExportActivatedDocuments}
+                      disabled={!exportStartDate || !exportEndDate || exportMutation.isPending}
+                      className="flex items-center space-x-2"
+                    >
+                      <Download className="h-4 w-4" />
+                      <span>{exportMutation.isPending ? '생성 중...' : '개통서류 엑셀 다운로드'}</span>
+                    </Button>
+                  </div>
+                </div>
               </CardHeader>
               <CardContent>
                 {documentsLoading ? (
@@ -1278,7 +1361,7 @@ export function AdminPanel() {
                             업로드일
                           </th>
                           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            작업
+                            파일
                           </th>
                         </tr>
                       </thead>
@@ -1307,7 +1390,7 @@ export function AdminPanel() {
                               {format(new Date(doc.uploadedAt), 'yyyy-MM-dd HH:mm', { locale: ko })}
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                              <div className="flex space-x-2">
+                              {doc.filePath && (
                                 <Button
                                   variant="outline"
                                   size="sm"
@@ -1315,14 +1398,7 @@ export function AdminPanel() {
                                 >
                                   <Download className="h-4 w-4" />
                                 </Button>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => openStatusDialog(doc)}
-                                >
-                                  상태 변경
-                                </Button>
-                              </div>
+                              )}
                             </td>
                           </tr>
                         ))}

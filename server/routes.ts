@@ -662,6 +662,110 @@ router.get('/api/worker-stats', requireAuth, async (req: any, res) => {
   }
 });
 
+// 개통서류 엑셀 다운로드 API
+router.get('/api/admin/export/activated-documents', requireAdmin, async (req: any, res) => {
+  try {
+    const { startDate, endDate } = req.query;
+    
+    if (!startDate || !endDate) {
+      return res.status(400).json({ error: '시작일과 종료일이 필요합니다.' });
+    }
+
+    // 개통된 서류 조회
+    const query = `
+      SELECT 
+        d.activated_at as activatedAt,
+        d.store_name as storeName,
+        d.customer_name as customerName,
+        d.customer_phone as customerPhone,
+        '',  -- 접점코드 (현재 데이터베이스에 없음)
+        dealers.name as dealerName,
+        d.carrier,
+        sp.plan_name as servicePlanName,
+        d.customer_phone as subscriptionNumber, -- 가입번호로 고객 전화번호 사용
+        d.additional_service_ids,
+        CASE 
+          WHEN d.device_model IS NOT NULL AND d.sim_number IS NOT NULL 
+          THEN d.device_model || '/' || d.sim_number
+          WHEN d.device_model IS NOT NULL 
+          THEN d.device_model
+          WHEN d.sim_number IS NOT NULL 
+          THEN d.sim_number
+          ELSE ''
+        END as deviceInfo
+      FROM documents d
+      JOIN dealers ON d.dealer_id = dealers.id
+      LEFT JOIN service_plans sp ON d.service_plan_id = sp.id
+      WHERE d.activation_status = '개통'
+      AND DATE(d.activated_at) >= ?
+      AND DATE(d.activated_at) <= ?
+      ORDER BY d.activated_at DESC
+    `;
+
+    const documents = await storage.getExportDocuments(startDate as string, endDate as string);
+
+    // 부가서비스 매핑
+    const serviceMap: { [key: string]: string } = {
+      '1': '필링',
+      '2': '캐치콜',
+      '3': '링투유',
+      '4': '통화중대기',
+      '5': '00700'
+    };
+
+    // 엑셀 데이터 준비
+    const excelData = documents.map(doc => {
+      let additionalServices = '';
+      if (doc.additional_service_ids) {
+        try {
+          const serviceIds = JSON.parse(doc.additional_service_ids) as string[];
+          additionalServices = serviceIds.map(id => serviceMap[id]).filter(Boolean).join(', ');
+        } catch (e) {
+          additionalServices = '';
+        }
+      }
+
+      return {
+        '개통일': doc.activatedAt ? new Date(doc.activatedAt).toLocaleDateString('ko-KR') : '',
+        '요청점': doc.storeName || '',
+        '고객명': doc.customerName || '',
+        '개통번호': doc.customerPhone || '',
+        '접점코드': '', // 현재 데이터베이스에 없음
+        '판매점명': doc.dealerName || '',
+        '유형': doc.carrier || '',
+        '요금제': doc.servicePlanName || '',
+        '가입번호': doc.subscriptionNumber || '',
+        '부가': additionalServices,
+        '유심모델/번호': doc.deviceInfo || ''
+      };
+    });
+
+    // XLSX 라이브러리 사용하여 엑셀 파일 생성
+    const XLSX = require('xlsx');
+    const worksheet = XLSX.utils.json_to_sheet(excelData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, '개통서류');
+
+    // 엑셀 파일을 버퍼로 생성
+    const buffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
+
+    // 파일명 설정
+    const fileName = `개통서류_${startDate}_${endDate}.xlsx`;
+
+    // 응답 헤더 설정
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(fileName)}"`);
+    res.setHeader('Content-Length', buffer.length);
+
+    // 엑셀 파일 전송
+    res.send(buffer);
+
+  } catch (error: any) {
+    console.error('Excel export error:', error);
+    res.status(500).json({ error: '엑셀 파일 생성에 실패했습니다.' });
+  }
+});
+
 // File download routes
 router.get('/api/files/documents/:id', requireAuth, async (req: any, res) => {
   try {

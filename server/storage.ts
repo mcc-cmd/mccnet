@@ -1243,6 +1243,39 @@ class SqliteStorage implements IStorage {
     }
   }
 
+  async getExportDocuments(startDate: string, endDate: string): Promise<any[]> {
+    const query = `
+      SELECT 
+        d.activated_at as activatedAt,
+        d.store_name as storeName,
+        d.customer_name as customerName,
+        d.customer_phone as customerPhone,
+        dealers.name as dealerName,
+        d.carrier,
+        sp.plan_name as servicePlanName,
+        d.customer_phone as subscriptionNumber,
+        d.additional_service_ids,
+        CASE 
+          WHEN d.device_model IS NOT NULL AND d.sim_number IS NOT NULL 
+          THEN d.device_model || '/' || d.sim_number
+          WHEN d.device_model IS NOT NULL 
+          THEN d.device_model
+          WHEN d.sim_number IS NOT NULL 
+          THEN d.sim_number
+          ELSE ''
+        END as deviceInfo
+      FROM documents d
+      JOIN dealers ON d.dealer_id = dealers.id
+      LEFT JOIN service_plans sp ON d.service_plan_id = sp.id
+      WHERE d.activation_status = '개통'
+      AND DATE(d.activated_at) >= ?
+      AND DATE(d.activated_at) <= ?
+      ORDER BY d.activated_at DESC
+    `;
+
+    return db.prepare(query).all(startDate, endDate) as any[];
+  }
+
   async updateDocumentStatus(id: number, data: UpdateDocumentStatusForm): Promise<Document> {
     let updateQuery = `
       UPDATE documents 
