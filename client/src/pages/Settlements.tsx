@@ -105,7 +105,8 @@ export function Settlements() {
   const { data: completedDocuments, isLoading, refetch } = useQuery({
     queryKey: ['/api/documents', { activationStatus: '개통', startDate, endDate, search: searchQuery }],
     queryFn: async () => {
-      const params = new URLSearchParams({ activationStatus: '개통' });
+      const params = new URLSearchParams();
+      params.append('activationStatus', '개통');
       if (startDate) params.append('startDate', startDate);
       if (endDate) params.append('endDate', endDate);
       if (searchQuery) params.append('search', searchQuery);
@@ -136,6 +137,14 @@ export function Settlements() {
   const form = useForm<ManualSettlementForm>({
     resolver: zodResolver(manualSettlementSchema),
     defaultValues: {
+      customerName: '',
+      customerPhone: '',
+      storeName: '',
+      carrier: '',
+      activatedAt: '',
+      deviceModel: '',
+      simNumber: '',
+      notes: '',
       additionalServices: [],
       bundleApplied: false,
       bundleNotApplied: false,
@@ -174,7 +183,8 @@ export function Settlements() {
   const { data: allCompletedDocuments } = useQuery({
     queryKey: ['/api/documents', { activationStatus: '개통' }],
     queryFn: async () => {
-      const params = new URLSearchParams({ activationStatus: '개통' });
+      const params = new URLSearchParams();
+      params.append('activationStatus', '개통');
       const response = await apiRequest('GET', `/api/documents?${params.toString()}`);
       return response.json() as Promise<CompletedDocument[]>;
     },
@@ -234,7 +244,7 @@ export function Settlements() {
       if (startDate) params.append('startDate', startDate);
       if (endDate) params.append('endDate', endDate);
       
-      const response = await apiRequest('GET', `/api/settlements/export?${params.toString()}`);
+      const response = await apiRequest('GET', `/api/documents/export-excel?${params.toString()}`);
       
       if (!response.ok) throw new Error('다운로드 실패');
       

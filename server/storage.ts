@@ -1094,14 +1094,21 @@ class SqliteStorage implements IStorage {
   }
 
   async uploadDocument(data: UploadDocumentForm & { dealerId: number; userId: number; filePath?: string | null; fileName?: string | null; fileSize?: number | null }): Promise<Document> {
-    const documentNumber = `DOC-${new Date().getFullYear()}-${String(Date.now()).slice(-6)}`;
+    const documentNumber = data.documentNumber || `DOC-${new Date().getFullYear()}-${String(Date.now()).slice(-6)}`;
     
     // 자동 접점 코드 할당
     const contactCode = await this.getContactCodeForCarrier(data.dealerId, data.carrier);
     
     const insertResult = db.prepare(`
-      INSERT INTO documents (dealer_id, user_id, document_number, customer_name, customer_phone, store_name, carrier, contact_code, status, activation_status, file_path, file_name, file_size, notes)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO documents (
+        dealer_id, user_id, document_number, customer_name, customer_phone, 
+        store_name, carrier, contact_code, status, activation_status, 
+        file_path, file_name, file_size, notes, service_plan_id,
+        additional_service_ids, activated_at, device_model, sim_number,
+        bundle_applied, bundle_not_applied, registration_fee_prepaid,
+        registration_fee_postpaid, sim_fee_prepaid, sim_fee_postpaid
+      )
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).run(
       data.dealerId,
       data.userId,
@@ -1112,11 +1119,22 @@ class SqliteStorage implements IStorage {
       data.carrier,
       contactCode,
       '접수',
-      '대기',
+      data.activationStatus || '대기',
       data.filePath || null,
       data.fileName || null,
       data.fileSize || null,
-      data.notes || null
+      data.notes || null,
+      data.servicePlanId || null,
+      data.additionalServices ? JSON.stringify(data.additionalServices) : null,
+      data.activatedAt ? data.activatedAt.toISOString() : null,
+      data.deviceModel || null,
+      data.simNumber || null,
+      data.bundleApplied ? 1 : 0,
+      data.bundleNotApplied ? 1 : 0,
+      data.registrationFeePrepaid ? 1 : 0,
+      data.registrationFeePostpaid ? 1 : 0,
+      data.simFeePrepaid ? 1 : 0,
+      data.simFeePostpaid ? 1 : 0
     );
 
     const result = db.prepare('SELECT * FROM documents WHERE id = ?').get(insertResult.lastInsertRowid) as any;
@@ -1206,6 +1224,7 @@ class SqliteStorage implements IStorage {
     }
 
     if (filters?.activationStatus) {
+      console.log('Filtering by activation status:', filters.activationStatus);
       query += ' AND d.activation_status = ?';
       params.push(filters.activationStatus);
     }
@@ -1227,7 +1246,10 @@ class SqliteStorage implements IStorage {
 
     query += ' ORDER BY d.uploaded_at DESC';
 
+    console.log('SQL Query:', query);
+    console.log('SQL Params:', params);
     const documents = db.prepare(query).all(...params) as any[];
+    console.log('Raw documents found:', documents.length);
     return documents.map(d => ({
       id: d.id,
       dealerId: d.dealer_id,

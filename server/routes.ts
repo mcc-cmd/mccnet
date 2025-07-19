@@ -608,6 +608,14 @@ router.get('/api/dashboard/stats', requireAuth, async (req: any, res) => {
 router.get('/api/documents', requireAuth, async (req: any, res) => {
   try {
     const { status, activationStatus, search, startDate, endDate } = req.query;
+    console.log('Documents API request:', { status, activationStatus, search, startDate, endDate });
+    console.log('Session data:', { 
+      userId: req.session.userId, 
+      dealerId: req.session.dealerId, 
+      userType: req.session.userType,
+      userRole: req.session.userRole 
+    });
+    
     // 관리자와 근무자는 모든 문서를, 판매점은 해당 대리점 문서만 조회
     const isWorker = req.session.userRole === 'dealer_worker';
     const isAdmin = req.session.userType === 'admin';
@@ -626,6 +634,7 @@ router.get('/api/documents', requireAuth, async (req: any, res) => {
       endDate: endDate as string
     });
     
+    console.log('Documents found:', documents.length);
     res.json(documents);
   } catch (error: any) {
     console.error('Documents API error:', error);
@@ -1489,6 +1498,13 @@ router.get('/api/settlements/export', requireAuth, async (req: any, res) => {
 // 수기 정산 등록 API
 router.post('/api/settlements/manual', requireAuth, async (req: any, res) => {
   try {
+    console.log('Manual settlement request:', req.body);
+    console.log('Session data:', { 
+      userId: req.session.userId, 
+      dealerId: req.session.dealerId, 
+      userType: req.session.userType 
+    });
+    
     const data = req.body;
     
     // 문서번호 생성 (MANUAL-YYYY-XXXXXX 형식)
@@ -1525,7 +1541,7 @@ router.post('/api/settlements/manual', requireAuth, async (req: any, res) => {
       isManualEntry: true // 수기 입력 구분을 위한 플래그
     };
     
-    const createdDocument = await storage.createDocument(manualDocument);
+    const createdDocument = await storage.uploadDocument(manualDocument);
     
     res.json({
       success: true,
