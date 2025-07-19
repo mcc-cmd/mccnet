@@ -1496,13 +1496,27 @@ router.get('/api/settlements/export', requireAuth, async (req: any, res) => {
 });
 
 // 수기 정산 등록 API
-router.post('/api/settlements/manual', requireAuth, async (req: any, res) => {
+router.post('/api/settlements/manual', async (req: any, res) => {
   try {
     console.log('Manual settlement request:', req.body);
+    
+    // 인증 확인
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({ error: '인증이 필요합니다.' });
+    }
+    
+    const sessionId = authHeader.substring(7);
+    const session = sessionStore.get(sessionId);
+    
+    if (!session) {
+      return res.status(401).json({ error: '유효하지 않은 세션입니다.' });
+    }
+    
     console.log('Session data:', { 
-      userId: req.session.userId, 
-      dealerId: req.session.dealerId, 
-      userType: req.session.userType 
+      userId: session.userId, 
+      dealerId: session.dealerId, 
+      userType: session.userType 
     });
     
     const data = req.body;
@@ -1515,8 +1529,8 @@ router.post('/api/settlements/manual', requireAuth, async (req: any, res) => {
     
     // 수기 정산 데이터를 documents 테이블에 삽입
     const manualDocument = {
-      dealerId: req.session.dealerId || 1, // 기본값 설정
-      userId: req.session.userId,
+      dealerId: session.dealerId || 1, // 기본값 설정
+      userId: session.userId,
       documentNumber,
       customerName: data.customerName,
       customerPhone: data.customerPhone,

@@ -302,6 +302,9 @@ export function Settlements() {
               <DialogHeader>
                 <DialogTitle>수기 정산 등록</DialogTitle>
               </DialogHeader>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                개통 완료된 고객 정보를 수기로 등록합니다.
+              </p>
               <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                   <div className="grid grid-cols-2 gap-4">
@@ -460,7 +463,12 @@ export function Settlements() {
                                 <input
                                   type="checkbox"
                                   checked={field.value}
-                                  onChange={field.onChange}
+                                  onChange={(e) => {
+                                    field.onChange(e.target.checked);
+                                    if (e.target.checked) {
+                                      form.setValue('bundleNotApplied', false);
+                                    }
+                                  }}
                                   className="rounded border-gray-300"
                                 />
                               </FormControl>
@@ -479,7 +487,12 @@ export function Settlements() {
                                 <input
                                   type="checkbox"
                                   checked={field.value}
-                                  onChange={field.onChange}
+                                  onChange={(e) => {
+                                    field.onChange(e.target.checked);
+                                    if (e.target.checked) {
+                                      form.setValue('registrationFeePostpaid', false);
+                                    }
+                                  }}
                                   className="rounded border-gray-300"
                                 />
                               </FormControl>
@@ -498,7 +511,12 @@ export function Settlements() {
                                 <input
                                   type="checkbox"
                                   checked={field.value}
-                                  onChange={field.onChange}
+                                  onChange={(e) => {
+                                    field.onChange(e.target.checked);
+                                    if (e.target.checked) {
+                                      form.setValue('simFeePostpaid', false);
+                                    }
+                                  }}
                                   className="rounded border-gray-300"
                                 />
                               </FormControl>
@@ -519,7 +537,12 @@ export function Settlements() {
                                 <input
                                   type="checkbox"
                                   checked={field.value}
-                                  onChange={field.onChange}
+                                  onChange={(e) => {
+                                    field.onChange(e.target.checked);
+                                    if (e.target.checked) {
+                                      form.setValue('bundleApplied', false);
+                                    }
+                                  }}
                                   className="rounded border-gray-300"
                                 />
                               </FormControl>
@@ -538,7 +561,12 @@ export function Settlements() {
                                 <input
                                   type="checkbox"
                                   checked={field.value}
-                                  onChange={field.onChange}
+                                  onChange={(e) => {
+                                    field.onChange(e.target.checked);
+                                    if (e.target.checked) {
+                                      form.setValue('registrationFeePrepaid', false);
+                                    }
+                                  }}
                                   className="rounded border-gray-300"
                                 />
                               </FormControl>
@@ -557,7 +585,12 @@ export function Settlements() {
                                 <input
                                   type="checkbox"
                                   checked={field.value}
-                                  onChange={field.onChange}
+                                  onChange={(e) => {
+                                    field.onChange(e.target.checked);
+                                    if (e.target.checked) {
+                                      form.setValue('simFeePrepaid', false);
+                                    }
+                                  }}
                                   className="rounded border-gray-300"
                                 />
                               </FormControl>
