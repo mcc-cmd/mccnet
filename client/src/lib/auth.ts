@@ -28,6 +28,11 @@ export const useAuth = create<AuthState>()(
             body: JSON.stringify(credentials),
           });
 
+          if (!response.ok) {
+            const errorData = await response.json().catch(() => ({ error: '로그인에 실패했습니다.' }));
+            throw new Error(errorData.error || '로그인에 실패했습니다.');
+          }
+
           const data: AuthResponse = await response.json();
 
           if (data.success && data.user && data.sessionId) {
