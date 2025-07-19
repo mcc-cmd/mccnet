@@ -988,7 +988,7 @@ class SqliteStorage implements IStorage {
   }
 
   // Direct service plan update in documents table
-  async updateDocumentServicePlanDirect(id: number, data: { servicePlanId?: number | null; additionalServiceIds?: string; registrationFeePrepaid?: boolean; registrationFeePostpaid?: boolean; simFeePrepaid?: boolean; simFeePostpaid?: boolean; bundleApplied?: boolean; bundleNotApplied?: boolean; deviceModel?: string | null; simNumber?: string | null }): Promise<Document> {
+  async updateDocumentServicePlanDirect(id: number, data: { servicePlanId?: number | null; additionalServiceIds?: string; registrationFeePrepaid?: boolean; registrationFeePostpaid?: boolean; simFeePrepaid?: boolean; simFeePostpaid?: boolean; bundleApplied?: boolean; bundleNotApplied?: boolean; deviceModel?: string | null; simNumber?: string | null; subscriptionNumber?: string | null }): Promise<Document> {
     const query = `
       UPDATE documents 
       SET service_plan_id = ?, 
@@ -1001,6 +1001,7 @@ class SqliteStorage implements IStorage {
           bundle_not_applied = ?,
           device_model = ?,
           sim_number = ?,
+          subscription_number = ?,
           updated_at = CURRENT_TIMESTAMP
       WHERE id = ?
     `;
@@ -1016,6 +1017,7 @@ class SqliteStorage implements IStorage {
       data.bundleNotApplied ? 1 : 0, 
       data.deviceModel || null,
       data.simNumber || null,
+      data.subscriptionNumber || null,
       id
     );
     
@@ -1049,7 +1051,8 @@ class SqliteStorage implements IStorage {
       bundleApplied: Boolean(document.bundle_applied),
       bundleNotApplied: Boolean(document.bundle_not_applied),
       deviceModel: document.device_model,
-      simNumber: document.sim_number
+      simNumber: document.sim_number,
+      subscriptionNumber: document.subscription_number
     };
   }
 
@@ -1576,24 +1579,29 @@ class SqliteStorage implements IStorage {
     };
   }
 
-  async getDashboardStats(dealerId?: number): Promise<DashboardStats> {
+  async getDashboardStats(dealerId?: number, userId?: number, userType?: string): Promise<DashboardStats & { carrierStats?: any[]; workerStats?: any[] }> {
     let whereClause = '';
     let params: any[] = [];
     
-    if (dealerId) {
+    // 사용자 유형별 필터링
+    if (userType === 'dealer_store' && dealerId) {
       whereClause = ' WHERE dealer_id = ?';
       params = [dealerId];
+    } else if (userType === 'dealer_worker' && userId) {
+      whereClause = ' WHERE activated_by = ? OR user_id = ?';
+      params = [userId, userId];
     }
+    // admin은 모든 데이터 조회
 
     const total = db.prepare(`SELECT COUNT(*) as count FROM documents${whereClause}`).get(...params) as { count: number };
-    const pending = db.prepare(`SELECT COUNT(*) as count FROM documents${whereClause}${dealerId ? ' AND' : ' WHERE'} status = ?`).get(...params, '접수') as { count: number };
-    const completed = db.prepare(`SELECT COUNT(*) as count FROM documents${whereClause}${dealerId ? ' AND' : ' WHERE'} status = ?`).get(...params, '완료') as { count: number };
-    const activated = db.prepare(`SELECT COUNT(*) as count FROM documents${whereClause}${dealerId ? ' AND' : ' WHERE'} activation_status = ?`).get(...params, '개통') as { count: number };
-    const canceled = db.prepare(`SELECT COUNT(*) as count FROM documents${whereClause}${dealerId ? ' AND' : ' WHERE'} activation_status = ?`).get(...params, '취소') as { count: number };
-    const pendingActivations = db.prepare(`SELECT COUNT(*) as count FROM documents${whereClause}${dealerId ? ' AND' : ' WHERE'} activation_status = ?`).get(...params, '대기') as { count: number };
-    const inProgress = db.prepare(`SELECT COUNT(*) as count FROM documents${whereClause}${dealerId ? ' AND' : ' WHERE'} activation_status = ?`).get(...params, '진행중') as { count: number };
+    const pending = db.prepare(`SELECT COUNT(*) as count FROM documents${whereClause}${whereClause ? ' AND' : ' WHERE'} status = ?`).get(...params, '접수') as { count: number };
+    const completed = db.prepare(`SELECT COUNT(*) as count FROM documents${whereClause}${whereClause ? ' AND' : ' WHERE'} status = ?`).get(...params, '완료') as { count: number };
+    const activated = db.prepare(`SELECT COUNT(*) as count FROM documents${whereClause}${whereClause ? ' AND' : ' WHERE'} activation_status = ?`).get(...params, '개통') as { count: number };
+    const canceled = db.prepare(`SELECT COUNT(*) as count FROM documents${whereClause}${whereClause ? ' AND' : ' WHERE'} activation_status = ?`).get(...params, '취소') as { count: number };
+    const pendingActivations = db.prepare(`SELECT COUNT(*) as count FROM documents${whereClause}${whereClause ? ' AND' : ' WHERE'} activation_status = ?`).get(...params, '대기') as { count: number };
+    const inProgress = db.prepare(`SELECT COUNT(*) as count FROM documents${whereClause}${whereClause ? ' AND' : ' WHERE'} activation_status = ?`).get(...params, '진행중') as { count: number };
 
-    return {
+    const stats: DashboardStats & { carrierStats?: any[]; workerStats?: any[] } = {
       totalDocuments: total.count,
       pendingDocuments: pending.count,
       completedDocuments: completed.count,
@@ -1604,6 +1612,36 @@ class SqliteStorage implements IStorage {
       pendingActivations: pendingActivations.count,
       inProgressCount: inProgress.count
     };
+
+    // 관리자에게만 통신사별/근무자별 통계 제공
+    if (userType === 'admin') {
+      // 통신사별 개통 수량
+      const carrierQuery = `
+        SELECT 
+          carrier,
+          COUNT(*) as count
+        FROM documents 
+        WHERE activation_status = '개통'
+        GROUP BY carrier
+        ORDER BY count DESC
+      `;
+      stats.carrierStats = db.prepare(carrierQuery).all() as any[];
+
+      // 근무자별 개통 수량
+      const workerQuery = `
+        SELECT 
+          u.name as workerName,
+          COUNT(*) as count
+        FROM documents d
+        JOIN users u ON d.activated_by = u.id
+        WHERE d.activation_status = '개통'
+        GROUP BY d.activated_by, u.name
+        ORDER BY count DESC
+      `;
+      stats.workerStats = db.prepare(workerQuery).all() as any[];
+    }
+    
+    return stats;
   }
 
   async uploadDocumentTemplate(data: { title: string; category: string; filePath: string; fileName: string; fileSize: number; uploadedBy: number }): Promise<any> {

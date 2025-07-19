@@ -69,6 +69,67 @@ export function Dashboard() {
   return (
     <Layout title="대시보드">
       <div className="space-y-6">
+        {/* Role-based additional stats for admin and workers */}
+        {user?.userType === 'admin' && (stats as any)?.carrierStats && (
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+            {/* 통신사별 개통 수량 */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg font-semibold">통신사별 개통 수량</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {((stats as any)?.carrierStats || []).map((carrier: any, index: number) => (
+                    <div key={index} className="flex justify-between items-center p-2 bg-gray-50 rounded">
+                      <span className="font-medium">{carrier.carrier}</span>
+                      <Badge variant="secondary">{carrier.count}건</Badge>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* 근무자별 개통 수량 */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg font-semibold">근무자별 개통 수량</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {((stats as any)?.workerStats || []).map((worker: any, index: number) => (
+                    <div key={index} className="flex justify-between items-center p-2 bg-gray-50 rounded">
+                      <span className="font-medium">{worker.workerName}</span>
+                      <Badge variant="secondary">{worker.count}건</Badge>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {/* Worker personal stats */}
+        {user?.userRole === 'dealer_worker' && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg font-semibold">내 개통 실적</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center justify-between p-4 bg-blue-50 rounded-lg">
+                <div className="flex items-center">
+                  <CheckCircle className="h-8 w-8 text-blue-600 mr-3" />
+                  <div>
+                    <div className="text-sm text-gray-600">내가 개통한 건수</div>
+                    <div className="text-2xl font-bold text-blue-600">
+                      {stats?.activatedCount || 0}건
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Stats Cards */}
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
           <Card>

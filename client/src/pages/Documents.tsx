@@ -367,7 +367,8 @@ export function Documents() {
       bundleApplied: servicePlanForm.bundleApplied,
       bundleNotApplied: servicePlanForm.bundleNotApplied,
       deviceModel: servicePlanForm.deviceModel || null,
-      simNumber: servicePlanForm.simNumber || null
+      simNumber: servicePlanForm.simNumber || null,
+      subscriptionNumber: servicePlanForm.subscriptionNumber || null
     };
     
     console.log('Submitting service plan data:', data);
@@ -809,11 +810,13 @@ export function Documents() {
                                   월 {(doc as any).totalMonthlyFee.toLocaleString()}원
                                 </div>
                               )}
-                              {((doc as any).deviceModel || (doc as any).simNumber) && (
+                              {((doc as any).deviceModel || (doc as any).simNumber || (doc as any).subscriptionNumber) && (
                                 <div className="text-xs text-gray-500">
                                   {(doc as any).deviceModel && `단말기: ${(doc as any).deviceModel}`}
-                                  {(doc as any).deviceModel && (doc as any).simNumber && ' | '}
+                                  {(doc as any).deviceModel && ((doc as any).simNumber || (doc as any).subscriptionNumber) && ' | '}
                                   {(doc as any).simNumber && `유심: ${(doc as any).simNumber}`}
+                                  {(doc as any).simNumber && (doc as any).subscriptionNumber && ' | '}
+                                  {(doc as any).subscriptionNumber && `가입번호: ${(doc as any).subscriptionNumber}`}
                                 </div>
                               )}
                             </div>
@@ -1216,7 +1219,7 @@ export function Documents() {
               {/* 단말기 정보 */}
               <div className="bg-purple-50 p-4 rounded-lg">
                 <Label className="text-lg font-semibold mb-3 block">단말기 정보</Label>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-3 gap-4">
                   <div>
                     <Label htmlFor="deviceModel" className="text-sm font-medium">단말기 기종</Label>
                     <Input
@@ -1236,6 +1239,17 @@ export function Documents() {
                       placeholder="예: 8982050000000000000"
                       value={servicePlanForm.simNumber || ''}
                       onChange={(e) => setServicePlanForm(prev => ({ ...prev, simNumber: e.target.value }))}
+                      className="mt-1"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="subscriptionNumber" className="text-sm font-medium">가입번호</Label>
+                    <Input
+                      id="subscriptionNumber"
+                      type="text"
+                      placeholder="가입번호/계약번호"
+                      value={servicePlanForm.subscriptionNumber || ''}
+                      onChange={(e) => setServicePlanForm(prev => ({ ...prev, subscriptionNumber: e.target.value }))}
                       className="mt-1"
                     />
                   </div>

@@ -595,12 +595,12 @@ router.patch('/api/documents/:id/service-plan', requireAuth, async (req: any, re
 // User routes
 router.get('/api/dashboard/stats', requireAuth, async (req: any, res) => {
   try {
-    // 관리자와 근무자는 모든 데이터를 보고, 판매점은 자신의 대리점 데이터만 봄
-    const isWorker = req.session.userRole === 'dealer_worker';
-    const isAdmin = req.session.userType === 'admin';
-    const dealerId = (isAdmin || isWorker) ? undefined : req.session.dealerId;
+    const userType = req.session.userType === 'admin' ? 'admin' : 
+                    req.session.userRole === 'dealer_worker' ? 'dealer_worker' : 'dealer_store';
+    const dealerId = req.session.dealerId;
+    const userId = req.session.userId;
     
-    const stats = await storage.getDashboardStats(dealerId);
+    const stats = await storage.getDashboardStats(dealerId, userId, userType);
     res.json(stats);
   } catch (error: any) {
     res.status(500).json({ error: error.message });
