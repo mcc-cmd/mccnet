@@ -983,7 +983,7 @@ class SqliteStorage implements IStorage {
   }
 
   // Direct service plan update in documents table
-  async updateDocumentServicePlanDirect(id: number, data: { servicePlanId?: number | null; additionalServiceIds?: string; registrationFee?: number | null; bundleDiscount?: number | null; totalMonthlyFee?: number | null }): Promise<Document> {
+  async updateDocumentServicePlanDirect(id: number, data: { servicePlanId?: number | null; additionalServiceIds?: string; registrationFee?: number | null; bundleDiscount?: number | null; totalMonthlyFee?: number | null; deviceModel?: string | null; simNumber?: string | null }): Promise<Document> {
     const query = `
       UPDATE documents 
       SET service_plan_id = ?, 
@@ -991,6 +991,8 @@ class SqliteStorage implements IStorage {
           registration_fee = ?, 
           bundle_discount = ?, 
           total_monthly_fee = ?,
+          device_model = ?,
+          sim_number = ?,
           updated_at = CURRENT_TIMESTAMP
       WHERE id = ?
     `;
@@ -1001,6 +1003,8 @@ class SqliteStorage implements IStorage {
       data.registrationFee || null, 
       data.bundleDiscount || null, 
       data.totalMonthlyFee || null, 
+      data.deviceModel || null,
+      data.simNumber || null,
       id
     );
     
@@ -1029,7 +1033,9 @@ class SqliteStorage implements IStorage {
       additionalServiceIds: document.additional_service_ids,
       registrationFee: document.registration_fee,
       bundleDiscount: document.bundle_discount,
-      totalMonthlyFee: document.total_monthly_fee
+      totalMonthlyFee: document.total_monthly_fee,
+      deviceModel: document.device_model,
+      simNumber: document.sim_number
     };
   }
 

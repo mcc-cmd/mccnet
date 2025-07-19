@@ -521,14 +521,16 @@ router.patch('/api/documents/:id/activation', requireAuth, async (req: any, res)
 router.patch('/api/documents/:id/service-plan', requireAuth, async (req: any, res) => {
   try {
     const id = parseInt(req.params.id);
-    const { servicePlanId, additionalServiceIds, registrationFee, bundleDiscount, totalMonthlyFee } = req.body;
+    const { servicePlanId, additionalServiceIds, registrationFee, bundleDiscount, totalMonthlyFee, deviceModel, simNumber } = req.body;
     
     const document = await storage.updateDocumentServicePlanDirect(id, {
       servicePlanId: servicePlanId ? parseInt(servicePlanId) : null,
       additionalServiceIds,
       registrationFee: registrationFee || null,
       bundleDiscount: bundleDiscount || null,
-      totalMonthlyFee: totalMonthlyFee || null
+      totalMonthlyFee: totalMonthlyFee || null,
+      deviceModel: deviceModel || null,
+      simNumber: simNumber || null
     });
     
     res.json(document);

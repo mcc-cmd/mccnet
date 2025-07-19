@@ -49,7 +49,9 @@ export function Documents() {
     additionalServiceIds: [] as string[],
     registrationFee: 0,
     bundleDiscount: 0,
-    totalMonthlyFee: 0
+    totalMonthlyFee: 0,
+    deviceModel: '',
+    simNumber: ''
   });
 
   const { data: documents, isLoading } = useQuery({
@@ -270,7 +272,9 @@ export function Documents() {
       additionalServiceIds: (doc as any).additionalServiceIds ? JSON.parse((doc as any).additionalServiceIds) : [],
       registrationFee: (doc as any).registrationFee || 0,
       bundleDiscount: (doc as any).bundleDiscount || 0,
-      totalMonthlyFee: (doc as any).totalMonthlyFee || 0
+      totalMonthlyFee: (doc as any).totalMonthlyFee || 0,
+      deviceModel: (doc as any).deviceModel || '',
+      simNumber: (doc as any).simNumber || ''
     });
     setServicePlanDialogOpen(true);
   };
@@ -702,6 +706,13 @@ export function Documents() {
                                   월 {(doc as any).totalMonthlyFee.toLocaleString()}원
                                 </div>
                               )}
+                              {((doc as any).deviceModel || (doc as any).simNumber) && (
+                                <div className="text-xs text-gray-500">
+                                  {(doc as any).deviceModel && `단말기: ${(doc as any).deviceModel}`}
+                                  {(doc as any).deviceModel && (doc as any).simNumber && ' | '}
+                                  {(doc as any).simNumber && `유심: ${(doc as any).simNumber}`}
+                                </div>
+                              )}
                             </div>
                           </div>
                         )}
@@ -960,6 +971,35 @@ export function Documents() {
                     placeholder="0"
                     className="mt-1 text-lg font-bold"
                   />
+                </div>
+              </div>
+
+              {/* 단말기 정보 */}
+              <div className="bg-purple-50 p-4 rounded-lg">
+                <Label className="text-lg font-semibold mb-3 block">단말기 정보</Label>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="deviceModel" className="text-sm font-medium">단말기 기종</Label>
+                    <Input
+                      id="deviceModel"
+                      type="text"
+                      placeholder="예: iPhone 15 Pro"
+                      value={servicePlanForm.deviceModel || ''}
+                      onChange={(e) => setServicePlanForm(prev => ({ ...prev, deviceModel: e.target.value }))}
+                      className="mt-1"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="simNumber" className="text-sm font-medium">유심번호</Label>
+                    <Input
+                      id="simNumber"
+                      type="text"
+                      placeholder="예: 8982050000000000000"
+                      value={servicePlanForm.simNumber || ''}
+                      onChange={(e) => setServicePlanForm(prev => ({ ...prev, simNumber: e.target.value }))}
+                      className="mt-1"
+                    />
+                  </div>
                 </div>
               </div>
 

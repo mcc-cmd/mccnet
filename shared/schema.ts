@@ -71,6 +71,9 @@ export interface Document {
   registrationFee?: number;
   bundleDiscount?: number;
   totalMonthlyFee?: number;
+  // 단말기 정보
+  deviceModel?: string; // 단말기 기종
+  simNumber?: string; // 유심번호
 }
 
 export interface DocumentTemplate {
