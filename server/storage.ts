@@ -1202,14 +1202,14 @@ class SqliteStorage implements IStorage {
     return matchingCode ? matchingCode.contactCode : null;
   }
 
-  async getDocuments(dealerId?: number, filters?: { status?: string; activationStatus?: string; search?: string; startDate?: string; endDate?: string }): Promise<Array<Document & { dealerName: string; userName: string }>> {
+  async getDocuments(dealerId?: number, filters?: { status?: string; activationStatus?: string; search?: string; startDate?: string; endDate?: string; workerFilter?: string }, userId?: number): Promise<Array<Document & { dealerName: string; userName: string }>> {
     let query = `
       SELECT d.*, dealers.name as dealer_name, u.name as user_name, sp.plan_name,
              d.registration_fee_prepaid, d.registration_fee_postpaid,
              d.sim_fee_prepaid, d.sim_fee_postpaid,
              d.bundle_applied, d.bundle_not_applied,
              d.device_model, d.sim_number, d.subscription_number, d.total_monthly_fee,
-             d.additional_service_ids
+             d.additional_service_ids, d.assigned_worker_id, d.assigned_at
       FROM documents d
       JOIN dealers ON d.dealer_id = dealers.id
       JOIN users u ON d.user_id = u.id
@@ -1230,8 +1230,16 @@ class SqliteStorage implements IStorage {
 
     if (filters?.activationStatus) {
       console.log('Filtering by activation status:', filters.activationStatus);
-      query += ' AND d.activation_status = ?';
-      params.push(filters.activationStatus);
+      if (filters.activationStatus.includes(',')) {
+        // 다중 상태 필터링 (예: "대기,진행중")
+        const statuses = filters.activationStatus.split(',').map(s => s.trim());
+        const placeholders = statuses.map(() => '?').join(',');
+        query += ` AND d.activation_status IN (${placeholders})`;
+        params.push(...statuses);
+      } else {
+        query += ' AND d.activation_status = ?';
+        params.push(filters.activationStatus);
+      }
     }
 
     if (filters?.search) {
@@ -1247,6 +1255,12 @@ class SqliteStorage implements IStorage {
     if (filters?.endDate) {
       query += ' AND date(d.uploaded_at) <= ?';
       params.push(filters.endDate);
+    }
+
+    // 근무자별 필터링 (자신이 개통한 건만 조회)
+    if (filters?.workerFilter === 'my' && userId) {
+      query += ' AND d.activated_by = ?';
+      params.push(userId);
     }
 
     query += ' ORDER BY d.uploaded_at DESC';
@@ -1278,6 +1292,8 @@ class SqliteStorage implements IStorage {
       supplementNotes: d.supplement_notes,
       supplementRequiredBy: d.supplement_required_by,
       supplementRequiredAt: d.supplement_required_at ? new Date(d.supplement_required_at) : undefined,
+      assignedWorkerId: d.assigned_worker_id,
+      assignedAt: d.assigned_at ? new Date(d.assigned_at) : undefined,
       dealerName: d.dealer_name,
       userName: d.user_name,
       servicePlanId: d.service_plan_id,
@@ -1389,16 +1405,24 @@ class SqliteStorage implements IStorage {
       uploadedAt: new Date(result.uploaded_at),
       updatedAt: new Date(result.updated_at),
       activatedAt: result.activated_at ? new Date(result.activated_at) : undefined,
-      notes: result.notes
+      notes: result.notes,
+      assignedWorkerId: result.assigned_worker_id,
+      assignedAt: result.assigned_at ? new Date(result.assigned_at) : undefined
     };
   }
 
-  async updateDocumentActivationStatus(id: number, data: any): Promise<Document> {
+  async updateDocumentActivationStatus(id: number, data: any, workerId?: number): Promise<Document> {
     let updateQuery = `
       UPDATE documents 
       SET activation_status = ?, notes = ?, updated_at = CURRENT_TIMESTAMP
     `;
     let params: any[] = [data.activationStatus, data.notes || null];
+
+    // 진행중 상태로 변경 시 작업자 할당
+    if (data.activationStatus === '진행중' && workerId) {
+      updateQuery += `, assigned_worker_id = ?, assigned_at = CURRENT_TIMESTAMP`;
+      params.push(workerId);
+    }
 
     // 보완필요 상태일 때 보완 관련 정보 추가
     if (data.activationStatus === '보완필요') {
@@ -1468,7 +1492,7 @@ class SqliteStorage implements IStorage {
     db.prepare('DELETE FROM documents WHERE id = ?').run(id);
   }
 
-  async getDocument(id: number): Promise<Document | null> {
+  async getDocument(id: number): Promise<(Document & { assignedWorkerId?: number; assignedAt?: Date }) | null> {
     const result = db.prepare(`
       SELECT d.*, dealers.name as dealer_name, u.name as user_name, sp.plan_name
       FROM documents d
@@ -1517,7 +1541,9 @@ class SqliteStorage implements IStorage {
       bundleNotApplied: Boolean(result.bundle_not_applied),
       deviceModel: result.device_model,
       simNumber: result.sim_number,
-      subscriptionNumber: result.subscription_number
+      subscriptionNumber: result.subscription_number,
+      assignedWorkerId: result.assigned_worker_id,
+      assignedAt: result.assigned_at ? new Date(result.assigned_at) : undefined
     };
   }
 

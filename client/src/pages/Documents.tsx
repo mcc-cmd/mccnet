@@ -66,8 +66,10 @@ export function Documents() {
     queryKey: ['/api/documents', filters],
     queryFn: () => {
       const params = new URLSearchParams();
+      // 접수 관리에서는 대기/진행중 상태만 표시
+      params.append('activationStatus', '대기,진행중');
       Object.entries(filters).forEach(([key, value]) => {
-        if (value && value !== 'all') params.append(key, value);
+        if (value && value !== 'all' && key !== 'activationStatus') params.append(key, value);
       });
       return apiRequest(`/api/documents?${params}`) as Promise<Document[]>;
     },
@@ -692,15 +694,21 @@ export function Documents() {
                                 </Button>
                               )}
                               {canManageActivationStatus() && (
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => handleActivationStatusChange(doc)}
-                                  title="개통상태 변경"
-                                  className="h-5 px-1 text-xs"
-                                >
-                                  개통상태
-                                </Button>
+                                (doc as any).assignedWorkerId && (doc as any).assignedWorkerId !== user?.id && user?.role === 'dealer_worker' ? (
+                                  <Badge variant="outline" className="text-xs h-5 px-1">
+                                    다른 근무자 처리중
+                                  </Badge>
+                                ) : (
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => handleActivationStatusChange(doc)}
+                                    title="개통상태 변경"
+                                    className="h-5 px-1 text-xs"
+                                  >
+                                    개통상태
+                                  </Button>
+                                )
                               )}
                               {(doc as any).activationStatus === '개통' && canManageActivationStatus() && (
                                 <Button

@@ -532,6 +532,29 @@ router.patch('/api/documents/:id/activation', requireAuth, async (req: any, res)
   try {
     const id = parseInt(req.params.id);
     const data = updateActivationStatusSchema.parse(req.body);
+    const isWorker = req.session.userRole === 'dealer_worker';
+    const isAdmin = req.session.userType === 'admin';
+    
+    // 진행중 상태로 변경 시 작업자 할당 확인
+    if (data.activationStatus === '진행중' && isWorker) {
+      // 이미 다른 근무자가 진행중인지 확인
+      const document = await storage.getDocument(id);
+      if (document?.assignedWorkerId && document.assignedWorkerId !== req.session.userId) {
+        return res.status(400).json({ 
+          error: '이미 다른 근무자가 처리 중인 서류입니다.' 
+        });
+      }
+    }
+    
+    // 진행중 상태 서류의 처리 권한 확인
+    if (['개통', '취소', '보완필요'].includes(data.activationStatus) && isWorker) {
+      const document = await storage.getDocument(id);
+      if (document?.assignedWorkerId && document.assignedWorkerId !== req.session.userId) {
+        return res.status(400).json({ 
+          error: '다른 근무자가 처리 중인 서류는 수정할 수 없습니다.' 
+        });
+      }
+    }
     
     // 개통완료 시 근무자 ID 추가 (관리자 제외)
     if (data.activationStatus === '개통' && req.session.userType === 'user') {
@@ -543,8 +566,9 @@ router.patch('/api/documents/:id/activation', requireAuth, async (req: any, res)
       data.supplementRequiredBy = req.session.userId;
     }
     
-    const document = await storage.updateDocumentActivationStatus(id, data);
-    res.json(document);
+    const workerId = isWorker ? req.session.userId : undefined;
+    const updatedDocument = await storage.updateDocumentActivationStatus(id, data, workerId);
+    res.json(updatedDocument);
   } catch (error: any) {
     res.status(400).json({ error: error.message });
   }
@@ -643,8 +667,9 @@ router.get('/api/documents', requireAuth, async (req: any, res) => {
       activationStatus: decodedActivationStatus,
       search: search as string,
       startDate: startDate as string,
-      endDate: endDate as string
-    });
+      endDate: endDate as string,
+      workerFilter: req.query.workerFilter as string
+    }, req.session.userId);
     
     console.log('Documents found:', documents.length);
     res.json(documents);

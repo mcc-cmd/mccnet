@@ -8,7 +8,8 @@ import {
   BarChart3,
   Settings,
   TestTube,
-  Calculator
+  Calculator,
+  CheckCircle
 } from 'lucide-react';
 import logoImage from '@assets/KakaoTalk_20250626_162541112-removebg-preview_1751604392501.png';
 
@@ -16,6 +17,7 @@ const navigation = [
   { name: '대시보드', href: '/dashboard', icon: LayoutDashboard },
   { name: '접수 신청', href: '/submit', icon: FileText },
   { name: '접수 관리', href: '/documents', icon: FileText },
+  { name: '개통완료 관리', href: '/completed', icon: CheckCircle },
   { name: '서식지 다운로드', href: '/downloads', icon: Download },
   { name: '정산 관리', href: '/settlements', icon: Calculator },
 ];
@@ -37,10 +39,14 @@ export function Sidebar({ isOpen = true, onClose }: SidebarProps) {
   const isAdmin = user?.userType === 'admin';
   const isWorker = user?.role === 'dealer_worker';
   
-  // 근무자는 접수 신청 메뉴를 제외한 메뉴만 접근 가능
-  const baseNavigation = isWorker 
-    ? navigation.filter(item => item.name !== '접수 신청')
-    : navigation;
+  // 근무자는 접수 신청 메뉴를 제외, 관리자는 정산 관리만 접근 가능
+  let baseNavigation = navigation;
+  if (isWorker) {
+    baseNavigation = navigation.filter(item => item.name !== '접수 신청');
+  } else if (!isAdmin) {
+    // 일반 대리점 사용자는 정산 관리 제외
+    baseNavigation = navigation.filter(item => item.name !== '정산 관리');
+  }
   
   // 관리자만 관리자 패널 접근 가능
   const currentNavigation = isAdmin ? [...baseNavigation, ...adminNavigation] : baseNavigation;

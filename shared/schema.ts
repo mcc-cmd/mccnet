@@ -62,6 +62,9 @@ export interface Document {
   activatedAt?: Date;
   activatedBy?: number; // 개통완료 처리한 근무자 ID
   notes?: string;
+  // 작업 잠금 시스템
+  assignedWorkerId?: number; // 진행중 상태로 변경한 근무자 ID
+  assignedAt?: Date; // 진행중으로 변경된 시간
   // 보완 관련 필드
   supplementRequired?: string; // 보완 필요 사유
   supplementNotes?: string; // 보완 상세 내용 (근무자가 작성)
