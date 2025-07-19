@@ -56,7 +56,6 @@ type CreateAdminForm = {
 };
 
 type CreateWorkerForm = {
-  dealerId: number;
   email: string;
   password: string;
   name: string;
@@ -372,7 +371,6 @@ export function AdminPanel() {
   const workerForm = useForm<CreateWorkerForm>({
     resolver: zodResolver(createWorkerSchema),
     defaultValues: {
-      dealerId: 0,
       email: '',
       password: '',
       name: '',
@@ -988,12 +986,8 @@ export function AdminPanel() {
         </div>
 
         {/* Admin Tabs */}
-        <Tabs defaultValue="dealers" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-9">
-            <TabsTrigger value="dealers" className="flex items-center space-x-2">
-              <Building2 className="h-4 w-4" />
-              <span>대리점</span>
-            </TabsTrigger>
+        <Tabs defaultValue="users" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-8">
             <TabsTrigger value="contact-codes" className="flex items-center space-x-2">
               <Settings className="h-4 w-4" />
               <span>접점코드</span>
@@ -1028,123 +1022,7 @@ export function AdminPanel() {
             </TabsTrigger>
           </TabsList>
 
-          {/* Dealers Tab */}
-          <TabsContent value="dealers">
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle>대리점 관리</CardTitle>
-                <Dialog open={dealerDialogOpen} onOpenChange={setDealerDialogOpen}>
-                  <DialogTrigger asChild>
-                    <Button>
-                      <Plus className="mr-2 h-4 w-4" />
-                      대리점 추가
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>새 대리점 추가</DialogTitle>
-                    </DialogHeader>
-                    <Form {...dealerForm}>
-                      <form onSubmit={dealerForm.handleSubmit(handleCreateDealer)} className="space-y-4">
-                        <FormField
-                          control={dealerForm.control}
-                          name="name"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>대리점명</FormLabel>
-                              <FormControl>
-                                <Input placeholder="대리점명을 입력하세요" {...field} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        <FormField
-                          control={dealerForm.control}
-                          name="location"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>위치</FormLabel>
-                              <FormControl>
-                                <Input placeholder="위치를 입력하세요" {...field} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        <FormField
-                          control={dealerForm.control}
-                          name="contactEmail"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>연락처 이메일</FormLabel>
-                              <FormControl>
-                                <Input type="email" placeholder="이메일을 입력하세요" {...field} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        <FormField
-                          control={dealerForm.control}
-                          name="contactPhone"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>연락처</FormLabel>
-                              <FormControl>
-                                <Input placeholder="연락처를 입력하세요" {...field} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        <div className="flex justify-end space-x-2">
-                          <Button type="button" variant="outline" onClick={() => setDealerDialogOpen(false)}>
-                            취소
-                          </Button>
-                          <Button type="submit" disabled={createDealerMutation.isPending}>
-                            {createDealerMutation.isPending ? '생성 중...' : '생성'}
-                          </Button>
-                        </div>
-                      </form>
-                    </Form>
-                  </DialogContent>
-                </Dialog>
-              </CardHeader>
-              <CardContent>
-                {dealersLoading ? (
-                  <div className="text-center py-8">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-accent mx-auto"></div>
-                  </div>
-                ) : dealers && dealers.length > 0 ? (
-                  <div className="grid gap-4">
-                    {dealers.map((dealer) => (
-                      <div key={dealer.id} className="border rounded-lg p-4">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <h4 className="font-medium text-gray-900">{dealer.name}</h4>
-                            <p className="text-sm text-gray-500">{dealer.location}</p>
-                            <div className="flex items-center space-x-4 mt-1 text-xs text-gray-400">
-                              <span>{dealer.contactEmail}</span>
-                              <span>{dealer.contactPhone}</span>
-                              <span>{format(new Date(dealer.createdAt), 'yyyy-MM-dd', { locale: ko })}</span>
-                            </div>
-                          </div>
-                          <Building2 className="h-8 w-8 text-gray-400" />
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-8">
-                    <Building2 className="mx-auto h-12 w-12 text-gray-400" />
-                    <h3 className="mt-2 text-sm font-medium text-gray-900">대리점이 없습니다</h3>
-                    <p className="mt-1 text-sm text-gray-500">첫 번째 대리점을 추가해보세요.</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
+
 
           {/* Contact Codes Tab */}
           <TabsContent value="contact-codes">
@@ -1550,30 +1428,6 @@ export function AdminPanel() {
                         </DialogHeader>
                         <Form {...workerForm}>
                           <form onSubmit={workerForm.handleSubmit(handleCreateWorker)} className="space-y-4">
-                            <FormField
-                              control={workerForm.control}
-                              name="dealerId"
-                              render={({ field }) => (
-                                <FormItem>
-                                  <FormLabel>소속 대리점</FormLabel>
-                                  <Select onValueChange={(value) => field.onChange(parseInt(value))}>
-                                    <FormControl>
-                                      <SelectTrigger>
-                                        <SelectValue placeholder="소속 대리점을 선택하세요" />
-                                      </SelectTrigger>
-                                    </FormControl>
-                                    <SelectContent>
-                                      {dealers?.map((dealer) => (
-                                        <SelectItem key={dealer.id} value={dealer.id.toString()}>
-                                          {dealer.name}
-                                        </SelectItem>
-                                      ))}
-                                    </SelectContent>
-                                  </Select>
-                                  <FormMessage />
-                                </FormItem>
-                              )}
-                            />
                             <FormField
                               control={workerForm.control}
                               name="name"

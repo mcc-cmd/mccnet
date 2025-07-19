@@ -214,6 +214,11 @@ This is a document management system built for MCC네트월드 telecommunication
 - July 19, 2025. Added mutually exclusive checkbox behavior for registration fees, SIM fees, and bundle options in manual settlement form
 - July 19, 2025. Enhanced data loading reliability with improved error handling and fallback to empty arrays on API failures
 - July 19, 2025. Verified complete settlement management functionality: data loading, statistics calculation, manual registration, and Excel export
+- July 19, 2025. Simplified worker account creation to only require name, email, and password (removed dealer assignment requirement)
+- July 19, 2025. Removed dealer management tab from AdminPanel as requested by user
+- July 19, 2025. Implemented role-based dashboard analytics: admin views carrier/worker activation statistics, workers see personal activation counts
+- July 19, 2025. Updated database schema and API endpoints to support dealerId-free worker creation
+- July 19, 2025. Enhanced dashboard UI with carrier statistics and worker performance rankings for administrators
 
 ## User Preferences
 
