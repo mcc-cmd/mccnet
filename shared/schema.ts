@@ -218,6 +218,13 @@ export interface ServicePlan {
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
+  // Cost information fields
+  registrationFeePrepaid?: number;
+  registrationFeePostpaid?: number;
+  simFeePrepaid?: number;
+  simFeePostpaid?: number;
+  bundleApplied?: number;
+  bundleNotApplied?: number;
 }
 
 export interface AdditionalService {
