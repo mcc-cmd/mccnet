@@ -16,6 +16,7 @@ import {
   createServicePlanSchema,
   createAdditionalServiceSchema,
   createDocumentServicePlanSchema,
+  updateDealerContactCodesSchema,
   type AuthResponse
 } from "../shared/schema";
 
@@ -870,6 +871,30 @@ router.post('/api/auth/register/dealer', async (req, res) => {
     const dealer = await storage.createDealerAccount(data, kpInfo);
     res.json(dealer);
   } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+// Contact codes management routes
+router.get('/api/dealers/:id/contact-codes', requireAuth, async (req: any, res) => {
+  try {
+    const dealerId = parseInt(req.params.id);
+    const contactCodes = await storage.getDealerContactCodes(dealerId);
+    res.json(contactCodes);
+  } catch (error: any) {
+    console.error('Get dealer contact codes error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.post('/api/dealers/:id/contact-codes', requireAdmin, async (req: any, res) => {
+  try {
+    const dealerId = parseInt(req.params.id);
+    const { contactCodes } = updateDealerContactCodesSchema.parse({ dealerId, contactCodes: req.body.contactCodes });
+    await storage.updateDealerContactCodes(dealerId, contactCodes);
+    res.json({ success: true });
+  } catch (error: any) {
+    console.error('Update dealer contact codes error:', error);
     res.status(400).json({ error: error.message });
   }
 });

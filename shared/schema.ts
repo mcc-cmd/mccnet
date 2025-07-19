@@ -17,6 +17,7 @@ export interface Dealer {
   contactEmail: string;
   contactPhone: string;
   kpNumber?: string; // KP번호 추가
+  contactCodes?: string; // 통신사별 접점 코드 (JSON 형태로 저장)
   createdAt: Date;
 }
 
@@ -50,6 +51,7 @@ export interface Document {
   customerPhone: string;
   storeName?: string; // 판매점 이름
   carrier: string; // 통신사
+  contactCode?: string; // 자동 할당된 접점 코드
   status: '접수' | '보완필요' | '완료';
   activationStatus: '대기' | '진행중' | '보완필요' | '개통' | '취소';
   filePath?: string | null;
@@ -118,6 +120,19 @@ export const createDealerSchema = z.object({
   contactEmail: z.string().email("올바른 이메일을 입력하세요"),
   contactPhone: z.string().min(1, "연락처를 입력하세요"),
   kpNumber: z.string().optional(),
+  contactCodes: z.string().optional(), // 통신사별 접점 코드 (JSON)
+});
+
+// 접점 코드 관리용 스키마
+export const contactCodeSchema = z.object({
+  carrierId: z.string().min(1, "통신사를 선택하세요"),
+  carrierName: z.string().min(1, "통신사명을 입력하세요"),
+  contactCode: z.string().min(1, "접점 코드를 입력하세요"),
+});
+
+export const updateDealerContactCodesSchema = z.object({
+  dealerId: z.number().min(1, "대리점을 선택하세요"),
+  contactCodes: z.array(contactCodeSchema).min(1, "최소 1개 이상의 접점 코드를 입력하세요"),
 });
 
 export const createAdminSchema = z.object({
@@ -281,3 +296,5 @@ export const createDocumentServicePlanSchema = z.object({
 export type CreateServicePlanForm = z.infer<typeof createServicePlanSchema>;
 export type CreateAdditionalServiceForm = z.infer<typeof createAdditionalServiceSchema>;
 export type CreateDocumentServicePlanForm = z.infer<typeof createDocumentServicePlanSchema>;
+
+

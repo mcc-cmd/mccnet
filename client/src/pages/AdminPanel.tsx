@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Layout } from '@/components/Layout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -67,6 +67,173 @@ type UpdateDocumentStatusForm = {
   notes?: string;
 };
 
+type ContactCode = {
+  carrierId: string;
+  carrierName: string;
+  contactCode: string;
+};
+
+// 12개 통신사 리스트
+const CARRIERS = [
+  { id: 'sk-tellink', name: 'SK텔링크' },
+  { id: 'sk-pretty', name: 'SK프리티' },
+  { id: 'sk-stage5', name: 'SK스테이지파이브' },
+  { id: 'kt-telecom', name: 'KT텔레콤' },
+  { id: 'kt-skylife', name: 'KT스카이라이프' },
+  { id: 'kt-pcom', name: 'KT피콤' },
+  { id: 'lg-hellomobile', name: 'LG헬로모바일' },
+  { id: 'lg-uplus', name: 'LG유플러스' },
+  { id: 'mvno-emobile', name: 'MVNO(엠모바일)' },
+  { id: 'mvno-future', name: 'MVNO(미래엔)' },
+  { id: 'mvno-china', name: 'MVNO(중국외국인)' },
+  { id: 'mvno-prepaid', name: 'MVNO(선불폰)' },
+];
+
+function ContactCodeManagement({ dealer }: { dealer: Dealer }) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [contactCodes, setContactCodes] = useState<ContactCode[]>([]);
+  const [tempContactCodes, setTempContactCodes] = useState<ContactCode[]>([]);
+  const apiRequest = useApiRequest();
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  // 접점 코드 조회
+  const { data: dealerContactCodes, isLoading } = useQuery({
+    queryKey: [`/api/dealers/${dealer.id}/contact-codes`],
+    queryFn: () => apiRequest(`/api/dealers/${dealer.id}/contact-codes`),
+  });
+
+  // 초기 데이터 설정
+  React.useEffect(() => {
+    if (dealerContactCodes) {
+      setContactCodes(dealerContactCodes);
+      setTempContactCodes(dealerContactCodes);
+    } else {
+      // 기본값: 모든 통신사에 빈 접점 코드
+      const defaultCodes = CARRIERS.map(carrier => ({
+        carrierId: carrier.id,
+        carrierName: carrier.name,
+        contactCode: ''
+      }));
+      setContactCodes(defaultCodes);
+      setTempContactCodes(defaultCodes);
+    }
+  }, [dealerContactCodes]);
+
+  // 접점 코드 저장
+  const saveContactCodesMutation = useMutation({
+    mutationFn: (data: ContactCode[]) => 
+      apiRequest(`/api/dealers/${dealer.id}/contact-codes`, {
+        method: 'POST',
+        body: JSON.stringify({ contactCodes: data }),
+        headers: { 'Content-Type': 'application/json' }
+      }),
+    onSuccess: () => {
+      setContactCodes(tempContactCodes);
+      setIsEditing(false);
+      toast({
+        title: "저장 완료",
+        description: "접점 코드가 성공적으로 저장되었습니다.",
+        variant: "default"
+      });
+      queryClient.invalidateQueries({ queryKey: [`/api/dealers/${dealer.id}/contact-codes`] });
+    },
+    onError: (error: any) => {
+      console.error('Save contact codes error:', error);
+      toast({
+        title: "저장 실패",
+        description: error.message || "접점 코드 저장에 실패했습니다.",
+        variant: "destructive"
+      });
+    }
+  });
+
+  const handleSave = () => {
+    saveContactCodesMutation.mutate(tempContactCodes);
+  };
+
+  const handleCancel = () => {
+    setTempContactCodes(contactCodes);
+    setIsEditing(false);
+  };
+
+  const updateContactCode = (carrierId: string, contactCode: string) => {
+    setTempContactCodes(prev => 
+      prev.map(code => 
+        code.carrierId === carrierId 
+          ? { ...code, contactCode }
+          : code
+      )
+    );
+  };
+
+  if (isLoading) {
+    return (
+      <div className="border rounded-lg p-4">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-accent mx-auto"></div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="border rounded-lg p-6">
+      <div className="flex items-center justify-between mb-4">
+        <div>
+          <h4 className="font-medium text-gray-900">{dealer.name}</h4>
+          <p className="text-sm text-gray-500">{dealer.location}</p>
+        </div>
+        <div className="flex space-x-2">
+          {isEditing ? (
+            <>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={handleCancel}
+                disabled={saveContactCodesMutation.isPending}
+              >
+                취소
+              </Button>
+              <Button 
+                size="sm" 
+                onClick={handleSave}
+                disabled={saveContactCodesMutation.isPending}
+              >
+                {saveContactCodesMutation.isPending ? '저장 중...' : '저장'}
+              </Button>
+            </>
+          ) : (
+            <Button size="sm" onClick={() => setIsEditing(true)}>
+              편집
+            </Button>
+          )}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {(isEditing ? tempContactCodes : contactCodes).map((code) => (
+          <div key={code.carrierId} className="space-y-2">
+            <Label className="text-sm font-medium">{code.carrierName}</Label>
+            {isEditing ? (
+              <Input
+                value={code.contactCode}
+                onChange={(e) => updateContactCode(code.carrierId, e.target.value)}
+                placeholder="접점 코드 입력"
+                className="text-sm"
+              />
+            ) : (
+              <div className="p-2 bg-gray-50 rounded text-sm min-h-[36px] flex items-center">
+                {code.contactCode || (
+                  <span className="text-gray-400">미설정</span>
+                )}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export function AdminPanel() {
   const { user } = useAuth();
   const apiRequest = useApiRequest();
@@ -98,6 +265,8 @@ export function AdminPanel() {
   const [servicePlanDialogOpen, setServicePlanDialogOpen] = useState(false);
   const [additionalServiceDialogOpen, setAdditionalServiceDialogOpen] = useState(false);
   const [selectedDocument, setSelectedDocument] = useState<Document | null>(null);
+  const [selectedDealerForContactCodes, setSelectedDealerForContactCodes] = useState<Dealer | null>(null);
+  const [contactCodeDialogOpen, setContactCodeDialogOpen] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [templateFile, setTemplateFile] = useState<File | null>(null);
   const [pricingTitle, setPricingTitle] = useState('');
@@ -751,10 +920,14 @@ export function AdminPanel() {
 
         {/* Admin Tabs */}
         <Tabs defaultValue="dealers" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-8">
+          <TabsList className="grid w-full grid-cols-9">
             <TabsTrigger value="dealers" className="flex items-center space-x-2">
               <Building2 className="h-4 w-4" />
               <span>대리점</span>
+            </TabsTrigger>
+            <TabsTrigger value="contact-codes" className="flex items-center space-x-2">
+              <Settings className="h-4 w-4" />
+              <span>접점코드</span>
             </TabsTrigger>
             <TabsTrigger value="users" className="flex items-center space-x-2">
               <Users className="h-4 w-4" />
@@ -898,6 +1071,33 @@ export function AdminPanel() {
                     <Building2 className="mx-auto h-12 w-12 text-gray-400" />
                     <h3 className="mt-2 text-sm font-medium text-gray-900">대리점이 없습니다</h3>
                     <p className="mt-1 text-sm text-gray-500">첫 번째 대리점을 추가해보세요.</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Contact Codes Tab */}
+          <TabsContent value="contact-codes">
+            <Card>
+              <CardHeader>
+                <CardTitle>접점 코드 관리</CardTitle>
+                <CardDescription>
+                  대리점별 통신사 접점 코드를 설정하여 자동으로 서류에 할당되도록 관리합니다.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {dealers && dealers.length > 0 ? (
+                  <div className="grid gap-4">
+                    {dealers.map((dealer) => (
+                      <ContactCodeManagement key={dealer.id} dealer={dealer} />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <Settings className="mx-auto h-12 w-12 text-gray-400" />
+                    <h3 className="mt-2 text-sm font-medium text-gray-900">대리점이 없습니다</h3>
+                    <p className="mt-1 text-sm text-gray-500">먼저 대리점을 추가해주세요.</p>
                   </div>
                 )}
               </CardContent>

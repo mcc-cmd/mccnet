@@ -350,6 +350,10 @@ export interface IStorage {
   getDealers(): Promise<Dealer[]>;
   getUsers(dealerId?: number): Promise<Array<User & { dealerName: string }>>;
   
+  // Contact codes management
+  updateDealerContactCodes(dealerId: number, contactCodes: Array<{ carrierId: string; carrierName: string; contactCode: string }>): Promise<void>;
+  getDealerContactCodes(dealerId: number): Promise<Array<{ carrierId: string; carrierName: string; contactCode: string }>>;
+  
   // Document operations
   uploadDocument(data: UploadDocumentForm & { dealerId: number; userId: number; filePath: string; fileName: string; fileSize: number }): Promise<Document>;
   getDocuments(dealerId?: number, filters?: { status?: string; search?: string; startDate?: string; endDate?: string }): Promise<Array<Document & { dealerName: string; userName: string }>>;
@@ -1091,9 +1095,12 @@ class SqliteStorage implements IStorage {
   async uploadDocument(data: UploadDocumentForm & { dealerId: number; userId: number; filePath?: string | null; fileName?: string | null; fileSize?: number | null }): Promise<Document> {
     const documentNumber = `DOC-${new Date().getFullYear()}-${String(Date.now()).slice(-6)}`;
     
+    // 자동 접점 코드 할당
+    const contactCode = await this.getContactCodeForCarrier(data.dealerId, data.carrier);
+    
     const insertResult = db.prepare(`
-      INSERT INTO documents (dealer_id, user_id, document_number, customer_name, customer_phone, store_name, carrier, status, activation_status, file_path, file_name, file_size, notes)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO documents (dealer_id, user_id, document_number, customer_name, customer_phone, store_name, carrier, contact_code, status, activation_status, file_path, file_name, file_size, notes)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).run(
       data.dealerId,
       data.userId,
@@ -1102,6 +1109,7 @@ class SqliteStorage implements IStorage {
       data.customerPhone,
       data.storeName || null,
       data.carrier,
+      contactCode,
       '접수',
       '대기',
       data.filePath || null,
@@ -1121,6 +1129,7 @@ class SqliteStorage implements IStorage {
       customerPhone: result.customer_phone,
       storeName: result.store_name,
       carrier: result.carrier,
+      contactCode: result.contact_code,
       status: result.status,
       activationStatus: result.activation_status,
       filePath: result.file_path,
@@ -1141,6 +1150,32 @@ class SqliteStorage implements IStorage {
       deviceModel: result.device_model,
       simNumber: result.sim_number
     };
+  }
+
+  // 접점 코드 관리 메서드들
+  async updateDealerContactCodes(dealerId: number, contactCodes: Array<{ carrierId: string; carrierName: string; contactCode: string }>): Promise<void> {
+    const contactCodesJson = JSON.stringify(contactCodes);
+    db.prepare('UPDATE dealers SET contact_codes = ? WHERE id = ?').run(contactCodesJson, dealerId);
+  }
+
+  async getDealerContactCodes(dealerId: number): Promise<Array<{ carrierId: string; carrierName: string; contactCode: string }>> {
+    const dealer = db.prepare('SELECT contact_codes FROM dealers WHERE id = ?').get(dealerId) as any;
+    if (!dealer || !dealer.contact_codes) {
+      return [];
+    }
+    try {
+      return JSON.parse(dealer.contact_codes);
+    } catch {
+      return [];
+    }
+  }
+
+  async getContactCodeForCarrier(dealerId: number, carrier: string): Promise<string | null> {
+    const contactCodes = await this.getDealerContactCodes(dealerId);
+    const matchingCode = contactCodes.find(code => 
+      code.carrierName === carrier || code.carrierId === carrier
+    );
+    return matchingCode ? matchingCode.contactCode : null;
   }
 
   async getDocuments(dealerId?: number, filters?: { status?: string; search?: string; startDate?: string; endDate?: string }): Promise<Array<Document & { dealerName: string; userName: string }>> {
@@ -1196,6 +1231,7 @@ class SqliteStorage implements IStorage {
       customerPhone: d.customer_phone,
       storeName: d.store_name,
       carrier: d.carrier,
+      contactCode: d.contact_code,
       status: d.status,
       activationStatus: d.activation_status || '대기',
       filePath: d.file_path,
