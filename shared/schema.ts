@@ -34,7 +34,7 @@ export interface KPDealerInfo {
 
 export interface User {
   id: number;
-  dealerId: number;
+  dealerId?: number; // nullable로 변경
   email: string;
   password: string;
   name: string;
