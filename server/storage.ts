@@ -983,14 +983,15 @@ class SqliteStorage implements IStorage {
   }
 
   // Direct service plan update in documents table
-  async updateDocumentServicePlanDirect(id: number, data: { servicePlanId?: number | null; additionalServiceIds?: string; registrationFee?: number | null; bundleDiscount?: number | null; totalMonthlyFee?: number | null; deviceModel?: string | null; simNumber?: string | null }): Promise<Document> {
+  async updateDocumentServicePlanDirect(id: number, data: { servicePlanId?: number | null; additionalServiceIds?: string; registrationFeePrepaid?: boolean; registrationFeePostpaid?: boolean; bundleApplied?: boolean; bundleNotApplied?: boolean; deviceModel?: string | null; simNumber?: string | null }): Promise<Document> {
     const query = `
       UPDATE documents 
       SET service_plan_id = ?, 
           additional_service_ids = ?, 
-          registration_fee = ?, 
-          bundle_discount = ?, 
-          total_monthly_fee = ?,
+          registration_fee_prepaid = ?, 
+          registration_fee_postpaid = ?, 
+          bundle_applied = ?,
+          bundle_not_applied = ?,
           device_model = ?,
           sim_number = ?,
           updated_at = CURRENT_TIMESTAMP
@@ -1000,9 +1001,10 @@ class SqliteStorage implements IStorage {
     db.prepare(query).run(
       data.servicePlanId || null, 
       data.additionalServiceIds || null, 
-      data.registrationFee || null, 
-      data.bundleDiscount || null, 
-      data.totalMonthlyFee || null, 
+      data.registrationFeePrepaid ? 1 : 0, 
+      data.registrationFeePostpaid ? 1 : 0, 
+      data.bundleApplied ? 1 : 0, 
+      data.bundleNotApplied ? 1 : 0, 
       data.deviceModel || null,
       data.simNumber || null,
       id
@@ -1031,9 +1033,10 @@ class SqliteStorage implements IStorage {
       notes: document.notes,
       servicePlanId: document.service_plan_id,
       additionalServiceIds: document.additional_service_ids,
-      registrationFee: document.registration_fee,
-      bundleDiscount: document.bundle_discount,
-      totalMonthlyFee: document.total_monthly_fee,
+      registrationFeePrepaid: Boolean(document.registration_fee_prepaid),
+      registrationFeePostpaid: Boolean(document.registration_fee_postpaid),
+      bundleApplied: Boolean(document.bundle_applied),
+      bundleNotApplied: Boolean(document.bundle_not_applied),
       deviceModel: document.device_model,
       simNumber: document.sim_number
     };
@@ -1111,6 +1114,7 @@ class SqliteStorage implements IStorage {
       customerName: result.customer_name,
       customerPhone: result.customer_phone,
       storeName: result.store_name,
+      carrier: result.carrier,
       status: result.status,
       activationStatus: result.activation_status,
       filePath: result.file_path,
@@ -1119,7 +1123,15 @@ class SqliteStorage implements IStorage {
       uploadedAt: new Date(result.uploaded_at),
       updatedAt: new Date(result.updated_at),
       activatedAt: result.activated_at ? new Date(result.activated_at) : undefined,
-      notes: result.notes
+      notes: result.notes,
+      servicePlanId: result.service_plan_id,
+      additionalServiceIds: result.additional_service_ids,
+      registrationFeePrepaid: Boolean(result.registration_fee_prepaid),
+      registrationFeePostpaid: Boolean(result.registration_fee_postpaid),
+      bundleApplied: Boolean(result.bundle_applied),
+      bundleNotApplied: Boolean(result.bundle_not_applied),
+      deviceModel: result.device_model,
+      simNumber: result.sim_number
     };
   }
 
@@ -1184,7 +1196,16 @@ class SqliteStorage implements IStorage {
       supplementRequiredBy: d.supplement_required_by,
       supplementRequiredAt: d.supplement_required_at ? new Date(d.supplement_required_at) : undefined,
       dealerName: d.dealer_name,
-      userName: d.user_name
+      userName: d.user_name,
+      servicePlanId: d.service_plan_id,
+      servicePlanName: d.plan_name,
+      additionalServiceIds: d.additional_service_ids,
+      registrationFeePrepaid: Boolean(d.registration_fee_prepaid),
+      registrationFeePostpaid: Boolean(d.registration_fee_postpaid),
+      bundleApplied: Boolean(d.bundle_applied),
+      bundleNotApplied: Boolean(d.bundle_not_applied),
+      deviceModel: d.device_model,
+      simNumber: d.sim_number
     }));
   }
 
@@ -1278,7 +1299,15 @@ class SqliteStorage implements IStorage {
       notes: result.notes,
       supplementNotes: result.supplement_notes,
       supplementRequiredBy: result.supplement_required_by,
-      supplementRequiredAt: result.supplement_required_at ? new Date(result.supplement_required_at) : undefined
+      supplementRequiredAt: result.supplement_required_at ? new Date(result.supplement_required_at) : undefined,
+      servicePlanId: result.service_plan_id,
+      additionalServiceIds: result.additional_service_ids,
+      registrationFeePrepaid: Boolean(result.registration_fee_prepaid),
+      registrationFeePostpaid: Boolean(result.registration_fee_postpaid),
+      bundleApplied: Boolean(result.bundle_applied),
+      bundleNotApplied: Boolean(result.bundle_not_applied),
+      deviceModel: result.device_model,
+      simNumber: result.sim_number
     };
   }
 

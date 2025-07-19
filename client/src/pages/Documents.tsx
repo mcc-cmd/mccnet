@@ -47,9 +47,10 @@ export function Documents() {
   const [servicePlanForm, setServicePlanForm] = useState({
     servicePlanId: '',
     additionalServiceIds: [] as string[],
-    registrationFee: 0,
-    bundleDiscount: 0,
-    totalMonthlyFee: 0,
+    registrationFeePrepaid: false, // 가입비 선납
+    registrationFeePostpaid: false, // 가입비 후납
+    bundleApplied: false, // 결합
+    bundleNotApplied: false, // 미결합
     deviceModel: '',
     simNumber: ''
   });
@@ -270,9 +271,10 @@ export function Documents() {
     setServicePlanForm({
       servicePlanId: (doc as any).servicePlanId?.toString() || '',
       additionalServiceIds: (doc as any).additionalServiceIds ? JSON.parse((doc as any).additionalServiceIds) : [],
-      registrationFee: (doc as any).registrationFee || 0,
-      bundleDiscount: (doc as any).bundleDiscount || 0,
-      totalMonthlyFee: (doc as any).totalMonthlyFee || 0,
+      registrationFeePrepaid: (doc as any).registrationFeePrepaid || false,
+      registrationFeePostpaid: (doc as any).registrationFeePostpaid || false,
+      bundleApplied: (doc as any).bundleApplied || false,
+      bundleNotApplied: (doc as any).bundleNotApplied || false,
       deviceModel: (doc as any).deviceModel || '',
       simNumber: (doc as any).simNumber || ''
     });
@@ -937,40 +939,76 @@ export function Documents() {
               {/* 비용 정보 */}
               <div className="bg-green-50 p-4 rounded-lg">
                 <Label className="text-lg font-semibold mb-3 block">비용 정보</Label>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 gap-6">
+                  {/* 가입비 */}
                   <div>
-                    <Label htmlFor="registrationFee" className="text-sm font-medium">가입비</Label>
-                    <Input
-                      id="registrationFee"
-                      type="number"
-                      value={servicePlanForm.registrationFee}
-                      onChange={(e) => setServicePlanForm(prev => ({ ...prev, registrationFee: parseInt(e.target.value) || 0 }))}
-                      placeholder="0"
-                      className="mt-1"
-                    />
+                    <Label className="text-sm font-medium mb-2 block">가입비</Label>
+                    <div className="space-y-2">
+                      <div className="flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          id="registrationFeePrepaid"
+                          checked={servicePlanForm.registrationFeePrepaid}
+                          onChange={(e) => setServicePlanForm(prev => ({ 
+                            ...prev, 
+                            registrationFeePrepaid: e.target.checked,
+                            registrationFeePostpaid: e.target.checked ? false : prev.registrationFeePostpaid
+                          }))}
+                          className="w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500"
+                        />
+                        <label htmlFor="registrationFeePrepaid" className="text-sm text-gray-700">선납</label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          id="registrationFeePostpaid"
+                          checked={servicePlanForm.registrationFeePostpaid}
+                          onChange={(e) => setServicePlanForm(prev => ({ 
+                            ...prev, 
+                            registrationFeePostpaid: e.target.checked,
+                            registrationFeePrepaid: e.target.checked ? false : prev.registrationFeePrepaid
+                          }))}
+                          className="w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500"
+                        />
+                        <label htmlFor="registrationFeePostpaid" className="text-sm text-gray-700">후납</label>
+                      </div>
+                    </div>
                   </div>
+
+                  {/* 결합 */}
                   <div>
-                    <Label htmlFor="bundleDiscount" className="text-sm font-medium">결합 할인</Label>
-                    <Input
-                      id="bundleDiscount"
-                      type="number"
-                      value={servicePlanForm.bundleDiscount}
-                      onChange={(e) => setServicePlanForm(prev => ({ ...prev, bundleDiscount: parseInt(e.target.value) || 0 }))}
-                      placeholder="0"
-                      className="mt-1"
-                    />
+                    <Label className="text-sm font-medium mb-2 block">결합</Label>
+                    <div className="space-y-2">
+                      <div className="flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          id="bundleApplied"
+                          checked={servicePlanForm.bundleApplied}
+                          onChange={(e) => setServicePlanForm(prev => ({ 
+                            ...prev, 
+                            bundleApplied: e.target.checked,
+                            bundleNotApplied: e.target.checked ? false : prev.bundleNotApplied
+                          }))}
+                          className="w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500"
+                        />
+                        <label htmlFor="bundleApplied" className="text-sm text-gray-700">결합</label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          id="bundleNotApplied"
+                          checked={servicePlanForm.bundleNotApplied}
+                          onChange={(e) => setServicePlanForm(prev => ({ 
+                            ...prev, 
+                            bundleNotApplied: e.target.checked,
+                            bundleApplied: e.target.checked ? false : prev.bundleApplied
+                          }))}
+                          className="w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500"
+                        />
+                        <label htmlFor="bundleNotApplied" className="text-sm text-gray-700">미결합</label>
+                      </div>
+                    </div>
                   </div>
-                </div>
-                <div className="mt-4">
-                  <Label htmlFor="totalMonthlyFee" className="text-sm font-medium">총 월 요금</Label>
-                  <Input
-                    id="totalMonthlyFee"
-                    type="number"
-                    value={servicePlanForm.totalMonthlyFee}
-                    onChange={(e) => setServicePlanForm(prev => ({ ...prev, totalMonthlyFee: parseInt(e.target.value) || 0 }))}
-                    placeholder="0"
-                    className="mt-1 text-lg font-bold"
-                  />
                 </div>
               </div>
 
