@@ -197,7 +197,7 @@ router.post('/api/auth/login', async (req, res) => {
           email: user.email,
           userType: 'user',
           dealerId: user.dealerId,
-          dealerName: dealer.name,
+          dealerName: dealer?.name || null,
           role: user.role
         },
         sessionId

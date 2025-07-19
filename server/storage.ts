@@ -389,11 +389,11 @@ class SqliteStorage implements IStorage {
     };
   }
 
-  async authenticateUser(email: string, password: string): Promise<{ user: User; dealer: Dealer } | null> {
+  async authenticateUser(email: string, password: string): Promise<{ user: User; dealer?: Dealer } | null> {
     const result = db.prepare(`
       SELECT u.*, d.name as dealer_name, d.location, d.contact_email, d.contact_phone, d.created_at as dealer_created_at
       FROM users u
-      JOIN dealers d ON u.dealer_id = d.id
+      LEFT JOIN dealers d ON u.dealer_id = d.id
       WHERE u.email = ?
     `).get(email) as any;
     
@@ -411,14 +411,17 @@ class SqliteStorage implements IStorage {
       createdAt: new Date(result.created_at)
     };
 
-    const dealer: Dealer = {
-      id: result.dealer_id,
-      name: result.dealer_name,
-      location: result.location,
-      contactEmail: result.contact_email,
-      contactPhone: result.contact_phone,
-      createdAt: new Date(result.dealer_created_at)
-    };
+    let dealer: Dealer | undefined = undefined;
+    if (result.dealer_id && result.dealer_name) {
+      dealer = {
+        id: result.dealer_id,
+        name: result.dealer_name,
+        location: result.location,
+        contactEmail: result.contact_email,
+        contactPhone: result.contact_phone,
+        createdAt: new Date(result.dealer_created_at)
+      };
+    }
 
     return { user, dealer };
   }
