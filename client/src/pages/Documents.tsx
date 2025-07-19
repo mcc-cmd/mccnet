@@ -72,9 +72,14 @@ export function Documents() {
     },
   });
 
-  const { data: servicePlans } = useQuery({
+  const { data: servicePlans, isLoading: servicePlansLoading } = useQuery({
     queryKey: ['/api/service-plans'],
     queryFn: () => apiRequest('/api/service-plans') as Promise<any[]>,
+  });
+
+  console.log('Service plans data:', { 
+    servicePlans: servicePlans?.length, 
+    loading: servicePlansLoading 
   });
 
   // 부가서비스 고정 데이터 (필링, 캐치콜, 링투유, 통화중대기, 00700)
@@ -313,6 +318,7 @@ export function Documents() {
       queryClient.invalidateQueries({ queryKey: ['/api/documents'] });
       setServicePlanDialogOpen(false);
       setSelectedDocument(null);
+      // 폼 초기화하지 않음 - 저장된 상태 유지
       toast({
         title: "성공",
         description: "요금제 정보가 저장되었습니다.",
@@ -335,11 +341,17 @@ export function Documents() {
     const data = {
       servicePlanId: servicePlanForm.servicePlanId || null,
       additionalServiceIds: JSON.stringify(servicePlanForm.additionalServiceIds),
-      registrationFee: servicePlanForm.registrationFee,
-      bundleDiscount: servicePlanForm.bundleDiscount,
-      totalMonthlyFee: servicePlanForm.totalMonthlyFee
+      registrationFeePrepaid: servicePlanForm.registrationFeePrepaid,
+      registrationFeePostpaid: servicePlanForm.registrationFeePostpaid,
+      simFeePrepaid: servicePlanForm.simFeePrepaid,
+      simFeePostpaid: servicePlanForm.simFeePostpaid,
+      bundleApplied: servicePlanForm.bundleApplied,
+      bundleNotApplied: servicePlanForm.bundleNotApplied,
+      deviceModel: servicePlanForm.deviceModel || null,
+      simNumber: servicePlanForm.simNumber || null
     };
     
+    console.log('Submitting service plan data:', data);
     servicePlanMutation.mutate(data);
   };
 

@@ -539,6 +539,20 @@ router.patch('/api/documents/:id/service-plan', requireAuth, async (req: any, re
     const id = parseInt(req.params.id);
     const { servicePlanId, additionalServiceIds, registrationFeePrepaid, registrationFeePostpaid, simFeePrepaid, simFeePostpaid, bundleApplied, bundleNotApplied, deviceModel, simNumber } = req.body;
     
+    console.log('Service plan update request:', {
+      id,
+      servicePlanId,
+      additionalServiceIds,
+      registrationFeePrepaid,
+      registrationFeePostpaid,
+      simFeePrepaid,
+      simFeePostpaid,
+      bundleApplied,
+      bundleNotApplied,
+      deviceModel,
+      simNumber
+    });
+    
     const document = await storage.updateDocumentServicePlanDirect(id, {
       servicePlanId: servicePlanId ? parseInt(servicePlanId) : null,
       additionalServiceIds,
@@ -552,8 +566,10 @@ router.patch('/api/documents/:id/service-plan', requireAuth, async (req: any, re
       simNumber: simNumber || null
     });
     
+    console.log('Service plan updated successfully:', document.id);
     res.json(document);
   } catch (error: any) {
+    console.error('Service plan update error:', error);
     res.status(400).json({ error: error.message });
   }
 });
