@@ -479,55 +479,55 @@ export function Documents() {
               <>
                 {/* Desktop Table View */}
                 <div className="hidden lg:block overflow-x-auto">
-                  <table className="w-full table-fixed divide-y divide-gray-300">
+                  <table className="w-full table-fixed divide-y divide-gray-300 text-sm">
                     <colgroup>
-                      <col className="w-28" />
-                      <col className="w-20" />
-                      <col className="w-28" />
-                      <col className="w-24" />
                       <col className="w-20" />
                       <col className="w-16" />
                       <col className="w-20" />
-                      <col className="w-24" />
-                      <col className="w-24" />
-                      {isAdmin && <col className="w-20" />}
-                      <col className="w-20" />
+                      <col className="w-16" />
+                      <col className="w-14" />
+                      <col className="w-12" />
+                      <col className="w-16" />
+                      <col className="w-18" />
+                      <col className="w-18" />
+                      {isAdmin && <col className="w-16" />}
+                      <col className="w-16" />
                     </colgroup>
                     <thead className="bg-gray-50">
                       <tr>
-                        <th className="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider truncate">
+                        <th className="px-1 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider truncate">
                           접수번호
                         </th>
-                        <th className="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider truncate">
+                        <th className="px-1 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider truncate">
                           고객명
                         </th>
-                        <th className="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider truncate">
+                        <th className="px-1 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider truncate">
                           연락처
                         </th>
-                        <th className="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider truncate">
+                        <th className="px-1 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider truncate">
                           판매점명
                         </th>
-                        <th className="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider truncate">
+                        <th className="px-1 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider truncate">
                           통신사
                         </th>
-                        <th className="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider truncate">
+                        <th className="px-1 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider truncate">
                           상태
                         </th>
-                        <th className="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider truncate">
+                        <th className="px-1 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider truncate">
                           개통상태
                         </th>
-                        <th className="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider truncate">
+                        <th className="px-1 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider truncate">
                           요금제정보
                         </th>
-                        <th className="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider truncate">
+                        <th className="px-1 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider truncate">
                           업로드일
                         </th>
                         {isAdmin && (
-                          <th className="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider truncate">
+                          <th className="px-1 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider truncate">
                             대리점
                           </th>
                         )}
-                        <th className="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider truncate">
+                        <th className="px-1 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider truncate">
                           작업
                         </th>
                       </tr>
@@ -535,28 +535,28 @@ export function Documents() {
                     <tbody className="bg-white divide-y divide-gray-200">
                       {documents.map((doc) => (
                         <tr key={doc.id} className="hover:bg-gray-50">
-                          <td className="px-2 py-2 text-xs font-medium text-gray-900 truncate">
+                          <td className="px-1 py-1 text-xs font-medium text-gray-900 truncate">
                             {doc.documentNumber}
                           </td>
-                          <td className="px-2 py-2 text-xs text-gray-900 truncate">
+                          <td className="px-1 py-1 text-xs text-gray-900 truncate">
                             {doc.customerName}
                           </td>
-                          <td className="px-2 py-2 text-xs text-gray-900 truncate">
+                          <td className="px-1 py-1 text-xs text-gray-900 truncate">
                             {doc.customerPhone}
                           </td>
-                          <td className="px-2 py-2 text-xs text-gray-500 truncate">
+                          <td className="px-1 py-1 text-xs text-gray-500 truncate">
                             {(doc as any).storeName || '-'}
                           </td>
-                          <td className="px-2 py-2 text-xs text-gray-700 truncate">
+                          <td className="px-1 py-1 text-xs text-gray-700 truncate">
                             {(doc as any).carrier || '-'}
                           </td>
-                          <td className="px-2 py-2">
+                          <td className="px-1 py-1">
                             {getStatusBadge(doc.status)}
                           </td>
-                          <td className="px-2 py-2">
+                          <td className="px-1 py-1">
                             {getActivationStatusBadge((doc as any).activationStatus || '대기')}
                           </td>
-                          <td className="px-2 py-2 text-xs text-gray-700">
+                          <td className="px-1 py-1 text-xs text-gray-700">
                             {(doc as any).activationStatus === '개통' ? (
                               <div className="space-y-0.5">
                                 {(doc as any).servicePlanName && (
@@ -579,23 +579,23 @@ export function Documents() {
                               <span className="text-gray-400">-</span>
                             )}
                           </td>
-                          <td className="px-2 py-2 text-xs text-gray-500 truncate">
+                          <td className="px-1 py-1 text-xs text-gray-500 truncate">
                             {format(new Date(doc.uploadedAt), 'MM-dd HH:mm', { locale: ko })}
                           </td>
                           {isAdmin && (
-                            <td className="px-2 py-2 text-xs text-gray-500 truncate">
+                            <td className="px-1 py-1 text-xs text-gray-500 truncate">
                               {(doc as any).dealerName}
                             </td>
                           )}
-                          <td className="px-2 py-2">
-                            <div className="flex flex-col space-y-1">
+                          <td className="px-1 py-1">
+                            <div className="flex flex-wrap gap-1">
                               {doc.filePath && (
                                 <Button
                                   variant="outline"
                                   size="sm"
                                   onClick={() => handleDownload(doc.id)}
                                   title="파일 다운로드"
-                                  className="h-6 w-6 p-0"
+                                  className="h-5 w-5 p-0"
                                 >
                                   <Download className="h-3 w-3" />
                                 </Button>
@@ -606,7 +606,7 @@ export function Documents() {
                                   size="sm"
                                   onClick={() => handleActivationStatusChange(doc)}
                                   title="개통상태 변경"
-                                  className="h-6 px-2 text-xs"
+                                  className="h-5 px-1 text-xs"
                                 >
                                   개통
                                 </Button>
@@ -617,7 +617,7 @@ export function Documents() {
                                   size="sm"
                                   onClick={() => openServicePlanDialog(doc)}
                                   title="요금제 선택"
-                                  className="h-6 px-2 text-xs"
+                                  className="h-5 px-1 text-xs"
                                 >
                                   요금제
                                 </Button>
@@ -871,7 +871,6 @@ export function Documents() {
                       />
                       <label htmlFor={`service-${service.id}`} className="flex-1 cursor-pointer">
                         <div className="font-medium text-gray-900">{service.serviceName}</div>
-                        <div className="text-sm text-gray-600">{service.monthlyFee.toLocaleString()}원/월</div>
                       </label>
                     </div>
                   ))}

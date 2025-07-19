@@ -205,26 +205,62 @@ if (kpInfoExists.count === 0) {
 const servicePlansExists = db.prepare('SELECT COUNT(*) as count FROM service_plans').get() as { count: number };
 if (servicePlansExists.count === 0) {
   const servicePlans = [
-    // SK 텔레콤 요금제
-    { plan_name: '5G 언리미티드 플러스', carrier: 'SK텔레콤', plan_type: '5G', data_allowance: '무제한', monthly_fee: 95000 },
-    { plan_name: '5G 언리미티드 레귤러', carrier: 'SK텔레콤', plan_type: '5G', data_allowance: '무제한', monthly_fee: 85000 },
-    { plan_name: '5G 언리미티드 스탠다드', carrier: 'SK텔레콤', plan_type: '5G', data_allowance: '무제한', monthly_fee: 75000 },
-    { plan_name: 'LTE 언리미티드 플러스', carrier: 'SK텔레콤', plan_type: 'LTE', data_allowance: '무제한', monthly_fee: 60000 },
-    { plan_name: 'LTE 언리미티드 레귤러', carrier: 'SK텔레콤', plan_type: 'LTE', data_allowance: '무제한', monthly_fee: 50000 },
+    // 선불 요금제
+    { plan_name: '선)363/1M', carrier: '선불', plan_type: 'LTE', data_allowance: '1GB', monthly_fee: 36300 },
+    { plan_name: '선)363/2M', carrier: '선불', plan_type: 'LTE', data_allowance: '2GB', monthly_fee: 36300 },
+    { plan_name: '선)363/3M', carrier: '선불', plan_type: 'LTE', data_allowance: '3GB', monthly_fee: 36300 },
+    { plan_name: '선)383/1M', carrier: '선불', plan_type: 'LTE', data_allowance: '1GB', monthly_fee: 38300 },
+    { plan_name: '선)383/2M', carrier: '선불', plan_type: 'LTE', data_allowance: '2GB', monthly_fee: 38300 },
+    { plan_name: '선)585/1M', carrier: '선불', plan_type: 'LTE', data_allowance: '1GB', monthly_fee: 58500 },
+    { plan_name: '선)407/1M', carrier: '선불', plan_type: 'LTE', data_allowance: '1GB', monthly_fee: 40700 },
     
-    // KT 요금제
-    { plan_name: '5G 슈퍼플랜', carrier: 'KT', plan_type: '5G', data_allowance: '무제한', monthly_fee: 95000 },
-    { plan_name: '5G 스탠다드', carrier: 'KT', plan_type: '5G', data_allowance: '무제한', monthly_fee: 85000 },
-    { plan_name: '5G 에센셜', carrier: 'KT', plan_type: '5G', data_allowance: '무제한', monthly_fee: 75000 },
-    { plan_name: 'LTE 슈퍼플랜', carrier: 'KT', plan_type: 'LTE', data_allowance: '무제한', monthly_fee: 60000 },
-    { plan_name: 'LTE 스탠다드', carrier: 'KT', plan_type: 'LTE', data_allowance: '무제한', monthly_fee: 50000 },
+    // 중외할부통신 5G 요금제
+    { plan_name: '중외)5G 웰컴 5', carrier: '중외할부통신', plan_type: '5G', data_allowance: '5GB', monthly_fee: 0 },
+    { plan_name: '중외)5G 웰컴 3', carrier: '중외할부통신', plan_type: '5G', data_allowance: '3GB', monthly_fee: 0 },
+    { plan_name: '중외)5G 웰컴 1', carrier: '중외할부통신', plan_type: '5G', data_allowance: '1GB', monthly_fee: 0 },
     
-    // LG U+ 요금제
-    { plan_name: '5G 시그니처', carrier: 'LG U+', plan_type: '5G', data_allowance: '무제한', monthly_fee: 95000 },
-    { plan_name: '5G 프리미엄', carrier: 'LG U+', plan_type: '5G', data_allowance: '무제한', monthly_fee: 85000 },
-    { plan_name: '5G 스탠다드', carrier: 'LG U+', plan_type: '5G', data_allowance: '무제한', monthly_fee: 75000 },
-    { plan_name: 'LTE 프리미엄', carrier: 'LG U+', plan_type: 'LTE', data_allowance: '무제한', monthly_fee: 60000 },
-    { plan_name: 'LTE 스탠다드', carrier: 'LG U+', plan_type: 'LTE', data_allowance: '무제한', monthly_fee: 50000 },
+    // 미래엔 LTE 요금제
+    { plan_name: '미)LTE 스페셜 플러스 N', carrier: '미래엔', plan_type: 'LTE', data_allowance: '무제한', monthly_fee: 0 },
+    { plan_name: '미)LTE 스페셜 프로', carrier: '미래엔', plan_type: 'LTE', data_allowance: '무제한', monthly_fee: 0 },
+    { plan_name: '미)LTE 스페셜', carrier: '미래엔', plan_type: 'LTE', data_allowance: '무제한', monthly_fee: 0 },
+    { plan_name: '미)LTE (15GB+/100분)', carrier: '미래엔', plan_type: 'LTE', data_allowance: '15GB+', monthly_fee: 0 },
+    { plan_name: '미)데이터플러스 (15GB+/100분)', carrier: '미래엔', plan_type: 'LTE', data_allowance: '15GB+', monthly_fee: 0 },
+    { plan_name: '미)LTE (10GB+/통화기본)', carrier: '미래엔', plan_type: 'LTE', data_allowance: '10GB+', monthly_fee: 0 },
+    { plan_name: '미)LTE (7GB+/통화기본)', carrier: '미래엔', plan_type: 'LTE', data_allowance: '7GB+', monthly_fee: 0 },
+    { plan_name: '미)5G (31GB+/통화기본)', carrier: '미래엔', plan_type: '5G', data_allowance: '31GB+', monthly_fee: 0 },
+    
+    // 엠모바일 요금제
+    { plan_name: '엠)M 알뜰 1.5GB 100분', carrier: '엠모바일', plan_type: 'LTE', data_allowance: '1.5GB', monthly_fee: 0 },
+    { plan_name: '엠)M 알뜰 안심', carrier: '엠모바일', plan_type: 'LTE', data_allowance: '무제한', monthly_fee: 0 },
+    { plan_name: '엠)통화 맘껏 4.5GB', carrier: '엠모바일', plan_type: 'LTE', data_allowance: '4.5GB', monthly_fee: 0 },
+    { plan_name: '엠)M 스페셜 10GB 플러스', carrier: '엠모바일', plan_type: 'LTE', data_allowance: '10GB+', monthly_fee: 0 },
+    { plan_name: '엠)5G M 알뜰 10GB', carrier: '엠모바일', plan_type: '5G', data_allowance: '10GB', monthly_fee: 0 },
+    { plan_name: '엠)5G M 프리미엄 110GB', carrier: '엠모바일', plan_type: '5G', data_allowance: '110GB', monthly_fee: 0 },
+    
+    // KT 계열 요금제
+    { plan_name: '카K)Z Mini + 밀리의 서재', carrier: 'KT', plan_type: 'LTE', data_allowance: '10GB', monthly_fee: 0 },
+    { plan_name: '카K)핀다이렉트Z Max(100GB)', carrier: 'KT', plan_type: 'LTE', data_allowance: '100GB', monthly_fee: 0 },
+    
+    // 텔레콤 요금제
+    { plan_name: '텔)LTE 알뜰 (100GB+/통화맘껏)', carrier: '텔레콤', plan_type: 'LTE', data_allowance: '100GB+', monthly_fee: 0 },
+    { plan_name: '텔)LTE 알뜰 (11GB+/통화맘껏)', carrier: '텔레콤', plan_type: 'LTE', data_allowance: '11GB+', monthly_fee: 0 },
+    { plan_name: '텔)CMLink (100GB+)', carrier: '텔레콤', plan_type: 'LTE', data_allowance: '100GB+', monthly_fee: 0 },
+    
+    // SK 계열 요금제
+    { plan_name: '카S)핀다이렉트 Z (11GB+)', carrier: 'SK텔레콤', plan_type: 'LTE', data_allowance: '11GB+', monthly_fee: 0 },
+    { plan_name: '카S)핀다이렉트Z Max(제휴)', carrier: 'SK텔레콤', plan_type: 'LTE', data_allowance: '무제한', monthly_fee: 0 },
+    
+    // 헬로모바일 요금제
+    { plan_name: '헬)슬림 유심 1GB 100분', carrier: '헬로모바일', plan_type: 'LTE', data_allowance: '1GB', monthly_fee: 0 },
+    { plan_name: '헬)DATA 걱정없는 유심 7GB', carrier: '헬로모바일', plan_type: 'LTE', data_allowance: '7GB', monthly_fee: 0 },
+    { plan_name: '헬)데이터 더주는 유심 15GB', carrier: '헬로모바일', plan_type: 'LTE', data_allowance: '15GB', monthly_fee: 0 },
+    
+    // 주요 통신사 5G 요금제
+    { plan_name: '중K)61K-5G 심플 70GB', carrier: 'KT', plan_type: '5G', data_allowance: '70GB', monthly_fee: 61000 },
+    { plan_name: '중K)61K-5G 심플 50GB', carrier: 'KT', plan_type: '5G', data_allowance: '50GB', monthly_fee: 61000 },
+    { plan_name: '중K)90K-넷플릭스 초이스 베이직', carrier: 'KT', plan_type: '5G', data_allowance: '무제한', monthly_fee: 90000 },
+    { plan_name: '중K)100K-스페셜', carrier: 'KT', plan_type: '5G', data_allowance: '무제한', monthly_fee: 100000 },
+    { plan_name: '중K)110K-넷플릭스 초이스 프리미엄', carrier: 'KT', plan_type: '5G', data_allowance: '무제한', monthly_fee: 110000 },
   ];
   
   for (const plan of servicePlans) {
