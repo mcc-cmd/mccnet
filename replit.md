@@ -179,6 +179,9 @@ This is a document management system built for MCC네트월드 telecommunication
 - July 19, 2025. Changed cost information UI from input fields to checkbox format: registration fee (선납/후납), SIM fee (선납/후납), bundle (결합/미결합)
 - July 19, 2025. Added support for service plan data import via images (JPG, PNG, GIF) and Excel files (XLS, XLSX) - can be provided per carrier
 - July 19, 2025. Enhanced database schema with sim_fee_prepaid, sim_fee_postpaid columns alongside existing registration fee and bundle options
+- July 19, 2025. Successfully imported 300 service plans from Excel file with automatic carrier classification (선불폰, 중국외국인, 미래엔, KT텔레콤, 엠모바일, 기타)
+- July 19, 2025. Implemented comprehensive service plan management with carrier-specific categorization and data allowance extraction from plan names
+- July 19, 2025. Enhanced cost information system with SIM fee prepaid/postpaid options alongside existing registration fee and bundle checkboxes
 
 ## User Preferences
 
