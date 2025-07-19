@@ -607,7 +607,7 @@ router.get('/api/dashboard/stats', requireAuth, async (req: any, res) => {
 
 router.get('/api/documents', requireAuth, async (req: any, res) => {
   try {
-    const { status, search, startDate, endDate } = req.query;
+    const { status, activationStatus, search, startDate, endDate } = req.query;
     // 관리자와 근무자는 모든 문서를, 판매점은 해당 대리점 문서만 조회
     const isWorker = req.session.userRole === 'dealer_worker';
     const isAdmin = req.session.userType === 'admin';
@@ -620,6 +620,7 @@ router.get('/api/documents', requireAuth, async (req: any, res) => {
     
     const documents = await storage.getDocuments(dealerId, {
       status: status as string,
+      activationStatus: activationStatus as string,
       search: search as string,
       startDate: startDate as string,
       endDate: endDate as string
@@ -989,6 +990,111 @@ router.post('/api/admin/contact-codes/upload', requireAdmin, upload.single('file
 });
 
 // 정산 관리 라우트들
+
+// 문서 기반 정산 등록을 위한 문서 데이터 조회
+router.get('/api/documents/:id/settlement-data', requireAuth, async (req: any, res) => {
+  try {
+    const documentId = parseInt(req.params.id);
+    const document = await storage.getDocument(documentId);
+    
+    if (!document) {
+      return res.status(404).json({ error: '문서를 찾을 수 없습니다.' });
+    }
+
+    // 관련 서비스 플랜 정보 조회
+    let servicePlan = null;
+    if (document.servicePlanId) {
+      servicePlan = await storage.getServicePlan(document.servicePlanId);
+    }
+
+    // 부가 서비스 정보 조회
+    let additionalServices: string[] = [];
+    if (document.additionalServiceIds) {
+      try {
+        const serviceIds = JSON.parse(document.additionalServiceIds);
+        const services = await Promise.all(
+          serviceIds.map((id: number) => storage.getAdditionalService(id))
+        );
+        additionalServices = services.filter(Boolean).map(s => s.serviceName);
+      } catch (e) {
+        console.warn('부가 서비스 파싱 실패:', e);
+      }
+    }
+
+    // 대리점 정보 조회
+    const dealer = await storage.getDealer(document.dealerId);
+
+    res.json({
+      documentId: document.id,
+      dealerId: document.dealerId,
+      dealerName: dealer?.name || '',
+      customerName: document.customerName,
+      customerPhone: document.customerPhone,
+      carrier: document.carrier,
+      servicePlanId: document.servicePlanId,
+      servicePlanName: servicePlan?.planName || '',
+      additionalServices,
+      activatedAt: document.activatedAt,
+      storeName: document.storeName,
+    });
+  } catch (error: any) {
+    console.error('Get document settlement data error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// 정책차수 자동 계산을 위한 정책표 조회
+router.get('/api/policy-level', requireAuth, async (req: any, res) => {
+  try {
+    const { date, carrier } = req.query;
+    
+    if (!date) {
+      return res.status(400).json({ error: '날짜를 제공해주세요.' });
+    }
+
+    const targetDate = new Date(date);
+    
+    // 정책표(PricingTable) 조회 - 가장 최근 것부터
+    const pricingTables = await storage.getPricingTables();
+    
+    // 날짜와 통신사에 맞는 정책표 찾기
+    const applicablePolicy = pricingTables
+      .filter(policy => {
+        const policyDate = new Date(policy.createdAt);
+        return policyDate <= targetDate && (carrier ? policy.title.includes(carrier) : true);
+      })
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0];
+
+    if (!applicablePolicy) {
+      return res.json({ policyLevel: 1, policyDetails: '기본 정책' });
+    }
+
+    // 정책차수 계산 로직 (예시: 정책표 생성 후 경과 일수에 따라)
+    const daysSincePolicy = Math.floor((targetDate.getTime() - new Date(applicablePolicy.createdAt).getTime()) / (1000 * 60 * 60 * 24));
+    let policyLevel = 1;
+    
+    if (daysSincePolicy <= 30) {
+      policyLevel = 1;
+    } else if (daysSincePolicy <= 60) {
+      policyLevel = 2;
+    } else if (daysSincePolicy <= 90) {
+      policyLevel = 3;
+    } else {
+      policyLevel = 4;
+    }
+
+    res.json({
+      policyLevel,
+      policyDetails: `${applicablePolicy.title} - ${policyLevel}차수`,
+      policyTableId: applicablePolicy.id,
+      policyTableTitle: applicablePolicy.title,
+    });
+  } catch (error: any) {
+    console.error('Get policy level error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 router.post('/api/settlements', requireAuth, async (req: any, res) => {
   try {
     const data = createSettlementSchema.parse(req.body);

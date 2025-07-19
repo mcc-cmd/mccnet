@@ -59,11 +59,18 @@ export function Settlements() {
   
   const [settlementDialogOpen, setSettlementDialogOpen] = useState(false);
   const [editingSettlement, setEditingSettlement] = useState<Settlement | null>(null);
+  const [selectedDocumentId, setSelectedDocumentId] = useState<number | null>(null);
   
   // 정산 데이터 조회
   const { data: settlements, isLoading: settlementsLoading } = useQuery({
     queryKey: ['/api/settlements'],
     queryFn: () => apiRequest('/api/settlements') as Promise<Settlement[]>,
+  });
+
+  // 개통 완료된 문서 목록 조회
+  const { data: completedDocuments } = useQuery({
+    queryKey: ['/api/documents', { status: '완료', activationStatus: '개통' }],
+    queryFn: () => apiRequest('/api/documents?status=완료&activationStatus=개통') as Promise<any[]>,
   });
 
   // 정산 생성 폼
@@ -156,6 +163,42 @@ export function Settlements() {
     }
   });
 
+  // 문서 선택 시 데이터 자동 로드
+  const loadDocumentData = async (documentId: number) => {
+    try {
+      // 문서 정산 데이터 조회
+      const documentData = await apiRequest(`/api/documents/${documentId}/settlement-data`);
+      
+      // 정책차수 자동 계산
+      const policyData = await apiRequest(`/api/policy-level?date=${documentData.activatedAt}&carrier=${documentData.carrier}`);
+      
+      // 폼에 데이터 설정
+      settlementForm.reset({
+        documentId: documentData.documentId,
+        dealerId: documentData.dealerId,
+        customerName: documentData.customerName,
+        customerPhone: documentData.customerPhone,
+        servicePlanId: documentData.servicePlanId,
+        servicePlanName: documentData.servicePlanName,
+        additionalServices: documentData.additionalServices || [],
+        policyLevel: policyData.policyLevel || 1,
+        policyDetails: policyData.policyDetails || '',
+        settlementStatus: '대기',
+      });
+
+      toast({
+        title: "문서 데이터 로드 완료",
+        description: `${documentData.customerName} 고객의 정보가 자동으로 입력되었습니다. 정책차수: ${policyData.policyLevel}차수`,
+      });
+    } catch (error: any) {
+      toast({
+        title: "데이터 로드 실패",
+        description: error.message || "문서 데이터를 불러오는데 실패했습니다.",
+        variant: "destructive"
+      });
+    }
+  };
+
   const handleSubmit = (data: CreateSettlementForm) => {
     createSettlementMutation.mutate(data);
   };
@@ -221,6 +264,39 @@ export function Settlements() {
               </DialogHeader>
               <Form {...settlementForm}>
                 <form onSubmit={settlementForm.handleSubmit(handleSubmit)} className="space-y-4">
+                  {/* 문서 선택 섹션 */}
+                  <div className="border rounded-lg p-4 bg-blue-50 dark:bg-blue-950">
+                    <h4 className="font-medium mb-3 text-blue-900 dark:text-blue-100">📋 접수 관리에서 데이터 불러오기</h4>
+                    <div className="space-y-3">
+                      <Label htmlFor="document-select">개통 완료된 문서 선택</Label>
+                      <Select 
+                        value={selectedDocumentId?.toString() || ''} 
+                        onValueChange={(value) => {
+                          const docId = parseInt(value);
+                          setSelectedDocumentId(docId);
+                          if (docId) {
+                            loadDocumentData(docId);
+                          }
+                        }}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="개통 완료된 문서를 선택하세요" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {completedDocuments?.map((doc) => (
+                            <SelectItem key={doc.id} value={doc.id.toString()}>
+                              {doc.documentNumber} - {doc.customerName} ({doc.carrier})
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <p className="text-sm text-muted-foreground">
+                        문서를 선택하면 개통날짜, 판매점정보, 통신사, 요금제, 부가서비스 정보가 자동으로 입력되고 정책차수가 계산됩니다.
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* 기본 정보 */}
                   <div className="grid grid-cols-2 gap-4">
                     <FormField
                       control={settlementForm.control}
@@ -229,7 +305,7 @@ export function Settlements() {
                         <FormItem>
                           <FormLabel>고객명</FormLabel>
                           <FormControl>
-                            <Input {...field} placeholder="고객명을 입력하세요" />
+                            <Input {...field} placeholder="고객명을 입력하세요" readOnly />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -242,7 +318,7 @@ export function Settlements() {
                         <FormItem>
                           <FormLabel>고객 연락처</FormLabel>
                           <FormControl>
-                            <Input {...field} placeholder="연락처를 입력하세요" />
+                            <Input {...field} placeholder="연락처를 입력하세요" readOnly />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -250,6 +326,7 @@ export function Settlements() {
                     />
                   </div>
                   
+                  {/* 요금제 정보 */}
                   <div className="grid grid-cols-2 gap-4">
                     <FormField
                       control={settlementForm.control}
@@ -258,7 +335,7 @@ export function Settlements() {
                         <FormItem>
                           <FormLabel>요금제명</FormLabel>
                           <FormControl>
-                            <Input {...field} placeholder="요금제명을 입력하세요" />
+                            <Input {...field} placeholder="요금제명" readOnly />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -288,25 +365,56 @@ export function Settlements() {
                     />
                   </div>
 
+                  {/* 부가 서비스 표시 */}
+                  <div className="space-y-2">
+                    <Label>부가 가입 내용</Label>
+                    <div className="p-3 border rounded-md bg-gray-50 dark:bg-gray-800 min-h-[60px]">
+                      {settlementForm.watch('additionalServices')?.length > 0 ? (
+                        <div className="flex flex-wrap gap-2">
+                          {settlementForm.watch('additionalServices').map((service, index) => (
+                            <Badge key={index} variant="secondary">
+                              {service}
+                            </Badge>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-muted-foreground text-sm">부가 서비스 정보가 없습니다</p>
+                      )}
+                    </div>
+                  </div>
+
                   <div className="grid grid-cols-2 gap-4">
                     <FormField
                       control={settlementForm.control}
                       name="policyLevel"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>정책차수</FormLabel>
+                          <FormLabel>정책차수 (자동계산)</FormLabel>
                           <FormControl>
                             <Input 
                               type="number" 
                               {...field} 
                               onChange={(e) => field.onChange(parseInt(e.target.value) || 1)}
-                              placeholder="정책차수를 입력하세요" 
+                              placeholder="정책차수 (자동계산됨)" 
+                              className="bg-yellow-50 dark:bg-yellow-950"
+                              readOnly
                             />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
+                    <div className="space-y-2">
+                      <Label>정책 상세</Label>
+                      <div className="p-3 border rounded-md bg-green-50 dark:bg-green-950 min-h-[40px]">
+                        <p className="text-sm text-green-800 dark:text-green-200">
+                          {settlementForm.watch('policyDetails') || '정책 상세 정보가 자동으로 표시됩니다'}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
                     <FormField
                       control={settlementForm.control}
                       name="settlementAmount"
