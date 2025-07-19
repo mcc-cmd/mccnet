@@ -219,6 +219,12 @@ This is a document management system built for MCC네트월드 telecommunication
 - July 19, 2025. Implemented role-based dashboard analytics: admin views carrier/worker activation statistics, workers see personal activation counts
 - July 19, 2025. Updated database schema and API endpoints to support dealerId-free worker creation
 - July 19, 2025. Enhanced dashboard UI with carrier statistics and worker performance rankings for administrators
+- July 19, 2025. Implemented comprehensive worker-specific document management system with document locking
+- July 19, 2025. Created separate "접수 관리" (pending/in-progress only) and "개통완료 관리" (worker's completed items) pages
+- July 19, 2025. Added document assignment system: workers can claim documents by changing to "진행중" status
+- July 19, 2025. Implemented work locking: only assigned worker can process their claimed documents
+- July 19, 2025. Restricted settlements management to admin-only access for enhanced security
+- July 19, 2025. Added admin override permissions: administrators can modify all documents regardless of worker assignment locks
 
 ## User Preferences
 

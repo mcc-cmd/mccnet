@@ -535,24 +535,27 @@ router.patch('/api/documents/:id/activation', requireAuth, async (req: any, res)
     const isWorker = req.session.userRole === 'dealer_worker';
     const isAdmin = req.session.userType === 'admin';
     
-    // 진행중 상태로 변경 시 작업자 할당 확인
-    if (data.activationStatus === '진행중' && isWorker) {
-      // 이미 다른 근무자가 진행중인지 확인
-      const document = await storage.getDocument(id);
-      if (document?.assignedWorkerId && document.assignedWorkerId !== req.session.userId) {
-        return res.status(400).json({ 
-          error: '이미 다른 근무자가 처리 중인 서류입니다.' 
-        });
+    // 관리자가 아닌 근무자만 작업 잠금 제한 적용
+    if (!isAdmin) {
+      // 진행중 상태로 변경 시 작업자 할당 확인
+      if (data.activationStatus === '진행중' && isWorker) {
+        // 이미 다른 근무자가 진행중인지 확인
+        const document = await storage.getDocument(id);
+        if (document?.assignedWorkerId && document.assignedWorkerId !== req.session.userId) {
+          return res.status(400).json({ 
+            error: '이미 다른 근무자가 처리 중인 서류입니다.' 
+          });
+        }
       }
-    }
-    
-    // 진행중 상태 서류의 처리 권한 확인
-    if (['개통', '취소', '보완필요'].includes(data.activationStatus) && isWorker) {
-      const document = await storage.getDocument(id);
-      if (document?.assignedWorkerId && document.assignedWorkerId !== req.session.userId) {
-        return res.status(400).json({ 
-          error: '다른 근무자가 처리 중인 서류는 수정할 수 없습니다.' 
-        });
+      
+      // 진행중 상태 서류의 처리 권한 확인
+      if (['개통', '취소', '보완필요'].includes(data.activationStatus) && isWorker) {
+        const document = await storage.getDocument(id);
+        if (document?.assignedWorkerId && document.assignedWorkerId !== req.session.userId) {
+          return res.status(400).json({ 
+            error: '다른 근무자가 처리 중인 서류는 수정할 수 없습니다.' 
+          });
+        }
       }
     }
     

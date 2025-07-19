@@ -226,8 +226,8 @@ export function Documents() {
   };
 
   const canManageActivationStatus = () => {
-    // 관리자와 근무자만 개통상태 관리 가능 (같은 회사에서 개통 업무 처리)
-    return user?.role === 'dealer_worker' || user?.userType === 'admin';
+    // 관리자는 모든 권한, 근무자도 개통상태 관리 가능
+    return user?.userType === 'admin' || user?.role === 'dealer_worker';
   };
 
   const updateActivationMutation = useMutation({
@@ -694,11 +694,8 @@ export function Documents() {
                                 </Button>
                               )}
                               {canManageActivationStatus() && (
-                                (doc as any).assignedWorkerId && (doc as any).assignedWorkerId !== user?.id && user?.role === 'dealer_worker' ? (
-                                  <Badge variant="outline" className="text-xs h-5 px-1">
-                                    다른 근무자 처리중
-                                  </Badge>
-                                ) : (
+                                // 관리자는 모든 권한, 근무자는 작업 잠금 확인
+                                user?.userType === 'admin' || !(doc as any).assignedWorkerId || (doc as any).assignedWorkerId === user?.id || user?.role !== 'dealer_worker' ? (
                                   <Button
                                     variant="outline"
                                     size="sm"
@@ -708,18 +705,25 @@ export function Documents() {
                                   >
                                     개통상태
                                   </Button>
+                                ) : (
+                                  <Badge variant="outline" className="text-xs h-5 px-1">
+                                    다른 근무자 처리중
+                                  </Badge>
                                 )
                               )}
                               {(doc as any).activationStatus === '개통' && canManageActivationStatus() && (
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => openServicePlanDialog(doc)}
-                                  title="요금제 선택"
-                                  className="h-5 px-1 text-xs"
-                                >
-                                  요금제
-                                </Button>
+                                // 관리자는 모든 문서에 접근, 근무자는 작업 잠금 확인
+                                user?.userType === 'admin' || !(doc as any).assignedWorkerId || (doc as any).assignedWorkerId === user?.id || user?.role !== 'dealer_worker' ? (
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => openServicePlanDialog(doc)}
+                                    title="요금제 선택"
+                                    className="h-5 px-1 text-xs"
+                                  >
+                                    요금제
+                                  </Button>
+                                ) : null
                               )}
                             </div>
                           </td>
