@@ -176,6 +176,9 @@ This is a document management system built for MCC네트월드 telecommunication
 - July 19, 2025. Cleaned up service plan display in UI by removing redundant " - carrier (fee)" suffix, showing only clean plan names (e.g., "카K)Z Mini + 밀리의 서재" instead of "카K)Z Mini + 밀리의 서재 - KT (0원)")
 - July 19, 2025. Enhanced supplement memo system: workers can add detailed notes when marking documents as "보완필요", dealers can view these notes prominently in orange boxes
 - July 19, 2025. Fixed duplicate service plan names by adding unique identifiers to "미)이동의즐거움 K" plans (K-1, K-2, K-3, K-4) for proper distinction in UI selection
+- July 19, 2025. Changed cost information UI from input fields to checkbox format: registration fee (선납/후납), SIM fee (선납/후납), bundle (결합/미결합)
+- July 19, 2025. Added support for service plan data import via images (JPG, PNG, GIF) and Excel files (XLS, XLSX) - can be provided per carrier
+- July 19, 2025. Enhanced database schema with sim_fee_prepaid, sim_fee_postpaid columns alongside existing registration fee and bundle options
 
 ## User Preferences
 

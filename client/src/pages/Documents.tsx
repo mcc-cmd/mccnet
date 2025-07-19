@@ -49,6 +49,8 @@ export function Documents() {
     additionalServiceIds: [] as string[],
     registrationFeePrepaid: false, // 가입비 선납
     registrationFeePostpaid: false, // 가입비 후납
+    simFeePrepaid: false, // 유심 선납
+    simFeePostpaid: false, // 유심 후납
     bundleApplied: false, // 결합
     bundleNotApplied: false, // 미결합
     deviceModel: '',
@@ -273,6 +275,8 @@ export function Documents() {
       additionalServiceIds: (doc as any).additionalServiceIds ? JSON.parse((doc as any).additionalServiceIds) : [],
       registrationFeePrepaid: (doc as any).registrationFeePrepaid || false,
       registrationFeePostpaid: (doc as any).registrationFeePostpaid || false,
+      simFeePrepaid: (doc as any).simFeePrepaid || false,
+      simFeePostpaid: (doc as any).simFeePostpaid || false,
       bundleApplied: (doc as any).bundleApplied || false,
       bundleNotApplied: (doc as any).bundleNotApplied || false,
       deviceModel: (doc as any).deviceModel || '',
@@ -939,7 +943,7 @@ export function Documents() {
               {/* 비용 정보 */}
               <div className="bg-green-50 p-4 rounded-lg">
                 <Label className="text-lg font-semibold mb-3 block">비용 정보</Label>
-                <div className="grid grid-cols-2 gap-6">
+                <div className="grid grid-cols-3 gap-6">
                   {/* 가입비 */}
                   <div>
                     <Label className="text-sm font-medium mb-2 block">가입비</Label>
@@ -971,6 +975,41 @@ export function Documents() {
                           className="w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500"
                         />
                         <label htmlFor="registrationFeePostpaid" className="text-sm text-gray-700">후납</label>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* 유심비 */}
+                  <div>
+                    <Label className="text-sm font-medium mb-2 block">유심비</Label>
+                    <div className="space-y-2">
+                      <div className="flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          id="simFeePrepaid"
+                          checked={servicePlanForm.simFeePrepaid}
+                          onChange={(e) => setServicePlanForm(prev => ({ 
+                            ...prev, 
+                            simFeePrepaid: e.target.checked,
+                            simFeePostpaid: e.target.checked ? false : prev.simFeePostpaid
+                          }))}
+                          className="w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500"
+                        />
+                        <label htmlFor="simFeePrepaid" className="text-sm text-gray-700">선납</label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          id="simFeePostpaid"
+                          checked={servicePlanForm.simFeePostpaid}
+                          onChange={(e) => setServicePlanForm(prev => ({ 
+                            ...prev, 
+                            simFeePostpaid: e.target.checked,
+                            simFeePrepaid: e.target.checked ? false : prev.simFeePrepaid
+                          }))}
+                          className="w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500"
+                        />
+                        <label htmlFor="simFeePostpaid" className="text-sm text-gray-700">후납</label>
                       </div>
                     </div>
                   </div>

@@ -983,13 +983,15 @@ class SqliteStorage implements IStorage {
   }
 
   // Direct service plan update in documents table
-  async updateDocumentServicePlanDirect(id: number, data: { servicePlanId?: number | null; additionalServiceIds?: string; registrationFeePrepaid?: boolean; registrationFeePostpaid?: boolean; bundleApplied?: boolean; bundleNotApplied?: boolean; deviceModel?: string | null; simNumber?: string | null }): Promise<Document> {
+  async updateDocumentServicePlanDirect(id: number, data: { servicePlanId?: number | null; additionalServiceIds?: string; registrationFeePrepaid?: boolean; registrationFeePostpaid?: boolean; simFeePrepaid?: boolean; simFeePostpaid?: boolean; bundleApplied?: boolean; bundleNotApplied?: boolean; deviceModel?: string | null; simNumber?: string | null }): Promise<Document> {
     const query = `
       UPDATE documents 
       SET service_plan_id = ?, 
           additional_service_ids = ?, 
           registration_fee_prepaid = ?, 
           registration_fee_postpaid = ?, 
+          sim_fee_prepaid = ?,
+          sim_fee_postpaid = ?,
           bundle_applied = ?,
           bundle_not_applied = ?,
           device_model = ?,
@@ -1003,6 +1005,8 @@ class SqliteStorage implements IStorage {
       data.additionalServiceIds || null, 
       data.registrationFeePrepaid ? 1 : 0, 
       data.registrationFeePostpaid ? 1 : 0, 
+      data.simFeePrepaid ? 1 : 0, 
+      data.simFeePostpaid ? 1 : 0, 
       data.bundleApplied ? 1 : 0, 
       data.bundleNotApplied ? 1 : 0, 
       data.deviceModel || null,
@@ -1035,6 +1039,8 @@ class SqliteStorage implements IStorage {
       additionalServiceIds: document.additional_service_ids,
       registrationFeePrepaid: Boolean(document.registration_fee_prepaid),
       registrationFeePostpaid: Boolean(document.registration_fee_postpaid),
+      simFeePrepaid: Boolean(document.sim_fee_prepaid),
+      simFeePostpaid: Boolean(document.sim_fee_postpaid),
       bundleApplied: Boolean(document.bundle_applied),
       bundleNotApplied: Boolean(document.bundle_not_applied),
       deviceModel: document.device_model,
@@ -1128,6 +1134,8 @@ class SqliteStorage implements IStorage {
       additionalServiceIds: result.additional_service_ids,
       registrationFeePrepaid: Boolean(result.registration_fee_prepaid),
       registrationFeePostpaid: Boolean(result.registration_fee_postpaid),
+      simFeePrepaid: Boolean(result.sim_fee_prepaid),
+      simFeePostpaid: Boolean(result.sim_fee_postpaid),
       bundleApplied: Boolean(result.bundle_applied),
       bundleNotApplied: Boolean(result.bundle_not_applied),
       deviceModel: result.device_model,
@@ -1202,6 +1210,8 @@ class SqliteStorage implements IStorage {
       additionalServiceIds: d.additional_service_ids,
       registrationFeePrepaid: Boolean(d.registration_fee_prepaid),
       registrationFeePostpaid: Boolean(d.registration_fee_postpaid),
+      simFeePrepaid: Boolean(d.sim_fee_prepaid),
+      simFeePostpaid: Boolean(d.sim_fee_postpaid),
       bundleApplied: Boolean(d.bundle_applied),
       bundleNotApplied: Boolean(d.bundle_not_applied),
       deviceModel: d.device_model,
@@ -1304,6 +1314,8 @@ class SqliteStorage implements IStorage {
       additionalServiceIds: result.additional_service_ids,
       registrationFeePrepaid: Boolean(result.registration_fee_prepaid),
       registrationFeePostpaid: Boolean(result.registration_fee_postpaid),
+      simFeePrepaid: Boolean(result.sim_fee_prepaid),
+      simFeePostpaid: Boolean(result.sim_fee_postpaid),
       bundleApplied: Boolean(result.bundle_applied),
       bundleNotApplied: Boolean(result.bundle_not_applied),
       deviceModel: result.device_model,
