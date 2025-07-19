@@ -235,28 +235,28 @@ export function Documents() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case '접수':
-        return <Badge className="status-badge-pending">접수</Badge>;
+        return <Badge className="status-badge-pending text-xs px-1 py-0.5">접수</Badge>;
       case '완료':
-        return <Badge className="status-badge-completed">완료</Badge>;
+        return <Badge className="status-badge-completed text-xs px-1 py-0.5">완료</Badge>;
       case '보완필요':
-        return <Badge className="status-badge-needs-review">보완필요</Badge>;
+        return <Badge className="status-badge-needs-review text-xs px-1 py-0.5">보완</Badge>;
       default:
-        return <Badge variant="secondary">{status}</Badge>;
+        return <Badge variant="secondary" className="text-xs px-1 py-0.5">{status}</Badge>;
     }
   };
 
   const getActivationStatusBadge = (status: string) => {
     switch (status) {
       case '대기':
-        return <Badge variant="outline" className="text-yellow-600 border-yellow-600">대기</Badge>;
+        return <Badge variant="outline" className="text-yellow-600 border-yellow-600 text-xs px-1 py-0.5">대기</Badge>;
       case '진행중':
-        return <Badge variant="outline" className="text-blue-600 border-blue-600">진행중</Badge>;
+        return <Badge variant="outline" className="text-blue-600 border-blue-600 text-xs px-1 py-0.5">진행</Badge>;
       case '개통':
-        return <Badge variant="outline" className="text-green-600 border-green-600">개통완료</Badge>;
+        return <Badge variant="outline" className="text-green-600 border-green-600 text-xs px-1 py-0.5">개통</Badge>;
       case '취소':
-        return <Badge variant="outline" className="text-red-600 border-red-600">취소</Badge>;
+        return <Badge variant="outline" className="text-red-600 border-red-600 text-xs px-1 py-0.5">취소</Badge>;
       default:
-        return <Badge variant="secondary">{status}</Badge>;
+        return <Badge variant="secondary" className="text-xs px-1 py-0.5">{status}</Badge>;
     }
   };
 
@@ -479,42 +479,55 @@ export function Documents() {
               <>
                 {/* Desktop Table View */}
                 <div className="hidden lg:block overflow-x-auto">
-                  <table className="min-w-full divide-y divide-gray-300">
+                  <table className="w-full table-fixed divide-y divide-gray-300">
+                    <colgroup>
+                      <col className="w-28" />
+                      <col className="w-20" />
+                      <col className="w-28" />
+                      <col className="w-24" />
+                      <col className="w-20" />
+                      <col className="w-16" />
+                      <col className="w-20" />
+                      <col className="w-24" />
+                      <col className="w-24" />
+                      {isAdmin && <col className="w-20" />}
+                      <col className="w-20" />
+                    </colgroup>
                     <thead className="bg-gray-50">
                       <tr>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th className="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider truncate">
                           접수번호
                         </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th className="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider truncate">
                           고객명
                         </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th className="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider truncate">
                           연락처
                         </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th className="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider truncate">
                           판매점명
                         </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th className="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider truncate">
                           통신사
                         </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th className="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider truncate">
                           상태
                         </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th className="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider truncate">
                           개통상태
                         </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th className="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider truncate">
                           요금제정보
                         </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th className="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider truncate">
                           업로드일
                         </th>
                         {isAdmin && (
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          <th className="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider truncate">
                             대리점
                           </th>
                         )}
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th className="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider truncate">
                           작업
                         </th>
                       </tr>
@@ -522,37 +535,37 @@ export function Documents() {
                     <tbody className="bg-white divide-y divide-gray-200">
                       {documents.map((doc) => (
                         <tr key={doc.id} className="hover:bg-gray-50">
-                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                          <td className="px-2 py-2 text-xs font-medium text-gray-900 truncate">
                             {doc.documentNumber}
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          <td className="px-2 py-2 text-xs text-gray-900 truncate">
                             {doc.customerName}
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          <td className="px-2 py-2 text-xs text-gray-900 truncate">
                             {doc.customerPhone}
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          <td className="px-2 py-2 text-xs text-gray-500 truncate">
                             {(doc as any).storeName || '-'}
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                          <td className="px-2 py-2 text-xs text-gray-700 truncate">
                             {(doc as any).carrier || '-'}
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
+                          <td className="px-2 py-2">
                             {getStatusBadge(doc.status)}
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
+                          <td className="px-2 py-2">
                             {getActivationStatusBadge((doc as any).activationStatus || '대기')}
                           </td>
-                          <td className="px-6 py-4 text-sm text-gray-700">
+                          <td className="px-2 py-2 text-xs text-gray-700">
                             {(doc as any).activationStatus === '개통' ? (
-                              <div className="space-y-1">
+                              <div className="space-y-0.5">
                                 {(doc as any).servicePlanName && (
-                                  <div className="font-medium text-blue-600">
+                                  <div className="font-medium text-blue-600 text-xs truncate">
                                     {(doc as any).servicePlanName}
                                   </div>
                                 )}
                                 {(doc as any).additionalServices && (
-                                  <div className="text-xs text-gray-500">
+                                  <div className="text-xs text-gray-500 truncate">
                                     부가: {(doc as any).additionalServices}
                                   </div>
                                 )}
@@ -566,24 +579,25 @@ export function Documents() {
                               <span className="text-gray-400">-</span>
                             )}
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {format(new Date(doc.uploadedAt), 'yyyy-MM-dd HH:mm', { locale: ko })}
+                          <td className="px-2 py-2 text-xs text-gray-500 truncate">
+                            {format(new Date(doc.uploadedAt), 'MM-dd HH:mm', { locale: ko })}
                           </td>
                           {isAdmin && (
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            <td className="px-2 py-2 text-xs text-gray-500 truncate">
                               {(doc as any).dealerName}
                             </td>
                           )}
-                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                            <div className="flex space-x-2">
+                          <td className="px-2 py-2">
+                            <div className="flex flex-col space-y-1">
                               {doc.filePath && (
                                 <Button
                                   variant="outline"
                                   size="sm"
                                   onClick={() => handleDownload(doc.id)}
                                   title="파일 다운로드"
+                                  className="h-6 w-6 p-0"
                                 >
-                                  <Download className="h-4 w-4" />
+                                  <Download className="h-3 w-3" />
                                 </Button>
                               )}
                               {canManageActivationStatus() && (
@@ -592,8 +606,9 @@ export function Documents() {
                                   size="sm"
                                   onClick={() => handleActivationStatusChange(doc)}
                                   title="개통상태 변경"
+                                  className="h-6 px-2 text-xs"
                                 >
-                                  개통상태
+                                  개통
                                 </Button>
                               )}
                               {(doc as any).activationStatus === '개통' && canManageActivationStatus() && (
@@ -602,19 +617,9 @@ export function Documents() {
                                   size="sm"
                                   onClick={() => openServicePlanDialog(doc)}
                                   title="요금제 선택"
+                                  className="h-6 px-2 text-xs"
                                 >
                                   요금제
-                                </Button>
-                              )}
-                              {isAdmin && (
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => handleDelete(doc.id)}
-                                  disabled={doc.status !== '접수'}
-                                  title="서류 삭제"
-                                >
-                                  삭제
                                 </Button>
                               )}
                             </div>
