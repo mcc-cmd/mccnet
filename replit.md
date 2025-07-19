@@ -195,6 +195,9 @@ This is a document management system built for MCC네트월드 telecommunication
 - July 19, 2025. Enhanced additional services display by implementing server-side service ID to name mapping for proper Excel export and UI display
 - July 19, 2025. Fixed authentication system by creating admin account and updating all test account passwords to "password"
 - July 19, 2025. Verified login functionality working correctly for all user types (admin, dealers, workers)
+- July 19, 2025. Fixed client-server authentication by adding Authorization header with Bearer token to all API requests
+- July 19, 2025. Updated XLSX import to use ES module syntax and successfully tested Excel export functionality (17KB test file generated)
+- July 19, 2025. Confirmed complete Excel export system working with proper Korean column headers and data mapping
 
 ## User Preferences
 

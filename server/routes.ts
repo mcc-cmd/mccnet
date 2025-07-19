@@ -741,7 +741,7 @@ router.get('/api/admin/export/activated-documents', requireAdmin, async (req: an
     });
 
     // XLSX 라이브러리 사용하여 엑셀 파일 생성
-    const XLSX = require('xlsx');
+    const XLSX = await import('xlsx');
     const worksheet = XLSX.utils.json_to_sheet(excelData);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, '개통서류');
