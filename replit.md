@@ -168,6 +168,10 @@ This is a document management system built for MCC네트월드 telecommunication
 - July 18, 2025. Enhanced logo functionality: MCC네트월드 logo now links to dashboard, removed "접수 포털" subtitle text
 - July 18, 2025. Improved service plan management UI with clean card-based layout and limited additional services to 5 options (필링, 캐치콜, 링투유, 통화중대기, 00700)
 - July 18, 2025. Enhanced Documents page with compressed 2-line table layout for better readability and service plan management for completed activations
+- July 19, 2025. Removed monthly fee display from additional services UI as requested by user
+- July 19, 2025. Applied comprehensive service plan data from Excel file containing 300+ real plans from multiple carriers (선불, 중외, 미래엔, 엠모바일, KT, 텔레콤, SK, 헬로모바일, 중K)
+- July 19, 2025. Optimized table layout for one-screen viewing: reduced column widths, decreased padding, minimized font sizes, and implemented horizontal button layout
+- July 19, 2025. Database reinitialized with real service plan data from Excel file, test accounts recreated with standardized passwords
 
 ## User Preferences
 
