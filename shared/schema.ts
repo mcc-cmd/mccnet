@@ -51,7 +51,7 @@ export interface Document {
   storeName?: string; // 판매점 이름
   carrier: string; // 통신사
   status: '접수' | '보완필요' | '완료';
-  activationStatus: '대기' | '진행중' | '개통' | '취소';
+  activationStatus: '대기' | '진행중' | '보완필요' | '개통' | '취소';
   filePath?: string | null;
   fileName?: string | null;
   fileSize?: number | null;
@@ -60,6 +60,11 @@ export interface Document {
   activatedAt?: Date;
   activatedBy?: number; // 개통완료 처리한 근무자 ID
   notes?: string;
+  // 보완 관련 필드
+  supplementRequired?: string; // 보완 필요 사유
+  supplementNotes?: string; // 보완 상세 내용 (근무자가 작성)
+  supplementRequiredBy?: number; // 보완 요청한 근무자 ID
+  supplementRequiredAt?: Date; // 보완 요청 일시
   // 개통 완료 후 플랜 정보
   servicePlanId?: number;
   additionalServiceIds?: string; // JSON 배열 형태로 저장

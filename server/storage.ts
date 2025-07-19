@@ -1172,7 +1172,11 @@ class SqliteStorage implements IStorage {
       uploadedAt: new Date(d.uploaded_at),
       updatedAt: new Date(d.updated_at),
       activatedAt: d.activated_at ? new Date(d.activated_at) : undefined,
+      activatedBy: d.activated_by,
       notes: d.notes,
+      supplementNotes: d.supplement_notes,
+      supplementRequiredBy: d.supplement_required_by,
+      supplementRequiredAt: d.supplement_required_at ? new Date(d.supplement_required_at) : undefined,
       dealerName: d.dealer_name,
       userName: d.user_name
     }));
@@ -1227,6 +1231,12 @@ class SqliteStorage implements IStorage {
     `;
     let params: any[] = [data.activationStatus, data.notes || null];
 
+    // 보완필요 상태일 때 보완 관련 정보 추가
+    if (data.activationStatus === '보완필요') {
+      updateQuery += `, supplement_notes = ?, supplement_required_by = ?, supplement_required_at = CURRENT_TIMESTAMP`;
+      params.push(data.supplementNotes || null, data.supplementRequiredBy || null);
+    }
+
     // 개통완료 시 작업자 ID와 시간 기록
     if (data.activationStatus === '개통' && data.activatedBy) {
       updateQuery += `, activated_by = ?, activated_at = CURRENT_TIMESTAMP`;
@@ -1249,6 +1259,7 @@ class SqliteStorage implements IStorage {
       customerName: result.customer_name,
       customerPhone: result.customer_phone,
       storeName: result.store_name,
+      carrier: result.carrier,
       status: result.status,
       activationStatus: result.activation_status,
       filePath: result.file_path,
@@ -1258,7 +1269,10 @@ class SqliteStorage implements IStorage {
       updatedAt: new Date(result.updated_at),
       activatedAt: result.activated_at ? new Date(result.activated_at) : undefined,
       activatedBy: result.activated_by,
-      notes: result.notes
+      notes: result.notes,
+      supplementNotes: result.supplement_notes,
+      supplementRequiredBy: result.supplement_required_by,
+      supplementRequiredAt: result.supplement_required_at ? new Date(result.supplement_required_at) : undefined
     };
   }
 

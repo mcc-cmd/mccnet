@@ -505,6 +505,11 @@ router.patch('/api/documents/:id/activation', requireAuth, async (req: any, res)
       data.activatedBy = req.session.userId;
     }
     
+    // 보완필요 상태일 때 요청한 근무자 ID 추가
+    if (data.activationStatus === '보완필요' && req.session.userType === 'user') {
+      data.supplementRequiredBy = req.session.userId;
+    }
+    
     const document = await storage.updateDocumentActivationStatus(id, data);
     res.json(document);
   } catch (error: any) {

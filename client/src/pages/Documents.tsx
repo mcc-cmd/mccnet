@@ -39,7 +39,8 @@ export function Documents() {
   const [selectedDocument, setSelectedDocument] = useState<Document | null>(null);
   const [activationForm, setActivationForm] = useState({
     activationStatus: '',
-    notes: ''
+    notes: '',
+    supplementNotes: ''
   });
   
   const [servicePlanDialogOpen, setServicePlanDialogOpen] = useState(false);
@@ -576,7 +577,21 @@ export function Documents() {
                                 )}
                               </div>
                             ) : (
-                              <span className="text-gray-400">-</span>
+                              <div>
+                                <span className="text-gray-400">-</span>
+                                {/* 보완 메모 표시 */}
+                                {(doc as any).supplementNotes && (
+                                  <div className="mt-1 p-2 bg-orange-50 border border-orange-200 rounded text-xs">
+                                    <div className="font-medium text-orange-700 mb-1">보완요청</div>
+                                    <div className="text-orange-800 text-xs leading-tight">
+                                      {(doc as any).supplementNotes.length > 50 
+                                        ? `${(doc as any).supplementNotes.substring(0, 50)}...` 
+                                        : (doc as any).supplementNotes
+                                      }
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
                             )}
                           </td>
                           <td className="px-1 py-1 text-xs text-gray-500 truncate">
@@ -690,6 +705,19 @@ export function Documents() {
                             </div>
                           </div>
                         )}
+                        
+                        {/* 보완 메모 표시 */}
+                        {(doc as any).supplementNotes && (
+                          <div className="col-span-2 mt-2 p-3 bg-orange-50 border border-orange-200 rounded-lg">
+                            <div className="text-xs font-medium text-orange-700 mb-1">보완 요청 사항</div>
+                            <div className="text-sm text-orange-800">{(doc as any).supplementNotes}</div>
+                            {(doc as any).supplementRequiredAt && (
+                              <div className="text-xs text-orange-600 mt-1">
+                                {format(new Date((doc as any).supplementRequiredAt), 'yyyy-MM-dd HH:mm', { locale: ko })}
+                              </div>
+                            )}
+                          </div>
+                        )}
                       </div>
                       
                       <div className="flex justify-between items-center">
@@ -778,6 +806,7 @@ export function Documents() {
                   <SelectContent>
                     <SelectItem value="대기">대기</SelectItem>
                     <SelectItem value="진행중">진행중</SelectItem>
+                    <SelectItem value="보완필요">보완필요</SelectItem>
                     <SelectItem value="개통">개통완료</SelectItem>
                     <SelectItem value="취소">취소</SelectItem>
                   </SelectContent>
@@ -794,6 +823,23 @@ export function Documents() {
                   rows={3}
                 />
               </div>
+              
+              {activationForm.activationStatus === '보완필요' && (
+                <div>
+                  <Label htmlFor="supplementNotes">보완 상세 내용</Label>
+                  <Textarea
+                    id="supplementNotes"
+                    placeholder="판매점에서 확인할 보완 내용을 자세히 입력하세요..."
+                    value={activationForm.supplementNotes}
+                    onChange={(e) => setActivationForm(prev => ({ ...prev, supplementNotes: e.target.value }))}
+                    rows={4}
+                    className="border-orange-200 focus:border-orange-400"
+                  />
+                  <div className="text-xs text-orange-600 mt-1">
+                    이 내용은 판매점에서 확인할 수 있습니다.
+                  </div>
+                </div>
+              )}
               
               <div className="flex justify-end space-x-2">
                 <Button 
