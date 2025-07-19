@@ -174,7 +174,8 @@ export function Documents() {
     setSelectedDocument(doc);
     setActivationForm({
       activationStatus: (doc as any).activationStatus || '대기',
-      notes: ''
+      notes: '',
+      supplementNotes: ''
     });
     setActivationDialogOpen(true);
   };
@@ -223,7 +224,7 @@ export function Documents() {
       queryClient.invalidateQueries({ queryKey: ['/api/dashboard/stats'] });
       setActivationDialogOpen(false);
       setSelectedDocument(null);
-      setActivationForm({ activationStatus: '', notes: '' });
+      setActivationForm({ activationStatus: '', notes: '', supplementNotes: '' });
       toast({
         title: "성공",
         description: "개통 상태가 변경되었습니다.",

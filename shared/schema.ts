@@ -163,9 +163,11 @@ export const updateDocumentStatusSchema = z.object({
 });
 
 export const updateActivationStatusSchema = z.object({
-  activationStatus: z.enum(['대기', '진행중', '개통', '취소']),
+  activationStatus: z.enum(['대기', '진행중', '개통', '취소', '보완필요']),
   notes: z.string().optional(),
+  supplementNotes: z.string().optional(), // 보완 상세 내용
   activatedBy: z.number().optional(), // 개통완료 처리한 근무자 ID
+  supplementRequiredBy: z.number().optional(), // 보완 요청한 근무자 ID
 });
 
 // Type exports
