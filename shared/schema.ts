@@ -160,7 +160,6 @@ export const createDealerAccountSchema = z.object({
 });
 
 export const createUserSchema = z.object({
-  dealerId: z.number().min(1, "대리점을 선택하세요"),
   email: z.string().email("올바른 이메일을 입력하세요"),
   password: z.string().min(6, "비밀번호는 최소 6자 이상이어야 합니다"),
   name: z.string().min(1, "이름을 입력하세요"),

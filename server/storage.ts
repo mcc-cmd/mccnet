@@ -528,8 +528,7 @@ class SqliteStorage implements IStorage {
 
   async createUser(data: CreateUserForm): Promise<User> {
     const hashedPassword = bcrypt.hashSync(data.password, 10);
-    const insertResult = db.prepare('INSERT INTO users (dealer_id, email, password, name, role) VALUES (?, ?, ?, ?, ?)').run(
-      data.dealerId,
+    const insertResult = db.prepare('INSERT INTO users (email, password, name, role) VALUES (?, ?, ?, ?)').run(
       data.email,
       hashedPassword,
       data.name,

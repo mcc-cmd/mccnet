@@ -42,7 +42,6 @@ type CreateDealerForm = {
 };
 
 type CreateUserForm = {
-  dealerId: number;
   email: string;
   password: string;
   name: string;
@@ -351,7 +350,6 @@ export function AdminPanel() {
   const userForm = useForm<CreateUserForm>({
     resolver: zodResolver(createUserSchema),
     defaultValues: {
-      dealerId: 0,
       email: '',
       password: '',
       name: '',
@@ -1088,30 +1086,6 @@ export function AdminPanel() {
                     </DialogHeader>
                     <Form {...userForm}>
                       <form onSubmit={userForm.handleSubmit(handleCreateUser)} className="space-y-4">
-                        <FormField
-                          control={userForm.control}
-                          name="dealerId"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>대리점</FormLabel>
-                              <Select onValueChange={(value) => field.onChange(parseInt(value))}>
-                                <FormControl>
-                                  <SelectTrigger>
-                                    <SelectValue placeholder="대리점을 선택하세요" />
-                                  </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                  {dealers?.map((dealer) => (
-                                    <SelectItem key={dealer.id} value={dealer.id.toString()}>
-                                      {dealer.name}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
                         <FormField
                           control={userForm.control}
                           name="name"
