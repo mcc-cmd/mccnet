@@ -1448,13 +1448,18 @@ class SqliteStorage implements IStorage {
       updateQuery += `, activated_at = CURRENT_TIMESTAMP`;
     }
     
-    // 개통완료 시 기기/유심/가입번호 정보 업데이트
+    // 개통완료 시 기기/유심/가입번호 정보 및 판매점 메모 업데이트
     if (data.activationStatus === '개통') {
-      updateQuery += `, device_model = ?, sim_number = ?, subscription_number = ?`;
+      const now = new Date();
+      const activationNumber = `개통${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}-${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}${String(now.getSeconds()).padStart(2, '0')}`;
+      
+      updateQuery += `, device_model = ?, sim_number = ?, subscription_number = ?, dealer_notes = ?, document_number = ?`;
       params.push(
         data.deviceModel || null,
         data.simNumber || null,
-        data.subscriptionNumber || null
+        activationNumber, // 개통번호로 접수번호 업데이트
+        data.dealerNotes || null,
+        activationNumber // 문서번호도 개통번호로 업데이트
       );
     }
 

@@ -218,6 +218,7 @@ export function Documents() {
       activationStatus: (doc as any).activationStatus || '대기',
       notes: '',
       supplementNotes: '',
+      dealerNotes: (doc as any).dealerNotes || '',
       deviceModel: (doc as any).deviceModel || '',
       simNumber: (doc as any).simNumber || '',
       subscriptionNumber: (doc as any).subscriptionNumber || '',
@@ -281,6 +282,7 @@ export function Documents() {
         activationStatus: '', 
         notes: '', 
         supplementNotes: '', 
+        dealerNotes: '',
         deviceModel: '', 
         simNumber: '', 
         subscriptionNumber: '',
@@ -708,6 +710,19 @@ export function Documents() {
                                   )}
                                 </div>
                               )}
+
+                              {/* 판매점 전달 메모 표시 */}
+                              {(doc as any).dealerNotes && (
+                                <div className="p-2 bg-green-50 border-l-4 border-green-400 rounded-r text-xs">
+                                  <div className="font-bold text-green-800 mb-1">💼 판매점 메모</div>
+                                  <div className="text-green-700 leading-tight">
+                                    {(doc as any).dealerNotes.length > 80 
+                                      ? `${(doc as any).dealerNotes.substring(0, 80)}...` 
+                                      : (doc as any).dealerNotes
+                                    }
+                                  </div>
+                                </div>
+                              )}
                             </div>
                           </td>
                           <td className="px-1 py-1 text-xs text-gray-500 truncate">
@@ -891,6 +906,19 @@ export function Documents() {
                               요청일: {format(new Date((doc as any).supplementRequiredAt), 'yyyy-MM-dd HH:mm', { locale: ko })}
                             </div>
                           )}
+                        </div>
+                      )}
+
+                      {/* 판매점 전달 메모 표시 - 근무자와 판매점 모두 확인 가능 */}
+                      {(doc as any).dealerNotes && (
+                        <div className="mt-3 p-4 bg-gradient-to-r from-green-50 to-teal-50 border-l-4 border-green-500 rounded-r-lg shadow-sm">
+                          <div className="flex items-center mb-2">
+                            <span className="text-lg mr-2">💼</span>
+                            <div className="text-sm font-bold text-green-800">판매점 전달 메모</div>
+                          </div>
+                          <div className="text-sm text-green-900 bg-white p-3 rounded border border-green-200">
+                            {(doc as any).dealerNotes}
+                          </div>
                         </div>
                       )}
                       
