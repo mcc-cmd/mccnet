@@ -595,14 +595,31 @@ router.patch('/api/documents/:id/activation', requireAuth, async (req: any, res)
     
     // 개통완료 시 요금제 정보도 함께 저장
     if (data.activationStatus === '개통') {
+      console.log('Processing activation completion with data:', data);
+      
       // 먼저 개통 상태 업데이트
       const updatedDocument = await storage.updateDocumentActivationStatus(id, data, workerId);
       
-      // 요금제 정보가 있으면 함께 저장
-      if (data.servicePlanId || data.additionalServiceIds || 
-          data.registrationFeePrepaid || data.registrationFeePostpaid ||
-          data.simFeePrepaid || data.simFeePostpaid ||
-          data.bundleApplied || data.bundleNotApplied) {
+      // 서비스 플랜 데이터가 있는지 확인
+      const hasServicePlanData = data.servicePlanId || 
+        data.additionalServiceIds?.length > 0 || 
+        data.registrationFeePrepaid || data.registrationFeePostpaid ||
+        data.simFeePrepaid || data.simFeePostpaid ||
+        data.bundleApplied || data.bundleNotApplied ||
+        data.deviceModel || data.simNumber || data.subscriptionNumber;
+        
+      console.log('Has service plan data:', hasServicePlanData);
+      console.log('Service plan data details:', {
+        servicePlanId: data.servicePlanId,
+        additionalServiceIds: data.additionalServiceIds,
+        deviceModel: data.deviceModel,
+        simNumber: data.simNumber,
+        subscriptionNumber: data.subscriptionNumber
+      });
+      
+      // 요금제 정보가 있으면 함께 저장 (조건을 더 관대하게 변경)
+      if (hasServicePlanData) {
+        console.log('Updating service plan data for document:', id);
         
         await storage.updateDocumentServicePlanDirect(id, {
           servicePlanId: data.servicePlanId ? parseInt(data.servicePlanId) : null,
@@ -617,6 +634,8 @@ router.patch('/api/documents/:id/activation', requireAuth, async (req: any, res)
           simNumber: data.simNumber || null,
           subscriptionNumber: data.subscriptionNumber || null
         });
+      } else {
+        console.log('No service plan data found, skipping service plan update');
       }
       
       res.json(updatedDocument);

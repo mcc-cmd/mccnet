@@ -193,6 +193,16 @@ export const updateActivationStatusSchema = z.object({
   deviceModel: z.string().optional(), // 기기모델
   simNumber: z.string().optional(), // 유심번호
   subscriptionNumber: z.string().optional(), // 가입번호/계약번호
+  
+  // 서비스 플랜 관련 필드들
+  servicePlanId: z.union([z.string(), z.number()]).optional(),
+  additionalServiceIds: z.array(z.number()).optional(),
+  registrationFeePrepaid: z.boolean().optional(),
+  registrationFeePostpaid: z.boolean().optional(),
+  simFeePrepaid: z.boolean().optional(),
+  simFeePostpaid: z.boolean().optional(),
+  bundleApplied: z.boolean().optional(),
+  bundleNotApplied: z.boolean().optional(),
 });
 
 // Type exports
