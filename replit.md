@@ -237,6 +237,10 @@ This is a document management system built for MCC네트월드 telecommunication
 - July 21, 2025. Updated login page design: reduced logo spacing, changed subtitle to "Empowering Mobile Innovation", removed test account credentials
 - July 21, 2025. Simplified login page title to "MCC" only with "Empowering Mobile Innovation" subtitle
 - July 21, 2025. Enhanced MCC title font size to text-5xl and updated card title to "MCC" only
+- July 21, 2025. Implemented comprehensive admin analytics drill-down system with clickable worker names and carrier names
+- July 21, 2025. Added worker-carrier details API showing which carriers each worker has activated
+- July 21, 2025. Added carrier-dealer details API showing which dealers have activations for each carrier
+- July 21, 2025. Enhanced dashboard and admin panel with modal dialogs displaying detailed breakdowns for better analytics
 
 ## User Preferences
 

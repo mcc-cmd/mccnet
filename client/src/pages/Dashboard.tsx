@@ -4,8 +4,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useApiRequest } from '@/lib/auth';
 import { useAuth } from '@/lib/auth';
+import { useState } from 'react';
 import type { DashboardStats, Document } from '../../../shared/schema';
 import {
   FileText,
@@ -22,6 +24,14 @@ import { ko } from 'date-fns/locale';
 export function Dashboard() {
   const apiRequest = useApiRequest();
   const { user } = useAuth();
+  
+  // Dialog states for analytics
+  const [carrierDetailsOpen, setCarrierDetailsOpen] = useState(false);
+  const [workerDetailsOpen, setWorkerDetailsOpen] = useState(false);
+  const [selectedCarrier, setSelectedCarrier] = useState('');
+  const [selectedWorker, setSelectedWorker] = useState<{ id: number; name: string } | null>(null);
+  const [carrierDealerDetails, setCarrierDealerDetails] = useState<Array<{ dealerName: string; count: number }>>([]);
+  const [workerCarrierDetails, setWorkerCarrierDetails] = useState<Array<{ carrier: string; count: number }>>([]);
 
   const { data: stats, isLoading: statsLoading } = useQuery({
     queryKey: ['/api/dashboard/stats'],
@@ -66,9 +76,26 @@ export function Dashboard() {
     window.location.href = '/downloads';
   };
 
-  const handleCarrierClick = (carrier: string) => {
-    // Navigate to admin panel with a carrier filter or open a modal
-    window.location.href = `/admin?carrier=${encodeURIComponent(carrier)}`;
+  const handleCarrierClick = async (carrier: string) => {
+    try {
+      setSelectedCarrier(carrier);
+      const response = await apiRequest(`/api/admin/carrier-details/${carrier}`);
+      setCarrierDealerDetails(response);
+      setCarrierDetailsOpen(true);
+    } catch (error) {
+      console.error('Error fetching carrier details:', error);
+    }
+  };
+
+  const handleWorkerClick = async (worker: { id: number; name: string }) => {
+    try {
+      setSelectedWorker(worker);
+      const response = await apiRequest(`/api/admin/worker-details/${worker.id}`);
+      setWorkerCarrierDetails(response);
+      setWorkerDetailsOpen(true);
+    } catch (error) {
+      console.error('Error fetching worker details:', error);
+    }
   };
 
   return (
@@ -108,7 +135,12 @@ export function Dashboard() {
                 <div className="space-y-3">
                   {((stats as any)?.workerStats || []).map((worker: any, index: number) => (
                     <div key={index} className="flex justify-between items-center p-2 bg-gray-50 rounded">
-                      <span className="font-medium">{worker.workerName}</span>
+                      <button 
+                        onClick={() => handleWorkerClick({ id: worker.workerId, name: worker.workerName })}
+                        className="font-medium text-blue-600 hover:text-blue-800 underline"
+                      >
+                        {worker.workerName}
+                      </button>
                       <Badge variant="secondary">{worker.count}건</Badge>
                     </div>
                   ))}
@@ -456,6 +488,52 @@ export function Dashboard() {
             </Card>
           </div>
         </div>
+
+        {/* Carrier Details Dialog */}
+        <Dialog open={carrierDetailsOpen} onOpenChange={setCarrierDetailsOpen}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>{selectedCarrier} 판매점별 개통 현황</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-3">
+              {carrierDealerDetails.length > 0 ? (
+                carrierDealerDetails.map((detail, index) => (
+                  <div key={index} className="flex justify-between items-center p-3 bg-gray-50 rounded">
+                    <span className="font-medium">{detail.dealerName}</span>
+                    <Badge variant="secondary">{detail.count}건</Badge>
+                  </div>
+                ))
+              ) : (
+                <div className="text-center py-4 text-gray-500">
+                  개통 내역이 없습니다.
+                </div>
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Worker Details Dialog */}
+        <Dialog open={workerDetailsOpen} onOpenChange={setWorkerDetailsOpen}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>{selectedWorker?.name} 통신사별 개통 현황</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-3">
+              {workerCarrierDetails.length > 0 ? (
+                workerCarrierDetails.map((detail, index) => (
+                  <div key={index} className="flex justify-between items-center p-3 bg-gray-50 rounded">
+                    <span className="font-medium">{detail.carrier}</span>
+                    <Badge variant="secondary">{detail.count}건</Badge>
+                  </div>
+                ))
+              ) : (
+                <div className="text-center py-4 text-gray-500">
+                  개통 내역이 없습니다.
+                </div>
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </Layout>
   );
