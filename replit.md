@@ -233,6 +233,8 @@ This is a document management system built for MCC네트월드 telecommunication
 - July 21, 2025. Created test data for reception management with various activation statuses (대기, 진행중, 보완필요)
 - July 21, 2025. Enhanced activation dialog with comprehensive service plan selection, additional services, registration fees, SIM fees, and bundle options
 - July 21, 2025. Integrated activation status change with automatic service plan data preservation
+- July 21, 2025. Fixed activation dialog scrolling with max-height and overflow-y-auto for better usability
+- July 21, 2025. Updated login page design: reduced logo spacing, changed subtitle to "Empowering Mobile Innovation", removed test account credentials
 
 ## User Preferences
 

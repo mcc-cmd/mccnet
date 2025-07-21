@@ -175,11 +175,11 @@ export function Login() {
             className="h-16 w-auto"
           />
         </div>
-        <h2 className="mt-6 text-center text-3xl font-bold text-gray-900">
+        <h2 className="mt-3 text-center text-3xl font-bold text-gray-900">
           MCC네트월드 접수 포털
         </h2>
-        <p className="mt-2 text-center text-sm text-gray-600">
-          휴대폰 접수 대리점 전용 포털입니다
+        <p className="mt-1 text-center text-sm text-gray-600">
+          Empowering Mobile Innovation
         </p>
       </div>
 
@@ -244,13 +244,7 @@ export function Login() {
                   </Button>
                 </form>
 
-                <div className="mt-6 text-center">
-                  <div className="text-sm text-gray-500">
-                    <p>테스트 계정:</p>
-                    <p className="font-mono"><strong>관리자:</strong> admin@portal.com / admin123!</p>
-                    <p className="font-mono"><strong>사용자:</strong> user@test.com / password</p>
-                  </div>
-                </div>
+
               </TabsContent>
 
               <TabsContent value="register" className="mt-4">

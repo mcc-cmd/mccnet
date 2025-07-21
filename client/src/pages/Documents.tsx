@@ -959,7 +959,7 @@ export function Documents() {
 
         {/* Activation Status Dialog */}
         <Dialog open={activationDialogOpen} onOpenChange={setActivationDialogOpen}>
-          <DialogContent className="sm:max-w-[425px]" aria-describedby="activation-dialog-description">
+          <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto" aria-describedby="activation-dialog-description">
             <DialogHeader>
               <DialogTitle>개통 상태 변경</DialogTitle>
             </DialogHeader>
