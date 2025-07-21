@@ -145,64 +145,7 @@ export function Dashboard() {
   return (
     <Layout title="대시보드">
       <div className="space-y-6">
-        {/* Date Filter Section for Admin */}
-        {user?.userType === 'admin' && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <Calendar className="mr-2 h-5 w-5" />
-                날짜별 통계 필터
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="start-date">시작일</Label>
-                  <Input
-                    id="start-date"
-                    type="date"
-                    value={startDate}
-                    onChange={(e) => setStartDate(e.target.value)}
-                    className="w-full"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="end-date">종료일</Label>
-                  <Input
-                    id="end-date"
-                    type="date"
-                    value={endDate}
-                    onChange={(e) => setEndDate(e.target.value)}
-                    className="w-full"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>&nbsp;</Label>
-                  <Button 
-                    onClick={() => {
-                      setStartDate('');
-                      setEndDate('');
-                    }}
-                    variant="outline"
-                    className="w-full"
-                  >
-                    초기화
-                  </Button>
-                </div>
-              </div>
-              {(startDate || endDate) && (
-                <div className="mt-3 text-sm text-gray-600">
-                  {startDate && endDate 
-                    ? `${startDate} ~ ${endDate} 기간의 통계`
-                    : startDate 
-                    ? `${startDate} 이후 통계`
-                    : `${endDate} 이전 통계`
-                  }
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        )}
+
 
         {/* Role-based additional stats for admin and workers */}
         {user?.userType === 'admin' && (

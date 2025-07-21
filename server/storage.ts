@@ -1329,17 +1329,17 @@ class SqliteStorage implements IStorage {
     
     try {
       const serviceIds = JSON.parse(additionalServiceIds) as string[];
-      const serviceMap: { [key: string]: string } = {
-        '1': '필링',
-        '2': '캐치콜', 
-        '3': '링투유',
-        '4': '통화중대기',
-        '5': '00700'
-      };
+      if (!Array.isArray(serviceIds) || serviceIds.length === 0) return null;
       
-      const serviceNames = serviceIds.map(id => serviceMap[id]).filter(Boolean);
+      // 데이터베이스에서 실제 부가서비스 이름 조회
+      const serviceNames = serviceIds.map(id => {
+        const service = db.prepare('SELECT service_name FROM additional_services WHERE id = ?').get(id) as any;
+        return service ? service.service_name : null;
+      }).filter(Boolean);
+      
       return serviceNames.length > 0 ? serviceNames.join(', ') : null;
-    } catch {
+    } catch (error) {
+      console.error('Error parsing additional service IDs:', error);
       return null;
     }
   }
