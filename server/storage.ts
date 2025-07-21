@@ -1216,7 +1216,7 @@ class SqliteStorage implements IStorage {
              d.sim_fee_prepaid, d.sim_fee_postpaid,
              d.bundle_applied, d.bundle_not_applied,
              d.device_model, d.sim_number, d.subscription_number, d.total_monthly_fee,
-             d.additional_service_ids, d.assigned_worker_id, d.assigned_at
+             d.additional_service_ids, d.assigned_worker_id, d.assigned_at, d.dealer_notes
       FROM documents d
       JOIN dealers ON d.dealer_id = dealers.id
       JOIN users u ON d.user_id = u.id
@@ -1301,8 +1301,6 @@ class SqliteStorage implements IStorage {
       supplementRequiredAt: d.supplement_required_at ? new Date(d.supplement_required_at) : undefined,
       assignedWorkerId: d.assigned_worker_id,
       assignedAt: d.assigned_at ? new Date(d.assigned_at) : undefined,
-      dealerName: d.dealer_name,
-      userName: d.user_name,
       servicePlanId: d.service_plan_id,
       servicePlanName: d.plan_name,
       additionalServiceIds: d.additional_service_ids,
@@ -1316,7 +1314,10 @@ class SqliteStorage implements IStorage {
       bundleNotApplied: Boolean(d.bundle_not_applied),
       deviceModel: d.device_model,
       simNumber: d.sim_number,
-      subscriptionNumber: d.subscription_number
+      subscriptionNumber: d.subscription_number,
+      dealerNotes: d.dealer_notes,
+      dealerName: d.dealer_name,
+      userName: d.user_name
     }));
   }
 
@@ -1623,7 +1624,7 @@ class SqliteStorage implements IStorage {
     };
   }
 
-  async getDashboardStats(dealerId?: number, userId?: number, userType?: string): Promise<DashboardStats & { carrierStats?: any[]; workerStats?: any[] }> {
+  async getDashboardStats(dealerId?: number, userId?: number, userType?: string, startDate?: string, endDate?: string): Promise<DashboardStats & { carrierStats?: any[]; workerStats?: any[] }> {
     let whereClause = '';
     let params: any[] = [];
     
@@ -1636,6 +1637,16 @@ class SqliteStorage implements IStorage {
       params = [userId, userId];
     }
     // admin은 모든 데이터 조회
+    
+    // 날짜 필터링 추가
+    if (startDate) {
+      whereClause += (whereClause ? ' AND' : ' WHERE') + ' date(activated_at) >= ?';
+      params.push(startDate);
+    }
+    if (endDate) {
+      whereClause += (whereClause ? ' AND' : ' WHERE') + ' date(activated_at) <= ?';
+      params.push(endDate);
+    }
 
     const total = db.prepare(`SELECT COUNT(*) as count FROM documents${whereClause}`).get(...params) as { count: number };
     const pending = db.prepare(`SELECT COUNT(*) as count FROM documents${whereClause}${whereClause ? ' AND' : ' WHERE'} status = ?`).get(...params, '접수') as { count: number };
@@ -1659,17 +1670,35 @@ class SqliteStorage implements IStorage {
 
     // 관리자에게만 통신사별/근무자별 통계 제공
     if (userType === 'admin') {
+      // 날짜 필터가 있는 경우 통신사별/근무자별 통계에도 적용
+      let carrierDateFilter = '';
+      let workerDateFilter = '';
+      let dateParams: any[] = [];
+      
+      if (startDate || endDate) {
+        if (startDate) {
+          carrierDateFilter += ' AND date(activated_at) >= ?';
+          workerDateFilter += ' AND date(d.activated_at) >= ?';
+          dateParams.push(startDate);
+        }
+        if (endDate) {
+          carrierDateFilter += ' AND date(activated_at) <= ?';
+          workerDateFilter += ' AND date(d.activated_at) <= ?';
+          dateParams.push(endDate);
+        }
+      }
+      
       // 통신사별 개통 수량
       const carrierQuery = `
         SELECT 
           carrier,
           COUNT(*) as count
         FROM documents 
-        WHERE activation_status = '개통'
+        WHERE activation_status = '개통'${carrierDateFilter}
         GROUP BY carrier
         ORDER BY count DESC
       `;
-      stats.carrierStats = db.prepare(carrierQuery).all() as any[];
+      stats.carrierStats = db.prepare(carrierQuery).all(...dateParams) as any[];
 
       // 근무자별 개통 수량
       const workerQuery = `
@@ -1679,11 +1708,11 @@ class SqliteStorage implements IStorage {
           COUNT(*) as count
         FROM documents d
         JOIN users u ON d.activated_by = u.id
-        WHERE d.activation_status = '개통'
+        WHERE d.activation_status = '개통'${workerDateFilter}
         GROUP BY d.activated_by, u.id, u.name
         ORDER BY count DESC
       `;
-      stats.workerStats = db.prepare(workerQuery).all() as any[];
+      stats.workerStats = db.prepare(workerQuery).all(...dateParams) as any[];
     }
     
     return stats;

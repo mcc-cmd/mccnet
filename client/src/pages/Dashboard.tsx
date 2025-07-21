@@ -4,6 +4,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useApiRequest } from '@/lib/auth';
 import { useAuth } from '@/lib/auth';
@@ -16,7 +18,8 @@ import {
   Upload,
   Download,
   Calculator,
-  TrendingUp
+  TrendingUp,
+  Calendar
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
@@ -24,6 +27,10 @@ import { ko } from 'date-fns/locale';
 export function Dashboard() {
   const apiRequest = useApiRequest();
   const { user } = useAuth();
+  
+  // Date filter states
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
   
   // Dialog states for analytics
   const [carrierDetailsOpen, setCarrierDetailsOpen] = useState(false);
@@ -34,8 +41,14 @@ export function Dashboard() {
   const [workerCarrierDetails, setWorkerCarrierDetails] = useState<Array<{ carrier: string; count: number }>>([]);
 
   const { data: stats, isLoading: statsLoading } = useQuery({
-    queryKey: ['/api/dashboard/stats'],
-    queryFn: () => apiRequest('/api/dashboard/stats') as Promise<DashboardStats>,
+    queryKey: ['/api/dashboard/stats', startDate, endDate],
+    queryFn: () => {
+      const params = new URLSearchParams();
+      if (startDate) params.append('startDate', startDate);
+      if (endDate) params.append('endDate', endDate);
+      const url = `/api/dashboard/stats${params.toString() ? '?' + params.toString() : ''}`;
+      return apiRequest(url) as Promise<DashboardStats>;
+    },
   });
 
   const { data: recentDocuments, isLoading: documentsLoading } = useQuery({
@@ -101,6 +114,65 @@ export function Dashboard() {
   return (
     <Layout title="대시보드">
       <div className="space-y-6">
+        {/* Date Filter Section for Admin */}
+        {user?.userType === 'admin' && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <Calendar className="mr-2 h-5 w-5" />
+                날짜별 통계 필터
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="start-date">시작일</Label>
+                  <Input
+                    id="start-date"
+                    type="date"
+                    value={startDate}
+                    onChange={(e) => setStartDate(e.target.value)}
+                    className="w-full"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="end-date">종료일</Label>
+                  <Input
+                    id="end-date"
+                    type="date"
+                    value={endDate}
+                    onChange={(e) => setEndDate(e.target.value)}
+                    className="w-full"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>&nbsp;</Label>
+                  <Button 
+                    onClick={() => {
+                      setStartDate('');
+                      setEndDate('');
+                    }}
+                    variant="outline"
+                    className="w-full"
+                  >
+                    초기화
+                  </Button>
+                </div>
+              </div>
+              {(startDate || endDate) && (
+                <div className="mt-3 text-sm text-gray-600">
+                  {startDate && endDate 
+                    ? `${startDate} ~ ${endDate} 기간의 통계`
+                    : startDate 
+                    ? `${startDate} 이후 통계`
+                    : `${endDate} 이전 통계`
+                  }
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
         {/* Role-based additional stats for admin and workers */}
         {user?.userType === 'admin' && (stats as any)?.carrierStats && (
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">

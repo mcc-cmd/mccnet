@@ -698,8 +698,9 @@ router.get('/api/dashboard/stats', requireAuth, async (req: any, res) => {
                     req.session.userRole === 'dealer_worker' ? 'dealer_worker' : 'dealer_store';
     const dealerId = req.session.dealerId;
     const userId = req.session.userId;
+    const { startDate, endDate } = req.query;
     
-    const stats = await storage.getDashboardStats(dealerId, userId, userType);
+    const stats = await storage.getDashboardStats(dealerId, userId, userType, startDate, endDate);
     res.json(stats);
   } catch (error: any) {
     res.status(500).json({ error: error.message });
