@@ -175,8 +175,8 @@ export function Login() {
             className="h-16 w-auto"
           />
         </div>
-        <h2 className="mt-3 text-center text-3xl font-bold text-gray-900">
-          MCC네트월드 접수 포털
+        <h2 className="mt-3 text-center text-2xl font-bold text-gray-900">
+          MCC
         </h2>
         <p className="mt-1 text-center text-sm text-gray-600">
           Empowering Mobile Innovation
