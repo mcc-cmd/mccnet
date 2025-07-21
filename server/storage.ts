@@ -1671,12 +1671,13 @@ class SqliteStorage implements IStorage {
       // 근무자별 개통 수량
       const workerQuery = `
         SELECT 
+          u.id as workerId,
           u.name as workerName,
           COUNT(*) as count
         FROM documents d
         JOIN users u ON d.activated_by = u.id
         WHERE d.activation_status = '개통'
-        GROUP BY d.activated_by, u.name
+        GROUP BY d.activated_by, u.id, u.name
         ORDER BY count DESC
       `;
       stats.workerStats = db.prepare(workerQuery).all() as any[];
