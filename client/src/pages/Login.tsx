@@ -175,7 +175,7 @@ export function Login() {
             className="h-16 w-auto"
           />
         </div>
-        <h2 className="mt-3 text-center text-2xl font-bold text-gray-900">
+        <h2 className="mt-3 text-center text-5xl font-bold text-gray-900">
           MCC
         </h2>
         <p className="mt-1 text-center text-sm text-gray-600">
@@ -186,7 +186,7 @@ export function Login() {
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
         <Card>
           <CardHeader>
-            <CardTitle>MCC네트월드 포털</CardTitle>
+            <CardTitle>MCC</CardTitle>
             <CardDescription>
               계정 정보를 입력하여 로그인하거나 새 계정을 생성하세요
             </CardDescription>

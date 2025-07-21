@@ -236,6 +236,7 @@ This is a document management system built for MCC네트월드 telecommunication
 - July 21, 2025. Fixed activation dialog scrolling with max-height and overflow-y-auto for better usability
 - July 21, 2025. Updated login page design: reduced logo spacing, changed subtitle to "Empowering Mobile Innovation", removed test account credentials
 - July 21, 2025. Simplified login page title to "MCC" only with "Empowering Mobile Innovation" subtitle
+- July 21, 2025. Enhanced MCC title font size to text-5xl and updated card title to "MCC" only
 
 ## User Preferences
 
