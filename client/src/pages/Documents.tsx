@@ -45,7 +45,15 @@ export function Documents() {
     supplementNotes: '',
     deviceModel: '',
     simNumber: '',
-    subscriptionNumber: ''
+    subscriptionNumber: '',
+    servicePlanId: '',
+    additionalServiceIds: [] as string[],
+    registrationFeePrepaid: false,
+    registrationFeePostpaid: false,
+    simFeePrepaid: false,
+    simFeePostpaid: false,
+    bundleApplied: false,
+    bundleNotApplied: false
   });
   
   const [servicePlanDialogOpen, setServicePlanDialogOpen] = useState(false);
@@ -211,7 +219,15 @@ export function Documents() {
       supplementNotes: '',
       deviceModel: (doc as any).deviceModel || '',
       simNumber: (doc as any).simNumber || '',
-      subscriptionNumber: (doc as any).subscriptionNumber || ''
+      subscriptionNumber: (doc as any).subscriptionNumber || '',
+      servicePlanId: (doc as any).servicePlanId?.toString() || '',
+      additionalServiceIds: (doc as any).additionalServiceIds ? JSON.parse((doc as any).additionalServiceIds) : [],
+      registrationFeePrepaid: (doc as any).registrationFeePrepaid || false,
+      registrationFeePostpaid: (doc as any).registrationFeePostpaid || false,
+      simFeePrepaid: (doc as any).simFeePrepaid || false,
+      simFeePostpaid: (doc as any).simFeePostpaid || false,
+      bundleApplied: (doc as any).bundleApplied || false,
+      bundleNotApplied: (doc as any).bundleNotApplied || false
     });
     setActivationDialogOpen(true);
   };
@@ -260,7 +276,22 @@ export function Documents() {
       queryClient.invalidateQueries({ queryKey: ['/api/dashboard/stats'] });
       setActivationDialogOpen(false);
       setSelectedDocument(null);
-      setActivationForm({ activationStatus: '', notes: '', supplementNotes: '', deviceModel: '', simNumber: '', subscriptionNumber: '' });
+      setActivationForm({ 
+        activationStatus: '', 
+        notes: '', 
+        supplementNotes: '', 
+        deviceModel: '', 
+        simNumber: '', 
+        subscriptionNumber: '',
+        servicePlanId: '',
+        additionalServiceIds: [],
+        registrationFeePrepaid: false,
+        registrationFeePostpaid: false,
+        simFeePrepaid: false,
+        simFeePostpaid: false,
+        bundleApplied: false,
+        bundleNotApplied: false
+      });
       toast({
         title: "성공",
         description: "개통 상태가 변경되었습니다.",
@@ -966,10 +997,216 @@ export function Documents() {
                 />
               </div>
               
-              {/* 개통완료 시 가입번호/계약번호 입력 */}
+              {/* 개통완료 시 요금제 정보 및 개통 정보 입력 */}
               {activationForm.activationStatus === '개통' && (
                 <div className="bg-blue-50 p-4 rounded-lg space-y-4">
                   <h4 className="font-medium text-blue-900">개통 정보 입력</h4>
+                  
+                  {/* 요금제 선택 */}
+                  <div>
+                    <Label>요금제 선택</Label>
+                    <Popover open={servicePlanComboboxOpen} onOpenChange={setServicePlanComboboxOpen}>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          role="combobox"
+                          aria-expanded={servicePlanComboboxOpen}
+                          className="w-full justify-between"
+                        >
+                          {activationForm.servicePlanId
+                            ? servicePlans?.find(plan => plan.id.toString() === activationForm.servicePlanId)?.planName
+                            : "요금제를 선택하세요..."}
+                          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-full p-0">
+                        <Command>
+                          <CommandInput 
+                            placeholder="요금제 검색..." 
+                            value={servicePlanSearchValue}
+                            onValueChange={setServicePlanSearchValue}
+                          />
+                          <CommandList>
+                            <CommandEmpty>요금제를 찾을 수 없습니다.</CommandEmpty>
+                            <CommandGroup>
+                              {servicePlans?.filter(plan => {
+                                const searchTerm = servicePlanSearchValue.toLowerCase();
+                                const planName = plan.planName.toLowerCase();
+                                
+                                // 숫자가 포함된 검색어는 GB 용량으로 검색
+                                if (/\d/.test(searchTerm)) {
+                                  return planName.includes(searchTerm);
+                                }
+                                
+                                return planName.includes(searchTerm);
+                              }).map((plan) => (
+                                <CommandItem
+                                  key={plan.id}
+                                  value={plan.planName}
+                                  onSelect={() => {
+                                    setActivationForm(prev => ({ ...prev, servicePlanId: plan.id.toString() }));
+                                    setServicePlanComboboxOpen(false);
+                                    setServicePlanSearchValue('');
+                                  }}
+                                >
+                                  <Check
+                                    className={`mr-2 h-4 w-4 ${
+                                      activationForm.servicePlanId === plan.id.toString() ? "opacity-100" : "opacity-0"
+                                    }`}
+                                  />
+                                  {plan.planName}
+                                </CommandItem>
+                              ))}
+                            </CommandGroup>
+                          </CommandList>
+                        </Command>
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+
+                  {/* 부가서비스 선택 */}
+                  <div>
+                    <Label>부가서비스 (복수 선택 가능)</Label>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mt-2">
+                      {additionalServices.map((service) => (
+                        <label key={service.id} className="flex items-center space-x-2">
+                          <input
+                            type="checkbox"
+                            checked={activationForm.additionalServiceIds.includes(service.id.toString())}
+                            onChange={(e) => {
+                              const serviceId = service.id.toString();
+                              if (e.target.checked) {
+                                setActivationForm(prev => ({
+                                  ...prev,
+                                  additionalServiceIds: [...prev.additionalServiceIds, serviceId]
+                                }));
+                              } else {
+                                setActivationForm(prev => ({
+                                  ...prev,
+                                  additionalServiceIds: prev.additionalServiceIds.filter(id => id !== serviceId)
+                                }));
+                              }
+                            }}
+                            className="rounded"
+                          />
+                          <span className="text-sm">{service.serviceName}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* 가입비 옵션 */}
+                  <div>
+                    <Label>가입비</Label>
+                    <div className="flex space-x-4 mt-2">
+                      <label className="flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          checked={activationForm.registrationFeePrepaid}
+                          onChange={(e) => {
+                            setActivationForm(prev => ({
+                              ...prev,
+                              registrationFeePrepaid: e.target.checked,
+                              registrationFeePostpaid: e.target.checked ? false : prev.registrationFeePostpaid
+                            }));
+                          }}
+                          className="rounded"
+                        />
+                        <span className="text-sm">선납</span>
+                      </label>
+                      <label className="flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          checked={activationForm.registrationFeePostpaid}
+                          onChange={(e) => {
+                            setActivationForm(prev => ({
+                              ...prev,
+                              registrationFeePostpaid: e.target.checked,
+                              registrationFeePrepaid: e.target.checked ? false : prev.registrationFeePrepaid
+                            }));
+                          }}
+                          className="rounded"
+                        />
+                        <span className="text-sm">후납</span>
+                      </label>
+                    </div>
+                  </div>
+
+                  {/* 유심비 옵션 */}
+                  <div>
+                    <Label>유심비</Label>
+                    <div className="flex space-x-4 mt-2">
+                      <label className="flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          checked={activationForm.simFeePrepaid}
+                          onChange={(e) => {
+                            setActivationForm(prev => ({
+                              ...prev,
+                              simFeePrepaid: e.target.checked,
+                              simFeePostpaid: e.target.checked ? false : prev.simFeePostpaid
+                            }));
+                          }}
+                          className="rounded"
+                        />
+                        <span className="text-sm">선납</span>
+                      </label>
+                      <label className="flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          checked={activationForm.simFeePostpaid}
+                          onChange={(e) => {
+                            setActivationForm(prev => ({
+                              ...prev,
+                              simFeePostpaid: e.target.checked,
+                              simFeePrepaid: e.target.checked ? false : prev.simFeePrepaid
+                            }));
+                          }}
+                          className="rounded"
+                        />
+                        <span className="text-sm">후납</span>
+                      </label>
+                    </div>
+                  </div>
+
+                  {/* 결합 옵션 */}
+                  <div>
+                    <Label>결합</Label>
+                    <div className="flex space-x-4 mt-2">
+                      <label className="flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          checked={activationForm.bundleApplied}
+                          onChange={(e) => {
+                            setActivationForm(prev => ({
+                              ...prev,
+                              bundleApplied: e.target.checked,
+                              bundleNotApplied: e.target.checked ? false : prev.bundleNotApplied
+                            }));
+                          }}
+                          className="rounded"
+                        />
+                        <span className="text-sm">결합</span>
+                      </label>
+                      <label className="flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          checked={activationForm.bundleNotApplied}
+                          onChange={(e) => {
+                            setActivationForm(prev => ({
+                              ...prev,
+                              bundleNotApplied: e.target.checked,
+                              bundleApplied: e.target.checked ? false : prev.bundleApplied
+                            }));
+                          }}
+                          className="rounded"
+                        />
+                        <span className="text-sm">미결합</span>
+                      </label>
+                    </div>
+                  </div>
+                  
+                  {/* 기기/유심/가입번호 정보 */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <Label htmlFor="deviceModel">기기모델</Label>

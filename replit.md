@@ -231,6 +231,8 @@ This is a document management system built for MCC네트월드 telecommunication
 - July 19, 2025. Added device model, SIM number, and subscription number fields to activation completion process
 - July 21, 2025. Fixed AdminPanel storeName null reference error for enhanced stability
 - July 21, 2025. Created test data for reception management with various activation statuses (대기, 진행중, 보완필요)
+- July 21, 2025. Enhanced activation dialog with comprehensive service plan selection, additional services, registration fees, SIM fees, and bundle options
+- July 21, 2025. Integrated activation status change with automatic service plan data preservation
 
 ## User Preferences
 

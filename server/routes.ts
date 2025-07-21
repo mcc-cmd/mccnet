@@ -570,8 +570,38 @@ router.patch('/api/documents/:id/activation', requireAuth, async (req: any, res)
     }
     
     const workerId = isWorker ? req.session.userId : undefined;
-    const updatedDocument = await storage.updateDocumentActivationStatus(id, data, workerId);
-    res.json(updatedDocument);
+    
+    // 개통완료 시 요금제 정보도 함께 저장
+    if (data.activationStatus === '개통') {
+      // 먼저 개통 상태 업데이트
+      const updatedDocument = await storage.updateDocumentActivationStatus(id, data, workerId);
+      
+      // 요금제 정보가 있으면 함께 저장
+      if (data.servicePlanId || data.additionalServiceIds || 
+          data.registrationFeePrepaid || data.registrationFeePostpaid ||
+          data.simFeePrepaid || data.simFeePostpaid ||
+          data.bundleApplied || data.bundleNotApplied) {
+        
+        await storage.updateDocumentServicePlanDirect(id, {
+          servicePlanId: data.servicePlanId ? parseInt(data.servicePlanId) : null,
+          additionalServiceIds: JSON.stringify(data.additionalServiceIds || []),
+          registrationFeePrepaid: data.registrationFeePrepaid || false,
+          registrationFeePostpaid: data.registrationFeePostpaid || false,
+          simFeePrepaid: data.simFeePrepaid || false,
+          simFeePostpaid: data.simFeePostpaid || false,
+          bundleApplied: data.bundleApplied || false,
+          bundleNotApplied: data.bundleNotApplied || false,
+          deviceModel: data.deviceModel || null,
+          simNumber: data.simNumber || null,
+          subscriptionNumber: data.subscriptionNumber || null
+        });
+      }
+      
+      res.json(updatedDocument);
+    } else {
+      const updatedDocument = await storage.updateDocumentActivationStatus(id, data, workerId);
+      res.json(updatedDocument);
+    }
   } catch (error: any) {
     res.status(400).json({ error: error.message });
   }
