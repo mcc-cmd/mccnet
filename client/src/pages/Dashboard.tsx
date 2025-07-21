@@ -28,9 +28,15 @@ export function Dashboard() {
   const apiRequest = useApiRequest();
   const { user } = useAuth();
   
-  // Date filter states
+  // Date filter states for general dashboard
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
+  
+  // Separate date filter states for carrier and worker stats
+  const [carrierStartDate, setCarrierStartDate] = useState('');
+  const [carrierEndDate, setCarrierEndDate] = useState('');
+  const [workerStartDate, setWorkerStartDate] = useState('');
+  const [workerEndDate, setWorkerEndDate] = useState('');
   
   // Dialog states for analytics
   const [carrierDetailsOpen, setCarrierDetailsOpen] = useState(false);
@@ -49,6 +55,31 @@ export function Dashboard() {
       const url = `/api/dashboard/stats${params.toString() ? '?' + params.toString() : ''}`;
       return apiRequest(url) as Promise<DashboardStats>;
     },
+  });
+
+  // Separate queries for carrier and worker stats with their own date filters
+  const { data: carrierStats, isLoading: carrierStatsLoading } = useQuery({
+    queryKey: ['/api/dashboard/carrier-stats', carrierStartDate, carrierEndDate],
+    queryFn: () => {
+      const params = new URLSearchParams();
+      if (carrierStartDate) params.append('startDate', carrierStartDate);
+      if (carrierEndDate) params.append('endDate', carrierEndDate);
+      const url = `/api/dashboard/carrier-stats${params.toString() ? '?' + params.toString() : ''}`;
+      return apiRequest(url) as Promise<any[]>;
+    },
+    enabled: user?.userType === 'admin',
+  });
+
+  const { data: workerStats, isLoading: workerStatsLoading } = useQuery({
+    queryKey: ['/api/dashboard/worker-stats', workerStartDate, workerEndDate],
+    queryFn: () => {
+      const params = new URLSearchParams();
+      if (workerStartDate) params.append('startDate', workerStartDate);
+      if (workerEndDate) params.append('endDate', workerEndDate);
+      const url = `/api/dashboard/worker-stats${params.toString() ? '?' + params.toString() : ''}`;
+      return apiRequest(url) as Promise<any[]>;
+    },
+    enabled: user?.userType === 'admin',
   });
 
   const { data: recentDocuments, isLoading: documentsLoading } = useQuery({
@@ -174,26 +205,79 @@ export function Dashboard() {
         )}
 
         {/* Role-based additional stats for admin and workers */}
-        {user?.userType === 'admin' && (stats as any)?.carrierStats && (
+        {user?.userType === 'admin' && (
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
             {/* 통신사별 개통 수량 */}
             <Card>
               <CardHeader>
                 <CardTitle className="text-lg font-semibold">통신사별 개통 수량</CardTitle>
+                <div className="grid grid-cols-2 gap-2 mt-4">
+                  <div className="space-y-1">
+                    <Label htmlFor="carrier-start-date" className="text-xs">시작일</Label>
+                    <Input
+                      id="carrier-start-date"
+                      type="date"
+                      value={carrierStartDate}
+                      onChange={(e) => setCarrierStartDate(e.target.value)}
+                      className="h-8 text-xs"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label htmlFor="carrier-end-date" className="text-xs">종료일</Label>
+                    <Input
+                      id="carrier-end-date"
+                      type="date"
+                      value={carrierEndDate}
+                      onChange={(e) => setCarrierEndDate(e.target.value)}
+                      className="h-8 text-xs"
+                    />
+                  </div>
+                </div>
+                {(carrierStartDate || carrierEndDate) && (
+                  <div className="flex justify-between items-center mt-2">
+                    <div className="text-xs text-gray-600">
+                      {carrierStartDate && carrierEndDate 
+                        ? `${carrierStartDate} ~ ${carrierEndDate}`
+                        : carrierStartDate 
+                        ? `${carrierStartDate} 이후`
+                        : `${carrierEndDate} 이전`
+                      }
+                    </div>
+                    <Button 
+                      onClick={() => {
+                        setCarrierStartDate('');
+                        setCarrierEndDate('');
+                      }}
+                      variant="outline"
+                      size="sm"
+                      className="h-6 px-2 text-xs"
+                    >
+                      초기화
+                    </Button>
+                  </div>
+                )}
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  {((stats as any)?.carrierStats || []).map((carrier: any, index: number) => (
-                    <div key={index} className="flex justify-between items-center p-2 bg-gray-50 rounded">
-                      <button 
-                        onClick={() => handleCarrierClick(carrier.carrier)}
-                        className="font-medium text-blue-600 hover:text-blue-800 underline"
-                      >
-                        {carrier.carrier}
-                      </button>
-                      <Badge variant="secondary">{carrier.count}건</Badge>
+                  {carrierStatsLoading ? (
+                    <div className="space-y-2">
+                      {[1, 2, 3].map((i) => (
+                        <Skeleton key={i} className="h-10 w-full" />
+                      ))}
                     </div>
-                  ))}
+                  ) : (
+                    (carrierStats || []).map((carrier: any, index: number) => (
+                      <div key={index} className="flex justify-between items-center p-2 bg-gray-50 rounded">
+                        <button 
+                          onClick={() => handleCarrierClick(carrier.carrier)}
+                          className="font-medium text-blue-600 hover:text-blue-800 underline"
+                        >
+                          {carrier.carrier}
+                        </button>
+                        <Badge variant="secondary">{carrier.count}건</Badge>
+                      </div>
+                    ))
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -202,20 +286,73 @@ export function Dashboard() {
             <Card>
               <CardHeader>
                 <CardTitle className="text-lg font-semibold">근무자별 개통 수량</CardTitle>
+                <div className="grid grid-cols-2 gap-2 mt-4">
+                  <div className="space-y-1">
+                    <Label htmlFor="worker-start-date" className="text-xs">시작일</Label>
+                    <Input
+                      id="worker-start-date"
+                      type="date"
+                      value={workerStartDate}
+                      onChange={(e) => setWorkerStartDate(e.target.value)}
+                      className="h-8 text-xs"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label htmlFor="worker-end-date" className="text-xs">종료일</Label>
+                    <Input
+                      id="worker-end-date"
+                      type="date"
+                      value={workerEndDate}
+                      onChange={(e) => setWorkerEndDate(e.target.value)}
+                      className="h-8 text-xs"
+                    />
+                  </div>
+                </div>
+                {(workerStartDate || workerEndDate) && (
+                  <div className="flex justify-between items-center mt-2">
+                    <div className="text-xs text-gray-600">
+                      {workerStartDate && workerEndDate 
+                        ? `${workerStartDate} ~ ${workerEndDate}`
+                        : workerStartDate 
+                        ? `${workerStartDate} 이후`
+                        : `${workerEndDate} 이전`
+                      }
+                    </div>
+                    <Button 
+                      onClick={() => {
+                        setWorkerStartDate('');
+                        setWorkerEndDate('');
+                      }}
+                      variant="outline"
+                      size="sm"
+                      className="h-6 px-2 text-xs"
+                    >
+                      초기화
+                    </Button>
+                  </div>
+                )}
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  {((stats as any)?.workerStats || []).map((worker: any, index: number) => (
-                    <div key={index} className="flex justify-between items-center p-2 bg-gray-50 rounded">
-                      <button 
-                        onClick={() => handleWorkerClick({ id: worker.workerId, name: worker.workerName })}
-                        className="font-medium text-blue-600 hover:text-blue-800 underline"
-                      >
-                        {worker.workerName}
-                      </button>
-                      <Badge variant="secondary">{worker.count}건</Badge>
+                  {workerStatsLoading ? (
+                    <div className="space-y-2">
+                      {[1, 2, 3].map((i) => (
+                        <Skeleton key={i} className="h-10 w-full" />
+                      ))}
                     </div>
-                  ))}
+                  ) : (
+                    (workerStats || []).map((worker: any, index: number) => (
+                      <div key={index} className="flex justify-between items-center p-2 bg-gray-50 rounded">
+                        <button 
+                          onClick={() => handleWorkerClick({ id: worker.workerId, name: worker.workerName })}
+                          className="font-medium text-blue-600 hover:text-blue-800 underline"
+                        >
+                          {worker.workerName}
+                        </button>
+                        <Badge variant="secondary">{worker.count}건</Badge>
+                      </div>
+                    ))
+                  )}
                 </div>
               </CardContent>
             </Card>

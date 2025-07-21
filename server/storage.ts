@@ -372,6 +372,8 @@ export interface IStorage {
   
   // Dashboard stats
   getDashboardStats(dealerId?: number): Promise<DashboardStats>;
+  getCarrierStats(startDate?: string, endDate?: string): Promise<any[]>;
+  getWorkerStats(startDate?: string, endDate?: string): Promise<any[]>;
   
   // Admin analytics
   getWorkerCarrierDetails(workerId: number): Promise<Array<{ carrier: string; count: number }>>;
@@ -1716,6 +1718,63 @@ class SqliteStorage implements IStorage {
     }
     
     return stats;
+  }
+
+  // Separate methods for carrier and worker stats
+  async getCarrierStats(startDate?: string, endDate?: string): Promise<any[]> {
+    let dateFilter = '';
+    let dateParams: any[] = [];
+    
+    if (startDate || endDate) {
+      if (startDate) {
+        dateFilter += ' AND date(activated_at) >= ?';
+        dateParams.push(startDate);
+      }
+      if (endDate) {
+        dateFilter += ' AND date(activated_at) <= ?';
+        dateParams.push(endDate);
+      }
+    }
+    
+    const carrierQuery = `
+      SELECT 
+        carrier,
+        COUNT(*) as count
+      FROM documents 
+      WHERE activation_status = '개통'${dateFilter}
+      GROUP BY carrier
+      ORDER BY count DESC
+    `;
+    return db.prepare(carrierQuery).all(...dateParams) as any[];
+  }
+
+  async getWorkerStats(startDate?: string, endDate?: string): Promise<any[]> {
+    let dateFilter = '';
+    let dateParams: any[] = [];
+    
+    if (startDate || endDate) {
+      if (startDate) {
+        dateFilter += ' AND date(d.activated_at) >= ?';
+        dateParams.push(startDate);
+      }
+      if (endDate) {
+        dateFilter += ' AND date(d.activated_at) <= ?';
+        dateParams.push(endDate);
+      }
+    }
+    
+    const workerQuery = `
+      SELECT 
+        u.id as workerId,
+        u.name as workerName,
+        COUNT(*) as count
+      FROM documents d
+      JOIN users u ON d.activated_by = u.id
+      WHERE d.activation_status = '개통'${dateFilter}
+      GROUP BY d.activated_by, u.id, u.name
+      ORDER BY count DESC
+    `;
+    return db.prepare(workerQuery).all(...dateParams) as any[];
   }
 
   async uploadDocumentTemplate(data: { title: string; category: string; filePath: string; fileName: string; fileSize: number; uploadedBy: number }): Promise<any> {

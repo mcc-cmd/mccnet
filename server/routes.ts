@@ -707,6 +707,35 @@ router.get('/api/dashboard/stats', requireAuth, async (req: any, res) => {
   }
 });
 
+// Separate endpoints for carrier and worker stats
+router.get('/api/dashboard/carrier-stats', requireAuth, async (req: any, res) => {
+  try {
+    if (req.session.userType !== 'admin') {
+      return res.status(403).json({ error: '관리자 권한이 필요합니다.' });
+    }
+    
+    const { startDate, endDate } = req.query;
+    const stats = await storage.getCarrierStats(startDate, endDate);
+    res.json(stats);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.get('/api/dashboard/worker-stats', requireAuth, async (req: any, res) => {
+  try {
+    if (req.session.userType !== 'admin') {
+      return res.status(403).json({ error: '관리자 권한이 필요합니다.' });
+    }
+    
+    const { startDate, endDate } = req.query;
+    const stats = await storage.getWorkerStats(startDate, endDate);
+    res.json(stats);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 router.get('/api/documents', requireAuth, async (req: any, res) => {
   try {
     const { status, activationStatus, search, startDate, endDate } = req.query;
