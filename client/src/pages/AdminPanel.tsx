@@ -1687,10 +1687,10 @@ export function AdminPanel() {
                           <div className="flex items-center justify-between mb-3">
                             <div className="flex items-center space-x-3">
                               <div className="w-10 h-10 rounded-full bg-accent text-white flex items-center justify-center font-medium">
-                                {stat.storeName.charAt(0)}
+                                {stat.storeName?.charAt(0) || 'S'}
                               </div>
                               <div>
-                                <h4 className="font-medium text-gray-900">{stat.storeName}</h4>
+                                <h4 className="font-medium text-gray-900">{stat.storeName || '판매점 정보 없음'}</h4>
                                 <p className="text-sm text-gray-500">
                                   {dealers?.find(d => d.id === stat.dealerId)?.name || '대리점 정보 없음'}
                                 </p>
