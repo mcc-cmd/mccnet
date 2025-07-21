@@ -324,6 +324,28 @@ router.post('/api/auth/register/dealer', async (req, res) => {
   }
 });
 
+// Worker details API
+router.get('/api/admin/worker-details/:workerId', requireAdmin, async (req, res) => {
+  try {
+    const workerId = parseInt(req.params.workerId);
+    const details = await storage.getWorkerCarrierDetails(workerId);
+    res.json(details);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Carrier details API
+router.get('/api/admin/carrier-details/:carrier', requireAdmin, async (req, res) => {
+  try {
+    const carrier = req.params.carrier;
+    const details = await storage.getCarrierDealerDetails(carrier);
+    res.json(details);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 router.post('/api/admin/create-admin', requireAdmin, async (req, res) => {
   try {
     const data = createAdminSchema.parse(req.body);

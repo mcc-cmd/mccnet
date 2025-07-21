@@ -270,6 +270,14 @@ export function AdminPanel() {
   const [templateTitle, setTemplateTitle] = useState('');
   const [templateCategory, setTemplateCategory] = useState<'가입서류' | '변경서류'>('가입서류');
   
+  // Analytics dialog states
+  const [workerDetailsOpen, setWorkerDetailsOpen] = useState(false);
+  const [carrierDetailsOpen, setCarrierDetailsOpen] = useState(false);
+  const [selectedWorker, setSelectedWorker] = useState<{ id: number; name: string } | null>(null);
+  const [selectedCarrier, setSelectedCarrier] = useState<string>('');
+  const [workerCarrierDetails, setWorkerCarrierDetails] = useState<Array<{ carrier: string; count: number }>>([]);
+  const [carrierDealerDetails, setCarrierDealerDetails] = useState<Array<{ dealerName: string; count: number }>>([]);
+  
   // 요금제 이미지 업로드 관련
   const [servicePlanImageForm, setServicePlanImageForm] = useState({
     carrier: '',
@@ -682,6 +690,37 @@ export function AdminPanel() {
 
   const handleCreateWorker = (data: CreateWorkerForm) => {
     createWorkerMutation.mutate(data);
+  };
+
+  // Analytics handlers
+  const handleWorkerClick = async (worker: { id: number; name: string }) => {
+    setSelectedWorker(worker);
+    try {
+      const response = await apiRequest(`/api/admin/worker-details/${worker.id}`);
+      setWorkerCarrierDetails(response);
+      setWorkerDetailsOpen(true);
+    } catch (error) {
+      toast({
+        title: '오류',
+        description: '근무자 상세 정보를 불러오는데 실패했습니다.',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleCarrierClick = async (carrier: string) => {
+    setSelectedCarrier(carrier);
+    try {
+      const response = await apiRequest(`/api/admin/carrier-details/${carrier}`);
+      setCarrierDealerDetails(response);
+      setCarrierDetailsOpen(true);
+    } catch (error) {
+      toast({
+        title: '오류',
+        description: '통신사 상세 정보를 불러오는데 실패했습니다.',
+        variant: 'destructive',
+      });
+    }
   };
 
   const createServicePlanMutation = useMutation({
@@ -1271,7 +1310,12 @@ export function AdminPanel() {
                           .map((worker, index) => (
                             <tr key={worker.workerName} className={index < 3 ? 'bg-green-50' : ''}>
                               <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                {worker.workerName}
+                                <button
+                                  onClick={() => handleWorkerClick({ id: worker.workerId, name: worker.workerName })}
+                                  className="text-blue-600 hover:text-blue-800 underline"
+                                >
+                                  {worker.workerName}
+                                </button>
                               </td>
                               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                 {worker.totalActivations}
@@ -2367,6 +2411,52 @@ export function AdminPanel() {
             </div>
           </TabsContent>
         </Tabs>
+
+        {/* Worker Details Dialog */}
+        <Dialog open={workerDetailsOpen} onOpenChange={setWorkerDetailsOpen}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>{selectedWorker?.name} 통신사별 개통 현황</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-3">
+              {workerCarrierDetails.length > 0 ? (
+                workerCarrierDetails.map((detail, index) => (
+                  <div key={index} className="flex justify-between items-center p-3 bg-gray-50 rounded">
+                    <span className="font-medium">{detail.carrier}</span>
+                    <Badge variant="secondary">{detail.count}건</Badge>
+                  </div>
+                ))
+              ) : (
+                <div className="text-center py-4 text-gray-500">
+                  개통 내역이 없습니다.
+                </div>
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Carrier Details Dialog */}
+        <Dialog open={carrierDetailsOpen} onOpenChange={setCarrierDetailsOpen}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>{selectedCarrier} 판매점별 개통 현황</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-3">
+              {carrierDealerDetails.length > 0 ? (
+                carrierDealerDetails.map((detail, index) => (
+                  <div key={index} className="flex justify-between items-center p-3 bg-gray-50 rounded">
+                    <span className="font-medium">{detail.dealerName}</span>
+                    <Badge variant="secondary">{detail.count}건</Badge>
+                  </div>
+                ))
+              ) : (
+                <div className="text-center py-4 text-gray-500">
+                  개통 내역이 없습니다.
+                </div>
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </Layout>
   );

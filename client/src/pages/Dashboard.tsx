@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useApiRequest } from '@/lib/auth';
 import { useAuth } from '@/lib/auth';
-import type { DashboardStats, Document, PricingTable } from '../../../shared/schema';
+import type { DashboardStats, Document } from '../../../shared/schema';
 import {
   FileText,
   Clock,
@@ -40,7 +40,7 @@ export function Dashboard() {
 
   const { data: activePricingTable } = useQuery({
     queryKey: ['/api/pricing-tables/active'],
-    queryFn: () => apiRequest('/api/pricing-tables/active') as Promise<PricingTable | null>,
+    queryFn: () => apiRequest('/api/pricing-tables/active') as Promise<any | null>,
   });
 
   const getStatusBadge = (status: string) => {
@@ -66,6 +66,11 @@ export function Dashboard() {
     window.location.href = '/downloads';
   };
 
+  const handleCarrierClick = (carrier: string) => {
+    // Navigate to admin panel with a carrier filter or open a modal
+    window.location.href = `/admin?carrier=${encodeURIComponent(carrier)}`;
+  };
+
   return (
     <Layout title="대시보드">
       <div className="space-y-6">
@@ -81,7 +86,12 @@ export function Dashboard() {
                 <div className="space-y-3">
                   {((stats as any)?.carrierStats || []).map((carrier: any, index: number) => (
                     <div key={index} className="flex justify-between items-center p-2 bg-gray-50 rounded">
-                      <span className="font-medium">{carrier.carrier}</span>
+                      <button 
+                        onClick={() => handleCarrierClick(carrier.carrier)}
+                        className="font-medium text-blue-600 hover:text-blue-800 underline"
+                      >
+                        {carrier.carrier}
+                      </button>
                       <Badge variant="secondary">{carrier.count}건</Badge>
                     </div>
                   ))}
@@ -109,7 +119,7 @@ export function Dashboard() {
         )}
 
         {/* Worker personal stats */}
-        {user?.userRole === 'dealer_worker' && (
+        {user?.userType === 'dealer_worker' && (
           <Card>
             <CardHeader>
               <CardTitle className="text-lg font-semibold">내 개통 실적</CardTitle>

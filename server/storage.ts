@@ -372,6 +372,10 @@ export interface IStorage {
   
   // Dashboard stats
   getDashboardStats(dealerId?: number): Promise<DashboardStats>;
+  
+  // Admin analytics
+  getWorkerCarrierDetails(workerId: number): Promise<Array<{ carrier: string; count: number }>>;
+  getCarrierDealerDetails(carrier: string): Promise<Array<{ dealerName: string; count: number }>>;
 }
 
 class SqliteStorage implements IStorage {
@@ -1979,6 +1983,29 @@ class SqliteStorage implements IStorage {
   async deleteSettlement(id: number): Promise<void> {
     const stmt = db.prepare('DELETE FROM settlements WHERE id = ?');
     stmt.run(id);
+  }
+
+  async getWorkerCarrierDetails(workerId: number): Promise<Array<{ carrier: string; count: number }>> {
+    const query = `
+      SELECT d.carrier, COUNT(*) as count
+      FROM documents d
+      WHERE d.activated_by = ? AND d.activation_status = '개통'
+      GROUP BY d.carrier
+      ORDER BY count DESC
+    `;
+    return db.prepare(query).all(workerId) as Array<{ carrier: string; count: number }>;
+  }
+
+  async getCarrierDealerDetails(carrier: string): Promise<Array<{ dealerName: string; count: number }>> {
+    const query = `
+      SELECT dealers.name as dealerName, COUNT(*) as count
+      FROM documents d
+      JOIN dealers ON d.dealer_id = dealers.id
+      WHERE d.carrier = ? AND d.activation_status = '개통'
+      GROUP BY dealers.name
+      ORDER BY count DESC
+    `;
+    return db.prepare(query).all(carrier) as Array<{ dealerName: string; count: number }>;
   }
 }
 
