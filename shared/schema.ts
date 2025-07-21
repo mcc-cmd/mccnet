@@ -80,6 +80,7 @@ export interface Document {
   deviceModel?: string; // 단말기 기종
   simNumber?: string; // 유심번호
   subscriptionNumber?: string; // 가입번호/계약번호
+  dealerNotes?: string; // 판매점 전달 메모
 }
 
 export interface DocumentTemplate {
@@ -196,13 +197,16 @@ export const updateActivationStatusSchema = z.object({
   
   // 서비스 플랜 관련 필드들
   servicePlanId: z.union([z.string(), z.number()]).optional(),
-  additionalServiceIds: z.array(z.number()).optional(),
+  additionalServiceIds: z.array(z.union([z.string(), z.number()])).optional(),
   registrationFeePrepaid: z.boolean().optional(),
   registrationFeePostpaid: z.boolean().optional(),
   simFeePrepaid: z.boolean().optional(),
   simFeePostpaid: z.boolean().optional(),
   bundleApplied: z.boolean().optional(),
   bundleNotApplied: z.boolean().optional(),
+  
+  // 판매점 전달 메모
+  dealerNotes: z.string().optional(),
 });
 
 // Type exports

@@ -993,7 +993,7 @@ class SqliteStorage implements IStorage {
   }
 
   // Direct service plan update in documents table
-  async updateDocumentServicePlanDirect(id: number, data: { servicePlanId?: number | null; additionalServiceIds?: string; registrationFeePrepaid?: boolean; registrationFeePostpaid?: boolean; simFeePrepaid?: boolean; simFeePostpaid?: boolean; bundleApplied?: boolean; bundleNotApplied?: boolean; deviceModel?: string | null; simNumber?: string | null; subscriptionNumber?: string | null }): Promise<Document> {
+  async updateDocumentServicePlanDirect(id: number, data: { servicePlanId?: number | null; additionalServiceIds?: string; registrationFeePrepaid?: boolean; registrationFeePostpaid?: boolean; simFeePrepaid?: boolean; simFeePostpaid?: boolean; bundleApplied?: boolean; bundleNotApplied?: boolean; deviceModel?: string | null; simNumber?: string | null; subscriptionNumber?: string | null; dealerNotes?: string | null }): Promise<Document> {
     const query = `
       UPDATE documents 
       SET service_plan_id = ?, 
@@ -1007,6 +1007,7 @@ class SqliteStorage implements IStorage {
           device_model = ?,
           sim_number = ?,
           subscription_number = ?,
+          dealer_notes = ?,
           updated_at = CURRENT_TIMESTAMP
       WHERE id = ?
     `;
@@ -1023,6 +1024,7 @@ class SqliteStorage implements IStorage {
       data.deviceModel || null,
       data.simNumber || null,
       data.subscriptionNumber || null,
+      data.dealerNotes || null,
       id
     );
     
@@ -1057,7 +1059,8 @@ class SqliteStorage implements IStorage {
       bundleNotApplied: Boolean(document.bundle_not_applied),
       deviceModel: document.device_model,
       simNumber: document.sim_number,
-      subscriptionNumber: document.subscription_number
+      subscriptionNumber: document.subscription_number,
+      dealerNotes: document.dealer_notes
     };
   }
 

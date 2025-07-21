@@ -632,7 +632,8 @@ router.patch('/api/documents/:id/activation', requireAuth, async (req: any, res)
           bundleNotApplied: data.bundleNotApplied || false,
           deviceModel: data.deviceModel || null,
           simNumber: data.simNumber || null,
-          subscriptionNumber: data.subscriptionNumber || null
+          subscriptionNumber: data.subscriptionNumber || null,
+          dealerNotes: data.dealerNotes || null
         });
       } else {
         console.log('No service plan data found, skipping service plan update');

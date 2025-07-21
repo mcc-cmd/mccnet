@@ -43,6 +43,7 @@ export function Documents() {
     activationStatus: '',
     notes: '',
     supplementNotes: '',
+    dealerNotes: '',
     deviceModel: '',
     simNumber: '',
     subscriptionNumber: '',
@@ -1239,33 +1240,37 @@ export function Documents() {
                 </div>
               )}
               
-              {/* 보완 내용 - 보완필요와 개통완료 상태에서 모두 작성 가능 */}
-              {(activationForm.activationStatus === '보완필요' || activationForm.activationStatus === '개통') && (
+              {/* 보완 내용 - 보완필요 상태에서만 작성 */}
+              {activationForm.activationStatus === '보완필요' && (
                 <div>
-                  <Label htmlFor="supplementNotes">
-                    {activationForm.activationStatus === '보완필요' ? '보완 상세 내용' : '추가 메모 (판매점 확인용)'}
-                  </Label>
+                  <Label htmlFor="supplementNotes">보완 상세 내용</Label>
                   <Textarea
                     id="supplementNotes"
-                    placeholder={
-                      activationForm.activationStatus === '보완필요' 
-                        ? "판매점에서 확인할 보완 내용을 자세히 입력하세요..."
-                        : "판매점에서 확인할 추가 정보나 특이사항을 입력하세요..."
-                    }
+                    placeholder="판매점에서 확인할 보완 내용을 자세히 입력하세요..."
                     value={activationForm.supplementNotes}
                     onChange={(e) => setActivationForm(prev => ({ ...prev, supplementNotes: e.target.value }))}
                     rows={4}
-                    className={
-                      activationForm.activationStatus === '보완필요'
-                        ? "border-orange-200 focus:border-orange-400"
-                        : "border-blue-200 focus:border-blue-400"
-                    }
+                    className="border-orange-200 focus:border-orange-400"
                   />
-                  <div className={`text-xs mt-1 ${
-                    activationForm.activationStatus === '보완필요' 
-                      ? 'text-orange-600' 
-                      : 'text-blue-600'
-                  }`}>
+                  <div className="text-xs mt-1 text-orange-600">
+                    이 내용은 판매점에서 확인할 수 있습니다.
+                  </div>
+                </div>
+              )}
+              
+              {/* 판매점 전달 메모 - 개통완료 상태에서만 작성 */}
+              {activationForm.activationStatus === '개통' && (
+                <div>
+                  <Label htmlFor="dealerNotes">판매점 전달 메모</Label>
+                  <Textarea
+                    id="dealerNotes"
+                    placeholder="판매점에게 전달할 메모나 특이사항을 입력하세요..."
+                    value={activationForm.dealerNotes || ''}
+                    onChange={(e) => setActivationForm(prev => ({ ...prev, dealerNotes: e.target.value }))}
+                    rows={3}
+                    className="border-green-200 focus:border-green-400"
+                  />
+                  <div className="text-xs mt-1 text-green-600">
                     이 내용은 판매점에서 확인할 수 있습니다.
                   </div>
                 </div>
