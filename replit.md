@@ -229,6 +229,8 @@ This is a document management system built for MCC네트월드 telecommunication
 - July 19, 2025. Updated carrier list: removed "중고KT", changed "미디어로그" to "LG미디어로그", added "스카이라이프KT" and "LG프리티"
 - July 19, 2025. Moved subscription/contract number fields from application form to activation completion workflow for worker input
 - July 19, 2025. Added device model, SIM number, and subscription number fields to activation completion process
+- July 21, 2025. Fixed AdminPanel storeName null reference error for enhanced stability
+- July 21, 2025. Created test data for reception management with various activation statuses (대기, 진행중, 보완필요)
 
 ## User Preferences
 
