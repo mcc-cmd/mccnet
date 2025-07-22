@@ -83,6 +83,28 @@ export interface Document {
   dealerNotes?: string; // 판매점 전달 메모
 }
 
+export interface ChatRoom {
+  id: number;
+  documentId: number;
+  dealerId: number;
+  workerId?: number;
+  status: 'active' | 'closed';
+  createdAt: Date;
+  closedAt?: Date;
+}
+
+export interface ChatMessage {
+  id: number;
+  roomId: number;
+  senderId: number;
+  senderType: 'dealer' | 'worker';
+  senderName: string;
+  message: string;
+  messageType: 'text' | 'system';
+  readAt?: Date;
+  createdAt: Date;
+}
+
 export interface DocumentTemplate {
   id: number;
   title: string;
@@ -383,6 +405,15 @@ export const updateSettlementSchema = createSettlementSchema.partial();
 
 export type CreateSettlementForm = z.infer<typeof createSettlementSchema>;
 export type UpdateSettlementForm = z.infer<typeof updateSettlementSchema>;
+
+// Chat schemas
+export const createChatMessageSchema = z.object({
+  roomId: z.number(),
+  message: z.string().min(1, "메시지를 입력하세요").max(1000, "메시지는 1000자 이내로 입력하세요"),
+  messageType: z.enum(['text', 'system']).default('text'),
+});
+
+export type CreateChatMessageForm = z.infer<typeof createChatMessageSchema>;
 
 
 

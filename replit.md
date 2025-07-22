@@ -248,6 +248,12 @@ This is a document management system built for MCC네트월드 telecommunication
 - July 22, 2025. Updated all carrier lists to match database records: SK텔레콤, KT텔레콤, 선불폰, 중국외국인, 미래엔, 엠모바일, 텔레콤, 헬로모바일, 기타
 - July 22, 2025. Enhanced service plan selection UI with carrier information display and automatic filtering based on selected document
 - July 22, 2025. Updated all carrier lists in AdminPanel and SubmitApplication to specific 13 operating carriers: SK텔링크, SK프리티, SK스테이지파이브, KT엠모바일, KT스카이라이프, KT스테이지파이브, KT코드모바일, LG미디어로그, LG헬로모바일, LG프리티, LG밸류컴, 스마텔LG, KT
+- July 22, 2025. Implemented comprehensive real-time WebSocket-based chat system for dealer-worker communication during activation process
+- July 22, 2025. Added ChatDialog component with real-time messaging, connection status indicators, and automatic chat room creation
+- July 22, 2025. Created WebSocket server with authentication, room management, and message broadcasting functionality
+- July 22, 2025. Integrated chat functionality into Documents page - chat buttons appear for documents with "진행중" activation status
+- July 22, 2025. Added chat database tables (chat_rooms, chat_messages) with proper foreign key relationships and indexing
+- July 22, 2025. Enhanced API endpoints for chat room creation, message retrieval, and real-time communication support
 
 ## User Preferences
 

@@ -14,9 +14,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { useApiRequest, useAuth } from '@/lib/auth';
 import { useToast } from '@/hooks/use-toast';
 import type { Document } from '../../../shared/schema';
-import { FileText, Upload, Search, Download, Calendar, Settings, Check, ChevronsUpDown, Calculator } from 'lucide-react';
+import { FileText, Upload, Search, Download, Calendar, Settings, Check, ChevronsUpDown, Calculator, MessageCircle } from 'lucide-react';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
+import { ChatDialog } from '@/components/ChatDialog';
 
 export function Documents() {
   const apiRequest = useApiRequest();
@@ -769,6 +770,22 @@ export function Documents() {
                                   </Badge>
                                 )
                               )}
+                              {(doc as any).activationStatus === '진행중' && (
+                                <ChatDialog 
+                                  documentId={doc.id}
+                                  dealerId={doc.dealerId}
+                                  trigger={
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      title="채팅"
+                                      className="h-5 px-1 text-xs"
+                                    >
+                                      채팅
+                                    </Button>
+                                  }
+                                />
+                              )}
                               {(doc as any).activationStatus === '개통' && canManageActivationStatus() && (
                                 // 관리자는 모든 문서에 접근, 근무자는 작업 잠금 확인
                                 user?.userType === 'admin' || !(doc as any).assignedWorkerId || (doc as any).assignedWorkerId === user?.id || user?.role !== 'dealer_worker' ? (
@@ -951,6 +968,21 @@ export function Documents() {
                             >
                               개통상태
                             </Button>
+                          )}
+                          {(doc as any).activationStatus === '진행중' && (
+                            <ChatDialog 
+                              documentId={doc.id}
+                              dealerId={doc.dealerId}
+                              trigger={
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  title="채팅"
+                                >
+                                  <MessageCircle className="h-4 w-4" />
+                                </Button>
+                              }
+                            />
                           )}
                           {(doc as any).activationStatus === '개통' && canManageActivationStatus() && (
                             <Button

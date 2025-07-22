@@ -1,13 +1,114 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { createServer } from "http";
+import { WebSocketServer, WebSocket } from "ws";
 import { setupVite, serveStatic, log } from "./vite";
 import router from "./routes";
+import { storage } from "./storage";
 
 const app = express();
 const server = createServer(app);
 
+// WebSocket Server 설정
+const wss = new WebSocketServer({ server, path: '/ws' });
+
+// 클라이언트 연결 관리
+interface ClientConnection {
+  ws: WebSocket;
+  userId: number;
+  userType: 'dealer' | 'worker';
+  roomIds: Set<number>;
+}
+
+const clients = new Map<number, ClientConnection>();
+
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+
+// WebSocket 연결 처리
+wss.on('connection', (ws: WebSocket, req) => {
+  console.log('WebSocket client connected');
+
+  ws.on('message', async (data: Buffer) => {
+    try {
+      const message = JSON.parse(data.toString());
+      
+      switch (message.type) {
+        case 'auth':
+          // 클라이언트 인증
+          const { userId, userType } = message;
+          clients.set(userId, {
+            ws,
+            userId,
+            userType,
+            roomIds: new Set()
+          });
+          ws.send(JSON.stringify({ type: 'auth_success', userId }));
+          break;
+
+        case 'join_room':
+          // 채팅방 참여
+          const { roomId } = message;
+          const client = Array.from(clients.values()).find(c => c.ws === ws);
+          if (client) {
+            client.roomIds.add(roomId);
+            ws.send(JSON.stringify({ type: 'joined_room', roomId }));
+          }
+          break;
+
+        case 'send_message':
+          // 메시지 전송
+          await handleChatMessage(message);
+          break;
+      }
+    } catch (error) {
+      console.error('WebSocket message error:', error);
+      ws.send(JSON.stringify({ type: 'error', message: 'Invalid message format' }));
+    }
+  });
+
+  ws.on('close', () => {
+    // 클라이언트 연결 제거
+    for (const [userId, client] of clients.entries()) {
+      if (client.ws === ws) {
+        clients.delete(userId);
+        break;
+      }
+    }
+    console.log('WebSocket client disconnected');
+  });
+});
+
+// 채팅 메시지 처리 함수
+async function handleChatMessage(message: any) {
+  try {
+    const { roomId, senderId, senderType, senderName, text } = message;
+    
+    // 메시지를 데이터베이스에 저장
+    const chatMessage = await storage.createChatMessage({
+      roomId,
+      senderId,
+      senderType,
+      senderName,
+      message: text,
+      messageType: 'text'
+    });
+
+    // 해당 채팅방의 모든 클라이언트에게 메시지 브로드캐스트
+    const broadcastMessage = {
+      type: 'new_message',
+      roomId,
+      message: chatMessage
+    };
+
+    for (const client of clients.values()) {
+      if (client.roomIds.has(roomId) && client.ws.readyState === WebSocket.OPEN) {
+        client.ws.send(JSON.stringify(broadcastMessage));
+      }
+    }
+  } catch (error) {
+    console.error('Chat message handling error:', error);
+  }
+}
 
 // API routes
 app.use(router);

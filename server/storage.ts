@@ -21,7 +21,9 @@ import type {
   KPDealerInfo,
   ServicePlan,
   AdditionalService,
-  DocumentServicePlan
+  DocumentServicePlan,
+  ChatRoom,
+  ChatMessage
 } from '../shared/schema';
 
 const dbPath = path.join(process.cwd(), 'database.sqlite');
@@ -378,6 +380,15 @@ export interface IStorage {
   // Admin analytics
   getWorkerCarrierDetails(workerId: number): Promise<Array<{ carrier: string; count: number }>>;
   getCarrierDealerDetails(carrier: string): Promise<Array<{ dealerName: string; count: number }>>;
+  
+  // Chat rooms and messages
+  createChatRoom(documentId: number, dealerId: number, workerId?: number): Promise<ChatRoom>;
+  getChatRoom(documentId: number): Promise<ChatRoom | null>;
+  getChatRoomById(roomId: number): Promise<ChatRoom | null>;
+  updateChatRoom(roomId: number, data: Partial<ChatRoom>): Promise<ChatRoom>;
+  createChatMessage(data: Omit<ChatMessage, 'id' | 'createdAt' | 'readAt'>): Promise<ChatMessage>;
+  getChatMessages(roomId: number): Promise<ChatMessage[]>;
+  markMessageAsRead(messageId: number): Promise<void>;
 }
 
 class SqliteStorage implements IStorage {
@@ -2103,6 +2114,154 @@ class SqliteStorage implements IStorage {
       ORDER BY count DESC
     `;
     return db.prepare(query).all(carrier) as Array<{ dealerName: string; count: number }>;
+  }
+
+  // 채팅 관련 메서드들
+  async createChatRoom(documentId: number, dealerId: number, workerId?: number): Promise<ChatRoom> {
+    const stmt = db.prepare(`
+      INSERT INTO chat_rooms (document_id, dealer_id, worker_id, status)
+      VALUES (?, ?, ?, 'active')
+    `);
+    
+    const result = stmt.run(documentId, dealerId, workerId || null);
+    const roomId = result.lastInsertRowid as number;
+    
+    // 시스템 메시지 생성
+    await this.createChatMessage({
+      roomId,
+      senderId: workerId || 0,
+      senderType: 'worker',
+      senderName: '시스템',
+      message: '채팅방이 생성되었습니다. 문의사항이 있으시면 언제든 메시지를 남겨주세요.',
+      messageType: 'system'
+    });
+    
+    return this.getChatRoomById(roomId) as Promise<ChatRoom>;
+  }
+
+  async getChatRoom(documentId: number): Promise<ChatRoom | null> {
+    const room = db.prepare(`
+      SELECT * FROM chat_rooms 
+      WHERE document_id = ? AND status = 'active'
+      ORDER BY created_at DESC
+      LIMIT 1
+    `).get(documentId) as any;
+    
+    if (!room) return null;
+    
+    return {
+      id: room.id,
+      documentId: room.document_id,
+      dealerId: room.dealer_id,
+      workerId: room.worker_id,
+      status: room.status,
+      createdAt: new Date(room.created_at),
+      closedAt: room.closed_at ? new Date(room.closed_at) : undefined
+    };
+  }
+
+  async getChatRoomById(roomId: number): Promise<ChatRoom | null> {
+    const room = db.prepare('SELECT * FROM chat_rooms WHERE id = ?').get(roomId) as any;
+    
+    if (!room) return null;
+    
+    return {
+      id: room.id,
+      documentId: room.document_id,
+      dealerId: room.dealer_id,
+      workerId: room.worker_id,
+      status: room.status,
+      createdAt: new Date(room.created_at),
+      closedAt: room.closed_at ? new Date(room.closed_at) : undefined
+    };
+  }
+
+  async updateChatRoom(roomId: number, data: Partial<ChatRoom>): Promise<ChatRoom> {
+    const updateFields: string[] = [];
+    const params: any[] = [];
+    
+    if (data.workerId !== undefined) {
+      updateFields.push('worker_id = ?');
+      params.push(data.workerId);
+    }
+    
+    if (data.status !== undefined) {
+      updateFields.push('status = ?');
+      params.push(data.status);
+      
+      if (data.status === 'closed') {
+        updateFields.push('closed_at = ?');
+        params.push(new Date().toISOString());
+      }
+    }
+    
+    if (updateFields.length > 0) {
+      params.push(roomId);
+      const stmt = db.prepare(`
+        UPDATE chat_rooms 
+        SET ${updateFields.join(', ')}
+        WHERE id = ?
+      `);
+      stmt.run(...params);
+    }
+    
+    return this.getChatRoomById(roomId) as Promise<ChatRoom>;
+  }
+
+  async createChatMessage(data: Omit<ChatMessage, 'id' | 'createdAt' | 'readAt'>): Promise<ChatMessage> {
+    const stmt = db.prepare(`
+      INSERT INTO chat_messages (room_id, sender_id, sender_type, sender_name, message, message_type)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `);
+    
+    const result = stmt.run(
+      data.roomId,
+      data.senderId,
+      data.senderType,
+      data.senderName,
+      data.message,
+      data.messageType
+    );
+    
+    const messageId = result.lastInsertRowid as number;
+    const message = db.prepare('SELECT * FROM chat_messages WHERE id = ?').get(messageId) as any;
+    
+    return {
+      id: message.id,
+      roomId: message.room_id,
+      senderId: message.sender_id,
+      senderType: message.sender_type,
+      senderName: message.sender_name,
+      message: message.message,
+      messageType: message.message_type,
+      readAt: message.read_at ? new Date(message.read_at) : undefined,
+      createdAt: new Date(message.created_at)
+    };
+  }
+
+  async getChatMessages(roomId: number): Promise<ChatMessage[]> {
+    const messages = db.prepare(`
+      SELECT * FROM chat_messages 
+      WHERE room_id = ? 
+      ORDER BY created_at ASC
+    `).all(roomId) as any[];
+    
+    return messages.map(msg => ({
+      id: msg.id,
+      roomId: msg.room_id,
+      senderId: msg.sender_id,
+      senderType: msg.sender_type,
+      senderName: msg.sender_name,
+      message: msg.message,
+      messageType: msg.message_type,
+      readAt: msg.read_at ? new Date(msg.read_at) : undefined,
+      createdAt: new Date(msg.created_at)
+    }));
+  }
+
+  async markMessageAsRead(messageId: number): Promise<void> {
+    const stmt = db.prepare('UPDATE chat_messages SET read_at = ? WHERE id = ?');
+    stmt.run(new Date().toISOString(), messageId);
   }
 }
 

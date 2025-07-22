@@ -1683,4 +1683,56 @@ router.post('/api/settlements/manual', requireAuth, async (req: any, res) => {
   }
 });
 
+// 채팅 관련 API 엔드포인트
+router.get('/api/chat/room/:documentId', requireAuth, async (req: any, res) => {
+  try {
+    const documentId = parseInt(req.params.documentId);
+    const chatRoom = await storage.getChatRoom(documentId);
+    
+    if (!chatRoom) {
+      return res.json({ room: null, messages: [] });
+    }
+    
+    const messages = await storage.getChatMessages(chatRoom.id);
+    res.json({ room: chatRoom, messages });
+  } catch (error: any) {
+    console.error('Get chat room error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.post('/api/chat/room', requireAuth, async (req: any, res) => {
+  try {
+    const { documentId, dealerId, workerId } = req.body;
+    
+    // 기존 채팅방이 있는지 확인
+    let chatRoom = await storage.getChatRoom(documentId);
+    
+    if (!chatRoom) {
+      // 새 채팅방 생성
+      chatRoom = await storage.createChatRoom(documentId, dealerId, workerId);
+    } else if (workerId && !chatRoom.workerId) {
+      // 기존 채팅방에 근무자 할당
+      chatRoom = await storage.updateChatRoom(chatRoom.id, { workerId });
+    }
+    
+    const messages = await storage.getChatMessages(chatRoom.id);
+    res.json({ room: chatRoom, messages });
+  } catch (error: any) {
+    console.error('Create chat room error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.get('/api/chat/messages/:roomId', requireAuth, async (req: any, res) => {
+  try {
+    const roomId = parseInt(req.params.roomId);
+    const messages = await storage.getChatMessages(roomId);
+    res.json(messages);
+  } catch (error: any) {
+    console.error('Get chat messages error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 export default router;
