@@ -38,11 +38,17 @@ wss.on('connection', (ws: WebSocket, req) => {
           const { userId, userType } = message;
           console.log(`WebSocket auth: User ${userId} (${userType})`);
           
-          // 기존 연결이 있다면 제거
+          // 기존 연결이 있다면 채팅방 정보 보존
+          let existingRooms = new Set();
           if (clients.has(userId)) {
             const existingClient = clients.get(userId);
             if (existingClient && existingClient.ws !== ws) {
-              console.log(`Replacing existing connection for user ${userId}`);
+              console.log(`Replacing existing connection for user ${userId}, preserving rooms:`, Array.from(existingClient.roomIds));
+              existingRooms = existingClient.roomIds;
+              // 기존 연결 종료
+              if (existingClient.ws.readyState === WebSocket.OPEN) {
+                existingClient.ws.close();
+              }
             }
           }
           
@@ -50,7 +56,7 @@ wss.on('connection', (ws: WebSocket, req) => {
             ws,
             userId,
             userType,
-            roomIds: new Set()
+            roomIds: existingRooms
           });
           console.log(`Client ${userId} authenticated. Total clients: ${clients.size}`);
           ws.send(JSON.stringify({ type: 'auth_success', userId }));

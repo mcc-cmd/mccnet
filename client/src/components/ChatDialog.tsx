@@ -106,16 +106,10 @@ export function ChatDialog({ documentId, dealerId, trigger }: ChatDialogProps) {
         if (wsMessage.error) {
           console.error('Join room error:', wsMessage.error);
         }
-      } else if (wsMessage.type === 'auth_success' && chatRoom) {
-        // 인증 성공 후 채팅방 참여 시도
-        console.log('Auth success, attempting to join room:', chatRoom.id);
-        setTimeout(() => {
-          const joinResult = sendWebSocketMessage({
-            type: 'join_room',
-            roomId: chatRoom.id
-          });
-          console.log('Auto join room message sent:', joinResult);
-        }, 200);
+      } else if (wsMessage.type === 'auth_success') {
+        // 인증 성공
+        console.log('Authentication successful');
+        setIsAuthenticated(true);
       }
     }
   });
@@ -172,20 +166,20 @@ export function ChatDialog({ documentId, dealerId, trigger }: ChatDialogProps) {
     }
   }, [chatData]);
 
+  // 인증 상태 추적
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
   // WebSocket 연결 및 채팅방 참여 처리
   useEffect(() => {
-    if (isConnected && chatRoom) {
-      console.log('WebSocket connected, joining room:', chatRoom.id);
-      // 약간의 지연을 두어 인증 완료 후 채팅방 참여
-      setTimeout(() => {
-        const joinResult = sendWebSocketMessage({
-          type: 'join_room',
-          roomId: chatRoom.id
-        });
-        console.log('Join room message sent:', joinResult);
-      }, 1000);
+    if (isConnected && isAuthenticated && chatRoom) {
+      console.log('Authenticated WebSocket, joining room:', chatRoom.id);
+      const joinResult = sendWebSocketMessage({
+        type: 'join_room',
+        roomId: chatRoom.id
+      });
+      console.log('Join room message sent:', joinResult);
     }
-  }, [isConnected, chatRoom]);
+  }, [isConnected, isAuthenticated, chatRoom]);
 
   // 별도 useEffect로 채팅방 생성 처리 - 단순화
   useEffect(() => {
