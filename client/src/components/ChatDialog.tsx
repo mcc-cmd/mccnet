@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { MessageCircle, Send, User } from 'lucide-react';
-import { useWebSocket } from '@/hooks/useWebSocket';
+// WebSocket 제거 - 폴링 방식 사용
 import { useAuth, useApiRequest } from '@/lib/auth';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import type { ChatRoom, ChatMessage } from '@shared/schema';
@@ -335,11 +335,11 @@ export function ChatDialog({ documentId, dealerId, trigger }: ChatDialogProps) {
                 onKeyPress={handleKeyPress}
                 placeholder={chatRoom ? "메시지를 입력하세요..." : "채팅방을 불러오는 중..."}
                 className="flex-1"
-                disabled={!isConnected || !chatRoom || createRoomMutation.isPending}
+                disabled={!chatRoom || createRoomMutation.isPending}
               />
               <Button
                 onClick={handleSendMessage}
-                disabled={!message.trim() || !isConnected || !chatRoom || createRoomMutation.isPending}
+                disabled={!message.trim() || !chatRoom || createRoomMutation.isPending}
                 size="sm"
               >
                 <Send className="w-4 h-4" />
@@ -348,13 +348,13 @@ export function ChatDialog({ documentId, dealerId, trigger }: ChatDialogProps) {
             
             {/* 디버그 정보 표시 */}
             <div className="text-xs text-gray-500 mt-2 p-2 bg-gray-50 rounded">
-              Debug: Connected: {isConnected ? 'Yes' : 'No'} | 
-              ChatRoom: {chatRoom ? `ID ${chatRoom.id}` : 'None'} | 
-              Creating: {createRoomMutation.isPending ? 'Yes' : 'No'} |
-              Messages: {messages.length}
+              Debug: 연결: {connectionStatus} | 
+              채팅방: {chatRoom ? `ID ${chatRoom.id}` : 'None'} | 
+              생성중: {createRoomMutation.isPending ? 'Yes' : 'No'} |
+              메시지: {messages.length}
             </div>
             
-            {!isConnected && (
+            {connectionStatus === 'disconnected' && (
               <div className="text-xs text-red-500 text-center pt-2">
                 연결이 끊어졌습니다. 재연결을 시도하고 있습니다...
               </div>
