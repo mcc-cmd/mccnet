@@ -79,8 +79,14 @@ export function ChatDialog({ documentId, dealerId, trigger }: ChatDialogProps) {
     onMessage: (wsMessage) => {
       console.log('WebSocket message received:', wsMessage);
       if (wsMessage.type === 'new_message' && wsMessage.roomId === chatRoom?.id) {
-        setMessages(prev => [...prev, wsMessage.message]);
-        scrollToBottom();
+        console.log('Adding new message to UI:', wsMessage.message);
+        setMessages(prev => {
+          // 중복 메시지 방지
+          const exists = prev.some(msg => msg.id === wsMessage.message.id);
+          if (exists) return prev;
+          return [...prev, wsMessage.message];
+        });
+        setTimeout(scrollToBottom, 100);
       } else if (wsMessage.type === 'joined_room' && wsMessage.roomId === chatRoom?.id) {
         // 채팅방 참여 확인
         console.log('Joined chat room:', wsMessage.roomId);
@@ -119,6 +125,20 @@ export function ChatDialog({ documentId, dealerId, trigger }: ChatDialogProps) {
     if (sent) {
       console.log('Message sent successfully');
       setMessage('');
+      // 낙관적 업데이트 - 즉시 메시지를 UI에 추가
+      const optimisticMessage = {
+        id: Date.now(), // 임시 ID
+        roomId: chatRoom.id,
+        senderId: user.id,
+        senderType: userType,
+        senderName: user.name,
+        message: message.trim(),
+        messageType: 'text' as const,
+        createdAt: new Date(),
+        readAt: undefined
+      };
+      setMessages(prev => [...prev, optimisticMessage]);
+      setTimeout(scrollToBottom, 100);
     } else {
       console.error('Failed to send message - WebSocket not connected');
     }

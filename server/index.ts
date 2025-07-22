@@ -36,6 +36,7 @@ wss.on('connection', (ws: WebSocket, req) => {
         case 'auth':
           // 클라이언트 인증
           const { userId, userType } = message;
+          console.log(`WebSocket auth: User ${userId} (${userType})`);
           clients.set(userId, {
             ws,
             userId,
