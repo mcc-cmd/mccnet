@@ -5,9 +5,8 @@ import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { MessageCircle, Send, User } from 'lucide-react';
 import { useWebSocket } from '@/hooks/useWebSocket';
-import { useAuth } from '@/lib/auth';
+import { useAuth, useApiRequest } from '@/lib/auth';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { apiRequest } from '@/lib/queryClient';
 import type { ChatRoom, ChatMessage } from '@shared/schema';
 
 interface ChatDialogProps {
@@ -23,6 +22,7 @@ export function ChatDialog({ documentId, dealerId, trigger }: ChatDialogProps) {
   const [chatRoom, setChatRoom] = useState<ChatRoom | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { user } = useAuth();
+  const apiRequest = useApiRequest();
   const queryClient = useQueryClient();
 
   const scrollToBottom = () => {
@@ -32,15 +32,24 @@ export function ChatDialog({ documentId, dealerId, trigger }: ChatDialogProps) {
   // 채팅방 데이터 조회
   const { data: chatData, isLoading } = useQuery({
     queryKey: ['chat-room', documentId],
-    queryFn: () => apiRequest(`/api/chat/room/${documentId}`),
+    queryFn: async () => {
+      const response = await apiRequest(`/api/chat/room/${documentId}`, { method: 'GET' });
+      return response.json();
+    },
     enabled: open,
     refetchOnWindowFocus: false
   });
 
   // 채팅방 생성/업데이트
   const createRoomMutation = useMutation({
-    mutationFn: (data: { documentId: number; dealerId: number; workerId?: number }) =>
-      apiRequest('/api/chat/room', { method: 'POST', body: data }),
+    mutationFn: async (data: { documentId: number; dealerId: number; workerId?: number }) => {
+      const response = await apiRequest('/api/chat/room', { 
+        method: 'POST', 
+        body: JSON.stringify(data),
+        headers: { 'Content-Type': 'application/json' }
+      });
+      return response.json();
+    },
     onSuccess: (data) => {
       setChatRoom(data.room);
       setMessages(data.messages || []);
@@ -63,7 +72,14 @@ export function ChatDialog({ documentId, dealerId, trigger }: ChatDialogProps) {
 
   // 메시지 전송
   const handleSendMessage = async () => {
-    if (!message.trim() || !chatRoom || !user) return;
+    if (!message.trim() || !chatRoom || !user) {
+      console.log('Message send blocked:', { 
+        hasMessage: !!message.trim(), 
+        hasChatRoom: !!chatRoom, 
+        hasUser: !!user 
+      });
+      return;
+    }
 
     const userType = user.userType === 'admin' ? 'worker' : 
                     user.role === 'dealer_worker' ? 'worker' : 'dealer';
@@ -77,9 +93,13 @@ export function ChatDialog({ documentId, dealerId, trigger }: ChatDialogProps) {
       text: message.trim()
     };
 
+    console.log('Sending message:', messageData);
+    console.log('WebSocket connected:', isConnected);
+    
     const sent = sendWebSocketMessage(messageData);
     
     if (sent) {
+      console.log('Message sent successfully');
       setMessage('');
     } else {
       console.error('Failed to send message - WebSocket not connected');

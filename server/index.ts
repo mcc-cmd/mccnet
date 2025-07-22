@@ -57,6 +57,7 @@ wss.on('connection', (ws: WebSocket, req) => {
 
         case 'send_message':
           // 메시지 전송
+          console.log('Processing chat message:', message);
           await handleChatMessage(message);
           break;
       }
@@ -81,9 +82,11 @@ wss.on('connection', (ws: WebSocket, req) => {
 // 채팅 메시지 처리 함수
 async function handleChatMessage(message: any) {
   try {
+    console.log('Handling chat message:', message);
     const { roomId, senderId, senderType, senderName, text } = message;
     
     // 메시지를 데이터베이스에 저장
+    console.log('Saving message to database...');
     const chatMessage = await storage.createChatMessage({
       roomId,
       senderId,
@@ -92,6 +95,7 @@ async function handleChatMessage(message: any) {
       message: text,
       messageType: 'text'
     });
+    console.log('Message saved:', chatMessage);
 
     // 해당 채팅방의 모든 클라이언트에게 메시지 브로드캐스트
     const broadcastMessage = {
@@ -100,11 +104,15 @@ async function handleChatMessage(message: any) {
       message: chatMessage
     };
 
+    console.log('Broadcasting to clients:', clients.size);
+    let broadcastCount = 0;
     for (const client of clients.values()) {
       if (client.roomIds.has(roomId) && client.ws.readyState === WebSocket.OPEN) {
         client.ws.send(JSON.stringify(broadcastMessage));
+        broadcastCount++;
       }
     }
+    console.log('Message broadcasted to', broadcastCount, 'clients');
   } catch (error) {
     console.error('Chat message handling error:', error);
   }
