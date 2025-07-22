@@ -51,7 +51,10 @@ wss.on('connection', (ws: WebSocket, req) => {
           const client = Array.from(clients.values()).find(c => c.ws === ws);
           if (client) {
             client.roomIds.add(roomId);
+            console.log(`Client ${client.userId} joined room ${roomId}`);
             ws.send(JSON.stringify({ type: 'joined_room', roomId }));
+          } else {
+            console.log('Client not found for join_room');
           }
           break;
 
@@ -105,11 +108,14 @@ async function handleChatMessage(message: any) {
     };
 
     console.log('Broadcasting to clients:', clients.size);
+    console.log('Room participants check for room:', roomId);
     let broadcastCount = 0;
     for (const client of clients.values()) {
+      console.log(`Client ${client.userId} in rooms:`, Array.from(client.roomIds));
       if (client.roomIds.has(roomId) && client.ws.readyState === WebSocket.OPEN) {
         client.ws.send(JSON.stringify(broadcastMessage));
         broadcastCount++;
+        console.log(`Message sent to client ${client.userId}`);
       }
     }
     console.log('Message broadcasted to', broadcastCount, 'clients');

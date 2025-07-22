@@ -35,7 +35,7 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
       
       // 인증 메시지 전송
       const userType = user.userType === 'admin' ? 'worker' : 
-                      user.role === 'dealer_worker' ? 'worker' : 'dealer';
+                      user.userRole === 'dealer_worker' ? 'worker' : 'dealer';
       
       ws.current?.send(JSON.stringify({
         type: 'auth',
