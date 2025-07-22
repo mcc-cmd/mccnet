@@ -88,8 +88,13 @@ export function Documents() {
   });
 
   const { data: servicePlans, isLoading: servicePlansLoading } = useQuery({
-    queryKey: ['/api/service-plans'],
-    queryFn: () => apiRequest('/api/service-plans') as Promise<any[]>,
+    queryKey: ['/api/service-plans', selectedDocument?.carrier],
+    queryFn: () => {
+      const carrier = selectedDocument?.carrier;
+      const params = carrier ? `?carrier=${encodeURIComponent(carrier)}` : '';
+      return apiRequest(`/api/service-plans${params}`) as Promise<any[]>;
+    },
+    enabled: !!selectedDocument, // 선택된 문서가 있을 때만 실행
   });
 
   console.log('Service plans data:', { 
@@ -1330,6 +1335,17 @@ export function Documents() {
             </DialogHeader>
             <div id="service-plan-dialog-description" className="text-sm text-gray-600 mb-6">
               <span className="font-medium">{selectedDocument?.customerName}</span>님의 요금제 정보를 입력해주세요.
+              {selectedDocument && (
+                <div className="mt-2 p-2 bg-blue-50 rounded-lg">
+                  <div className="flex items-center space-x-2">
+                    <span className="text-sm font-medium">통신사:</span>
+                    <span className="text-sm font-bold text-blue-700">{(selectedDocument as any).carrier}</span>
+                    <span className="text-xs text-blue-600">
+                      (해당 통신사의 요금제만 표시됩니다)
+                    </span>
+                  </div>
+                </div>
+              )}
             </div>
             
             <form onSubmit={handleServicePlanSubmit} className="space-y-6">
