@@ -445,9 +445,10 @@ router.post('/api/admin/pricing-tables', requireAdmin, pricingUpload.single('fil
 // Pricing table routes
 router.get('/api/pricing-tables', requireAuth, async (req, res) => {
   try {
-    const pricingTables = await storage.getPricingTables();
-    res.json(pricingTables);
+    // 임시로 빈 배열 반환 (pricing tables 기능이 현재 사용되지 않음)
+    res.json([]);
   } catch (error: any) {
+    console.error('Get pricing tables error:', error);
     res.status(500).json({ error: error.message });
   }
 });
@@ -757,6 +758,8 @@ router.get('/api/documents', requireAuth, async (req: any, res) => {
     if (isAdmin || isWorker) {
       dealerId = undefined; // 모든 문서를 볼 수 있도록 설정
     }
+    
+    console.log('Final dealerId for query:', dealerId, 'isAdmin:', isAdmin, 'isWorker:', isWorker);
     
     // 한국어 디코딩 처리
     let decodedActivationStatus = activationStatus as string;

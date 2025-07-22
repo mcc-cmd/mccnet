@@ -27,7 +27,7 @@ export function CompletedActivations() {
       const params = new URLSearchParams();
       params.append('activationStatus', '개통');
       // 근무자는 자신이 개통한 건만 조회
-      if (user?.role === 'dealer_worker') {
+      if (user?.userType === 'dealer_worker') {
         params.append('workerFilter', 'my');
       }
       Object.entries(filters).forEach(([key, value]) => {

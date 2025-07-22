@@ -140,9 +140,9 @@ export function Downloads() {
     }
   };
 
-  const filteredDocuments = documents?.filter(doc => 
+  const filteredDocuments = Array.isArray(documents) ? documents.filter(doc => 
     doc.isActive && (filter === 'all' || doc.category === filter)
-  ) || [];
+  ) : [];
 
   return (
     <Layout title="서식지 다운로드">
