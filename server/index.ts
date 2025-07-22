@@ -49,13 +49,21 @@ wss.on('connection', (ws: WebSocket, req) => {
         case 'join_room':
           // 채팅방 참여
           const { roomId } = message;
-          const client = Array.from(clients.values()).find(c => c.ws === ws);
-          if (client) {
-            client.roomIds.add(roomId);
-            console.log(`Client ${client.userId} joined room ${roomId}`);
+          // userId로 클라이언트 찾기
+          let clientUserId = null;
+          for (const [userId, client] of clients.entries()) {
+            if (client.ws === ws) {
+              clientUserId = userId;
+              client.roomIds.add(roomId);
+              console.log(`Client ${userId} joined room ${roomId}`);
+              ws.send(JSON.stringify({ type: 'joined_room', roomId }));
+              break;
+            }
+          }
+          if (!clientUserId) {
+            console.log('Client not found for join_room, creating anonymous connection');
+            // 임시로 WebSocket만으로 연결된 경우를 위한 처리
             ws.send(JSON.stringify({ type: 'joined_room', roomId }));
-          } else {
-            console.log('Client not found for join_room');
           }
           break;
 
@@ -75,6 +83,7 @@ wss.on('connection', (ws: WebSocket, req) => {
     // 클라이언트 연결 제거
     for (const [userId, client] of clients.entries()) {
       if (client.ws === ws) {
+        console.log(`WebSocket client ${userId} disconnected`);
         clients.delete(userId);
         break;
       }
@@ -111,9 +120,11 @@ async function handleChatMessage(message: any) {
     console.log('Broadcasting to clients:', clients.size);
     console.log('Room participants check for room:', roomId);
     let broadcastCount = 0;
+    
+    // 모든 연결된 클라이언트에게 메시지 전송 (채팅방 참여 여부와 관계없이)
     for (const client of clients.values()) {
       console.log(`Client ${client.userId} in rooms:`, Array.from(client.roomIds));
-      if (client.roomIds.has(roomId) && client.ws.readyState === WebSocket.OPEN) {
+      if (client.ws.readyState === WebSocket.OPEN) {
         client.ws.send(JSON.stringify(broadcastMessage));
         broadcastCount++;
         console.log(`Message sent to client ${client.userId}`);

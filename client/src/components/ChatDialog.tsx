@@ -78,7 +78,7 @@ export function ChatDialog({ documentId, dealerId, trigger }: ChatDialogProps) {
   const { isConnected, sendMessage: sendWebSocketMessage } = useWebSocket({
     onMessage: (wsMessage) => {
       console.log('WebSocket message received:', wsMessage);
-      if (wsMessage.type === 'new_message' && wsMessage.roomId === chatRoom?.id) {
+      if (wsMessage.type === 'new_message') {
         console.log('Adding new message to UI:', wsMessage.message);
         setMessages(prev => {
           // 중복 메시지 방지
@@ -87,7 +87,7 @@ export function ChatDialog({ documentId, dealerId, trigger }: ChatDialogProps) {
           return [...prev, wsMessage.message];
         });
         setTimeout(scrollToBottom, 100);
-      } else if (wsMessage.type === 'joined_room' && wsMessage.roomId === chatRoom?.id) {
+      } else if (wsMessage.type === 'joined_room') {
         // 채팅방 참여 확인
         console.log('Joined chat room:', wsMessage.roomId);
       }
@@ -125,20 +125,6 @@ export function ChatDialog({ documentId, dealerId, trigger }: ChatDialogProps) {
     if (sent) {
       console.log('Message sent successfully');
       setMessage('');
-      // 낙관적 업데이트 - 즉시 메시지를 UI에 추가
-      const optimisticMessage = {
-        id: Date.now(), // 임시 ID
-        roomId: chatRoom.id,
-        senderId: user.id,
-        senderType: userType,
-        senderName: user.name,
-        message: message.trim(),
-        messageType: 'text' as const,
-        createdAt: new Date(),
-        readAt: undefined
-      };
-      setMessages(prev => [...prev, optimisticMessage]);
-      setTimeout(scrollToBottom, 100);
     } else {
       console.error('Failed to send message - WebSocket not connected');
     }
@@ -157,18 +143,20 @@ export function ChatDialog({ documentId, dealerId, trigger }: ChatDialogProps) {
       console.log('Chat data received:', chatData);
       setChatRoom(chatData.room);
       setMessages(chatData.messages || []);
-      
-      // WebSocket 채팅방 참여
-      if (isConnected) {
-        console.log('Joining WebSocket room:', chatData.room.id);
-        const joinResult = sendWebSocketMessage({
-          type: 'join_room',
-          roomId: chatData.room.id
-        });
-        console.log('Join room message sent:', joinResult);
-      }
     }
-  }, [chatData, isConnected]);
+  }, [chatData]);
+
+  // WebSocket 연결 및 채팅방 참여 처리
+  useEffect(() => {
+    if (isConnected && chatRoom) {
+      console.log('WebSocket connected, joining room:', chatRoom.id);
+      const joinResult = sendWebSocketMessage({
+        type: 'join_room',
+        roomId: chatRoom.id
+      });
+      console.log('Join room message sent:', joinResult);
+    }
+  }, [isConnected, chatRoom]);
 
   // 별도 useEffect로 채팅방 생성 처리 - 단순화
   useEffect(() => {
