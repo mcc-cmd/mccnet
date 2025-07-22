@@ -2060,15 +2060,19 @@ export function AdminPanel() {
                                     </SelectTrigger>
                                   </FormControl>
                                   <SelectContent>
-                                    <SelectItem value="SK텔레콤">SK텔레콤</SelectItem>
-                                    <SelectItem value="KT텔레콤">KT텔레콤</SelectItem>
-                                    <SelectItem value="선불폰">선불폰</SelectItem>
-                                    <SelectItem value="중국외국인">중국외국인</SelectItem>
-                                    <SelectItem value="미래엔">미래엔</SelectItem>
-                                    <SelectItem value="엠모바일">엠모바일</SelectItem>
-                                    <SelectItem value="텔레콤">텔레콤</SelectItem>
-                                    <SelectItem value="헬로모바일">헬로모바일</SelectItem>
-                                    <SelectItem value="기타">기타</SelectItem>
+                                    <SelectItem value="SK텔링크">SK텔링크</SelectItem>
+                                    <SelectItem value="SK프리티">SK프리티</SelectItem>
+                                    <SelectItem value="SK스테이지파이브">SK스테이지파이브</SelectItem>
+                                    <SelectItem value="KT엠모바일">KT엠모바일</SelectItem>
+                                    <SelectItem value="KT스카이라이프">KT스카이라이프</SelectItem>
+                                    <SelectItem value="KT스테이지파이브">KT스테이지파이브</SelectItem>
+                                    <SelectItem value="KT코드모바일">KT코드모바일</SelectItem>
+                                    <SelectItem value="LG미디어로그">LG미디어로그</SelectItem>
+                                    <SelectItem value="LG헬로모바일">LG헬로모바일</SelectItem>
+                                    <SelectItem value="LG프리티">LG프리티</SelectItem>
+                                    <SelectItem value="LG밸류컴">LG밸류컴</SelectItem>
+                                    <SelectItem value="스마텔LG">스마텔LG</SelectItem>
+                                    <SelectItem value="KT">KT</SelectItem>
                                   </SelectContent>
                                 </Select>
                                 <FormMessage />
@@ -2239,15 +2243,19 @@ export function AdminPanel() {
                           <SelectValue placeholder="통신사를 선택하세요" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="SK텔레콤">SK텔레콤</SelectItem>
-                          <SelectItem value="KT텔레콤">KT텔레콤</SelectItem>
-                          <SelectItem value="선불폰">선불폰</SelectItem>
-                          <SelectItem value="중국외국인">중국외국인</SelectItem>
-                          <SelectItem value="미래엔">미래엔</SelectItem>
-                          <SelectItem value="엠모바일">엠모바일</SelectItem>
-                          <SelectItem value="텔레콤">텔레콤</SelectItem>
-                          <SelectItem value="헬로모바일">헬로모바일</SelectItem>
-                          <SelectItem value="기타">기타</SelectItem>
+                          <SelectItem value="SK텔링크">SK텔링크</SelectItem>
+                          <SelectItem value="SK프리티">SK프리티</SelectItem>
+                          <SelectItem value="SK스테이지파이브">SK스테이지파이브</SelectItem>
+                          <SelectItem value="KT엠모바일">KT엠모바일</SelectItem>
+                          <SelectItem value="KT스카이라이프">KT스카이라이프</SelectItem>
+                          <SelectItem value="KT스테이지파이브">KT스테이지파이브</SelectItem>
+                          <SelectItem value="KT코드모바일">KT코드모바일</SelectItem>
+                          <SelectItem value="LG미디어로그">LG미디어로그</SelectItem>
+                          <SelectItem value="LG헬로모바일">LG헬로모바일</SelectItem>
+                          <SelectItem value="LG프리티">LG프리티</SelectItem>
+                          <SelectItem value="LG밸류컴">LG밸류컴</SelectItem>
+                          <SelectItem value="스마텔LG">스마텔LG</SelectItem>
+                          <SelectItem value="KT">KT</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>

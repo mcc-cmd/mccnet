@@ -38,14 +38,15 @@ export function SubmitApplication() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [dragActive, setDragActive] = useState(false);
   
-  // 통신사 목록 (데이터베이스와 일치)
+  // 통신사 목록 (실제 운영 통신사)
   const carriers = [
-    'SK텔레콤', 'KT텔레콤', '선불폰', '중국외국인', '미래엔', '엠모바일', '텔레콤', '헬로모바일', '기타'
+    'SK텔링크', 'SK프리티', 'SK스테이지파이브', 'KT엠모바일', 'KT스카이라이프', 'KT스테이지파이브', 
+    'KT코드모바일', 'LG미디어로그', 'LG헬로모바일', 'LG프리티', 'LG밸류컴', '스마텔LG', 'KT'
   ];
   
-  // SK 계열사 체크 (SK텔레콤만 해당)
+  // SK 계열사 체크 (SK텔링크, SK프리티, SK스테이지파이브)
   const isSKCarrier = (carrier: string) => {
-    return carrier === 'SK텔레콤';
+    return carrier.startsWith('SK');
   };
 
   const uploadMutation = useMutation({
