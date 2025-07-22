@@ -35,8 +35,7 @@ export function ChatDialog({ documentId, dealerId, trigger }: ChatDialogProps) {
     queryFn: async () => {
       console.log('Fetching chat room for document:', documentId);
       try {
-        const response = await apiRequest(`/api/chat/room/${documentId}`, { method: 'GET' });
-        const result = await response.json();
+        const result = await apiRequest(`/api/chat/room/${documentId}`, { method: 'GET' });
         console.log('Chat room fetch result:', result);
         return result;
       } catch (error) {
@@ -53,30 +52,12 @@ export function ChatDialog({ documentId, dealerId, trigger }: ChatDialogProps) {
   const createRoomMutation = useMutation({
     mutationFn: async (data: { documentId: number; dealerId: number; workerId?: number }) => {
       console.log('Creating chat room with data:', data);
-      try {
-        const response = await apiRequest('/api/chat/room', { 
-          method: 'POST', 
-          body: JSON.stringify(data),
-          headers: { 'Content-Type': 'application/json' }
-        });
-        
-        if (!response.ok) {
-          const errorText = await response.text();
-          console.error('Chat room creation failed with status:', response.status, errorText);
-          throw new Error(`HTTP ${response.status}: ${errorText}`);
-        }
-        
-        const result = await response.json();
-        console.log('Chat room creation response:', result);
-        return result;
-      } catch (error) {
-        console.error('Chat room creation error:', error);
-        console.error('Error details:', {
-          message: error instanceof Error ? error.message : 'Unknown error',
-          stack: error instanceof Error ? error.stack : undefined
-        });
-        throw error;
-      }
+      const result = await apiRequest('/api/chat/room', { 
+        method: 'POST', 
+        body: JSON.stringify(data)
+      });
+      console.log('Chat room creation response:', result);
+      return result;
     },
     onSuccess: (data) => {
       console.log('Chat room created successfully:', data);
@@ -119,7 +100,7 @@ export function ChatDialog({ documentId, dealerId, trigger }: ChatDialogProps) {
     }
 
     const userType = user.userType === 'admin' ? 'worker' : 
-                    user.role === 'dealer_worker' ? 'worker' : 'dealer';
+                    user.userRole === 'dealer_worker' ? 'worker' : 'dealer';
     
     const messageData = {
       type: 'send_message',
@@ -166,19 +147,22 @@ export function ChatDialog({ documentId, dealerId, trigger }: ChatDialogProps) {
         });
         console.log('Join room message sent:', joinResult);
       }
-    } else if (chatData && !chatData.room) {
-      console.log('No chat room in response, creating new one');
-      // 채팅방이 없으면 생성 시도
-      if (user && !createRoomMutation.isPending) {
-        const workerId = user.userType === 'admin' || user.role === 'dealer_worker' ? user.id : undefined;
-        createRoomMutation.mutate({
-          documentId,
-          dealerId,
-          workerId
-        });
-      }
     }
   }, [chatData, isConnected]);
+
+  // 별도 useEffect로 채팅방 생성 처리 - 단순화
+  useEffect(() => {
+    if (open && chatData && !chatData.room && user && !createRoomMutation.isPending) {
+      console.log('Auto-creating chat room for document:', documentId);
+      console.log('Current user:', user);
+      const workerId = user.userType === 'admin' || user.userRole === 'dealer_worker' ? user.id : undefined;
+      createRoomMutation.mutate({
+        documentId,
+        dealerId,
+        workerId
+      });
+    }
+  }, [open, chatData, user, createRoomMutation.isPending]);
 
   // 메시지 변경 시 스크롤
   useEffect(() => {
