@@ -141,12 +141,24 @@ export const useApiRequest = () => {
       headers,
     });
 
+    console.log('API Response:', {
+      url,
+      status: response.status,
+      ok: response.ok,
+      statusText: response.statusText
+    });
+
     if (!response.ok) {
+      console.error('API request failed:', {
+        url,
+        status: response.status,
+        statusText: response.statusText
+      });
       const error = await response.json().catch(() => ({ error: '요청에 실패했습니다.' }));
       throw new Error(error.error || '요청에 실패했습니다.');
     }
 
-    return response.json();
+    return response;
   };
 
   return apiRequest;

@@ -36,10 +36,6 @@ export function ChatDialog({ documentId, dealerId, trigger }: ChatDialogProps) {
       console.log('Fetching chat room for document:', documentId);
       try {
         const response = await apiRequest(`/api/chat/room/${documentId}`, { method: 'GET' });
-        if (!response.ok) {
-          console.log('Chat room not found, status:', response.status);
-          return null;
-        }
         const result = await response.json();
         console.log('Chat room fetch result:', result);
         return result;
@@ -75,14 +71,22 @@ export function ChatDialog({ documentId, dealerId, trigger }: ChatDialogProps) {
         return result;
       } catch (error) {
         console.error('Chat room creation error:', error);
+        console.error('Error details:', {
+          message: error instanceof Error ? error.message : 'Unknown error',
+          stack: error instanceof Error ? error.stack : undefined
+        });
         throw error;
       }
     },
     onSuccess: (data) => {
       console.log('Chat room created successfully:', data);
-      setChatRoom(data.room);
-      setMessages(data.messages || []);
-      queryClient.invalidateQueries({ queryKey: ['chat-room', documentId] });
+      if (data && data.room) {
+        setChatRoom(data.room);
+        setMessages(data.messages || []);
+        queryClient.invalidateQueries({ queryKey: ['chat-room', documentId] });
+      } else {
+        console.error('Invalid chat room data:', data);
+      }
     },
     onError: (error) => {
       console.error('Chat room creation failed:', error);
@@ -148,19 +152,30 @@ export function ChatDialog({ documentId, dealerId, trigger }: ChatDialogProps) {
 
   // 채팅방 데이터 업데이트
   useEffect(() => {
-    if (chatData) {
+    if (chatData && chatData.room) {
       console.log('Chat data received:', chatData);
       setChatRoom(chatData.room);
       setMessages(chatData.messages || []);
       
       // WebSocket 채팅방 참여
-      if (chatData.room && isConnected) {
+      if (isConnected) {
         console.log('Joining WebSocket room:', chatData.room.id);
         const joinResult = sendWebSocketMessage({
           type: 'join_room',
           roomId: chatData.room.id
         });
         console.log('Join room message sent:', joinResult);
+      }
+    } else if (chatData && !chatData.room) {
+      console.log('No chat room in response, creating new one');
+      // 채팅방이 없으면 생성 시도
+      if (user && !createRoomMutation.isPending) {
+        const workerId = user.userType === 'admin' || user.role === 'dealer_worker' ? user.id : undefined;
+        createRoomMutation.mutate({
+          documentId,
+          dealerId,
+          workerId
+        });
       }
     }
   }, [chatData, isConnected]);
@@ -205,7 +220,7 @@ export function ChatDialog({ documentId, dealerId, trigger }: ChatDialogProps) {
 
   // 채팅방 생성 시도
   useEffect(() => {
-    if (open && !chatRoom && !isLoading && !createRoomMutation.isPending && user && !chatData) {
+    if (open && !chatRoom && !isLoading && !createRoomMutation.isPending && user && chatData === null) {
       console.log('Auto-creating chat room for document:', documentId);
       console.log('Current user:', user);
       console.log('Current sessionId:', useAuth.getState().sessionId);
