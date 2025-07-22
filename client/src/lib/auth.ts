@@ -158,7 +158,7 @@ export const useApiRequest = () => {
       throw new Error(error.error || '요청에 실패했습니다.');
     }
 
-    return response;
+    return response.json();
   };
 
   return apiRequest;

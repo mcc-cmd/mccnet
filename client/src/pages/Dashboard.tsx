@@ -136,7 +136,7 @@ export function Dashboard() {
   const handleCarrierClick = async (carrier: string) => {
     try {
       setSelectedCarrier(carrier);
-      const response = await apiRequest(`/api/admin/carrier-details/${carrier}`);
+      const response = await apiRequest(`/api/admin/carrier-details/${carrier}`) as Array<{ dealerName: string; count: number }>;
       setCarrierDealerDetails(response);
       setCarrierDetailsOpen(true);
     } catch (error) {
@@ -147,7 +147,7 @@ export function Dashboard() {
   const handleWorkerClick = async (worker: { id: number; name: string }) => {
     try {
       setSelectedWorker(worker);
-      const response = await apiRequest(`/api/admin/worker-details/${worker.id}`);
+      const response = await apiRequest(`/api/admin/worker-details/${worker.id}`) as Array<{ carrier: string; count: number }>;
       setWorkerCarrierDetails(response);
       setWorkerDetailsOpen(true);
     } catch (error) {
@@ -316,7 +316,7 @@ export function Dashboard() {
         )}
 
         {/* Worker personal stats */}
-        {user?.userType === 'dealer_worker' && (
+        {user?.userRole === 'dealer_worker' && (
           <Card>
             <CardHeader>
               <CardTitle className="text-lg font-semibold">내 개통 실적</CardTitle>
@@ -557,7 +557,7 @@ export function Dashboard() {
                               {getStatusBadge(doc.status)}
                             </td>
                             <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
-                              {formatSafeDate(doc.uploadedAt)}
+                              {formatSafeDate(doc.uploadedAt, 'yyyy-MM-dd HH:mm')}
                             </td>
                           </tr>
                         ))}
