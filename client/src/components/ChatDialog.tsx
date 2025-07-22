@@ -30,14 +30,27 @@ export function ChatDialog({ documentId, dealerId, trigger }: ChatDialogProps) {
   };
 
   // 채팅방 데이터 조회
-  const { data: chatData, isLoading } = useQuery({
+  const { data: chatData, isLoading, error: chatError } = useQuery({
     queryKey: ['chat-room', documentId],
     queryFn: async () => {
-      const response = await apiRequest(`/api/chat/room/${documentId}`, { method: 'GET' });
-      return response.json();
+      console.log('Fetching chat room for document:', documentId);
+      try {
+        const response = await apiRequest(`/api/chat/room/${documentId}`, { method: 'GET' });
+        if (!response.ok) {
+          console.log('Chat room not found, status:', response.status);
+          return null;
+        }
+        const result = await response.json();
+        console.log('Chat room fetch result:', result);
+        return result;
+      } catch (error) {
+        console.log('Chat room fetch error:', error);
+        return null;
+      }
     },
     enabled: open,
-    refetchOnWindowFocus: false
+    refetchOnWindowFocus: false,
+    retry: false
   });
 
   // 채팅방 생성/업데이트
@@ -180,7 +193,7 @@ export function ChatDialog({ documentId, dealerId, trigger }: ChatDialogProps) {
 
   // 채팅방 생성 시도
   useEffect(() => {
-    if (open && !chatRoom && !isLoading && !createRoomMutation.isPending && user) {
+    if (open && !chatRoom && !isLoading && !createRoomMutation.isPending && user && !chatData) {
       console.log('Auto-creating chat room for document:', documentId);
       const workerId = user.userType === 'admin' || user.role === 'dealer_worker' ? user.id : undefined;
       createRoomMutation.mutate({
@@ -189,7 +202,7 @@ export function ChatDialog({ documentId, dealerId, trigger }: ChatDialogProps) {
         workerId
       });
     }
-  }, [open, chatRoom, isLoading, createRoomMutation.isPending, user]);
+  }, [open, chatRoom, isLoading, createRoomMutation.isPending, user, chatData]);
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
