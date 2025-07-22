@@ -27,6 +27,19 @@ import { ko } from 'date-fns/locale';
 export function Dashboard() {
   const apiRequest = useApiRequest();
   const { user } = useAuth();
+
+  // 안전한 날짜 포맷팅 함수
+  const formatSafeDate = (dateString: string | null | undefined, formatString: string = 'yyyy-MM-dd HH:mm') => {
+    if (!dateString) return '-';
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) return '-';
+      return format(date, formatString, { locale: ko });
+    } catch (error) {
+      console.error('Date formatting error:', error, 'for date:', dateString);
+      return '-';
+    }
+  };
   
   // Date filter states for general dashboard
   const [startDate, setStartDate] = useState('');
@@ -544,7 +557,7 @@ export function Dashboard() {
                               {getStatusBadge(doc.status)}
                             </td>
                             <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
-                              {format(new Date(doc.uploadedAt), 'yyyy-MM-dd HH:mm', { locale: ko })}
+                              {formatSafeDate(doc.uploadedAt)}
                             </td>
                           </tr>
                         ))}
@@ -579,7 +592,7 @@ export function Dashboard() {
                           {activePricingTable.title}
                         </p>
                         <p className="text-xs text-gray-500 mt-1">
-                          {format(new Date(activePricingTable.uploadedAt), 'yyyy-MM-dd 게시', { locale: ko })}
+                          {formatSafeDate(activePricingTable.uploadedAt, 'yyyy-MM-dd') + ' 게시'}
                         </p>
                         <Button
                           variant="link"
