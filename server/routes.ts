@@ -101,20 +101,28 @@ const templateUpload = multer({
 
 // Middleware to check authentication
 const requireAuth = async (req: any, res: any, next: any) => {
-  const sessionId = req.headers.authorization?.replace('Bearer ', '');
+  const authHeader = req.headers.authorization;
+  console.log('Auth check - Header:', authHeader);
   
-  if (!sessionId) {
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    console.log('Auth failed - No valid header');
     return res.status(401).json({ error: '인증이 필요합니다.' });
   }
+  
+  const sessionId = authHeader.replace('Bearer ', '');
+  console.log('Auth check - SessionId:', sessionId);
 
   const session = await storage.getSession(sessionId);
+  console.log('Auth check - Session found:', session ? 'yes' : 'no');
   
   if (!session) {
+    console.log('Auth failed - Invalid session');
     return res.status(401).json({ error: '유효하지 않은 세션입니다.' });
   }
 
   req.session = session;
   req.user = session; // Add user property for compatibility
+  console.log('Auth success - User:', session.userId);
   next();
 };
 
@@ -1686,14 +1694,22 @@ router.post('/api/settlements/manual', requireAuth, async (req: any, res) => {
 // 채팅 관련 API 엔드포인트
 router.get('/api/chat/room/:documentId', requireAuth, async (req: any, res) => {
   try {
+    console.log('Getting chat room for document:', req.params.documentId);
+    console.log('Session data:', { 
+      userId: req.session.userId, 
+      userType: req.session.userType 
+    });
+    
     const documentId = parseInt(req.params.documentId);
     const chatRoom = await storage.getChatRoom(documentId);
     
     if (!chatRoom) {
+      console.log('No chat room found for document:', documentId);
       return res.json({ room: null, messages: [] });
     }
     
     const messages = await storage.getChatMessages(chatRoom.id);
+    console.log('Chat room found with', messages.length, 'messages');
     res.json({ room: chatRoom, messages });
   } catch (error: any) {
     console.error('Get chat room error:', error);
@@ -1703,20 +1719,31 @@ router.get('/api/chat/room/:documentId', requireAuth, async (req: any, res) => {
 
 router.post('/api/chat/room', requireAuth, async (req: any, res) => {
   try {
+    console.log('Creating chat room with body:', req.body);
+    console.log('Session data:', { 
+      userId: req.session.userId, 
+      userType: req.session.userType 
+    });
+    
     const { documentId, dealerId, workerId } = req.body;
     
     // 기존 채팅방이 있는지 확인
     let chatRoom = await storage.getChatRoom(documentId);
     
     if (!chatRoom) {
+      console.log('Creating new chat room for document:', documentId);
       // 새 채팅방 생성
       chatRoom = await storage.createChatRoom(documentId, dealerId, workerId);
+      console.log('Chat room created:', chatRoom);
     } else if (workerId && !chatRoom.workerId) {
+      console.log('Updating existing chat room with worker:', workerId);
       // 기존 채팅방에 근무자 할당
       chatRoom = await storage.updateChatRoom(chatRoom.id, { workerId });
+      console.log('Chat room updated:', chatRoom);
     }
     
     const messages = await storage.getChatMessages(chatRoom.id);
+    console.log('Returning chat room with', messages.length, 'messages');
     res.json({ room: chatRoom, messages });
   } catch (error: any) {
     console.error('Create chat room error:', error);

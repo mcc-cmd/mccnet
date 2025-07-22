@@ -57,14 +57,26 @@ export function ChatDialog({ documentId, dealerId, trigger }: ChatDialogProps) {
   const createRoomMutation = useMutation({
     mutationFn: async (data: { documentId: number; dealerId: number; workerId?: number }) => {
       console.log('Creating chat room with data:', data);
-      const response = await apiRequest('/api/chat/room', { 
-        method: 'POST', 
-        body: JSON.stringify(data),
-        headers: { 'Content-Type': 'application/json' }
-      });
-      const result = await response.json();
-      console.log('Chat room creation response:', result);
-      return result;
+      try {
+        const response = await apiRequest('/api/chat/room', { 
+          method: 'POST', 
+          body: JSON.stringify(data),
+          headers: { 'Content-Type': 'application/json' }
+        });
+        
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error('Chat room creation failed with status:', response.status, errorText);
+          throw new Error(`HTTP ${response.status}: ${errorText}`);
+        }
+        
+        const result = await response.json();
+        console.log('Chat room creation response:', result);
+        return result;
+      } catch (error) {
+        console.error('Chat room creation error:', error);
+        throw error;
+      }
     },
     onSuccess: (data) => {
       console.log('Chat room created successfully:', data);
@@ -195,6 +207,8 @@ export function ChatDialog({ documentId, dealerId, trigger }: ChatDialogProps) {
   useEffect(() => {
     if (open && !chatRoom && !isLoading && !createRoomMutation.isPending && user && !chatData) {
       console.log('Auto-creating chat room for document:', documentId);
+      console.log('Current user:', user);
+      console.log('Current sessionId:', useAuth.getState().sessionId);
       const workerId = user.userType === 'admin' || user.role === 'dealer_worker' ? user.id : undefined;
       createRoomMutation.mutate({
         documentId,
