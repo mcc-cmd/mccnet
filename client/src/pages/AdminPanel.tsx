@@ -2061,8 +2061,14 @@ export function AdminPanel() {
                                   </FormControl>
                                   <SelectContent>
                                     <SelectItem value="SK텔레콤">SK텔레콤</SelectItem>
-                                    <SelectItem value="KT">KT</SelectItem>
-                                    <SelectItem value="LG U+">LG U+</SelectItem>
+                                    <SelectItem value="KT텔레콤">KT텔레콤</SelectItem>
+                                    <SelectItem value="선불폰">선불폰</SelectItem>
+                                    <SelectItem value="중국외국인">중국외국인</SelectItem>
+                                    <SelectItem value="미래엔">미래엔</SelectItem>
+                                    <SelectItem value="엠모바일">엠모바일</SelectItem>
+                                    <SelectItem value="텔레콤">텔레콤</SelectItem>
+                                    <SelectItem value="헬로모바일">헬로모바일</SelectItem>
+                                    <SelectItem value="기타">기타</SelectItem>
                                   </SelectContent>
                                 </Select>
                                 <FormMessage />
@@ -2233,14 +2239,15 @@ export function AdminPanel() {
                           <SelectValue placeholder="통신사를 선택하세요" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="선불">선불</SelectItem>
-                          <SelectItem value="KT">KT</SelectItem>
                           <SelectItem value="SK텔레콤">SK텔레콤</SelectItem>
+                          <SelectItem value="KT텔레콤">KT텔레콤</SelectItem>
+                          <SelectItem value="선불폰">선불폰</SelectItem>
+                          <SelectItem value="중국외국인">중국외국인</SelectItem>
                           <SelectItem value="미래엔">미래엔</SelectItem>
                           <SelectItem value="엠모바일">엠모바일</SelectItem>
-                          <SelectItem value="중외할부통신">중외할부통신</SelectItem>
                           <SelectItem value="텔레콤">텔레콤</SelectItem>
                           <SelectItem value="헬로모바일">헬로모바일</SelectItem>
+                          <SelectItem value="기타">기타</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>

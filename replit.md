@@ -244,6 +244,9 @@ This is a document management system built for MCC네트월드 telecommunication
 - July 21, 2025. Fixed worker activation statistics duplicate ID issue by consolidating getWorkerStats functions and removing duplicate API routes
 - July 21, 2025. Enhanced dealer memo display visibility: added prominent memo boxes in CompletedActivations page and AdminPanel document management tab
 - July 21, 2025. Fixed dealer memo visibility issues for dealer login accounts by improving UI styling with green boxes and proper memo field display
+- July 22, 2025. Implemented carrier-specific service plan filtering: service plans are now filtered by document carrier in activation dialogs
+- July 22, 2025. Updated all carrier lists to match database records: SK텔레콤, KT텔레콤, 선불폰, 중국외국인, 미래엔, 엠모바일, 텔레콤, 헬로모바일, 기타
+- July 22, 2025. Enhanced service plan selection UI with carrier information display and automatic filtering based on selected document
 
 ## User Preferences
 
