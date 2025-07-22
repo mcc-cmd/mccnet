@@ -2224,19 +2224,7 @@ class SqliteStorage implements IStorage {
     );
     
     const messageId = result.lastInsertRowid as number;
-    const message = db.prepare('SELECT * FROM chat_messages WHERE id = ?').get(messageId) as any;
-    
-    return {
-      id: message.id,
-      roomId: message.room_id,
-      senderId: message.sender_id,
-      senderType: message.sender_type,
-      senderName: message.sender_name,
-      message: message.message,
-      messageType: message.message_type,
-      readAt: message.read_at ? new Date(message.read_at) : undefined,
-      createdAt: new Date(message.created_at)
-    };
+    return this.getChatMessageById(messageId) as Promise<ChatMessage>;
   }
 
   async getChatMessages(roomId: number): Promise<ChatMessage[]> {
@@ -2254,9 +2242,27 @@ class SqliteStorage implements IStorage {
       senderName: msg.sender_name,
       message: msg.message,
       messageType: msg.message_type,
-      readAt: msg.read_at ? new Date(msg.read_at) : undefined,
-      createdAt: new Date(msg.created_at)
+      createdAt: new Date(msg.created_at),
+      readAt: msg.read_at ? new Date(msg.read_at) : undefined
     }));
+  }
+
+  async getChatMessageById(messageId: number): Promise<ChatMessage | null> {
+    const msg = db.prepare('SELECT * FROM chat_messages WHERE id = ?').get(messageId) as any;
+    
+    if (!msg) return null;
+    
+    return {
+      id: msg.id,
+      roomId: msg.room_id,
+      senderId: msg.sender_id,
+      senderType: msg.sender_type,
+      senderName: msg.sender_name,
+      message: msg.message,
+      messageType: msg.message_type,
+      createdAt: new Date(msg.created_at),
+      readAt: msg.read_at ? new Date(msg.read_at) : undefined
+    };
   }
 
   async markMessageAsRead(messageId: number): Promise<void> {

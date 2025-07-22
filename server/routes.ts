@@ -1735,4 +1735,75 @@ router.get('/api/chat/messages/:roomId', requireAuth, async (req: any, res) => {
   }
 });
 
+// 채팅 API 라우트들
+router.post('/api/chat/room', requireAuth, async (req: any, res) => {
+  try {
+    const { documentId, dealerId, workerId } = req.body;
+    
+    // 기존 채팅방 확인
+    const existingRoom = await storage.getChatRoom(documentId);
+    if (existingRoom) {
+      const messages = await storage.getChatMessages(existingRoom.id);
+      return res.json({ room: existingRoom, messages });
+    }
+    
+    // 새 채팅방 생성
+    const room = await storage.createChatRoom(documentId, dealerId, workerId);
+    const messages = await storage.getChatMessages(room.id);
+    
+    res.json({ room, messages });
+  } catch (error: any) {
+    console.error('Chat room creation error:', error);
+    res.status(500).json({ error: '채팅방 생성에 실패했습니다.' });
+  }
+});
+
+router.get('/api/chat/room/:documentId', requireAuth, async (req: any, res) => {
+  try {
+    const documentId = parseInt(req.params.documentId);
+    const room = await storage.getChatRoom(documentId);
+    
+    if (!room) {
+      return res.status(404).json({ error: '채팅방을 찾을 수 없습니다.' });
+    }
+    
+    const messages = await storage.getChatMessages(room.id);
+    res.json({ room, messages });
+  } catch (error: any) {
+    console.error('Get chat room error:', error);
+    res.status(500).json({ error: '채팅방 조회에 실패했습니다.' });
+  }
+});
+
+router.post('/api/chat/message', requireAuth, async (req: any, res) => {
+  try {
+    const { roomId, message } = req.body;
+    const { userId, userType, userRole } = req.session;
+    
+    const senderType = userType === 'admin' || userRole === 'dealer_worker' ? 'worker' : 'dealer';
+    // 사용자 이름 가져오기
+    let senderName = '사용자';
+    try {
+      const user = await storage.getUserById(userId);
+      senderName = user?.name || '사용자';
+    } catch (error) {
+      console.log('Failed to get user name, using default');
+    }
+    
+    const chatMessage = await storage.createChatMessage({
+      roomId,
+      senderId: userId,
+      senderType,
+      senderName,
+      message,
+      messageType: 'text'
+    });
+    
+    res.json(chatMessage);
+  } catch (error: any) {
+    console.error('Send message error:', error);
+    res.status(500).json({ error: '메시지 전송에 실패했습니다.' });
+  }
+});
+
 export default router;
