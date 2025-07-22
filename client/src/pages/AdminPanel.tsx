@@ -1561,6 +1561,9 @@ export function AdminPanel() {
                             개통상태
                           </th>
                           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            판매점 메모
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                             업로드일
                           </th>
                           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -1588,6 +1591,20 @@ export function AdminPanel() {
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap">
                               {getActivationStatusBadge((doc as any).activationStatus || '대기')}
+                            </td>
+                            <td className="px-6 py-4 text-sm">
+                              {(doc as any).dealerNotes ? (
+                                <div className="max-w-xs">
+                                  <div className="p-2 bg-green-50 border-l-4 border-green-400 rounded-r text-xs">
+                                    <div className="font-bold text-green-800 mb-1">💼 판매점 메모</div>
+                                    <div className="text-green-700 leading-tight truncate">
+                                      {(doc as any).dealerNotes}
+                                    </div>
+                                  </div>
+                                </div>
+                              ) : (
+                                <span className="text-gray-400 text-xs">메모 없음</span>
+                              )}
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                               {format(new Date(doc.uploadedAt), 'yyyy-MM-dd HH:mm', { locale: ko })}

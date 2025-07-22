@@ -241,6 +241,9 @@ This is a document management system built for MCC네트월드 telecommunication
 - July 21, 2025. Added worker-carrier details API showing which carriers each worker has activated
 - July 21, 2025. Added carrier-dealer details API showing which dealers have activations for each carrier
 - July 21, 2025. Enhanced dashboard and admin panel with modal dialogs displaying detailed breakdowns for better analytics
+- July 21, 2025. Fixed worker activation statistics duplicate ID issue by consolidating getWorkerStats functions and removing duplicate API routes
+- July 21, 2025. Enhanced dealer memo display visibility: added prominent memo boxes in CompletedActivations page and AdminPanel document management tab
+- July 21, 2025. Fixed dealer memo visibility issues for dealer login accounts by improving UI styling with green boxes and proper memo field display
 
 ## User Preferences
 

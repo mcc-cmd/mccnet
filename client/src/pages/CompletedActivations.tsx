@@ -197,6 +197,16 @@ export function CompletedActivations() {
                                   월 {(doc as any).totalMonthlyFee.toLocaleString()}원
                                 </div>
                               )}
+
+                              {/* 판매점 전달 메모 표시 */}
+                              {(doc as any).dealerNotes && (
+                                <div className="mt-2 p-2 bg-green-50 border-l-4 border-green-400 rounded-r text-xs">
+                                  <div className="font-bold text-green-800 mb-1">💼 판매점 메모</div>
+                                  <div className="text-green-700 leading-tight">
+                                    {(doc as any).dealerNotes}
+                                  </div>
+                                </div>
+                              )}
                             </div>
                           </td>
                           <td className="px-3 py-2 text-sm text-gray-500">
@@ -280,6 +290,19 @@ export function CompletedActivations() {
                           
                           <p><span className="font-medium">개통일:</span> {doc.activatedAt ? format(new Date(doc.activatedAt), 'yyyy-MM-dd', { locale: ko }) : '-'}</p>
                         </div>
+
+                        {/* 판매점 전달 메모 표시 */}
+                        {(doc as any).dealerNotes && (
+                          <div className="mt-3 p-3 bg-gradient-to-r from-green-50 to-teal-50 border-l-4 border-green-500 rounded-r-lg shadow-sm">
+                            <div className="flex items-center mb-2">
+                              <span className="text-lg mr-2">💼</span>
+                              <div className="text-sm font-bold text-green-800">판매점 전달 메모</div>
+                            </div>
+                            <div className="text-sm text-green-900 bg-white p-2 rounded border border-green-200">
+                              {(doc as any).dealerNotes}
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </Card>
                   ))}
