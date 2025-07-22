@@ -411,15 +411,7 @@ router.delete('/api/admin/users/:id', requireAdmin, async (req, res) => {
   }
 });
 
-// Worker statistics endpoint (admin only)
-router.get('/api/worker-stats', requireAdmin, async (req: any, res) => {
-  try {
-    const stats = await storage.getWorkerStats();
-    res.json(stats);
-  } catch (error: any) {
-    res.status(500).json({ error: error.message });
-  }
-});
+
 
 router.post('/api/admin/pricing-tables', requireAdmin, pricingUpload.single('file'), async (req: any, res) => {
   try {
@@ -851,16 +843,7 @@ router.get('/api/document-templates/:id/download', requireAuth, async (req, res)
   }
 });
 
-// Worker stats route
-router.get('/api/worker-stats', requireAuth, async (req: any, res) => {
-  try {
-    const dealerId = req.session.userType === 'admin' ? undefined : req.session.dealerId;
-    const stats = await storage.getWorkerStats(dealerId);
-    res.json(stats);
-  } catch (error: any) {
-    res.status(500).json({ error: error.message });
-  }
-});
+
 
 // 개통서류 엑셀 다운로드 API
 router.get('/api/admin/export/activated-documents', requireAdmin, async (req: any, res) => {

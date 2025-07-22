@@ -368,7 +368,7 @@ export interface IStorage {
   getDocumentTemplateById(id: number): Promise<any | null>;
   
   // Worker stats
-  getWorkerStats(dealerId?: number): Promise<WorkerStats[]>;
+  getWorkerStatsWithDealer(dealerId?: number): Promise<WorkerStats[]>;
   
   // Dashboard stats
   getDashboardStats(dealerId?: number): Promise<DashboardStats>;
@@ -1772,11 +1772,11 @@ class SqliteStorage implements IStorage {
       SELECT 
         u.id as workerId,
         u.name as workerName,
-        COUNT(*) as count
+        COUNT(DISTINCT d.id) as count
       FROM documents d
       JOIN users u ON d.activated_by = u.id
-      WHERE d.activation_status = '개통'${dateFilter}
-      GROUP BY d.activated_by, u.id, u.name
+      WHERE d.activation_status = '개통' AND d.activated_by IS NOT NULL${dateFilter}
+      GROUP BY u.id, u.name
       ORDER BY count DESC
     `;
     return db.prepare(workerQuery).all(...dateParams) as any[];
@@ -1842,14 +1842,14 @@ class SqliteStorage implements IStorage {
     };
   }
 
-  async getWorkerStats(dealerId?: number): Promise<WorkerStats[]> {
+  async getWorkerStatsWithDealer(dealerId?: number): Promise<WorkerStats[]> {
     let query = `
       SELECT 
         u.name as worker_name,
         u.id as worker_id,
         d.name as dealer_name,
         d.id as dealer_id,
-        COUNT(*) as total_activations,
+        COUNT(DISTINCT docs.id) as total_activations,
         SUM(CASE WHEN date(docs.activated_at) >= date('now', 'start of month') THEN 1 ELSE 0 END) as monthly_activations
       FROM documents docs
       JOIN users u ON docs.activated_by = u.id
