@@ -209,7 +209,7 @@ export function Dashboard() {
                       ))}
                     </div>
                   ) : (
-                    (carrierStats || []).map((carrier: any, index: number) => (
+                    (Array.isArray(carrierStats) ? carrierStats : []).map((carrier: any, index: number) => (
                       <div key={index} className="flex justify-between items-center p-2 bg-gray-50 rounded">
                         <button 
                           onClick={() => handleCarrierClick(carrier.carrier)}
@@ -284,7 +284,7 @@ export function Dashboard() {
                       ))}
                     </div>
                   ) : (
-                    (workerStats || []).map((worker: any, index: number) => (
+                    (Array.isArray(workerStats) ? workerStats : []).map((worker: any, index: number) => (
                       <div key={index} className="flex justify-between items-center p-2 bg-gray-50 rounded">
                         <button 
                           onClick={() => handleWorkerClick({ id: worker.workerId, name: worker.workerName })}

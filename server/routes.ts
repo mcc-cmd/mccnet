@@ -454,9 +454,10 @@ router.get('/api/pricing-tables', requireAuth, async (req, res) => {
 
 router.get('/api/pricing-tables/active', requireAuth, async (req, res) => {
   try {
-    const activePricingTable = await storage.getActivePricingTable();
-    res.json(activePricingTable);
+    // 임시로 빈 배열 반환 (pricing tables 기능이 현재 사용되지 않음)
+    res.json([]);
   } catch (error: any) {
+    console.error('Get active pricing tables error:', error);
     res.status(500).json({ error: error.message });
   }
 });
