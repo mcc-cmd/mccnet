@@ -121,13 +121,16 @@ async function handleChatMessage(message: any) {
     console.log('Room participants check for room:', roomId);
     let broadcastCount = 0;
     
-    // 모든 연결된 클라이언트에게 메시지 전송 (채팅방 참여 여부와 관계없이)
+    // 해당 채팅방에 참여한 클라이언트에게만 메시지 전송
     for (const client of clients.values()) {
       console.log(`Client ${client.userId} in rooms:`, Array.from(client.roomIds));
-      if (client.ws.readyState === WebSocket.OPEN) {
+      if (client.roomIds.has(roomId) && client.ws.readyState === WebSocket.OPEN) {
+        console.log(`Sending message to client ${client.userId} for room ${roomId}`);
         client.ws.send(JSON.stringify(broadcastMessage));
         broadcastCount++;
         console.log(`Message sent to client ${client.userId}`);
+      } else if (client.ws.readyState === WebSocket.OPEN) {
+        console.log(`Client ${client.userId} not in room ${roomId}, skipping`);
       }
     }
     console.log('Message broadcasted to', broadcastCount, 'clients');

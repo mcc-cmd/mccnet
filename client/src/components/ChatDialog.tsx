@@ -77,16 +77,29 @@ export function ChatDialog({ documentId, dealerId, trigger }: ChatDialogProps) {
   // WebSocket 메시지 핸들링
   const { isConnected, sendMessage: sendWebSocketMessage } = useWebSocket({
     onMessage: (wsMessage) => {
-      console.log('WebSocket message received:', wsMessage);
+      console.log('WebSocket message received in ChatDialog:', wsMessage);
       if (wsMessage.type === 'new_message') {
-        console.log('Adding new message to UI:', wsMessage.message);
+        console.log('Processing new message for room:', wsMessage.roomId, 'Current room:', chatRoom?.id);
+        console.log('Message data:', wsMessage.message);
+        
+        // 현재 열려있는 채팅방의 메시지인지 확인
+        if (!chatRoom || wsMessage.roomId !== chatRoom.id) {
+          console.log('Message not for current room, ignoring');
+          return;
+        }
+        
         setMessages(prev => {
           // 중복 메시지 방지
           const exists = prev.some(msg => msg.id === wsMessage.message.id);
-          if (exists) return prev;
-          return [...prev, wsMessage.message];
+          if (exists) {
+            console.log('Message already exists, skipping');
+            return prev;
+          }
+          console.log('Adding message to UI');
+          const newMessages = [...prev, wsMessage.message];
+          setTimeout(scrollToBottom, 100);
+          return newMessages;
         });
-        setTimeout(scrollToBottom, 100);
       } else if (wsMessage.type === 'joined_room') {
         // 채팅방 참여 확인
         console.log('Joined chat room:', wsMessage.roomId);
