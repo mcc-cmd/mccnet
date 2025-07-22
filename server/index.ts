@@ -59,19 +59,24 @@ wss.on('connection', (ws: WebSocket, req) => {
         case 'join_room':
           // 채팅방 참여
           const { roomId } = message;
+          console.log(`Join room request for room ${roomId}`);
+          
           // 현재 WebSocket에 해당하는 클라이언트 찾기
-          let found = false;
+          let foundClient = null;
           for (const [userId, client] of clients.entries()) {
             if (client.ws === ws) {
+              foundClient = client;
               client.roomIds.add(roomId);
               console.log(`Client ${userId} joined room ${roomId}, now in rooms:`, Array.from(client.roomIds));
-              ws.send(JSON.stringify({ type: 'joined_room', roomId }));
-              found = true;
+              ws.send(JSON.stringify({ type: 'joined_room', roomId, userId }));
               break;
             }
           }
-          if (!found) {
-            console.log('Client not found for join_room - WebSocket not authenticated yet');
+          
+          if (!foundClient) {
+            console.log('Client not found for join_room - WebSocket connection issue');
+            // 응답은 보내되 경고 메시지 포함
+            ws.send(JSON.stringify({ type: 'joined_room', roomId, error: 'not_authenticated' }));
           }
           break;
 
@@ -91,12 +96,12 @@ wss.on('connection', (ws: WebSocket, req) => {
     // 클라이언트 연결 제거
     for (const [userId, client] of clients.entries()) {
       if (client.ws === ws) {
-        console.log(`WebSocket client ${userId} disconnected`);
+        console.log(`WebSocket client ${userId} disconnected, was in rooms:`, Array.from(client.roomIds));
         clients.delete(userId);
         break;
       }
     }
-    console.log('WebSocket client disconnected');
+    console.log(`WebSocket client disconnected. Total clients: ${clients.size}`);
   });
 });
 
@@ -131,14 +136,15 @@ async function handleChatMessage(message: any) {
     
     // 해당 채팅방에 참여한 클라이언트에게만 메시지 전송
     for (const client of clients.values()) {
-      console.log(`Client ${client.userId} in rooms:`, Array.from(client.roomIds));
+      console.log(`Checking client ${client.userId} - in rooms:`, Array.from(client.roomIds), `WebSocket state: ${client.ws.readyState}`);
       if (client.roomIds.has(roomId) && client.ws.readyState === WebSocket.OPEN) {
-        console.log(`Sending message to client ${client.userId} for room ${roomId}`);
+        console.log(`✓ Sending message to client ${client.userId} for room ${roomId}`);
         client.ws.send(JSON.stringify(broadcastMessage));
         broadcastCount++;
-        console.log(`Message sent to client ${client.userId}`);
       } else if (client.ws.readyState === WebSocket.OPEN) {
-        console.log(`Client ${client.userId} not in room ${roomId}, skipping`);
+        console.log(`✗ Client ${client.userId} not in room ${roomId}, skipping`);
+      } else {
+        console.log(`✗ Client ${client.userId} WebSocket not ready (state: ${client.ws.readyState})`);
       }
     }
     console.log('Message broadcasted to', broadcastCount, 'clients');
