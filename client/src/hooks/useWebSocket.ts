@@ -63,12 +63,12 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
       }
     };
 
-    ws.current.onclose = () => {
-      console.log('WebSocket disconnected');
+    ws.current.onclose = (event) => {
+      console.log('WebSocket disconnected', event.code, event.reason);
       setIsConnected(false);
       
-      // 자동 재연결
-      if (reconnectCount.current < reconnectAttempts) {
+      // 정상 종료가 아닌 경우에만 재연결 시도
+      if (event.code !== 1000 && reconnectCount.current < reconnectAttempts) {
         reconnectCount.current++;
         console.log(`Attempting to reconnect... (${reconnectCount.current}/${reconnectAttempts})`);
         setTimeout(connect, reconnectInterval);
@@ -96,7 +96,7 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
   };
 
   useEffect(() => {
-    if (user) {
+    if (user && !ws.current) {
       connect();
     }
 

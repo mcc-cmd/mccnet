@@ -20,6 +20,7 @@ export function ChatDialog({ documentId, dealerId, trigger }: ChatDialogProps) {
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [chatRoom, setChatRoom] = useState<ChatRoom | null>(null);
+  const [connectionStatus, setConnectionStatus] = useState<'connecting' | 'connected' | 'disconnected'>('disconnected');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { user } = useAuth();
   const apiRequest = useApiRequest();
@@ -74,47 +75,35 @@ export function ChatDialog({ documentId, dealerId, trigger }: ChatDialogProps) {
     }
   });
 
-  // WebSocket 메시지 핸들링
-  const { isConnected, sendMessage: sendWebSocketMessage } = useWebSocket({
-    onMessage: (wsMessage) => {
-      console.log('WebSocket message received in ChatDialog:', wsMessage);
-      if (wsMessage.type === 'new_message') {
-        console.log('Processing new message for room:', wsMessage.roomId, 'Current room:', chatRoom?.id);
-        console.log('Message data:', wsMessage.message);
-        
-        // 현재 열려있는 채팅방의 메시지인지 확인
-        if (!chatRoom || wsMessage.roomId !== chatRoom.id) {
-          console.log('Message not for current room, ignoring');
-          return;
-        }
-        
-        setMessages(prev => {
-          // 중복 메시지 방지
-          const exists = prev.some(msg => msg.id === wsMessage.message.id);
-          if (exists) {
-            console.log('Message already exists, skipping');
-            return prev;
-          }
-          console.log('Adding message to UI');
-          const newMessages = [...prev, wsMessage.message];
-          setTimeout(scrollToBottom, 100);
-          return newMessages;
-        });
-      } else if (wsMessage.type === 'joined_room') {
-        // 채팅방 참여 확인
-        console.log('Joined chat room:', wsMessage.roomId, 'User:', wsMessage.userId);
-        if (wsMessage.error) {
-          console.error('Join room error:', wsMessage.error);
-        }
-      } else if (wsMessage.type === 'auth_success') {
-        // 인증 성공
-        console.log('Authentication successful');
-        setIsAuthenticated(true);
-      }
-    }
-  });
+  // 폴링 기반 메시지 업데이트 (WebSocket 대신 사용)
+  useEffect(() => {
+    if (!open || !chatRoom) return;
 
-  // 메시지 전송
+    const pollInterval = setInterval(async () => {
+      try {
+        const result = await apiRequest(`/api/chat/room/${documentId}`, { method: 'GET' });
+        if (result && result.messages) {
+          setMessages(prev => {
+            const newMessages = result.messages;
+            // 새 메시지가 있는지 확인
+            if (newMessages.length > prev.length) {
+              setTimeout(scrollToBottom, 100);
+            }
+            return newMessages;
+          });
+          setConnectionStatus('connected');
+        }
+      } catch (error) {
+        console.error('Failed to poll messages:', error);
+        setConnectionStatus('disconnected');
+      }
+    }, 2000); // 2초마다 업데이트
+
+    setConnectionStatus('connected');
+    return () => clearInterval(pollInterval);
+  }, [open, chatRoom, documentId]);
+
+  // 메시지 전송 (API 기반)
   const handleSendMessage = async () => {
     if (!message.trim() || !chatRoom || !user) {
       console.log('Message send blocked:', { 
@@ -129,24 +118,36 @@ export function ChatDialog({ documentId, dealerId, trigger }: ChatDialogProps) {
                     user.userRole === 'dealer_worker' ? 'worker' : 'dealer';
     
     const messageData = {
-      type: 'send_message',
       roomId: chatRoom.id,
       senderId: user.id,
       senderType: userType,
       senderName: user.name,
-      text: message.trim()
+      message: message.trim(),
+      messageType: 'text'
     };
 
-    console.log('Sending message:', messageData);
-    console.log('WebSocket connected:', isConnected);
-    
-    const sent = sendWebSocketMessage(messageData);
-    
-    if (sent) {
-      console.log('Message sent successfully');
-      setMessage('');
-    } else {
-      console.error('Failed to send message - WebSocket not connected');
+    try {
+      console.log('Sending message via API:', messageData);
+      const result = await apiRequest('/api/chat/message', {
+        method: 'POST',
+        body: JSON.stringify(messageData)
+      });
+      
+      if (result) {
+        console.log('Message sent successfully');
+        setMessage('');
+        
+        // 즉시 메시지 목록 업데이트
+        const updatedChat = await apiRequest(`/api/chat/room/${documentId}`, { method: 'GET' });
+        if (updatedChat && updatedChat.messages) {
+          setMessages(updatedChat.messages);
+          setTimeout(scrollToBottom, 100);
+        }
+        setConnectionStatus('connected');
+      }
+    } catch (error) {
+      console.error('Failed to send message:', error);
+      setConnectionStatus('disconnected');
     }
   };
 
@@ -166,20 +167,12 @@ export function ChatDialog({ documentId, dealerId, trigger }: ChatDialogProps) {
     }
   }, [chatData]);
 
-  // 인증 상태 추적
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-
-  // WebSocket 연결 및 채팅방 참여 처리
+  // 연결 상태 초기화
   useEffect(() => {
-    if (isConnected && isAuthenticated && chatRoom) {
-      console.log('Authenticated WebSocket, joining room:', chatRoom.id);
-      const joinResult = sendWebSocketMessage({
-        type: 'join_room',
-        roomId: chatRoom.id
-      });
-      console.log('Join room message sent:', joinResult);
+    if (open && chatRoom) {
+      setConnectionStatus('connected');
     }
-  }, [isConnected, isAuthenticated, chatRoom]);
+  }, [open, chatRoom]);
 
   // 별도 useEffect로 채팅방 생성 처리 - 단순화
   useEffect(() => {
@@ -268,11 +261,19 @@ export function ChatDialog({ documentId, dealerId, trigger }: ChatDialogProps) {
           <DialogTitle className="flex items-center gap-2">
             <MessageCircle className="w-5 h-5" />
             실시간 채팅
-            {isConnected && (
-              <span className="text-xs text-green-600 bg-green-100 px-2 py-1 rounded-full">
-                연결됨
+            <div className="flex items-center gap-2 ml-auto">
+              <div className={`w-2 h-2 rounded-full ${
+                connectionStatus === 'connected' ? 'bg-green-500' : 
+                connectionStatus === 'connecting' ? 'bg-yellow-500' : 'bg-red-500'
+              }`} />
+              <span className={`text-xs px-2 py-1 rounded-full ${
+                connectionStatus === 'connected' ? 'text-green-600 bg-green-100' : 
+                connectionStatus === 'connecting' ? 'text-yellow-600 bg-yellow-100' : 'text-red-600 bg-red-100'
+              }`}>
+                {connectionStatus === 'connected' ? '연결됨' : 
+                 connectionStatus === 'connecting' ? '연결 중' : '연결이 끊어졌습니다. 재연결을 시도하고 있습니다.'}
               </span>
-            )}
+            </div>
           </DialogTitle>
         </DialogHeader>
         
