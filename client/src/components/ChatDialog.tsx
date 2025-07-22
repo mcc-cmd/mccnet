@@ -103,6 +103,16 @@ export function ChatDialog({ documentId, dealerId, trigger }: ChatDialogProps) {
       } else if (wsMessage.type === 'joined_room') {
         // 채팅방 참여 확인
         console.log('Joined chat room:', wsMessage.roomId);
+      } else if (wsMessage.type === 'auth_success' && chatRoom) {
+        // 인증 성공 후 채팅방 참여 시도
+        console.log('Auth success, attempting to join room:', chatRoom.id);
+        setTimeout(() => {
+          const joinResult = sendWebSocketMessage({
+            type: 'join_room',
+            roomId: chatRoom.id
+          });
+          console.log('Auto join room message sent:', joinResult);
+        }, 200);
       }
     }
   });
@@ -170,7 +180,7 @@ export function ChatDialog({ documentId, dealerId, trigger }: ChatDialogProps) {
           roomId: chatRoom.id
         });
         console.log('Join room message sent:', joinResult);
-      }, 500);
+      }, 1000);
     }
   }, [isConnected, chatRoom]);
 

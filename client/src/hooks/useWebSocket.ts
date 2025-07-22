@@ -50,6 +50,12 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
         const message = JSON.parse(event.data);
         console.log('Raw WebSocket message received:', message);
         setLastMessage(message);
+        
+        // 인증 성공 후 채팅방 참여 시도
+        if (message.type === 'auth_success') {
+          console.log('Authentication successful, ready to join rooms');
+        }
+        
         onMessage?.(message);
       } catch (error) {
         console.error('Failed to parse WebSocket message:', error);

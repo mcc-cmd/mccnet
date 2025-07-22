@@ -37,12 +37,22 @@ wss.on('connection', (ws: WebSocket, req) => {
           // 클라이언트 인증
           const { userId, userType } = message;
           console.log(`WebSocket auth: User ${userId} (${userType})`);
+          
+          // 기존 연결이 있다면 제거
+          if (clients.has(userId)) {
+            const existingClient = clients.get(userId);
+            if (existingClient && existingClient.ws !== ws) {
+              console.log(`Replacing existing connection for user ${userId}`);
+            }
+          }
+          
           clients.set(userId, {
             ws,
             userId,
             userType,
             roomIds: new Set()
           });
+          console.log(`Client ${userId} authenticated. Total clients: ${clients.size}`);
           ws.send(JSON.stringify({ type: 'auth_success', userId }));
           break;
 
