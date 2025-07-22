@@ -67,6 +67,7 @@ export function ChatDialog({ documentId, dealerId, trigger }: ChatDialogProps) {
   // WebSocket 메시지 핸들링
   const { isConnected, sendMessage: sendWebSocketMessage } = useWebSocket({
     onMessage: (wsMessage) => {
+      console.log('WebSocket message received:', wsMessage);
       if (wsMessage.type === 'new_message' && wsMessage.roomId === chatRoom?.id) {
         setMessages(prev => [...prev, wsMessage.message]);
         scrollToBottom();
@@ -123,15 +124,18 @@ export function ChatDialog({ documentId, dealerId, trigger }: ChatDialogProps) {
   // 채팅방 데이터 업데이트
   useEffect(() => {
     if (chatData) {
+      console.log('Chat data received:', chatData);
       setChatRoom(chatData.room);
       setMessages(chatData.messages || []);
       
       // WebSocket 채팅방 참여
       if (chatData.room && isConnected) {
-        sendWebSocketMessage({
+        console.log('Joining WebSocket room:', chatData.room.id);
+        const joinResult = sendWebSocketMessage({
           type: 'join_room',
           roomId: chatData.room.id
         });
+        console.log('Join room message sent:', joinResult);
       }
     }
   }, [chatData, isConnected]);
@@ -271,17 +275,25 @@ export function ChatDialog({ documentId, dealerId, trigger }: ChatDialogProps) {
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
                 onKeyPress={handleKeyPress}
-                placeholder="메시지를 입력하세요..."
+                placeholder={chatRoom ? "메시지를 입력하세요..." : "채팅방을 불러오는 중..."}
                 className="flex-1"
-                disabled={!isConnected}
+                disabled={!isConnected || !chatRoom || createRoomMutation.isPending}
               />
               <Button
                 onClick={handleSendMessage}
-                disabled={!message.trim() || !isConnected}
+                disabled={!message.trim() || !isConnected || !chatRoom || createRoomMutation.isPending}
                 size="sm"
               >
                 <Send className="w-4 h-4" />
               </Button>
+            </div>
+            
+            {/* 디버그 정보 표시 */}
+            <div className="text-xs text-gray-500 mt-2 p-2 bg-gray-50 rounded">
+              Debug: Connected: {isConnected ? 'Yes' : 'No'} | 
+              ChatRoom: {chatRoom ? `ID ${chatRoom.id}` : 'None'} | 
+              Creating: {createRoomMutation.isPending ? 'Yes' : 'No'} |
+              Messages: {messages.length}
             </div>
             
             {!isConnected && (
