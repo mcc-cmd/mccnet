@@ -37,6 +37,7 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
       const userType = user.userType === 'admin' ? 'worker' : 
                       user.userRole === 'dealer_worker' ? 'worker' : 'dealer';
       
+      console.log('Sending auth message:', { userId: user.id, userType });
       ws.current?.send(JSON.stringify({
         type: 'auth',
         userId: user.id,

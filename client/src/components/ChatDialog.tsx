@@ -163,11 +163,14 @@ export function ChatDialog({ documentId, dealerId, trigger }: ChatDialogProps) {
   useEffect(() => {
     if (isConnected && chatRoom) {
       console.log('WebSocket connected, joining room:', chatRoom.id);
-      const joinResult = sendWebSocketMessage({
-        type: 'join_room',
-        roomId: chatRoom.id
-      });
-      console.log('Join room message sent:', joinResult);
+      // 약간의 지연을 두어 인증 완료 후 채팅방 참여
+      setTimeout(() => {
+        const joinResult = sendWebSocketMessage({
+          type: 'join_room',
+          roomId: chatRoom.id
+        });
+        console.log('Join room message sent:', joinResult);
+      }, 500);
     }
   }, [isConnected, chatRoom]);
 

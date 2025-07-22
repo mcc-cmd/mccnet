@@ -49,21 +49,19 @@ wss.on('connection', (ws: WebSocket, req) => {
         case 'join_room':
           // 채팅방 참여
           const { roomId } = message;
-          // userId로 클라이언트 찾기
-          let clientUserId = null;
+          // 현재 WebSocket에 해당하는 클라이언트 찾기
+          let found = false;
           for (const [userId, client] of clients.entries()) {
             if (client.ws === ws) {
-              clientUserId = userId;
               client.roomIds.add(roomId);
-              console.log(`Client ${userId} joined room ${roomId}`);
+              console.log(`Client ${userId} joined room ${roomId}, now in rooms:`, Array.from(client.roomIds));
               ws.send(JSON.stringify({ type: 'joined_room', roomId }));
+              found = true;
               break;
             }
           }
-          if (!clientUserId) {
-            console.log('Client not found for join_room, creating anonymous connection');
-            // 임시로 WebSocket만으로 연결된 경우를 위한 처리
-            ws.send(JSON.stringify({ type: 'joined_room', roomId }));
+          if (!found) {
+            console.log('Client not found for join_room - WebSocket not authenticated yet');
           }
           break;
 
