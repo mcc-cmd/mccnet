@@ -13,7 +13,8 @@ import { useApiRequest, useAuth } from '@/lib/auth';
 import { useToast } from '@/hooks/use-toast';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
+import { Switch } from '@/components/ui/switch';
 import { createDealerSchema, createUserSchema, createAdminSchema, createWorkerSchema, updateDocumentStatusSchema, createServicePlanSchema, createAdditionalServiceSchema } from '../../../shared/schema';
 import type { Dealer, User, Document, PricingTable, ServicePlan, AdditionalService } from '../../../shared/schema';
 import { 
@@ -260,6 +261,8 @@ export function AdminPanel() {
   const [templateDialogOpen, setTemplateDialogOpen] = useState(false);
   const [statusDialogOpen, setStatusDialogOpen] = useState(false);
   const [servicePlanDialogOpen, setServicePlanDialogOpen] = useState(false);
+  const [editServicePlanDialogOpen, setEditServicePlanDialogOpen] = useState(false);
+  const [editingServicePlan, setEditingServicePlan] = useState<ServicePlan | null>(null);
   const [additionalServiceDialogOpen, setAdditionalServiceDialogOpen] = useState(false);
   const [selectedDocument, setSelectedDocument] = useState<Document | null>(null);
   const [selectedDealerForContactCodes, setSelectedDealerForContactCodes] = useState<Dealer | null>(null);
@@ -393,6 +396,18 @@ export function AdminPanel() {
   });
 
   const servicePlanForm = useForm({
+    resolver: zodResolver(createServicePlanSchema),
+    defaultValues: {
+      planName: '',
+      carrier: '',
+      planType: '',
+      dataAllowance: '',
+      monthlyFee: 0,
+      isActive: true,
+    },
+  });
+
+  const editServicePlanForm = useForm({
     resolver: zodResolver(createServicePlanSchema),
     defaultValues: {
       planName: '',
@@ -746,6 +761,30 @@ export function AdminPanel() {
     },
   });
 
+  const updateServicePlanMutation = useMutation({
+    mutationFn: ({ id, data }: { id: number; data: any }) => apiRequest(`/api/service-plans/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/service-plans'] });
+      setEditServicePlanDialogOpen(false);
+      setEditingServicePlan(null);
+      editServicePlanForm.reset();
+      toast({
+        title: '성공',
+        description: '요금제가 성공적으로 수정되었습니다.',
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: '오류',
+        description: error.message,
+        variant: 'destructive',
+      });
+    },
+  });
+
   const deleteServicePlanMutation = useMutation({
     mutationFn: (id: number) => apiRequest(`/api/service-plans/${id}`, {
       method: 'DELETE',
@@ -826,6 +865,25 @@ export function AdminPanel() {
 
   const handleCreateServicePlan = (data: any) => {
     createServicePlanMutation.mutate(data);
+  };
+
+  const openEditServicePlanDialog = (plan: ServicePlan) => {
+    setEditingServicePlan(plan);
+    editServicePlanForm.reset({
+      planName: plan.planName,
+      carrier: plan.carrier,
+      planType: plan.planType,
+      dataAllowance: plan.dataAllowance,
+      monthlyFee: plan.monthlyFee,
+      isActive: plan.isActive,
+    });
+    setEditServicePlanDialogOpen(true);
+  };
+
+  const handleUpdateServicePlan = (data: any) => {
+    if (editingServicePlan) {
+      updateServicePlanMutation.mutate({ id: editingServicePlan.id, data });
+    }
   };
 
   const handleDeleteServicePlan = (id: number) => {
@@ -2144,6 +2202,145 @@ export function AdminPanel() {
                       </Form>
                     </DialogContent>
                   </Dialog>
+                  
+                  {/* Edit Service Plan Dialog */}
+                  <Dialog open={editServicePlanDialogOpen} onOpenChange={setEditServicePlanDialogOpen}>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>요금제 편집</DialogTitle>
+                      </DialogHeader>
+                      <Form {...editServicePlanForm}>
+                        <form onSubmit={editServicePlanForm.handleSubmit(handleUpdateServicePlan)} className="space-y-4">
+                          <FormField
+                            control={editServicePlanForm.control}
+                            name="planName"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>요금제명</FormLabel>
+                                <FormControl>
+                                  <Input placeholder="요금제명을 입력하세요" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={editServicePlanForm.control}
+                            name="carrier"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>통신사</FormLabel>
+                                <Select onValueChange={field.onChange} value={field.value}>
+                                  <FormControl>
+                                    <SelectTrigger>
+                                      <SelectValue placeholder="통신사를 선택하세요" />
+                                    </SelectTrigger>
+                                  </FormControl>
+                                  <SelectContent>
+                                    <SelectItem value="SK텔링크">SK텔링크</SelectItem>
+                                    <SelectItem value="SK프리티">SK프리티</SelectItem>
+                                    <SelectItem value="SK스테이지파이브">SK스테이지파이브</SelectItem>
+                                    <SelectItem value="KT엠모바일">KT엠모바일</SelectItem>
+                                    <SelectItem value="KT스카이라이프">KT스카이라이프</SelectItem>
+                                    <SelectItem value="KT스테이지파이브">KT스테이지파이브</SelectItem>
+                                    <SelectItem value="KT코드모바일">KT코드모바일</SelectItem>
+                                    <SelectItem value="LG미디어로그">LG미디어로그</SelectItem>
+                                    <SelectItem value="LG헬로모바일">LG헬로모바일</SelectItem>
+                                    <SelectItem value="LG프리티">LG프리티</SelectItem>
+                                    <SelectItem value="LG밸류컴">LG밸류컴</SelectItem>
+                                    <SelectItem value="스마텔LG">스마텔LG</SelectItem>
+                                    <SelectItem value="KT">KT</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={editServicePlanForm.control}
+                            name="planType"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>요금제 유형</FormLabel>
+                                <Select onValueChange={field.onChange} value={field.value}>
+                                  <FormControl>
+                                    <SelectTrigger>
+                                      <SelectValue placeholder="요금제 유형을 선택하세요" />
+                                    </SelectTrigger>
+                                  </FormControl>
+                                  <SelectContent>
+                                    <SelectItem value="5G">5G</SelectItem>
+                                    <SelectItem value="LTE">LTE</SelectItem>
+                                    <SelectItem value="3G">3G</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={editServicePlanForm.control}
+                            name="dataAllowance"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>데이터 제공량</FormLabel>
+                                <FormControl>
+                                  <Input placeholder="예: 무제한, 100GB" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={editServicePlanForm.control}
+                            name="monthlyFee"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>월 요금 (원)</FormLabel>
+                                <FormControl>
+                                  <Input 
+                                    type="number" 
+                                    placeholder="월 요금을 입력하세요"
+                                    {...field}
+                                    onChange={(e) => field.onChange(parseInt(e.target.value))}
+                                  />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={editServicePlanForm.control}
+                            name="isActive"
+                            render={({ field }) => (
+                              <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
+                                <div className="space-y-0.5">
+                                  <FormLabel>활성 상태</FormLabel>
+                                  <FormDescription>
+                                    요금제를 활성화하거나 비활성화합니다.
+                                  </FormDescription>
+                                </div>
+                                <FormControl>
+                                  <Switch
+                                    checked={field.value}
+                                    onCheckedChange={field.onChange}
+                                  />
+                                </FormControl>
+                              </FormItem>
+                            )}
+                          />
+                          <div className="flex justify-end space-x-2">
+                            <Button type="button" variant="outline" onClick={() => setEditServicePlanDialogOpen(false)}>
+                              취소
+                            </Button>
+                            <Button type="submit" disabled={updateServicePlanMutation.isPending}>
+                              {updateServicePlanMutation.isPending ? '수정 중...' : '수정'}
+                            </Button>
+                          </div>
+                        </form>
+                      </Form>
+                    </DialogContent>
+                  </Dialog>
                 </CardHeader>
                 <CardContent>
                   {servicePlansLoading ? (
@@ -2203,13 +2400,22 @@ export function AdminPanel() {
                                 </Badge>
                               </td>
                               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                <Button
-                                  variant="destructive"
-                                  size="sm"
-                                  onClick={() => handleDeleteServicePlan(plan.id)}
-                                >
-                                  삭제
-                                </Button>
+                                <div className="flex space-x-2">
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => openEditServicePlanDialog(plan)}
+                                  >
+                                    편집
+                                  </Button>
+                                  <Button
+                                    variant="destructive"
+                                    size="sm"
+                                    onClick={() => handleDeleteServicePlan(plan.id)}
+                                  >
+                                    삭제
+                                  </Button>
+                                </div>
                               </td>
                             </tr>
                           ))}
