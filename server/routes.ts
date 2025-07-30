@@ -1952,24 +1952,65 @@ router.post('/api/contact-codes/upload-excel', contactCodeUpload.single('file'),
       return res.status(400).json({ error: '엑셀 파일에 데이터를 찾을 수 없습니다.' });
     }
 
-    const jsonData = XLSX.default ? XLSX.default.utils.sheet_to_json(worksheet) : XLSX.utils.sheet_to_json(worksheet);
+    // CSV 파일의 경우 첫 번째 행이 "Column1,Column2,Column3"일 수 있으므로 raw 데이터로 처리
+    const rawData = XLSX.default ? XLSX.default.utils.sheet_to_json(worksheet, { header: 1 }) : XLSX.utils.sheet_to_json(worksheet, { header: 1 });
     
-    if (!jsonData || jsonData.length === 0) {
+    if (!rawData || rawData.length < 2) {
       return res.status(400).json({ error: '엑셀 파일에 데이터가 없습니다.' });
     }
 
     let addedCodes = 0;
     const errors: string[] = [];
 
+    // 헤더 행 찾기 (접점코드, 판매점명, 통신사가 포함된 행)
+    let headerIndex = -1;
+    for (let i = 0; i < Math.min(5, rawData.length); i++) {
+      const row = rawData[i] as any[];
+      if (row && row.length >= 3) {
+        const hasContactCode = row.some(cell => cell && String(cell).includes('접점코드'));
+        const hasDealerName = row.some(cell => cell && String(cell).includes('판매점명'));
+        const hasCarrier = row.some(cell => cell && String(cell).includes('통신사'));
+        
+        if (hasContactCode && hasDealerName && hasCarrier) {
+          headerIndex = i;
+          break;
+        }
+      }
+    }
+
+    if (headerIndex === -1) {
+      return res.status(400).json({ error: '접점코드, 판매점명, 통신사 헤더를 찾을 수 없습니다.' });
+    }
+
+    const headers = rawData[headerIndex] as any[];
+    const dataRows = rawData.slice(headerIndex + 1);
+
+    // 컬럼 인덱스 찾기
+    let codeIndex = -1, dealerNameIndex = -1, carrierIndex = -1;
+    
+    for (let i = 0; i < headers.length; i++) {
+      const header = String(headers[i]).trim();
+      if (header.includes('접점코드') || header.toLowerCase().includes('code')) {
+        codeIndex = i;
+      } else if (header.includes('판매점명') || header.toLowerCase().includes('dealer')) {
+        dealerNameIndex = i;
+      } else if (header.includes('통신사') || header.toLowerCase().includes('carrier')) {
+        carrierIndex = i;
+      }
+    }
+
+    if (codeIndex === -1 || dealerNameIndex === -1 || carrierIndex === -1) {
+      return res.status(400).json({ error: '필수 컬럼을 찾을 수 없습니다. (접점코드, 판매점명, 통신사)' });
+    }
+
     // 각 행에 대해 접점코드 생성
-    for (let i = 0; i < jsonData.length; i++) {
-      const row = jsonData[i] as any;
+    for (let i = 0; i < dataRows.length; i++) {
+      const row = dataRows[i] as any[];
       
       try {
-        // 컬럼명은 한글 또는 영문 모두 지원
-        const code = row['접점코드'] || row['code'] || row['Code'] || row['접점코드'];
-        const dealerName = row['판매점명'] || row['dealerName'] || row['DealerName'] || row['dealer_name'];
-        const carrier = row['통신사'] || row['carrier'] || row['Carrier'] || row['통신사명'];
+        const code = row[codeIndex];
+        const dealerName = row[dealerNameIndex];
+        const carrier = row[carrierIndex];
         
         if (!code || !dealerName || !carrier) {
           errors.push(`${i + 2}행: 필수 정보가 누락되었습니다 (접점코드, 판매점명, 통신사 필수)`);
