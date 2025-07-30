@@ -23,7 +23,10 @@ import type {
   AdditionalService,
   DocumentServicePlan,
   ChatRoom,
-  ChatMessage
+  ChatMessage,
+  ContactCode,
+  CreateContactCodeForm,
+  UpdateContactCodeForm
 } from '../shared/schema';
 
 const dbPath = path.join(process.cwd(), 'database.sqlite');
@@ -71,6 +74,16 @@ db.exec(`
     FOREIGN KEY (dealer_id) REFERENCES dealers (id)
   );
 
+  CREATE TABLE IF NOT EXISTS contact_codes (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    code TEXT NOT NULL,
+    dealer_name TEXT NOT NULL,
+    carrier TEXT NOT NULL,
+    is_active BOOLEAN DEFAULT true,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  );
+
   CREATE TABLE IF NOT EXISTS documents (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     dealer_id INTEGER NOT NULL,
@@ -79,6 +92,7 @@ db.exec(`
     customer_name TEXT NOT NULL,
     customer_phone TEXT NOT NULL,
     store_name TEXT,
+    contact_code TEXT,
     carrier TEXT NOT NULL,
     status TEXT NOT NULL CHECK (status IN ('접수', '보완필요', '완료')),
     activation_status TEXT NOT NULL DEFAULT '대기' CHECK (activation_status IN ('대기', '진행중', '개통', '취소')),
@@ -1118,10 +1132,24 @@ class SqliteStorage implements IStorage {
   }
 
   async uploadDocument(data: UploadDocumentForm & { dealerId: number; userId: number; filePath?: string | null; fileName?: string | null; fileSize?: number | null }): Promise<Document> {
-    const documentNumber = data.documentNumber || `DOC-${new Date().getFullYear()}-${String(Date.now()).slice(-6)}`;
+    // 한글 접수번호 생성
+    const documentNumber = this.generateKoreanDocumentNumber();
     
-    // 자동 접점 코드 할당
-    const contactCode = await this.getContactCodeForCarrier(data.dealerId, data.carrier);
+    // 접점코드로 판매점명 자동 설정
+    const storeName = data.contactCode ? await this.getStoreName(data.contactCode, data.carrier) : null;
+    
+    // 새로운 접점코드 자동 등록
+    if (data.contactCode && storeName) {
+      const existingCode = await this.findContactCodeByCode(data.contactCode);
+      if (!existingCode) {
+        await this.createContactCode({
+          code: data.contactCode,
+          dealerName: storeName,
+          carrier: data.carrier,
+          isActive: true
+        });
+      }
+    }
     
     const insertResult = db.prepare(`
       INSERT INTO documents (
@@ -1139,9 +1167,9 @@ class SqliteStorage implements IStorage {
       documentNumber,
       data.customerName,
       data.customerPhone,
-      data.storeName || null,
+      storeName || data.storeName || null,
       data.carrier,
-      contactCode,
+      data.contactCode || null,
       '접수',
       data.activationStatus || '대기',
       data.filePath || null,
@@ -2268,6 +2296,130 @@ class SqliteStorage implements IStorage {
   async markMessageAsRead(messageId: number): Promise<void> {
     const stmt = db.prepare('UPDATE chat_messages SET read_at = ? WHERE id = ?');
     stmt.run(new Date().toISOString(), messageId);
+  }
+
+  // 접점코드 관리 기능
+  async createContactCode(data: CreateContactCodeForm): Promise<ContactCode> {
+    const stmt = db.prepare(`
+      INSERT INTO contact_codes (code, dealer_name, carrier, is_active)
+      VALUES (?, ?, ?, ?)
+    `);
+    
+    const result = stmt.run(data.code, data.dealerName, data.carrier, data.isActive ? 1 : 0);
+    const contactCode = db.prepare('SELECT * FROM contact_codes WHERE id = ?').get(result.lastInsertRowid) as any;
+    
+    return {
+      id: contactCode.id,
+      code: contactCode.code,
+      dealerName: contactCode.dealer_name,
+      carrier: contactCode.carrier,
+      isActive: Boolean(contactCode.is_active),
+      createdAt: new Date(contactCode.created_at),
+      updatedAt: new Date(contactCode.updated_at)
+    };
+  }
+
+  async getContactCodes(): Promise<ContactCode[]> {
+    const codes = db.prepare('SELECT * FROM contact_codes WHERE is_active = 1 ORDER BY code').all() as any[];
+    return codes.map(code => ({
+      id: code.id,
+      code: code.code,
+      dealerName: code.dealer_name,
+      carrier: code.carrier,
+      isActive: Boolean(code.is_active),
+      createdAt: new Date(code.created_at),
+      updatedAt: new Date(code.updated_at)
+    }));
+  }
+
+  async getContactCodesByCarrier(carrier: string): Promise<ContactCode[]> {
+    const codes = db.prepare('SELECT * FROM contact_codes WHERE carrier = ? AND is_active = 1 ORDER BY code').all(carrier) as any[];
+    return codes.map(code => ({
+      id: code.id,
+      code: code.code,
+      dealerName: code.dealer_name,
+      carrier: code.carrier,
+      isActive: Boolean(code.is_active),
+      createdAt: new Date(code.created_at),
+      updatedAt: new Date(code.updated_at)
+    }));
+  }
+
+  async findContactCodeByCode(code: string): Promise<ContactCode | null> {
+    const contactCode = db.prepare('SELECT * FROM contact_codes WHERE code = ? AND is_active = 1').get(code) as any;
+    if (!contactCode) return null;
+    
+    return {
+      id: contactCode.id,
+      code: contactCode.code,
+      dealerName: contactCode.dealer_name,
+      carrier: contactCode.carrier,
+      isActive: Boolean(contactCode.is_active),
+      createdAt: new Date(contactCode.created_at),
+      updatedAt: new Date(contactCode.updated_at)
+    };
+  }
+
+  async updateContactCode(id: number, data: UpdateContactCodeForm): Promise<ContactCode> {
+    const setParts = [];
+    const values = [];
+
+    if (data.code !== undefined) {
+      setParts.push('code = ?');
+      values.push(data.code);
+    }
+    if (data.dealerName !== undefined) {
+      setParts.push('dealer_name = ?');
+      values.push(data.dealerName);
+    }
+    if (data.carrier !== undefined) {
+      setParts.push('carrier = ?');
+      values.push(data.carrier);
+    }
+    if (data.isActive !== undefined) {
+      setParts.push('is_active = ?');
+      values.push(data.isActive ? 1 : 0);
+    }
+    
+    setParts.push('updated_at = ?');
+    values.push(new Date().toISOString());
+    values.push(id);
+
+    const stmt = db.prepare(`UPDATE contact_codes SET ${setParts.join(', ')} WHERE id = ?`);
+    stmt.run(...values);
+
+    const contactCode = db.prepare('SELECT * FROM contact_codes WHERE id = ?').get(id) as any;
+    
+    return {
+      id: contactCode.id,
+      code: contactCode.code,
+      dealerName: contactCode.dealer_name,
+      carrier: contactCode.carrier,
+      isActive: Boolean(contactCode.is_active),
+      createdAt: new Date(contactCode.created_at),
+      updatedAt: new Date(contactCode.updated_at)
+    };
+  }
+
+  async deleteContactCode(id: number): Promise<void> {
+    db.prepare('UPDATE contact_codes SET is_active = 0 WHERE id = ?').run(id);
+  }
+
+  // 한글 접수번호 생성 함수
+  generateKoreanDocumentNumber(): string {
+    const now = new Date();
+    const month = (now.getMonth() + 1).toString().padStart(2, '0');
+    const day = now.getDate().toString().padStart(2, '0');
+    const hour = now.getHours().toString().padStart(2, '0');
+    const minute = now.getMinutes().toString().padStart(2, '0');
+    
+    return `접수${month}월${day}일${hour}시${minute}분`;
+  }
+
+  // 개통방명 코드로 판매점명 자동 설정
+  async getStoreName(contactCode: string, carrier: string): Promise<string | null> {
+    const contact = db.prepare('SELECT dealer_name FROM contact_codes WHERE code = ? AND carrier = ? AND is_active = 1').get(contactCode, carrier) as any;
+    return contact ? contact.dealer_name : null;
   }
 }
 

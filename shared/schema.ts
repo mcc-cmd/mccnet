@@ -49,9 +49,9 @@ export interface Document {
   documentNumber: string;
   customerName: string;
   customerPhone: string;
-  storeName?: string; // 판매점 이름
+  storeName?: string; // 판매점 이름 (자동 설정)
+  contactCode?: string; // 개통방명 코드 입력
   carrier: string; // 통신사
-  contactCode?: string; // 자동 할당된 접점 코드
   status: '접수' | '보완필요' | '완료';
   activationStatus: '대기' | '진행중' | '보완필요' | '개통' | '취소';
   filePath?: string | null;
@@ -195,7 +195,7 @@ export const createUserSchema = z.object({
 export const uploadDocumentSchema = z.object({
   customerName: z.string().min(1, "고객명을 입력하세요"),
   customerPhone: z.string().min(1, "연락처를 입력하세요"),
-  storeName: z.string().optional(),
+  contactCode: z.string().min(1, "개통방명 코드를 입력하세요"),
   carrier: z.string().min(1, "통신사를 선택하세요"),
   subscriptionNumber: z.string().optional(),
   notes: z.string().optional(),
@@ -414,6 +414,30 @@ export const createChatMessageSchema = z.object({
 });
 
 export type CreateChatMessageForm = z.infer<typeof createChatMessageSchema>;
+
+// 접점코드 관리 인터페이스
+export interface ContactCode {
+  id: number;
+  code: string; // 접점코드 (예: "부산해운대구")
+  dealerName: string; // 개통방명 (판매점명)
+  carrier: string; // 통신사
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+// 접점코드 스키마
+export const createContactCodeSchema = z.object({
+  code: z.string().min(1, "접점코드를 입력해주세요"),
+  dealerName: z.string().min(1, "개통방명을 입력해주세요"),
+  carrier: z.string().min(1, "통신사를 선택해주세요"),
+  isActive: z.boolean().default(true)
+});
+
+export const updateContactCodeSchema = createContactCodeSchema.partial();
+
+export type CreateContactCodeForm = z.infer<typeof createContactCodeSchema>;
+export type UpdateContactCodeForm = z.infer<typeof updateContactCodeSchema>;
 
 
 

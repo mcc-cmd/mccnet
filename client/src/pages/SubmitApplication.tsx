@@ -21,20 +21,28 @@ export function SubmitApplication() {
   const [formData, setFormData] = useState({
     customerName: '',
     customerPhone: '',
-    storeName: user?.dealerName || '', // 로그인한 사용자의 대리점명 자동 설정
+    contactCode: '',
+    storeName: '',
     carrier: '',
     notes: ''
   });
 
-  // 사용자 정보가 변경될 때 판매점명 자동 설정
-  useEffect(() => {
-    if (user?.dealerName) {
-      setFormData(prev => ({
-        ...prev,
-        storeName: user.dealerName
-      }));
+  // 접점코드 변경 시 판매점명 자동 조회
+  const handleContactCodeChange = async (contactCode: string) => {
+    setFormData(prev => ({ ...prev, contactCode }));
+    
+    if (contactCode.trim() && formData.carrier) {
+      try {
+        const response = await apiRequest(`/api/contact-codes/search/${contactCode}`);
+        if (response?.dealerName) {
+          setFormData(prev => ({ ...prev, storeName: response.dealerName }));
+        }
+      } catch (error) {
+        // 접점코드가 없으면 판매점명을 비워둠
+        setFormData(prev => ({ ...prev, storeName: '' }));
+      }
     }
-  }, [user?.dealerName]);
+  };
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [dragActive, setDragActive] = useState(false);
   
@@ -66,7 +74,7 @@ export function SubmitApplication() {
       });
 
       // Reset form
-      setFormData({ customerName: '', customerPhone: '', storeName: user?.dealerName || '', carrier: '', notes: '' });
+      setFormData({ customerName: '', customerPhone: '', contactCode: '', storeName: '', carrier: '', notes: '' });
       setSelectedFile(null);
     },
     onError: (error: Error) => {
@@ -81,10 +89,10 @@ export function SubmitApplication() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.customerName || !formData.customerPhone) {
+    if (!formData.customerName || !formData.customerPhone || !formData.contactCode) {
       toast({
         title: "입력 오류",
-        description: "고객명과 연락처를 입력하세요.",
+        description: "고객명, 연락처, 개통방명 코드를 입력하세요.",
         variant: "destructive",
       });
       return;
@@ -112,7 +120,7 @@ export function SubmitApplication() {
     const data = new FormData();
     data.append('customerName', formData.customerName);
     data.append('customerPhone', formData.customerPhone);
-    data.append('storeName', formData.storeName);
+    data.append('contactCode', formData.contactCode);
     data.append('carrier', formData.carrier);
     data.append('notes', formData.notes);
     
@@ -194,7 +202,7 @@ export function SubmitApplication() {
                   고객 정보
                 </h3>
                 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="customerName">고객명 *</Label>
                     <Input
@@ -221,6 +229,21 @@ export function SubmitApplication() {
                       className="mt-1"
                     />
                   </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="contactCode">개통방명 코드 *</Label>
+                    <Input
+                      id="contactCode"
+                      name="contactCode"
+                      value={formData.contactCode}
+                      onChange={(e) => handleContactCodeChange(e.target.value)}
+                      required
+                      placeholder="개통방명 코드를 입력하세요"
+                      className="mt-1"
+                    />
+                  </div>
                   
                   <div>
                     <Label htmlFor="storeName">판매점명</Label>
@@ -229,7 +252,7 @@ export function SubmitApplication() {
                       name="storeName"
                       value={formData.storeName}
                       readOnly
-                      placeholder="자동으로 설정됨"
+                      placeholder="접점코드 입력 시 자동 설정"
                       className="mt-1 bg-gray-50 text-gray-700"
                     />
                   </div>

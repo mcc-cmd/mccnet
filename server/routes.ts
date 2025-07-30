@@ -1837,4 +1837,85 @@ router.post('/api/chat/message', requireAuth, async (req: any, res) => {
   }
 });
 
+// 접점코드 관리 API
+router.get('/api/contact-codes', requireAuth, async (req: any, res) => {
+  try {
+    const contactCodes = await storage.getContactCodes();
+    res.json(contactCodes);
+  } catch (error: any) {
+    console.error('Get contact codes error:', error);
+    res.status(500).json({ error: '접점코드 조회에 실패했습니다.' });
+  }
+});
+
+router.get('/api/contact-codes/carrier/:carrier', requireAuth, async (req: any, res) => {
+  try {
+    const { carrier } = req.params;
+    const contactCodes = await storage.getContactCodesByCarrier(carrier);
+    res.json(contactCodes);
+  } catch (error: any) {
+    console.error('Get contact codes by carrier error:', error);
+    res.status(500).json({ error: '접점코드 조회에 실패했습니다.' });
+  }
+});
+
+router.get('/api/contact-codes/search/:code', requireAuth, async (req: any, res) => {
+  try {
+    const { code } = req.params;
+    const contactCode = await storage.findContactCodeByCode(code);
+    if (contactCode) {
+      res.json(contactCode);
+    } else {
+      res.status(404).json({ error: '접점코드를 찾을 수 없습니다.' });
+    }
+  } catch (error: any) {
+    console.error('Find contact code error:', error);
+    res.status(500).json({ error: '접점코드 검색에 실패했습니다.' });
+  }
+});
+
+router.post('/api/contact-codes', requireAuth, async (req: any, res) => {
+  try {
+    const { code, dealerName, carrier, isActive } = req.body;
+    const contactCode = await storage.createContactCode({
+      code,
+      dealerName,
+      carrier,
+      isActive: isActive !== undefined ? isActive : true
+    });
+    res.json(contactCode);
+  } catch (error: any) {
+    console.error('Create contact code error:', error);
+    res.status(500).json({ error: '접점코드 생성에 실패했습니다.' });
+  }
+});
+
+router.put('/api/contact-codes/:id', requireAuth, async (req: any, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const { code, dealerName, carrier, isActive } = req.body;
+    const contactCode = await storage.updateContactCode(id, {
+      code,
+      dealerName,
+      carrier,
+      isActive
+    });
+    res.json(contactCode);
+  } catch (error: any) {
+    console.error('Update contact code error:', error);
+    res.status(500).json({ error: '접점코드 수정에 실패했습니다.' });
+  }
+});
+
+router.delete('/api/contact-codes/:id', requireAuth, async (req: any, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    await storage.deleteContactCode(id);
+    res.json({ success: true });
+  } catch (error: any) {
+    console.error('Delete contact code error:', error);
+    res.status(500).json({ error: '접점코드 삭제에 실패했습니다.' });
+  }
+});
+
 export default router;

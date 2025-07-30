@@ -16,7 +16,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
 import { Switch } from '@/components/ui/switch';
 import { createDealerSchema, createUserSchema, createAdminSchema, createWorkerSchema, updateDocumentStatusSchema, createServicePlanSchema, createAdditionalServiceSchema } from '../../../shared/schema';
-import type { Dealer, User, Document, PricingTable, ServicePlan, AdditionalService } from '../../../shared/schema';
+import type { Dealer, User, Document, PricingTable, ServicePlan, AdditionalService, ContactCode } from '../../../shared/schema';
 import { 
   Building2, 
   Users, 
@@ -273,6 +273,11 @@ export function AdminPanel() {
   const [templateTitle, setTemplateTitle] = useState('');
   const [templateCategory, setTemplateCategory] = useState<'가입서류' | '변경서류'>('가입서류');
   
+  // 접점코드 관리 상태
+  const [newContactCode, setNewContactCode] = useState('');
+  const [newDealerName, setNewDealerName] = useState('');
+  const [newCarrier, setNewCarrier] = useState('');
+  
   // Analytics dialog states
   const [workerDetailsOpen, setWorkerDetailsOpen] = useState(false);
   const [carrierDetailsOpen, setCarrierDetailsOpen] = useState(false);
@@ -345,6 +350,12 @@ export function AdminPanel() {
   const { data: additionalServices, isLoading: additionalServicesLoading } = useQuery({
     queryKey: ['/api/additional-services'],
     queryFn: () => apiRequest('/api/additional-services') as Promise<AdditionalService[]>,
+  });
+
+  // Contact Codes Query
+  const { data: contactCodes, isLoading: contactCodesLoading } = useQuery({
+    queryKey: ['/api/contact-codes'],
+    queryFn: () => apiRequest('/api/contact-codes') as Promise<ContactCode[]>,
   });
 
   // Forms
@@ -863,6 +874,53 @@ export function AdminPanel() {
     },
   });
 
+  // Contact Code Mutations
+  const createContactCodeMutation = useMutation({
+    mutationFn: (data: { code: string; dealerName: string; carrier: string }) => 
+      apiRequest('/api/contact-codes', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/contact-codes'] });
+      setContactCodeDialogOpen(false);
+      setNewContactCode('');
+      setNewDealerName('');
+      setNewCarrier('');
+      toast({
+        title: '성공',
+        description: '접점코드가 성공적으로 생성되었습니다.',
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: '오류',
+        description: error.message,
+        variant: 'destructive',
+      });
+    },
+  });
+
+  const deleteContactCodeMutation = useMutation({
+    mutationFn: (id: number) => apiRequest(`/api/contact-codes/${id}`, {
+      method: 'DELETE',
+    }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/contact-codes'] });
+      toast({
+        title: '성공',
+        description: '접점코드가 성공적으로 삭제되었습니다.',
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: '오류',
+        description: error.message,
+        variant: 'destructive',
+      });
+    },
+  });
+
   const handleCreateServicePlan = (data: any) => {
     createServicePlanMutation.mutate(data);
   };
@@ -912,6 +970,32 @@ export function AdminPanel() {
       carrier: servicePlanImageForm.carrier,
       file: servicePlanImageForm.file
     });
+  };
+
+  // Contact Code Handlers
+  const handleCreateContactCode = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!newContactCode || !newDealerName || !newCarrier) {
+      toast({
+        title: '오류',
+        description: '모든 필드를 입력해주세요.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    createContactCodeMutation.mutate({
+      code: newContactCode,
+      dealerName: newDealerName,
+      carrier: newCarrier,
+    });
+  };
+
+  const handleDeleteContactCode = (id: number) => {
+    if (confirm('정말로 이 접점코드를 삭제하시겠습니까?')) {
+      deleteContactCodeMutation.mutate(id);
+    }
   };
 
   // 엑셀 다운로드 mutation
@@ -1124,41 +1208,122 @@ export function AdminPanel() {
             <Card>
               <CardHeader className="flex flex-row items-center justify-between">
                 <div>
-                  <CardTitle>접점 코드 관리</CardTitle>
+                  <CardTitle>접점코드 관리</CardTitle>
                   <CardDescription>
-                    대리점별 통신사 접점 코드를 설정하여 자동으로 서류에 할당되도록 관리합니다.
+                    개통방명 코드를 관리하여 자동으로 판매점명이 설정되도록 합니다.
                   </CardDescription>
                 </div>
-                <div className="space-x-2">
-                  <input
-                    ref={excelFileInputRef}
-                    type="file"
-                    accept=".xlsx,.xls"
-                    onChange={handleExcelUpload}
-                    className="hidden"
-                  />
-                  <Button
-                    variant="outline"
-                    onClick={() => excelFileInputRef.current?.click()}
-                    disabled={excelUploadMutation.isPending}
-                  >
-                    <Upload className="mr-2 h-4 w-4" />
-                    {excelUploadMutation.isPending ? '업로드 중...' : '엑셀 업로드'}
-                  </Button>
-                </div>
+                <Dialog open={contactCodeDialogOpen} onOpenChange={setContactCodeDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button>
+                      <Plus className="mr-2 h-4 w-4" />
+                      접점코드 추가
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>새 접점코드 추가</DialogTitle>
+                    </DialogHeader>
+                    <form onSubmit={handleCreateContactCode} className="space-y-4">
+                      <div>
+                        <Label htmlFor="contactCodeInput">접점코드</Label>
+                        <Input
+                          id="contactCodeInput"
+                          value={newContactCode}
+                          onChange={(e) => setNewContactCode(e.target.value)}
+                          placeholder="접점코드를 입력하세요"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="dealerName">판매점명</Label>
+                        <Input
+                          id="dealerName"
+                          value={newDealerName}
+                          onChange={(e) => setNewDealerName(e.target.value)}
+                          placeholder="판매점명을 입력하세요"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="carrier">통신사</Label>
+                        <Select value={newCarrier} onValueChange={setNewCarrier}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="통신사를 선택하세요" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="SK텔링크">SK텔링크</SelectItem>
+                            <SelectItem value="SK프리티">SK프리티</SelectItem>
+                            <SelectItem value="SK스테이지파이브">SK스테이지파이브</SelectItem>
+                            <SelectItem value="KT엠모바일">KT엠모바일</SelectItem>
+                            <SelectItem value="KT스카이라이프">KT스카이라이프</SelectItem>
+                            <SelectItem value="KT스테이지파이브">KT스테이지파이브</SelectItem>
+                            <SelectItem value="KT코드모바일">KT코드모바일</SelectItem>
+                            <SelectItem value="LG미디어로그">LG미디어로그</SelectItem>
+                            <SelectItem value="LG헬로모바일">LG헬로모바일</SelectItem>
+                            <SelectItem value="LG프리티">LG프리티</SelectItem>
+                            <SelectItem value="LG밸류컴">LG밸류컴</SelectItem>
+                            <SelectItem value="스마텔LG">스마텔LG</SelectItem>
+                            <SelectItem value="KT">KT</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="flex justify-end space-x-2">
+                        <Button type="button" variant="outline" onClick={() => setContactCodeDialogOpen(false)}>
+                          취소
+                        </Button>
+                        <Button type="submit" disabled={createContactCodeMutation.isPending}>
+                          {createContactCodeMutation.isPending ? '생성 중...' : '생성'}
+                        </Button>
+                      </div>
+                    </form>
+                  </DialogContent>
+                </Dialog>
               </CardHeader>
               <CardContent>
-                {dealers && dealers.length > 0 ? (
-                  <div className="grid gap-4">
-                    {dealers.map((dealer) => (
-                      <ContactCodeManagement key={dealer.id} dealer={dealer} />
-                    ))}
+                {contactCodesLoading ? (
+                  <div className="text-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-accent mx-auto"></div>
+                    <p className="mt-2 text-sm text-gray-500">접점코드 로딩 중...</p>
+                  </div>
+                ) : contactCodes && contactCodes.length > 0 ? (
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {contactCodes.map((code) => (
+                        <div key={code.id} className="border rounded-lg p-4 bg-white">
+                          <div className="flex items-center justify-between mb-3">
+                            <div>
+                              <h4 className="font-medium text-gray-900">{code.code}</h4>
+                              <p className="text-sm text-gray-500">{code.dealerName}</p>
+                            </div>
+                            <Badge variant="outline">{code.carrier}</Badge>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className={`text-xs px-2 py-1 rounded-full ${
+                              code.isActive 
+                                ? 'bg-green-100 text-green-800' 
+                                : 'bg-gray-100 text-gray-800'
+                            }`}>
+                              {code.isActive ? '활성' : '비활성'}
+                            </span>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleDeleteContactCode(code.id)}
+                              className="text-red-600 hover:text-red-700"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 ) : (
                   <div className="text-center py-8">
                     <Settings className="mx-auto h-12 w-12 text-gray-400" />
-                    <h3 className="mt-2 text-sm font-medium text-gray-900">대리점이 없습니다</h3>
-                    <p className="mt-1 text-sm text-gray-500">먼저 대리점을 추가해주세요.</p>
+                    <h3 className="mt-2 text-sm font-medium text-gray-900">접점코드가 없습니다</h3>
+                    <p className="mt-1 text-sm text-gray-500">첫 번째 접점코드를 추가해보세요.</p>
                   </div>
                 )}
               </CardContent>
