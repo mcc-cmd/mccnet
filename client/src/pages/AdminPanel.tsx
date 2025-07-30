@@ -257,6 +257,16 @@ function CarrierManagement() {
     }
   };
 
+  const handleToggleCarrierStatus = (carrier: Carrier) => {
+    updateCarrierMutation.mutate({
+      id: carrier.id,
+      data: {
+        ...carrier,
+        isActive: !carrier.isActive
+      }
+    });
+  };
+
   // 대화상자가 닫힐 때 상태 정리
   React.useEffect(() => {
     if (!carrierDialogOpen) {
@@ -574,9 +584,18 @@ function CarrierManagement() {
                         </div>
                       </div>
                       <div className="flex items-center space-x-2">
-                        <Badge variant={carrier.isActive ? "default" : "secondary"}>
+                        <Button
+                          variant={carrier.isActive ? "default" : "secondary"}
+                          size="sm"
+                          onClick={() => handleToggleCarrierStatus(carrier)}
+                          className={`min-w-[60px] ${
+                            carrier.isActive 
+                              ? 'bg-green-600 hover:bg-green-700 text-white' 
+                              : 'bg-gray-300 hover:bg-gray-400 text-gray-700'
+                          }`}
+                        >
                           {carrier.isActive ? '활성' : '비활성'}
-                        </Badge>
+                        </Button>
                         <Button
                           variant="outline"
                           size="sm"
