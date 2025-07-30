@@ -352,12 +352,12 @@ export function SubmitApplication() {
                       </SelectTrigger>
                       <SelectContent>
                         {carriersLoading ? (
-                          <SelectItem value="" disabled>로딩 중...</SelectItem>
+                          <SelectItem value="loading" disabled>로딩 중...</SelectItem>
                         ) : (
                           carriers.map((carrier) => (
                             <SelectItem key={carrier.id} value={carrier.name}>
                               {carrier.name}
-                              {carrier.documentRequired && " (서류 필수)"}
+                              {carrier.requireDocumentUpload && " (서류 필수)"}
                             </SelectItem>
                           ))
                         )}
