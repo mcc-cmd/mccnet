@@ -277,6 +277,11 @@ This is a document management system built for MCC네트월드 telecommunication
 - July 30, 2025. Fixed dashboard statistics calculation to properly distinguish between reception statistics (based on upload date) and activation statistics (based on current activation status)
 - July 30, 2025. Resolved dashboard display confusion by changing "당월 접수" to "총 서류" and clarifying "접수 대기" vs "개통 대기" labels
 - July 30, 2025. Added test data with various activation statuses (대기, 진행중, 개통) to demonstrate proper workflow functionality
+- July 30, 2025. Removed "당월 개통 현황" section from Dashboard as requested by user
+- July 30, 2025. Created new "개통취소" category and page for cancelled activations with dedicated navigation menu
+- July 30, 2025. Implemented activation cancellation feature in CompletedActivations page with confirmation dialog
+- July 30, 2025. Added "개통취소" button in both desktop table and mobile card views for easy cancellation
+- July 30, 2025. Updated dashboard statistics to properly track and display cancelled activations count
 
 ## User Preferences
 

@@ -1,19 +1,23 @@
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Layout } from '@/components/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useApiRequest, useAuth } from '@/lib/auth';
+import { useToast } from '@/hooks/use-toast';
 import type { Document } from '../../../shared/schema';
-import { FileText, Search, Calendar, CheckCircle } from 'lucide-react';
+import { FileText, Search, Calendar, CheckCircle, X } from 'lucide-react';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
 
 export function CompletedActivations() {
   const apiRequest = useApiRequest();
   const { user } = useAuth();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
   
   const [filters, setFilters] = useState({
     search: '',
@@ -36,6 +40,40 @@ export function CompletedActivations() {
       return apiRequest(`/api/documents?${params}`) as Promise<Document[]>;
     },
   });
+
+  // 개통취소 mutation
+  const cancelActivationMutation = useMutation({
+    mutationFn: (documentId: number) => {
+      return apiRequest(`/api/documents/${documentId}/activation-status`, {
+        method: 'PUT',
+        body: JSON.stringify({
+          activationStatus: '취소',
+          notes: '개통취소 처리됨'
+        })
+      });
+    },
+    onSuccess: () => {
+      toast({
+        title: "개통취소 완료",
+        description: "문서가 개통취소로 변경되었습니다.",
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/documents/completed'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/dashboard/stats'] });
+    },
+    onError: () => {
+      toast({
+        title: "개통취소 실패",
+        description: "개통취소 처리 중 오류가 발생했습니다.",
+        variant: "destructive",
+      });
+    }
+  });
+
+  const handleCancelActivation = (documentId: number) => {
+    if (confirm('이 문서를 개통취소로 변경하시겠습니까?')) {
+      cancelActivationMutation.mutate(documentId);
+    }
+  };
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -141,6 +179,7 @@ export function CompletedActivations() {
                         <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">요금제 정보</th>
                         <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">개통일</th>
                         <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">상태</th>
+                        <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">액션</th>
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
@@ -233,6 +272,18 @@ export function CompletedActivations() {
                           <td className="px-3 py-2">
                             {getActivationStatusBadge(doc.activationStatus)}
                           </td>
+                          <td className="px-3 py-2">
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              onClick={() => handleCancelActivation(doc.id)}
+                              disabled={cancelActivationMutation.isPending}
+                              className="text-xs"
+                            >
+                              <X className="h-3 w-3 mr-1" />
+                              개통취소
+                            </Button>
+                          </td>
                         </tr>
                       ))}
                     </tbody>
@@ -323,6 +374,20 @@ export function CompletedActivations() {
                             </div>
                           </div>
                         )}
+
+                        {/* 개통취소 버튼 */}
+                        <div className="mt-3">
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            onClick={() => handleCancelActivation(doc.id)}
+                            disabled={cancelActivationMutation.isPending}
+                            className="w-full text-sm"
+                          >
+                            <X className="h-4 w-4 mr-2" />
+                            개통취소
+                          </Button>
+                        </div>
                       </div>
                     </Card>
                   ))}

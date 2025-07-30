@@ -9,6 +9,7 @@ import { Login } from '@/pages/Login';
 import { Dashboard } from '@/pages/Dashboard';
 import { Documents } from '@/pages/Documents';
 import { CompletedActivations } from '@/pages/CompletedActivations';
+import { CancelledActivations } from '@/pages/CancelledActivations';
 import { SubmitApplication } from '@/pages/SubmitApplication';
 import { Downloads } from '@/pages/Downloads';
 import { AdminPanel } from '@/pages/AdminPanel';
@@ -39,6 +40,7 @@ function AppRoutes() {
       <Route path="/submit" component={SubmitApplication} />
       <Route path="/documents" component={Documents} />
       <Route path="/completed" component={CompletedActivations} />
+      <Route path="/cancelled" component={CancelledActivations} />
       <Route path="/downloads" component={Downloads} />
       {user?.userType === 'admin' && (
         <Route path="/settlements" component={Settlements} />
