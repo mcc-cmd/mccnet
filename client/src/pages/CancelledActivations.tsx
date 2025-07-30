@@ -137,33 +137,59 @@ export function CancelledActivations() {
             ) : (
               <div className="overflow-x-auto">
                 {/* Desktop Table */}
-                <div className="hidden md:block">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="border-b text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        <th className="text-left py-2">고객명</th>
-                        <th className="text-left py-2">전화번호</th>
-                        <th className="text-left py-2">통신사</th>
-                        <th className="text-left py-2">개통번호</th>
-                        <th className="text-left py-2">요금제</th>
-                        <th className="text-left py-2">가입번호</th>
-                        <th className="text-left py-2">취소일</th>
-                        <th className="text-left py-2">상태</th>
+                <div className="hidden md:block overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-300">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">개통완료일시</th>
+                        <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">고객명</th>
+                        <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">연락처</th>
+                        <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">통신사</th>
+                        <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">요금제 정보</th>
+                        <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">개통일</th>
+                        <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">상태</th>
+                        <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">액션</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-200">
+                    <tbody className="bg-white divide-y divide-gray-200">
                       {documents.map((doc) => (
                         <tr key={doc.id} className="hover:bg-gray-50">
-                          <td className="py-2 break-words leading-tight max-w-[100px]">{(doc as any).customerName}</td>
-                          <td className="py-2 break-words leading-tight max-w-[120px]">{(doc as any).customerPhone}</td>
-                          <td className="py-2 break-words leading-tight max-w-[100px]">{doc.carrier}</td>
-                          <td className="py-2 break-words leading-tight max-w-[120px]">{(doc as any).subscriptionNumber || '-'}</td>
-                          <td className="py-2 break-words leading-tight max-w-[150px]">{(doc as any).servicePlanName || '-'}</td>
-                          <td className="py-2 break-words leading-tight max-w-[120px]">{(doc as any).subscriptionNumber || '-'}</td>
-                          <td className="py-2 break-words leading-tight max-w-[100px]">
-                            {doc.activatedAt ? format(new Date(doc.activatedAt), 'yyyy-MM-dd', { locale: ko }) : '-'}
+                          <td className="px-3 py-2 text-sm font-medium text-gray-900">
+                            <div className="leading-tight break-words max-w-full">
+                              {doc.activatedAt ? format(new Date(doc.activatedAt), 'yyyy-MM-dd HH:mm', { locale: ko }) : '-'}
+                            </div>
                           </td>
-                          <td className="py-2">{getActivationStatusBadge(doc.activationStatus)}</td>
+                          <td className="px-3 py-2 text-sm text-gray-900">
+                            <div className="leading-tight break-words max-w-full">
+                              {(doc as any).customerName}
+                            </div>
+                          </td>
+                          <td className="px-3 py-2 text-sm text-gray-900">
+                            <div className="leading-tight break-words max-w-full">
+                              {(doc as any).customerPhone}
+                            </div>
+                          </td>
+                          <td className="px-3 py-2 text-sm text-gray-900">
+                            <div className="leading-tight break-words max-w-full">
+                              {doc.carrier}
+                            </div>
+                          </td>
+                          <td className="px-3 py-2 text-sm text-gray-900">
+                            <div className="leading-tight break-words max-w-full">
+                              {(doc as any).servicePlanName || '-'}
+                            </div>
+                          </td>
+                          <td className="px-3 py-2 text-sm text-gray-900">
+                            <div className="leading-tight break-words max-w-full">
+                              {doc.activatedAt ? format(new Date(doc.activatedAt), 'yyyy-MM-dd', { locale: ko }) : '-'}
+                            </div>
+                          </td>
+                          <td className="px-3 py-2 text-sm text-gray-900">
+                            {getActivationStatusBadge(doc.activationStatus)}
+                          </td>
+                          <td className="px-3 py-2 text-sm text-gray-900">
+                            <span className="text-red-600 font-medium">취소</span>
+                          </td>
                         </tr>
                       ))}
                     </tbody>

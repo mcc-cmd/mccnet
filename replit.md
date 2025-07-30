@@ -289,6 +289,7 @@ This is a document management system built for MCC네트월드 telecommunication
 - July 30, 2025. Updated "당월 개통 현황" to 5 boxes layout: 총 서류, 접수 대기, 진행중, 개통완료, 취소
 - July 30, 2025. Enhanced CancelledActivations page to display proper fields: 고객명, 개통번호, 취소일 with correct data mapping
 - July 30, 2025. Removed redundant 4-box statistics section above "당월 개통 현황" per user request
+- July 30, 2025. Aligned CancelledActivations table layout to match CompletedActivations table styling and column structure
 
 ## User Preferences
 
