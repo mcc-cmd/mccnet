@@ -1206,6 +1206,18 @@ export function AdminPanel() {
     }
   };
 
+  const getCustomerFileName = (customerName: string, originalFileName: string) => {
+    // 파일 확장자 추출
+    const fileExtension = originalFileName.includes('.') 
+      ? originalFileName.substring(originalFileName.lastIndexOf('.'))
+      : '';
+    
+    // 고객명을 파일명에 안전하게 사용할 수 있도록 처리
+    const safeCustomerName = customerName.replace(/[^가-힣a-zA-Z0-9]/g, '_');
+    
+    return `${safeCustomerName}_서류${fileExtension}`;
+  };
+
   const handleDocumentDownload = async (documentId: number, fileName: string) => {
     try {
       const sessionId = useAuth.getState().sessionId;
@@ -2063,7 +2075,7 @@ export function AdminPanel() {
                                 <Button
                                   variant="outline"
                                   size="sm"
-                                  onClick={() => handleDocumentDownload(doc.id, doc.fileName || `document_${doc.id}`)}
+                                  onClick={() => handleDocumentDownload(doc.id, getCustomerFileName(doc.customerName, doc.fileName || `document_${doc.id}`))}
                                 >
                                   <Download className="h-4 w-4" />
                                 </Button>

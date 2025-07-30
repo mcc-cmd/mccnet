@@ -294,6 +294,8 @@ This is a document management system built for MCC네트월드 telecommunication
 - July 30, 2025. Replaced window.open() file downloads with fetch API and proper authentication headers in AdminPanel document management and pricing table downloads
 - July 30, 2025. Enhanced server-side file download routes with improved null checking and error handling for documents and pricing tables
 - July 30, 2025. Resolved "인증이 필요합니다. :)" errors in Downloads, Documents, PricingTables, and AdminPanel file download functionality
+- July 30, 2025. Enhanced file download naming convention to use customer names: files now download with format "고객명_서류.확장자" instead of original filenames
+- July 30, 2025. Implemented getCustomerFileName utility function across Documents and AdminPanel pages for consistent customer-based file naming
 
 ## User Preferences
 

@@ -208,6 +208,18 @@ export function Documents() {
     uploadMutation.mutate(formData);
   };
 
+  const getCustomerFileName = (customerName: string, originalFileName: string) => {
+    // 파일 확장자 추출
+    const fileExtension = originalFileName.includes('.') 
+      ? originalFileName.substring(originalFileName.lastIndexOf('.'))
+      : '';
+    
+    // 고객명을 파일명에 안전하게 사용할 수 있도록 처리
+    const safeCustomerName = customerName.replace(/[^가-힣a-zA-Z0-9]/g, '_');
+    
+    return `${safeCustomerName}_서류${fileExtension}`;
+  };
+
   const handleDownload = async (documentId: number) => {
     try {
       const sessionId = useAuth.getState().sessionId;
@@ -224,14 +236,20 @@ export function Documents() {
 
       const blob = await response.blob();
       const contentDisposition = response.headers.get('Content-Disposition');
-      const fileName = contentDisposition 
+      const originalFileName = contentDisposition 
         ? decodeURIComponent(contentDisposition.split('filename=')[1]?.replace(/"/g, '') || `document_${documentId}`)
         : `document_${documentId}`;
+      
+      // 현재 문서의 고객명 찾기
+      const currentDoc = documents?.find(doc => doc.id === documentId);
+      const customerFileName = currentDoc 
+        ? getCustomerFileName(currentDoc.customerName, originalFileName)
+        : originalFileName;
       
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = fileName;
+      link.download = customerFileName;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -239,7 +257,7 @@ export function Documents() {
 
       toast({
         title: "다운로드 완료",
-        description: `파일이 다운로드되었습니다.`,
+        description: `${customerFileName} 파일이 다운로드되었습니다.`,
       });
     } catch (error) {
       toast({
