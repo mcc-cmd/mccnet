@@ -222,6 +222,72 @@ export function SubmitApplication() {
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
+              {/* 통신사 선택 섹션 */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-medium text-gray-900 flex items-center">
+                  <Phone className="mr-2 h-4 w-4" />
+                  통신사 선택
+                </h3>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="carrier">통신사 *</Label>
+                    <Select value={formData.carrier} onValueChange={(value) => setFormData(prev => ({ ...prev, carrier: value }))}>
+                      <SelectTrigger className="mt-1">
+                        <SelectValue placeholder="통신사를 선택하세요" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {carriersLoading ? (
+                          <SelectItem value="loading" disabled>로딩 중...</SelectItem>
+                        ) : (
+                          carriers.map((carrier) => (
+                            <SelectItem key={carrier.id} value={carrier.name}>
+                              {carrier.name}
+                              {carrier.requireDocumentUpload && " (서류 필수)"}
+                            </SelectItem>
+                          ))
+                        )}
+                      </SelectContent>
+                    </Select>
+                    {selectedCarrier?.requireDocumentUpload && (
+                      <Alert className="mt-2">
+                        <AlertDescription>
+                          {formData.carrier} 접수 시 서류 업로드는 필수입니다.
+                        </AlertDescription>
+                      </Alert>
+                    )}
+                    {selectedCarrier?.bundleNumber && (
+                      <Alert className="mt-2">
+                        <AlertDescription>
+                          결합 번호: {selectedCarrier.bundleNumber}
+                          {selectedCarrier.bundleCarrier && ` (${selectedCarrier.bundleCarrier})`}
+                        </AlertDescription>
+                      </Alert>
+                    )}
+                  </div>
+                  
+                  {selectedCarrier?.requirePreviousCarrier && (
+                    <div>
+                      <Label htmlFor="previousCarrier">
+                        이전통신사 *
+                      </Label>
+                      <Select value={formData.previousCarrier} onValueChange={(value) => setFormData(prev => ({ ...prev, previousCarrier: value }))}>
+                        <SelectTrigger className="mt-1">
+                          <SelectValue placeholder="이전통신사를 선택하세요" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {previousCarriers.map((carrier) => (
+                            <SelectItem key={carrier} value={carrier}>
+                              {carrier}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+                </div>
+              </div>
+
               {/* 고객 정보 섹션 */}
               <div className="space-y-4">
                 <h3 className="text-lg font-medium text-gray-900 flex items-center">
@@ -343,64 +409,7 @@ export function SubmitApplication() {
                   )}
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="carrier">통신사 *</Label>
-                    <Select value={formData.carrier} onValueChange={(value) => setFormData(prev => ({ ...prev, carrier: value }))}>
-                      <SelectTrigger className="mt-1">
-                        <SelectValue placeholder="통신사를 선택하세요" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {carriersLoading ? (
-                          <SelectItem value="loading" disabled>로딩 중...</SelectItem>
-                        ) : (
-                          carriers.map((carrier) => (
-                            <SelectItem key={carrier.id} value={carrier.name}>
-                              {carrier.name}
-                              {carrier.requireDocumentUpload && " (서류 필수)"}
-                            </SelectItem>
-                          ))
-                        )}
-                      </SelectContent>
-                    </Select>
-                    {selectedCarrier?.requireDocumentUpload && (
-                      <Alert className="mt-2">
-                        <AlertDescription>
-                          {formData.carrier} 접수 시 서류 업로드는 필수입니다.
-                        </AlertDescription>
-                      </Alert>
-                    )}
-                    {selectedCarrier?.bundleNumber && (
-                      <Alert className="mt-2">
-                        <AlertDescription>
-                          결합 번호: {selectedCarrier.bundleNumber}
-                          {selectedCarrier.bundleCarrier && ` (${selectedCarrier.bundleCarrier})`}
-                        </AlertDescription>
-                      </Alert>
-                    )}
-                  </div>
-                  
-                  {selectedCarrier?.requirePreviousCarrier && (
-                    <div>
-                      <Label htmlFor="previousCarrier">
-                        이전통신사 *
-                      </Label>
-                      <Select value={formData.previousCarrier} onValueChange={(value) => setFormData(prev => ({ ...prev, previousCarrier: value }))}>
-                        <SelectTrigger className="mt-1">
-                          <SelectValue placeholder="이전통신사를 선택하세요" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {previousCarriers.map((carrier) => (
-                            <SelectItem key={carrier} value={carrier}>
-                              {carrier}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  )}
 
-                </div>
 
                 <div>
                   <Label htmlFor="notes">메모</Label>
