@@ -408,7 +408,7 @@ export interface IStorage {
 
 class SqliteStorage implements IStorage {
   async authenticateAdmin(email: string, password: string): Promise<Admin | null> {
-    const admin = db.prepare('SELECT * FROM admin_users WHERE email = ?').get(email) as Admin | undefined;
+    const admin = db.prepare('SELECT * FROM users WHERE email = ? AND user_type = ?').get(email, 'admin') as any;
     if (!admin || !bcrypt.compareSync(password, admin.password)) {
       return null;
     }
@@ -417,17 +417,17 @@ class SqliteStorage implements IStorage {
       email: admin.email,
       password: admin.password,
       name: admin.name,
-      createdAt: admin.createdAt
+      createdAt: new Date(admin.created_at)
     };
   }
 
   async authenticateUser(email: string, password: string): Promise<{ user: User; dealer?: Dealer } | null> {
     const result = db.prepare(`
-      SELECT u.*, d.name as dealer_name, d.location, d.contact_email, d.contact_phone, d.created_at as dealer_created_at
+      SELECT u.*, d.name as dealer_name, d.created_at as dealer_created_at
       FROM users u
       LEFT JOIN dealers d ON u.dealer_id = d.id
-      WHERE u.email = ?
-    `).get(email) as any;
+      WHERE u.email = ? AND u.user_type != ?
+    `).get(email, 'admin') as any;
     
     if (!result || !bcrypt.compareSync(password, result.password)) {
       return null;
@@ -439,7 +439,7 @@ class SqliteStorage implements IStorage {
       email: result.email,
       password: result.password,
       name: result.name,
-      role: result.role,
+      role: result.user_type,
       createdAt: new Date(result.created_at)
     };
 
@@ -448,9 +448,9 @@ class SqliteStorage implements IStorage {
       dealer = {
         id: result.dealer_id,
         name: result.dealer_name,
-        location: result.location,
-        contactEmail: result.contact_email,
-        contactPhone: result.contact_phone,
+        location: '',
+        contactEmail: '',
+        contactPhone: '',
         createdAt: new Date(result.dealer_created_at)
       };
     }
@@ -507,7 +507,7 @@ class SqliteStorage implements IStorage {
   }
 
   async getAdminById(id: number): Promise<Admin | null> {
-    const admin = db.prepare('SELECT * FROM admin_users WHERE id = ?').get(id) as Admin | undefined;
+    const admin = db.prepare('SELECT * FROM users WHERE id = ? AND user_type = ?').get(id, 'admin') as any;
     if (!admin) return null;
     
     return {
@@ -515,7 +515,7 @@ class SqliteStorage implements IStorage {
       email: admin.email,
       password: admin.password,
       name: admin.name,
-      createdAt: admin.createdAt
+      createdAt: new Date(admin.created_at)
     };
   }
 
@@ -542,21 +542,15 @@ class SqliteStorage implements IStorage {
   }
 
   async createDealer(data: CreateDealerForm): Promise<Dealer> {
-    const insertResult = db.prepare('INSERT INTO dealers (name, location, contact_email, contact_phone) VALUES (?, ?, ?, ?)').run(
-      data.name,
-      data.location,
-      data.contactEmail,
-      data.contactPhone
-    );
-
+    const insertResult = db.prepare('INSERT INTO dealers (name) VALUES (?)').run(data.name);
     const result = db.prepare('SELECT * FROM dealers WHERE id = ?').get(insertResult.lastInsertRowid) as any;
 
     return {
       id: result.id,
       name: result.name,
-      location: result.location,
-      contactEmail: result.contact_email,
-      contactPhone: result.contact_phone,
+      location: '',
+      contactEmail: '',
+      contactPhone: '',
       createdAt: new Date(result.created_at)
     };
   }
