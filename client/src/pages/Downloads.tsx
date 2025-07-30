@@ -4,7 +4,7 @@ import { Layout } from '@/components/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { useApiRequest } from '@/lib/auth';
+import { useApiRequest, useAuth } from '@/lib/auth';
 import { useToast } from '@/hooks/use-toast';
 import { Download, FileText, Calendar, Calculator } from 'lucide-react';
 import { format } from 'date-fns';
@@ -49,11 +49,11 @@ export function Downloads() {
 
   const handleDownload = async (documentId: number, fileName: string) => {
     try {
+      const sessionId = useAuth.getState().sessionId;
       const response = await fetch(`/api/document-templates/${documentId}/download`, {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('auth-storage') ? 
-            JSON.parse(localStorage.getItem('auth-storage')!)?.state?.sessionId : null}`
+          'Authorization': `Bearer ${sessionId}`
         },
       });
 
@@ -86,11 +86,11 @@ export function Downloads() {
 
   const handlePricingDownload = async (pricingId: number, fileName: string) => {
     try {
+      const sessionId = useAuth.getState().sessionId;
       const response = await fetch(`/api/files/pricing/${pricingId}`, {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('auth-storage') ? 
-            JSON.parse(localStorage.getItem('auth-storage')!)?.state?.sessionId : null}`
+          'Authorization': `Bearer ${sessionId}`
         },
       });
 

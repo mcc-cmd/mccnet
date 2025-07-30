@@ -1037,12 +1037,17 @@ router.get('/api/files/documents/:id', requireAuth, async (req: any, res) => {
       return res.status(404).json({ error: '파일을 찾을 수 없습니다.' });
     }
 
+    if (!document.filePath) {
+      return res.status(404).json({ error: '파일 경로가 없습니다.' });
+    }
+
     if (!fs.existsSync(document.filePath)) {
       return res.status(404).json({ error: '파일이 서버에 존재하지 않습니다.' });
     }
 
-    res.download(document.filePath, document.fileName);
+    res.download(document.filePath, document.fileName || `document_${id}`);
   } catch (error: any) {
+    console.error('File download error:', error);
     res.status(500).json({ error: error.message });
   }
 });
@@ -1057,12 +1062,17 @@ router.get('/api/files/pricing/:id', requireAuth, async (req, res) => {
       return res.status(404).json({ error: '파일을 찾을 수 없습니다.' });
     }
 
+    if (!table.filePath) {
+      return res.status(404).json({ error: '파일 경로가 없습니다.' });
+    }
+
     if (!fs.existsSync(table.filePath)) {
       return res.status(404).json({ error: '파일이 서버에 존재하지 않습니다.' });
     }
 
-    res.download(table.filePath, table.fileName);
+    res.download(table.filePath, table.fileName || `pricing_${id}`);
   } catch (error: any) {
+    console.error('Pricing file download error:', error);
     res.status(500).json({ error: error.message });
   }
 });

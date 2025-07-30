@@ -208,8 +208,46 @@ export function Documents() {
     uploadMutation.mutate(formData);
   };
 
-  const handleDownload = (documentId: number) => {
-    window.open(`/api/files/documents/${documentId}`, '_blank');
+  const handleDownload = async (documentId: number) => {
+    try {
+      const sessionId = useAuth.getState().sessionId;
+      const response = await fetch(`/api/files/documents/${documentId}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${sessionId}`
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('파일 다운로드에 실패했습니다.');
+      }
+
+      const blob = await response.blob();
+      const contentDisposition = response.headers.get('Content-Disposition');
+      const fileName = contentDisposition 
+        ? decodeURIComponent(contentDisposition.split('filename=')[1]?.replace(/"/g, '') || `document_${documentId}`)
+        : `document_${documentId}`;
+      
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+
+      toast({
+        title: "다운로드 완료",
+        description: `파일이 다운로드되었습니다.`,
+      });
+    } catch (error) {
+      toast({
+        title: "다운로드 실패",
+        description: error instanceof Error ? error.message : "파일 다운로드 중 오류가 발생했습니다.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleDelete = (documentId: number) => {

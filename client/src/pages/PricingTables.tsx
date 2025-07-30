@@ -3,8 +3,17 @@ import { Layout } from '@/components/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { useApiRequest } from '@/lib/auth';
-import type { PricingTable } from '../../../shared/schema';
+import { useApiRequest, useAuth } from '@/lib/auth';
+interface PricingTable {
+  id: number;
+  title: string;
+  fileName: string;
+  filePath: string;
+  fileSize: number;
+  uploadedBy: number;
+  uploadedAt: Date;
+  isActive: boolean;
+}
 import { Calculator, Download, FileText } from 'lucide-react';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
@@ -17,8 +26,37 @@ export function PricingTables() {
     queryFn: () => apiRequest('/api/pricing-tables') as Promise<PricingTable[]>,
   });
 
-  const handleDownload = (tableId: number) => {
-    window.open(`/api/files/pricing/${tableId}`, '_blank');
+  const handleDownload = async (tableId: number) => {
+    try {
+      const sessionId = useAuth.getState().sessionId;
+      const response = await fetch(`/api/files/pricing/${tableId}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${sessionId}`
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('파일 다운로드에 실패했습니다.');
+      }
+
+      const blob = await response.blob();
+      const contentDisposition = response.headers.get('Content-Disposition');
+      const fileName = contentDisposition 
+        ? decodeURIComponent(contentDisposition.split('filename=')[1]?.replace(/"/g, '') || `pricing_${tableId}`)
+        : `pricing_${tableId}`;
+      
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('다운로드 실패:', error);
+    }
   };
 
   const formatFileSize = (bytes: number) => {
