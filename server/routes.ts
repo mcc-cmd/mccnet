@@ -99,6 +99,25 @@ const templateUpload = multer({
   }
 });
 
+// Configure multer for contact code uploads (CSV and Excel)
+const contactCodeUpload = multer({
+  dest: path.join(process.cwd(), 'uploads', 'contact-codes'),
+  limits: {
+    fileSize: 10 * 1024 * 1024, // 10MB
+  },
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = /xlsx|xls|csv/;
+    const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
+    const mimetype = /application\/vnd\.ms-excel|application\/vnd\.openxmlformats-officedocument\.spreadsheetml\.sheet|text\/csv|application\/csv/.test(file.mimetype);
+
+    if (extname || mimetype) {
+      return cb(null, true);
+    } else {
+      cb(new Error('허용되지 않는 파일 형식입니다. (xlsx, xls, csv만 가능)'));
+    }
+  }
+});
+
 // Middleware to check authentication
 const requireAuth = async (req: any, res: any, next: any) => {
   const authHeader = req.headers.authorization;
@@ -1919,7 +1938,7 @@ router.delete('/api/contact-codes/:id', requireAuth, async (req: any, res) => {
 });
 
 // 접점코드 엑셀 업로드 API
-router.post('/api/contact-codes/upload-excel', upload.single('file'), requireAuth, async (req: any, res) => {
+router.post('/api/contact-codes/upload-excel', contactCodeUpload.single('file'), requireAuth, async (req: any, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ error: '파일을 업로드해주세요.' });
