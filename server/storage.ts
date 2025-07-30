@@ -1251,12 +1251,7 @@ class SqliteStorage implements IStorage {
 
   async getDocuments(dealerId?: number, filters?: { status?: string; activationStatus?: string; search?: string; startDate?: string; endDate?: string; workerFilter?: string }, userId?: number): Promise<Array<Document & { dealerName: string; userName: string }>> {
     let query = `
-      SELECT d.*, dealers.name as dealer_name, u.name as user_name, sp.plan_name,
-             d.registration_fee_prepaid, d.registration_fee_postpaid,
-             d.sim_fee_prepaid, d.sim_fee_postpaid,
-             d.bundle_applied, d.bundle_not_applied,
-             d.device_model, d.sim_number, d.subscription_number, d.total_monthly_fee,
-             d.additional_service_ids, d.assigned_worker_id, d.assigned_at, d.dealer_notes
+      SELECT d.*, dealers.name as dealer_name, u.name as user_name, sp.plan_name
       FROM documents d
       LEFT JOIN dealers ON d.dealer_id = dealers.id
       JOIN users u ON d.user_id = u.id
@@ -1337,29 +1332,10 @@ class SqliteStorage implements IStorage {
       activatedAt: d.activated_at ? new Date(d.activated_at) : undefined,
       activatedBy: d.activated_by,
       notes: d.notes,
-      supplementNotes: d.supplement_notes,
-      supplementRequiredBy: d.supplement_required_by,
-      supplementRequiredAt: d.supplement_required_at ? new Date(d.supplement_required_at) : undefined,
-      assignedWorkerId: d.assigned_worker_id,
-      assignedAt: d.assigned_at ? new Date(d.assigned_at) : undefined,
-      servicePlanId: d.service_plan_id,
-      servicePlanName: d.plan_name,
-      additionalServiceIds: d.additional_service_ids,
-      additionalServices: this.getAdditionalServiceNames(d.additional_service_ids),
-      totalMonthlyFee: d.total_monthly_fee,
-      registrationFeePrepaid: Boolean(d.registration_fee_prepaid),
-      registrationFeePostpaid: Boolean(d.registration_fee_postpaid),
-      simFeePrepaid: Boolean(d.sim_fee_prepaid),
-      simFeePostpaid: Boolean(d.sim_fee_postpaid),
-      bundleApplied: Boolean(d.bundle_applied),
-      bundleNotApplied: Boolean(d.bundle_not_applied),
-      deviceModel: d.device_model,
-      simNumber: d.sim_number,
-      subscriptionNumber: d.subscription_number,
-      dealerNotes: d.dealer_notes,
       dealerName: d.dealer_name,
-      userName: d.user_name
-    }));
+      userName: d.user_name,
+      servicePlanName: d.plan_name
+    } as Document & { dealerName: string; userName: string }));
   }
 
   // 부가서비스 이름 가져오기 헬퍼 함수
