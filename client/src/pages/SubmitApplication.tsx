@@ -54,7 +54,9 @@ export function SubmitApplication() {
   // 통신사 목록을 데이터베이스에서 가져오기
   const { data: carriers = [], isLoading: carriersLoading } = useQuery<Carrier[]>({
     queryKey: ['/api/carriers'],
-    queryFn: () => apiRequest('/api/carriers')
+    queryFn: () => apiRequest('/api/carriers'),
+    staleTime: 0, // 항상 최신 데이터를 가져오도록 설정
+    refetchOnWindowFocus: true // 창 포커스 시 새로고침
   });
   
   // 이전통신사 목록

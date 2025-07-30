@@ -132,8 +132,10 @@ function CarrierManagement() {
       method: 'POST',
       body: JSON.stringify(data)
     }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/carriers'] });
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['/api/carriers'] });
+      await queryClient.refetchQueries({ queryKey: ['/api/carriers'] });
+      
       setCarrierDialogOpen(false);
       carrierForm.reset();
       toast({
@@ -157,8 +159,11 @@ function CarrierManagement() {
         method: 'PUT',
         body: JSON.stringify(data)
       }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/carriers'] });
+    onSuccess: async () => {
+      // 모든 관련 쿼리 무효화
+      await queryClient.invalidateQueries({ queryKey: ['/api/carriers'] });
+      await queryClient.refetchQueries({ queryKey: ['/api/carriers'] });
+      
       setCarrierDialogOpen(false);
       setEditingCarrier(null);
       carrierForm.reset();
@@ -181,8 +186,10 @@ function CarrierManagement() {
     mutationFn: (id: number) => apiRequest(`/api/carriers/${id}`, {
       method: 'DELETE'
     }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/carriers'] });
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['/api/carriers'] });
+      await queryClient.refetchQueries({ queryKey: ['/api/carriers'] });
+      
       toast({
         title: "통신사 삭제",
         description: "통신사가 성공적으로 삭제되었습니다."
