@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/lib/auth';
-import { useApiRequest } from '@/lib/queryClient';
+import { apiRequest } from '@/lib/queryClient';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -25,26 +25,35 @@ export default function WorkRequests() {
   const [selectedDocument, setSelectedDocument] = useState<Document | null>(null);
   const [statusDialogOpen, setStatusDialogOpen] = useState(false);
   const { user } = useAuth();
-  const apiRequest = useApiRequest();
+
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
   // 업무 요청중 상태의 서류들 조회
   const { data: documents = [], isLoading } = useQuery({
     queryKey: ['/api/documents', { activationStatus: '업무요청중' }],
-    queryFn: () => apiRequest(`/api/documents?activationStatus=업무요청중`)
+    queryFn: async () => {
+      const response = await apiRequest('GET', `/api/documents?activationStatus=업무요청중`);
+      return response.json();
+    }
   });
 
   // 서비스 플랜 조회
   const { data: servicePlans = [] } = useQuery({
     queryKey: ['/api/service-plans'],
-    queryFn: () => apiRequest('/api/service-plans')
+    queryFn: async () => {
+      const response = await apiRequest('GET', '/api/service-plans');
+      return response.json();
+    }
   });
 
   // 부가 서비스 조회
   const { data: additionalServices = [] } = useQuery({
     queryKey: ['/api/additional-services'],
-    queryFn: () => apiRequest('/api/additional-services')
+    queryFn: async () => {
+      const response = await apiRequest('GET', '/api/additional-services');
+      return response.json();
+    }  
   });
 
   // 활성화 상태 변경 폼
@@ -61,11 +70,10 @@ export default function WorkRequests() {
 
   // 활성화 상태 변경 mutation
   const updateStatusMutation = useMutation({
-    mutationFn: ({ id, data }: { id: number; data: any }) =>
-      apiRequest(`/api/documents/${id}/activation-status`, {
-        method: 'PUT',
-        body: JSON.stringify(data)
-      }),
+    mutationFn: async ({ id, data }: { id: number; data: any }) => {
+      const response = await apiRequest('PUT', `/api/documents/${id}/activation-status`, data);
+      return response.json();
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/documents'] });
       queryClient.invalidateQueries({ queryKey: ['/api/dashboard'] });
