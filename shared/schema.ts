@@ -421,25 +421,49 @@ export type CreateChatMessageForm = z.infer<typeof createChatMessageSchema>;
 export interface Carrier {
   id: number;
   name: string; // 통신사명 (예: "SK텔링크", "KT엠모바일")
-  displayOrder: number; // 정렬 순서
+  displayOrder?: number; // 정렬 순서
   isActive: boolean;
-  isWired: boolean; // 유선 통신사 여부
+  isWired?: boolean; // 유선 통신사 여부
   bundleNumber?: string; // 결합 번호
   bundleCarrier?: string; // 결합 통신사
-  documentRequired: boolean; // 서류 업로드 필수 여부
+  documentRequired?: boolean; // 서류 업로드 필수 여부
   // 접수 신청 시 필수 입력 필드 설정
-  requireCustomerName: boolean; // 고객명 필수
-  requireCustomerPhone: boolean; // 연락처 필수
-  requireCustomerEmail: boolean; // 이메일 필수
-  requireContactCode: boolean; // 개통방명 코드 필수
-  requireCarrier: boolean; // 통신사 필수
-  requirePreviousCarrier: boolean; // 이전통신사 필수
-  requireDocumentUpload: boolean; // 서류 첨부 필수
-  requireBundleNumber: boolean; // 결합번호 필수
-  requireBundleCarrier: boolean; // 결합통신사 필수
-  createdAt: Date;
-  updatedAt: Date;
+  requireCustomerName?: boolean; // 고객명 필수
+  requireCustomerPhone?: boolean; // 연락처 필수
+  requireCustomerEmail?: boolean; // 이메일 필수
+  requireContactCode?: boolean; // 접점코드 필수
+  requireCarrier?: boolean; // 통신사 필수
+  requirePreviousCarrier?: boolean; // 이전통신사 필수
+  requireDocumentUpload?: boolean; // 서류업로드 필수
+  requireBundleNumber?: boolean; // 결합번호 필수
+  requireBundleCarrier?: boolean; // 결합통신사 필수
+  createdAt?: Date;
 }
+
+// 통신사 스키마
+export const createCarrierSchema = z.object({
+  name: z.string().min(1, "통신사명을 입력해주세요"),
+  displayOrder: z.number().optional(),
+  isActive: z.boolean().default(true),
+  isWired: z.boolean().default(false),
+  bundleNumber: z.string().optional(),
+  bundleCarrier: z.string().optional(),
+  documentRequired: z.boolean().default(false),
+  requireCustomerName: z.boolean().default(true),
+  requireCustomerPhone: z.boolean().default(true),
+  requireCustomerEmail: z.boolean().default(false),
+  requireContactCode: z.boolean().default(true),
+  requireCarrier: z.boolean().default(true),
+  requirePreviousCarrier: z.boolean().default(false),
+  requireDocumentUpload: z.boolean().default(false),
+  requireBundleNumber: z.boolean().default(false),
+  requireBundleCarrier: z.boolean().default(false),
+});
+
+export const updateCarrierSchema = createCarrierSchema.partial();
+
+export type CreateCarrierForm = z.infer<typeof createCarrierSchema>;
+export type UpdateCarrierForm = z.infer<typeof updateCarrierSchema>;
 
 // 접점코드 관리 인터페이스
 export interface ContactCode {
@@ -452,28 +476,7 @@ export interface ContactCode {
   updatedAt: Date;
 }
 
-// 통신사 스키마
-export const createCarrierSchema = z.object({
-  name: z.string().min(1, "통신사명을 입력해주세요"),
-  displayOrder: z.number().min(0, "정렬 순서를 입력해주세요").default(0),
-  isActive: z.boolean().default(true),
-  isWired: z.boolean().default(false),
-  bundleNumber: z.string().optional(),
-  bundleCarrier: z.string().optional(),
-  documentRequired: z.boolean().default(false),
-  // 접수 신청 필드 필수 여부 설정
-  requireCustomerName: z.boolean().default(true),
-  requireCustomerPhone: z.boolean().default(true),
-  requireCustomerEmail: z.boolean().default(false),
-  requireContactCode: z.boolean().default(true),
-  requireCarrier: z.boolean().default(true),
-  requirePreviousCarrier: z.boolean().default(false),
-  requireDocumentUpload: z.boolean().default(false),
-  requireBundleNumber: z.boolean().default(false),
-  requireBundleCarrier: z.boolean().default(false)
-});
 
-export const updateCarrierSchema = createCarrierSchema.partial();
 
 // 접점코드 스키마
 export const createContactCodeSchema = z.object({

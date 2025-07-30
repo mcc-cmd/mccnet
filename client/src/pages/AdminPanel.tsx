@@ -16,7 +16,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
 import { Switch } from '@/components/ui/switch';
 import { createDealerSchema, createUserSchema, createAdminSchema, createWorkerSchema, updateDocumentStatusSchema, createServicePlanSchema, createAdditionalServiceSchema, createCarrierSchema, updateCarrierSchema } from '../../../shared/schema';
-import type { Dealer, User, Document, PricingTable, ServicePlan, AdditionalService, ContactCode, Carrier } from '../../../shared/schema';
+import type { Dealer, User, Document, ServicePlan, AdditionalService, Carrier, ContactCode } from '../../../shared/schema';
 import { 
   Building2, 
   Users, 
