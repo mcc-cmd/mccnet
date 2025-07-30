@@ -317,6 +317,9 @@ This is a document management system built for MCC네트월드 telecommunication
 - July 30, 2025. Complete database reinitialization with proper constraints for all activation statuses including "업무요청중"
 - July 30, 2025. Added comprehensive test data for workflow testing: 5 documents with various activation statuses (대기, 진행중, 업무요청중, 개통, 취소)
 - July 30, 2025. Updated user authentication system with proper password hashing for all test accounts
+- July 30, 2025. Fixed carriers API 500 errors by creating proper carriers table and implementing getCarriers, getCarrierById, updateCarrier methods
+- July 30, 2025. Resolved database schema inconsistencies in user authentication and admin table references
+- July 30, 2025. Successfully tested admin login (admin@test.com/password) and carriers API endpoint functionality
 
 ## User Preferences
 

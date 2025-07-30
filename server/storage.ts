@@ -404,6 +404,11 @@ export interface IStorage {
   createChatMessage(data: Omit<ChatMessage, 'id' | 'createdAt' | 'readAt'>): Promise<ChatMessage>;
   getChatMessages(roomId: number): Promise<ChatMessage[]>;
   markMessageAsRead(messageId: number): Promise<void>;
+  
+  // Carriers
+  getCarriers(): Promise<any[]>;
+  getCarrierById(id: number): Promise<any | null>;
+  updateCarrier(id: number, data: any): Promise<any>;
 }
 
 class SqliteStorage implements IStorage {
@@ -2407,189 +2412,102 @@ class SqliteStorage implements IStorage {
 
   // ==================== 통신사 관리 ====================
   
-  async getCarriers(): Promise<Array<{ id: number; name: string; displayOrder: number; isActive: boolean; bundleNumber?: string; bundleCarrier?: string; documentRequired: boolean; requireCustomerName: boolean; requireCustomerPhone: boolean; requireCustomerEmail: boolean; requireContactCode: boolean; requireCarrier: boolean; requirePreviousCarrier: boolean; requireDocumentUpload: boolean; requireBundleNumber: boolean; requireBundleCarrier: boolean; createdAt: Date; updatedAt: Date }>> {
-    const carriers = db.prepare('SELECT * FROM carriers WHERE is_active = 1 ORDER BY display_order ASC, name ASC').all() as any[];
-    return carriers.map(carrier => ({
-      id: carrier.id,
-      name: carrier.name,
-      displayOrder: carrier.display_order,
-      isActive: Boolean(carrier.is_active),
-      bundleNumber: carrier.bundle_number || undefined,
-      bundleCarrier: carrier.bundle_carrier || undefined,
-      documentRequired: Boolean(carrier.document_required),
-      requireCustomerName: Boolean(carrier.require_customer_name || 1),
-      requireCustomerPhone: Boolean(carrier.require_customer_phone || 1),
-      requireCustomerEmail: Boolean(carrier.require_customer_email || 0),
-      requireContactCode: Boolean(carrier.require_contact_code || 1),
-      requireCarrier: Boolean(carrier.require_carrier || 1),
-      requirePreviousCarrier: Boolean(carrier.require_previous_carrier || 0),
-      requireDocumentUpload: Boolean(carrier.require_document_upload || 0),
-      requireBundleNumber: Boolean(carrier.require_bundle_number || 0),
-      requireBundleCarrier: Boolean(carrier.require_bundle_carrier || 0),
-      createdAt: new Date(carrier.created_at),
-      updatedAt: new Date(carrier.updated_at)
+  async getCarriers(): Promise<any[]> {
+    const carriers = db.prepare('SELECT * FROM carriers ORDER BY name').all() as any[];
+    return carriers.map(c => ({
+      id: c.id,
+      name: c.name,
+      requireCustomerName: Boolean(c.require_customer_name),
+      requireCustomerPhone: Boolean(c.require_customer_phone),
+      requireContactCode: Boolean(c.require_contact_code),
+      requireEmail: Boolean(c.require_email),
+      requireBundleNumber: Boolean(c.require_bundle_number),
+      requireBundleCarrier: Boolean(c.require_bundle_carrier),
+      requirePreviousCarrier: Boolean(c.require_previous_carrier),
+      requireStoreName: Boolean(c.require_store_name),
+      requireFileUpload: Boolean(c.require_file_upload),
+      isWired: Boolean(c.is_wired),
+      createdAt: new Date(c.created_at)
     }));
   }
 
-  async createCarrier(data: { name: string; displayOrder?: number; isActive?: boolean; bundleNumber?: string; bundleCarrier?: string; documentRequired?: boolean; requireCustomerName?: boolean; requireCustomerPhone?: boolean; requireCustomerEmail?: boolean; requireContactCode?: boolean; requireCarrier?: boolean; requirePreviousCarrier?: boolean; requireDocumentUpload?: boolean; requireBundleNumber?: boolean; requireBundleCarrier?: boolean }): Promise<{ id: number; name: string; displayOrder: number; isActive: boolean; bundleNumber?: string; bundleCarrier?: string; documentRequired: boolean; requireCustomerName: boolean; requireCustomerPhone: boolean; requireCustomerEmail: boolean; requireContactCode: boolean; requireCarrier: boolean; requirePreviousCarrier: boolean; requireDocumentUpload: boolean; requireBundleNumber: boolean; requireBundleCarrier: boolean; createdAt: Date; updatedAt: Date }> {
-    const insertResult = db.prepare(`
-      INSERT INTO carriers (name, display_order, is_active, bundle_number, bundle_carrier, document_required, 
-                           require_customer_name, require_customer_phone, require_customer_email, require_contact_code,
-                           require_carrier, require_previous_carrier, require_document_upload, require_bundle_number,
-                           require_bundle_carrier, created_at, updated_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
-    `).run(
-      data.name,
-      data.displayOrder || 0,
-      data.isActive !== false ? 1 : 0,
-      data.bundleNumber || null,
-      data.bundleCarrier || null,
-      data.documentRequired ? 1 : 0,
-      data.requireCustomerName !== false ? 1 : 0,
-      data.requireCustomerPhone !== false ? 1 : 0,
-      data.requireCustomerEmail ? 1 : 0,
-      data.requireContactCode !== false ? 1 : 0,
-      data.requireCarrier !== false ? 1 : 0,
-      data.requirePreviousCarrier ? 1 : 0,
-      data.requireDocumentUpload ? 1 : 0,
-      data.requireBundleNumber ? 1 : 0,
-      data.requireBundleCarrier ? 1 : 0
-    );
-
-    const carrier = db.prepare('SELECT * FROM carriers WHERE id = ?').get(insertResult.lastInsertRowid) as any;
+  async getCarrierById(id: number): Promise<any | null> {
+    const carrier = db.prepare('SELECT * FROM carriers WHERE id = ?').get(id) as any;
+    if (!carrier) return null;
     
     return {
       id: carrier.id,
       name: carrier.name,
-      displayOrder: carrier.display_order,
-      isActive: Boolean(carrier.is_active),
-      bundleNumber: carrier.bundle_number || undefined,
-      bundleCarrier: carrier.bundle_carrier || undefined,
-      documentRequired: Boolean(carrier.document_required),
       requireCustomerName: Boolean(carrier.require_customer_name),
       requireCustomerPhone: Boolean(carrier.require_customer_phone),
-      requireCustomerEmail: Boolean(carrier.require_customer_email),
       requireContactCode: Boolean(carrier.require_contact_code),
-      requireCarrier: Boolean(carrier.require_carrier),
-      requirePreviousCarrier: Boolean(carrier.require_previous_carrier),
-      requireDocumentUpload: Boolean(carrier.require_document_upload),
+      requireEmail: Boolean(carrier.require_email),
       requireBundleNumber: Boolean(carrier.require_bundle_number),
       requireBundleCarrier: Boolean(carrier.require_bundle_carrier),
-      createdAt: new Date(carrier.created_at),
-      updatedAt: new Date(carrier.updated_at)
+      requirePreviousCarrier: Boolean(carrier.require_previous_carrier),
+      requireStoreName: Boolean(carrier.require_store_name),
+      requireFileUpload: Boolean(carrier.require_file_upload),
+      isWired: Boolean(carrier.is_wired),
+      createdAt: new Date(carrier.created_at)
     };
   }
 
-  async updateCarrier(id: number, data: { name?: string; displayOrder?: number; isActive?: boolean; bundleNumber?: string; bundleCarrier?: string; documentRequired?: boolean; requireCustomerName?: boolean; requireCustomerPhone?: boolean; requireCustomerEmail?: boolean; requireContactCode?: boolean; requireCarrier?: boolean; requirePreviousCarrier?: boolean; requireDocumentUpload?: boolean; requireBundleNumber?: boolean; requireBundleCarrier?: boolean }): Promise<{ id: number; name: string; displayOrder: number; isActive: boolean; bundleNumber?: string; bundleCarrier?: string; documentRequired: boolean; requireCustomerName: boolean; requireCustomerPhone: boolean; requireCustomerEmail: boolean; requireContactCode: boolean; requireCarrier: boolean; requirePreviousCarrier: boolean; requireDocumentUpload: boolean; requireBundleNumber: boolean; requireBundleCarrier: boolean; createdAt: Date; updatedAt: Date }> {
-    const updates: string[] = [];
-    const params: any[] = [];
-    
-    if (data.name !== undefined) {
-      updates.push('name = ?');
-      params.push(data.name);
-    }
-    
-    if (data.displayOrder !== undefined) {
-      updates.push('display_order = ?');
-      params.push(data.displayOrder);
-    }
-    
-    if (data.isActive !== undefined) {
-      updates.push('is_active = ?');
-      params.push(data.isActive ? 1 : 0);
-    }
-    
-    if (data.bundleNumber !== undefined) {
-      updates.push('bundle_number = ?');
-      params.push(data.bundleNumber || null);
-    }
-    
-    if (data.bundleCarrier !== undefined) {
-      updates.push('bundle_carrier = ?');
-      params.push(data.bundleCarrier || null);
-    }
-    
-    if (data.documentRequired !== undefined) {
-      updates.push('document_required = ?');
-      params.push(data.documentRequired ? 1 : 0);
-    }
+  async updateCarrier(id: number, data: any): Promise<any> {
+    const updateFields = [];
+    const params = [];
     
     if (data.requireCustomerName !== undefined) {
-      updates.push('require_customer_name = ?');
+      updateFields.push('require_customer_name = ?');
       params.push(data.requireCustomerName ? 1 : 0);
     }
-    
     if (data.requireCustomerPhone !== undefined) {
-      updates.push('require_customer_phone = ?');
+      updateFields.push('require_customer_phone = ?');
       params.push(data.requireCustomerPhone ? 1 : 0);
     }
-    
-    if (data.requireCustomerEmail !== undefined) {
-      updates.push('require_customer_email = ?');
-      params.push(data.requireCustomerEmail ? 1 : 0);
-    }
-    
     if (data.requireContactCode !== undefined) {
-      updates.push('require_contact_code = ?');
+      updateFields.push('require_contact_code = ?');
       params.push(data.requireContactCode ? 1 : 0);
     }
-    
-    if (data.requireCarrier !== undefined) {
-      updates.push('require_carrier = ?');
-      params.push(data.requireCarrier ? 1 : 0);
+    if (data.requireEmail !== undefined) {
+      updateFields.push('require_email = ?');
+      params.push(data.requireEmail ? 1 : 0);
     }
-    
-    if (data.requirePreviousCarrier !== undefined) {
-      updates.push('require_previous_carrier = ?');
-      params.push(data.requirePreviousCarrier ? 1 : 0);
-    }
-    
-    if (data.requireDocumentUpload !== undefined) {
-      updates.push('require_document_upload = ?');
-      params.push(data.requireDocumentUpload ? 1 : 0);
-    }
-    
     if (data.requireBundleNumber !== undefined) {
-      updates.push('require_bundle_number = ?');
+      updateFields.push('require_bundle_number = ?');
       params.push(data.requireBundleNumber ? 1 : 0);
     }
-    
     if (data.requireBundleCarrier !== undefined) {
-      updates.push('require_bundle_carrier = ?');
+      updateFields.push('require_bundle_carrier = ?');
       params.push(data.requireBundleCarrier ? 1 : 0);
     }
+    if (data.requirePreviousCarrier !== undefined) {
+      updateFields.push('require_previous_carrier = ?');
+      params.push(data.requirePreviousCarrier ? 1 : 0);
+    }
+    if (data.requireStoreName !== undefined) {
+      updateFields.push('require_store_name = ?');
+      params.push(data.requireStoreName ? 1 : 0);
+    }
+    if (data.requireFileUpload !== undefined) {
+      updateFields.push('require_file_upload = ?');
+      params.push(data.requireFileUpload ? 1 : 0);
+    }
+    if (data.isWired !== undefined) {
+      updateFields.push('is_wired = ?');
+      params.push(data.isWired ? 1 : 0);
+    }
     
-    updates.push('updated_at = datetime(\'now\')');
-    params.push(id);
+    if (updateFields.length > 0) {
+      params.push(id);
+      const stmt = db.prepare(`
+        UPDATE carriers 
+        SET ${updateFields.join(', ')}
+        WHERE id = ?
+      `);
+      stmt.run(...params);
+    }
     
-    db.prepare(`UPDATE carriers SET ${updates.join(', ')} WHERE id = ?`).run(...params);
-    
-    const carrier = db.prepare('SELECT * FROM carriers WHERE id = ?').get(id) as any;
-    
-    return {
-      id: carrier.id,
-      name: carrier.name,
-      displayOrder: carrier.display_order,
-      isActive: Boolean(carrier.is_active),
-      bundleNumber: carrier.bundle_number || undefined,
-      bundleCarrier: carrier.bundle_carrier || undefined,
-      documentRequired: Boolean(carrier.document_required),
-      requireCustomerName: Boolean(carrier.require_customer_name),
-      requireCustomerPhone: Boolean(carrier.require_customer_phone),
-      requireCustomerEmail: Boolean(carrier.require_customer_email),
-      requireContactCode: Boolean(carrier.require_contact_code),
-      requireCarrier: Boolean(carrier.require_carrier),
-      requirePreviousCarrier: Boolean(carrier.require_previous_carrier),
-      requireDocumentUpload: Boolean(carrier.require_document_upload),
-      requireBundleNumber: Boolean(carrier.require_bundle_number),
-      requireBundleCarrier: Boolean(carrier.require_bundle_carrier),
-      createdAt: new Date(carrier.created_at),
-      updatedAt: new Date(carrier.updated_at)
-    };
-  }
-
-  async deleteCarrier(id: number): Promise<void> {
-    db.prepare('UPDATE carriers SET is_active = 0, updated_at = datetime(\'now\') WHERE id = ?').run(id);
+    return this.getCarrierById(id);
   }
 }
 
