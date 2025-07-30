@@ -2552,6 +2552,30 @@ class SqliteStorage implements IStorage {
       updateFields.push('is_wired = ?');
       params.push(data.isWired ? 1 : 0);
     }
+    if (data.isActive !== undefined) {
+      updateFields.push('is_active = ?');
+      params.push(data.isActive ? 1 : 0);
+    }
+    if (data.name !== undefined) {
+      updateFields.push('name = ?');
+      params.push(data.name);
+    }
+    if (data.displayOrder !== undefined) {
+      updateFields.push('display_order = ?');
+      params.push(data.displayOrder);
+    }
+    if (data.bundleNumber !== undefined) {
+      updateFields.push('bundle_number = ?');
+      params.push(data.bundleNumber);
+    }
+    if (data.bundleCarrier !== undefined) {
+      updateFields.push('bundle_carrier = ?');
+      params.push(data.bundleCarrier);
+    }
+    if (data.documentRequired !== undefined) {
+      updateFields.push('document_required = ?');
+      params.push(data.documentRequired ? 1 : 0);
+    }
     
     if (updateFields.length > 0) {
       params.push(id);

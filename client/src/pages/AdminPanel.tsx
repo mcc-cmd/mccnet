@@ -187,17 +187,26 @@ function CarrierManagement() {
         body: JSON.stringify(data)
       }),
     onSuccess: async () => {
-      // 모든 관련 쿼리 무효화
+      // 모든 관련 쿼리 무효화 및 새로고침
       await queryClient.invalidateQueries({ queryKey: ['/api/carriers'] });
       await queryClient.refetchQueries({ queryKey: ['/api/carriers'] });
       
-      setCarrierDialogOpen(false);
-      setEditingCarrier(null);
-      carrierForm.reset();
-      toast({
-        title: "통신사 수정",
-        description: "통신사가 성공적으로 수정되었습니다."
-      });
+      // 토글 작업이 아닌 경우에만 대화상자 닫기
+      if (carrierDialogOpen) {
+        setCarrierDialogOpen(false);
+        setEditingCarrier(null);
+        carrierForm.reset();
+        toast({
+          title: "통신사 수정",
+          description: "통신사가 성공적으로 수정되었습니다."
+        });
+      } else {
+        // 토글 작업 시에는 간단한 알림만
+        toast({
+          title: "상태 변경",
+          description: "통신사 상태가 성공적으로 변경되었습니다."
+        });
+      }
     },
     onError: (error: any) => {
       toast({
@@ -258,12 +267,16 @@ function CarrierManagement() {
   };
 
   const handleToggleCarrierStatus = (carrier: Carrier) => {
+    console.log('Toggle carrier status:', carrier.id, 'from', carrier.isActive, 'to', !carrier.isActive);
+    
+    // 토글용 별도 mutation 생성
+    const toggleData = {
+      isActive: !carrier.isActive
+    };
+    
     updateCarrierMutation.mutate({
       id: carrier.id,
-      data: {
-        ...carrier,
-        isActive: !carrier.isActive
-      }
+      data: toggleData
     });
   };
 
