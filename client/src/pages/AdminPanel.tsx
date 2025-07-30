@@ -109,7 +109,10 @@ function CarrierManagement() {
     defaultValues: {
       name: '',
       displayOrder: 0,
-      isActive: true
+      isActive: true,
+      bundleNumber: '',
+      bundleCarrier: '',
+      documentRequired: false
     }
   });
 
@@ -197,7 +200,10 @@ function CarrierManagement() {
     carrierForm.reset({
       name: carrier.name,
       displayOrder: carrier.displayOrder,
-      isActive: carrier.isActive
+      isActive: carrier.isActive,
+      bundleNumber: carrier.bundleNumber || '',
+      bundleCarrier: carrier.bundleCarrier || '',
+      documentRequired: carrier.documentRequired
     });
     setCarrierDialogOpen(true);
   };
@@ -207,7 +213,10 @@ function CarrierManagement() {
     carrierForm.reset({
       name: '',
       displayOrder: carriers.length,
-      isActive: true
+      isActive: true,
+      bundleNumber: '',
+      bundleCarrier: '',
+      documentRequired: false
     });
     setCarrierDialogOpen(true);
   };
@@ -275,6 +284,58 @@ function CarrierManagement() {
                 />
                 <FormField
                   control={carrierForm.control}
+                  name="bundleNumber"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>결합 번호</FormLabel>
+                      <FormControl>
+                        <Input placeholder="결합 번호를 입력하세요 (선택사항)" {...field} />
+                      </FormControl>
+                      <FormDescription>
+                        결합 상품이 있는 경우 결합 번호를 입력하세요.
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={carrierForm.control}
+                  name="bundleCarrier"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>결합 통신사</FormLabel>
+                      <FormControl>
+                        <Input placeholder="결합하는 통신사를 입력하세요 (선택사항)" {...field} />
+                      </FormControl>
+                      <FormDescription>
+                        결합 상품이 있는 경우 결합하는 통신사를 입력하세요.
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={carrierForm.control}
+                  name="documentRequired"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                      <div className="space-y-0.5">
+                        <FormLabel className="text-base">서류 업로드 필수</FormLabel>
+                        <FormDescription>
+                          활성화하면 접수 신청 시 서류 업로드가 필수가 됩니다.
+                        </FormDescription>
+                      </div>
+                      <FormControl>
+                        <Switch
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={carrierForm.control}
                   name="isActive"
                   render={({ field }) => (
                     <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
@@ -335,9 +396,16 @@ function CarrierManagement() {
                         </div>
                         <div>
                           <h4 className="font-medium text-gray-900">{carrier.name}</h4>
-                          <p className="text-sm text-gray-500">
-                            정렬 순서: {carrier.displayOrder}
-                          </p>
+                          <div className="text-sm text-gray-500 space-y-1">
+                            <p>정렬 순서: {carrier.displayOrder}</p>
+                            {carrier.bundleNumber && (
+                              <p>결합 번호: {carrier.bundleNumber}</p>
+                            )}
+                            {carrier.bundleCarrier && (
+                              <p>결합 통신사: {carrier.bundleCarrier}</p>
+                            )}
+                            <p>서류 필수: {carrier.documentRequired ? '예' : '아니오'}</p>
+                          </div>
                         </div>
                       </div>
                       <div className="flex items-center space-x-2">

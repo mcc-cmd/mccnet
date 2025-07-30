@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { useAuth, useApiRequest } from '@/lib/auth';
 import { Layout } from '@/components/Layout';
 import { Button } from '@/components/ui/button';
@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
 import { Upload, Loader2, FileText, Phone, User } from 'lucide-react';
+import { Carrier } from '@shared/schema';
 
 export function SubmitApplication() {
   const { user } = useAuth();
@@ -47,21 +48,19 @@ export function SubmitApplication() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [dragActive, setDragActive] = useState(false);
   
-  // 통신사 목록 (실제 운영 통신사)
-  const carriers = [
-    'SK텔링크', 'SK프리티', 'SK스테이지파이브', 'KT엠모바일', 'KT스카이라이프', 'KT스테이지파이브', 
-    'KT코드모바일', 'LG미디어로그', 'LG헬로모바일', 'LG프리티', 'LG밸류컴', '스마텔LG', 'KT'
-  ];
+  // 통신사 목록을 데이터베이스에서 가져오기
+  const { data: carriers = [], isLoading: carriersLoading } = useQuery<Carrier[]>({
+    queryKey: ['/api/carriers'],
+    queryFn: () => apiRequest('/api/carriers')
+  });
   
   // 이전통신사 목록
   const previousCarriers = [
     'SK', 'KT', 'LG', 'SK알뜰', 'KT알뜰', 'LG알뜰'
   ];
   
-  // SK 계열사 체크 (SK텔링크, SK프리티, SK스테이지파이브)
-  const isSKCarrier = (carrier: string) => {
-    return carrier.startsWith('SK');
-  };
+  // 선택된 통신사의 정보 가져오기
+  const selectedCarrier = carriers.find(c => c.name === formData.carrier);
 
   const uploadMutation = useMutation({
     mutationFn: async (data: FormData) => {
@@ -113,11 +112,11 @@ export function SubmitApplication() {
       return;
     }
 
-    // SK 계열사인 경우 파일 업로드 필수
-    if (isSKCarrier(formData.carrier) && !selectedFile) {
+    // 통신사별 서류 업로드 필수 체크
+    if (selectedCarrier?.documentRequired && !selectedFile) {
       toast({
         title: "입력 오류",
-        description: "SK 계열사 접수 시 서류 업로드는 필수입니다.",
+        description: `${formData.carrier} 접수 시 서류 업로드는 필수입니다.`,
         variant: "destructive",
       });
       return;
@@ -273,17 +272,32 @@ export function SubmitApplication() {
                         <SelectValue placeholder="통신사를 선택하세요" />
                       </SelectTrigger>
                       <SelectContent>
-                        {carriers.map((carrier) => (
-                          <SelectItem key={carrier} value={carrier}>
-                            {carrier}
-                          </SelectItem>
-                        ))}
+                        {carriersLoading ? (
+                          <SelectItem value="" disabled>로딩 중...</SelectItem>
+                        ) : (
+                          carriers.map((carrier) => (
+                            <SelectItem key={carrier.id} value={carrier.name}>
+                              {carrier.name}
+                              {carrier.documentRequired && " (서류 필수)"}
+                            </SelectItem>
+                          ))
+                        )}
                       </SelectContent>
                     </Select>
-                    {formData.carrier && isSKCarrier(formData.carrier) && (
-                      <p className="text-sm text-red-600 mt-1">
-                        * SK 계열사 접수 시 서류 업로드는 필수입니다.
-                      </p>
+                    {selectedCarrier?.documentRequired && (
+                      <Alert className="mt-2">
+                        <AlertDescription>
+                          {formData.carrier} 접수 시 서류 업로드는 필수입니다.
+                        </AlertDescription>
+                      </Alert>
+                    )}
+                    {selectedCarrier?.bundleNumber && (
+                      <Alert className="mt-2">
+                        <AlertDescription>
+                          결합 번호: {selectedCarrier.bundleNumber}
+                          {selectedCarrier.bundleCarrier && ` (${selectedCarrier.bundleCarrier})`}
+                        </AlertDescription>
+                      </Alert>
                     )}
                   </div>
                   

@@ -2439,26 +2439,32 @@ class SqliteStorage implements IStorage {
 
   // ==================== 통신사 관리 ====================
   
-  async getCarriers(): Promise<Array<{ id: number; name: string; displayOrder: number; isActive: boolean; createdAt: Date; updatedAt: Date }>> {
+  async getCarriers(): Promise<Array<{ id: number; name: string; displayOrder: number; isActive: boolean; bundleNumber?: string; bundleCarrier?: string; documentRequired: boolean; createdAt: Date; updatedAt: Date }>> {
     const carriers = db.prepare('SELECT * FROM carriers WHERE is_active = 1 ORDER BY display_order ASC, name ASC').all() as any[];
     return carriers.map(carrier => ({
       id: carrier.id,
       name: carrier.name,
       displayOrder: carrier.display_order,
       isActive: Boolean(carrier.is_active),
+      bundleNumber: carrier.bundle_number || undefined,
+      bundleCarrier: carrier.bundle_carrier || undefined,
+      documentRequired: Boolean(carrier.document_required),
       createdAt: new Date(carrier.created_at),
       updatedAt: new Date(carrier.updated_at)
     }));
   }
 
-  async createCarrier(data: { name: string; displayOrder?: number; isActive?: boolean }): Promise<{ id: number; name: string; displayOrder: number; isActive: boolean; createdAt: Date; updatedAt: Date }> {
+  async createCarrier(data: { name: string; displayOrder?: number; isActive?: boolean; bundleNumber?: string; bundleCarrier?: string; documentRequired?: boolean }): Promise<{ id: number; name: string; displayOrder: number; isActive: boolean; bundleNumber?: string; bundleCarrier?: string; documentRequired: boolean; createdAt: Date; updatedAt: Date }> {
     const insertResult = db.prepare(`
-      INSERT INTO carriers (name, display_order, is_active, created_at, updated_at)
-      VALUES (?, ?, ?, datetime('now'), datetime('now'))
+      INSERT INTO carriers (name, display_order, is_active, bundle_number, bundle_carrier, document_required, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
     `).run(
       data.name,
       data.displayOrder || 0,
-      data.isActive !== false ? 1 : 0
+      data.isActive !== false ? 1 : 0,
+      data.bundleNumber || null,
+      data.bundleCarrier || null,
+      data.documentRequired ? 1 : 0
     );
 
     const carrier = db.prepare('SELECT * FROM carriers WHERE id = ?').get(insertResult.lastInsertRowid) as any;
@@ -2468,12 +2474,15 @@ class SqliteStorage implements IStorage {
       name: carrier.name,
       displayOrder: carrier.display_order,
       isActive: Boolean(carrier.is_active),
+      bundleNumber: carrier.bundle_number || undefined,
+      bundleCarrier: carrier.bundle_carrier || undefined,
+      documentRequired: Boolean(carrier.document_required),
       createdAt: new Date(carrier.created_at),
       updatedAt: new Date(carrier.updated_at)
     };
   }
 
-  async updateCarrier(id: number, data: { name?: string; displayOrder?: number; isActive?: boolean }): Promise<{ id: number; name: string; displayOrder: number; isActive: boolean; createdAt: Date; updatedAt: Date }> {
+  async updateCarrier(id: number, data: { name?: string; displayOrder?: number; isActive?: boolean; bundleNumber?: string; bundleCarrier?: string; documentRequired?: boolean }): Promise<{ id: number; name: string; displayOrder: number; isActive: boolean; bundleNumber?: string; bundleCarrier?: string; documentRequired: boolean; createdAt: Date; updatedAt: Date }> {
     const updates: string[] = [];
     const params: any[] = [];
     
@@ -2492,7 +2501,22 @@ class SqliteStorage implements IStorage {
       params.push(data.isActive ? 1 : 0);
     }
     
-    updates.push('updated_at = datetime("now")');
+    if (data.bundleNumber !== undefined) {
+      updates.push('bundle_number = ?');
+      params.push(data.bundleNumber || null);
+    }
+    
+    if (data.bundleCarrier !== undefined) {
+      updates.push('bundle_carrier = ?');
+      params.push(data.bundleCarrier || null);
+    }
+    
+    if (data.documentRequired !== undefined) {
+      updates.push('document_required = ?');
+      params.push(data.documentRequired ? 1 : 0);
+    }
+    
+    updates.push('updated_at = datetime(\'now\')');
     params.push(id);
     
     db.prepare(`UPDATE carriers SET ${updates.join(', ')} WHERE id = ?`).run(...params);
@@ -2504,13 +2528,16 @@ class SqliteStorage implements IStorage {
       name: carrier.name,
       displayOrder: carrier.display_order,
       isActive: Boolean(carrier.is_active),
+      bundleNumber: carrier.bundle_number || undefined,
+      bundleCarrier: carrier.bundle_carrier || undefined,
+      documentRequired: Boolean(carrier.document_required),
       createdAt: new Date(carrier.created_at),
       updatedAt: new Date(carrier.updated_at)
     };
   }
 
   async deleteCarrier(id: number): Promise<void> {
-    db.prepare('UPDATE carriers SET is_active = 0, updated_at = datetime("now") WHERE id = ?').run(id);
+    db.prepare('UPDATE carriers SET is_active = 0, updated_at = datetime(\'now\') WHERE id = ?').run(id);
   }
 }
 
