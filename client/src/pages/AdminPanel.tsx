@@ -103,9 +103,10 @@ function CarrierManagement() {
     queryFn: () => apiRequest('/api/carriers')
   });
 
-  // 통신사 생성/수정 폼
+  // 통신사 생성/수정 폼 - 고정된 resolver 사용
   const carrierForm = useForm({
-    resolver: zodResolver(editingCarrier ? updateCarrierSchema : createCarrierSchema),
+    resolver: zodResolver(createCarrierSchema),
+    mode: 'onChange',
     defaultValues: {
       name: '',
       displayOrder: 0,
@@ -214,29 +215,29 @@ function CarrierManagement() {
 
   const handleEditCarrier = (carrier: Carrier) => {
     setEditingCarrier(carrier);
-    carrierForm.reset({
-      name: carrier.name,
-      displayOrder: carrier.displayOrder,
-      isActive: carrier.isActive,
-      isWired: carrier.isWired || false,
-      bundleNumber: carrier.bundleNumber || '',
-      bundleCarrier: carrier.bundleCarrier || '',
-      documentRequired: carrier.documentRequired,
-      requireCustomerName: carrier.requireCustomerName,
-      requireCustomerPhone: carrier.requireCustomerPhone,
-      requireCustomerEmail: carrier.requireCustomerEmail,
-      requireContactCode: carrier.requireContactCode,
-      requireCarrier: carrier.requireCarrier,
-      requirePreviousCarrier: carrier.requirePreviousCarrier,
-      requireDocumentUpload: carrier.requireDocumentUpload,
-      requireBundleNumber: carrier.requireBundleNumber,
-      requireBundleCarrier: carrier.requireBundleCarrier
-    });
+    // 값을 직접 설정
+    carrierForm.setValue('name', carrier.name || '');
+    carrierForm.setValue('displayOrder', carrier.displayOrder || 0);
+    carrierForm.setValue('isActive', carrier.isActive !== false);
+    carrierForm.setValue('isWired', carrier.isWired || false);
+    carrierForm.setValue('bundleNumber', carrier.bundleNumber || '');
+    carrierForm.setValue('bundleCarrier', carrier.bundleCarrier || '');
+    carrierForm.setValue('documentRequired', carrier.documentRequired || false);
+    carrierForm.setValue('requireCustomerName', carrier.requireCustomerName !== false);
+    carrierForm.setValue('requireCustomerPhone', carrier.requireCustomerPhone !== false);
+    carrierForm.setValue('requireCustomerEmail', carrier.requireCustomerEmail || false);
+    carrierForm.setValue('requireContactCode', carrier.requireContactCode !== false);
+    carrierForm.setValue('requireCarrier', carrier.requireCarrier !== false);
+    carrierForm.setValue('requirePreviousCarrier', carrier.requirePreviousCarrier || false);
+    carrierForm.setValue('requireDocumentUpload', carrier.requireDocumentUpload || false);
+    carrierForm.setValue('requireBundleNumber', carrier.requireBundleNumber || false);
+    carrierForm.setValue('requireBundleCarrier', carrier.requireBundleCarrier || false);
     setCarrierDialogOpen(true);
   };
 
   const handleAddCarrier = () => {
     setEditingCarrier(null);
+    // 기본값으로 폼 리셋
     carrierForm.reset({
       name: '',
       displayOrder: carriers.length,
@@ -263,6 +264,36 @@ function CarrierManagement() {
       deleteCarrierMutation.mutate(id);
     }
   };
+
+  // 대화상자가 열릴 때 폼을 다시 초기화
+  React.useEffect(() => {
+    if (carrierDialogOpen && !editingCarrier) {
+      // 새 통신사 추가 시
+      setTimeout(() => {
+        carrierForm.reset({
+          name: '',
+          displayOrder: carriers.length,
+          isActive: true,
+          isWired: false,
+          bundleNumber: '',
+          bundleCarrier: '',
+          documentRequired: false,
+          requireCustomerName: true,
+          requireCustomerPhone: true,
+          requireCustomerEmail: false,
+          requireContactCode: true,
+          requireCarrier: true,
+          requirePreviousCarrier: false,
+          requireDocumentUpload: false,
+          requireBundleNumber: false,
+          requireBundleCarrier: false
+        });
+      }, 100);
+    } else if (!carrierDialogOpen) {
+      // 대화상자가 닫혔을 때 상태 정리
+      setEditingCarrier(null);
+    }
+  }, [carrierDialogOpen, editingCarrier, carriers.length, carrierForm]);
 
   return (
     <Card>
