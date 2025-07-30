@@ -1945,14 +1945,14 @@ router.post('/api/contact-codes/upload-excel', contactCodeUpload.single('file'),
     }
 
     const XLSX = await import('xlsx');
-    const workbook = XLSX.readFile(req.file.path);
+    const workbook = XLSX.default ? XLSX.default.readFile(req.file.path) : XLSX.readFile(req.file.path);
     const worksheet = workbook.Sheets[workbook.SheetNames[0]];
     
     if (!worksheet) {
       return res.status(400).json({ error: '엑셀 파일에 데이터를 찾을 수 없습니다.' });
     }
 
-    const jsonData = XLSX.utils.sheet_to_json(worksheet);
+    const jsonData = XLSX.default ? XLSX.default.utils.sheet_to_json(worksheet) : XLSX.utils.sheet_to_json(worksheet);
     
     if (!jsonData || jsonData.length === 0) {
       return res.status(400).json({ error: '엑셀 파일에 데이터가 없습니다.' });
