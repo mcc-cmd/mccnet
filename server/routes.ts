@@ -485,14 +485,18 @@ router.get('/api/pricing-tables/active', requireAuth, async (req, res) => {
 // Document upload route
 router.post('/api/documents', requireAuth, upload.single('file'), async (req: any, res) => {
   try {
-    if (req.session.userType !== 'user') {
-      return res.status(403).json({ error: '사용자만 문서를 업로드할 수 있습니다.' });
-    }
-
+    // 모든 사용자 유형(관리자, 작업자, 대리점)이 접수 신청 가능
     const data = uploadDocumentSchema.parse(req.body);
+    
+    // dealerId 설정: 관리자/작업자는 null, 일반 사용자는 본인의 dealerId
+    let dealerId = null;
+    if (req.session.userType === 'user' && req.session.dealerId) {
+      dealerId = req.session.dealerId;
+    }
+    
     const document = await storage.uploadDocument({
       ...data,
-      dealerId: req.session.dealerId,
+      dealerId: dealerId,
       userId: req.session.userId,
       filePath: req.file?.path || null,
       fileName: req.file?.originalname || null,
@@ -501,6 +505,7 @@ router.post('/api/documents', requireAuth, upload.single('file'), async (req: an
 
     res.json(document);
   } catch (error: any) {
+    console.error('Document upload error:', error);
     res.status(400).json({ error: error.message });
   }
 });

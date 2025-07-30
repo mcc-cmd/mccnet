@@ -1151,77 +1151,73 @@ class SqliteStorage implements IStorage {
       }
     }
     
-    const insertResult = db.prepare(`
-      INSERT INTO documents (
-        dealer_id, user_id, document_number, customer_name, customer_phone, 
-        store_name, carrier, contact_code, status, activation_status, 
-        file_path, file_name, file_size, notes, service_plan_id,
-        additional_service_ids, activated_at, device_model, sim_number,
-        subscription_number, bundle_applied, bundle_not_applied, 
-        registration_fee_prepaid, registration_fee_postpaid, sim_fee_prepaid, sim_fee_postpaid
-      )
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `).run(
-      data.dealerId,
-      data.userId,
-      documentNumber,
-      data.customerName,
-      data.customerPhone,
-      storeName || data.storeName || null,
-      data.carrier,
-      data.contactCode || null,
-      '접수',
-      data.activationStatus || '대기',
-      data.filePath || null,
-      data.fileName || null,
-      data.fileSize || null,
-      data.notes || null,
-      data.servicePlanId || null,
-      data.additionalServices ? JSON.stringify(data.additionalServices) : null,
-      data.activatedAt ? data.activatedAt.toISOString() : null,
-      data.deviceModel || null,
-      data.simNumber || null,
-      data.subscriptionNumber || null,
-      data.bundleApplied ? 1 : 0,
-      data.bundleNotApplied ? 1 : 0,
-      data.registrationFeePrepaid ? 1 : 0,
-      data.registrationFeePostpaid ? 1 : 0,
-      data.simFeePrepaid ? 1 : 0,
-      data.simFeePostpaid ? 1 : 0
-    );
+    try {
+      console.log('Attempting to insert document with dealerId:', data.dealerId);
+      
+      const insertResult = db.prepare(`
+        INSERT INTO documents (
+          dealer_id, user_id, document_number, customer_name, customer_phone, 
+          store_name, carrier, contact_code, status, activation_status, 
+          file_path, file_name, file_size, notes
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `).run(
+        data.dealerId || null,
+        data.userId,
+        documentNumber,
+        data.customerName,
+        data.customerPhone,
+        storeName || null,
+        data.carrier,
+        data.contactCode || null,
+        '접수',
+        '대기',
+        data.filePath || null,
+        data.fileName || null,
+        data.fileSize || null,
+        data.notes || null
+      );
 
-    const result = db.prepare('SELECT * FROM documents WHERE id = ?').get(insertResult.lastInsertRowid) as any;
+      console.log('Insert result:', insertResult);
 
-    return {
-      id: result.id,
-      dealerId: result.dealer_id,
-      userId: result.user_id,
-      documentNumber: result.document_number,
-      customerName: result.customer_name,
-      customerPhone: result.customer_phone,
-      storeName: result.store_name,
-      carrier: result.carrier,
-      contactCode: result.contact_code,
-      status: result.status,
-      activationStatus: result.activation_status,
-      filePath: result.file_path,
-      fileName: result.file_name,
-      fileSize: result.file_size,
-      uploadedAt: new Date(result.uploaded_at),
-      updatedAt: new Date(result.updated_at),
-      activatedAt: result.activated_at ? new Date(result.activated_at) : undefined,
-      notes: result.notes,
-      servicePlanId: result.service_plan_id,
-      additionalServiceIds: result.additional_service_ids,
-      registrationFeePrepaid: Boolean(result.registration_fee_prepaid),
-      registrationFeePostpaid: Boolean(result.registration_fee_postpaid),
-      simFeePrepaid: Boolean(result.sim_fee_prepaid),
-      simFeePostpaid: Boolean(result.sim_fee_postpaid),
-      bundleApplied: Boolean(result.bundle_applied),
-      bundleNotApplied: Boolean(result.bundle_not_applied),
-      deviceModel: result.device_model,
-      simNumber: result.sim_number
-    };
+      if (!insertResult || !insertResult.lastInsertRowid) {
+        throw new Error('문서 삽입에 실패했습니다.');
+      }
+
+      const result = db.prepare('SELECT * FROM documents WHERE id = ?').get(insertResult.lastInsertRowid) as any;
+      
+      console.log('Query result:', result);
+      
+      if (!result) {
+        throw new Error('삽입된 문서를 찾을 수 없습니다.');
+      }
+
+      return {
+        id: result.id,
+        dealerId: result.dealer_id,
+        userId: result.user_id,
+        documentNumber: result.document_number,
+        customerName: result.customer_name,
+        customerPhone: result.customer_phone,
+        storeName: result.store_name,
+        carrier: result.carrier,
+        contactCode: result.contact_code,
+        status: result.status,
+        activationStatus: result.activation_status,
+        filePath: result.file_path,
+        fileName: result.file_name,
+        fileSize: result.file_size,
+        uploadedAt: new Date(result.uploaded_at),
+        updatedAt: new Date(result.updated_at || result.uploaded_at),
+        activatedAt: result.activated_at ? new Date(result.activated_at) : undefined,
+        notes: result.notes
+      } as Document;
+      
+    } catch (error: any) {
+      console.error('Document insert error:', error);
+      throw new Error(`문서 업로드 중 오류 발생: ${error.message}`);
+    }
+
   }
 
   // 접점 코드 관리 메서드들
@@ -1259,7 +1255,7 @@ class SqliteStorage implements IStorage {
              d.device_model, d.sim_number, d.subscription_number, d.total_monthly_fee,
              d.additional_service_ids, d.assigned_worker_id, d.assigned_at, d.dealer_notes
       FROM documents d
-      JOIN dealers ON d.dealer_id = dealers.id
+      LEFT JOIN dealers ON d.dealer_id = dealers.id
       JOIN users u ON d.user_id = u.id
       LEFT JOIN service_plans sp ON d.service_plan_id = sp.id
       WHERE 1=1
