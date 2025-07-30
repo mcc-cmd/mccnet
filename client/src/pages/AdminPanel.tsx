@@ -277,6 +277,7 @@ export function AdminPanel() {
   const [newContactCode, setNewContactCode] = useState('');
   const [newDealerName, setNewDealerName] = useState('');
   const [newCarrier, setNewCarrier] = useState('');
+  const contactCodeExcelInputRef = useRef<HTMLInputElement>(null);
   
   // Analytics dialog states
   const [workerDetailsOpen, setWorkerDetailsOpen] = useState(false);
@@ -668,6 +669,41 @@ export function AdminPanel() {
     }
   };
 
+  // 접점코드 엑셀 업로드 뮤테이션
+  const contactCodeExcelUploadMutation = useMutation({
+    mutationFn: async (file: File) => {
+      const formData = new FormData();
+      formData.append('file', file);
+      
+      return apiRequest('/api/contact-codes/upload-excel', {
+        method: 'POST',
+        body: formData,
+      });
+    },
+    onSuccess: (data: any) => {
+      queryClient.invalidateQueries({ queryKey: ['/api/contact-codes'] });
+      toast({
+        title: "업로드 완료",
+        description: data.message || "접점코드가 성공적으로 업로드되었습니다.",
+      });
+      // 파일 입력 초기화
+      if (contactCodeExcelInputRef.current) {
+        contactCodeExcelInputRef.current.value = '';
+      }
+    },
+    onError: (error: any) => {
+      toast({
+        title: "업로드 실패",
+        description: error.message || "접점코드 업로드에 실패했습니다.",
+        variant: "destructive"
+      });
+      // 파일 입력 초기화
+      if (contactCodeExcelInputRef.current) {
+        contactCodeExcelInputRef.current.value = '';
+      }
+    }
+  });
+
   // 엑셀 업로드 뮤테이션
   const excelUploadMutation = useMutation({
     mutationFn: async (file: File) => {
@@ -998,6 +1034,47 @@ export function AdminPanel() {
     }
   };
 
+
+
+  const handleContactCodeExcelUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      contactCodeExcelUploadMutation.mutate(file);
+    }
+  };
+
+  const handleDownloadTemplate = () => {
+    // 접점코드 엑셀 템플릿 생성
+    const templateData = [
+      {
+        '접점코드': 'LDI672346',
+        '판매점명': '샘플판매점',
+        '통신사': 'LG미디어로그'
+      },
+      {
+        '접점코드': 'SKT123456',
+        '판매점명': '테스트판매점',
+        '통신사': 'SK텔링크'
+      }
+    ];
+
+    // CSV 형태로 다운로드
+    const csvContent = '\uFEFF' + // BOM for Excel UTF-8 recognition
+      '접점코드,판매점명,통신사\n' +
+      'LDI672346,샘플판매점,LG미디어로그\n' +
+      'SKT123456,테스트판매점,SK텔링크\n';
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', '접점코드_업로드_양식.csv');
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   // 엑셀 다운로드 mutation
   const exportMutation = useMutation({
     mutationFn: async () => {
@@ -1213,74 +1290,112 @@ export function AdminPanel() {
                     개통방명 코드를 관리하여 자동으로 판매점명이 설정되도록 합니다.
                   </CardDescription>
                 </div>
-                <Dialog open={contactCodeDialogOpen} onOpenChange={setContactCodeDialogOpen}>
-                  <DialogTrigger asChild>
-                    <Button>
-                      <Plus className="mr-2 h-4 w-4" />
-                      접점코드 추가
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>새 접점코드 추가</DialogTitle>
-                    </DialogHeader>
-                    <form onSubmit={handleCreateContactCode} className="space-y-4">
-                      <div>
-                        <Label htmlFor="contactCodeInput">접점코드</Label>
-                        <Input
-                          id="contactCodeInput"
-                          value={newContactCode}
-                          onChange={(e) => setNewContactCode(e.target.value)}
-                          placeholder="접점코드를 입력하세요"
-                          required
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="dealerName">판매점명</Label>
-                        <Input
-                          id="dealerName"
-                          value={newDealerName}
-                          onChange={(e) => setNewDealerName(e.target.value)}
-                          placeholder="판매점명을 입력하세요"
-                          required
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="carrier">통신사</Label>
-                        <Select value={newCarrier} onValueChange={setNewCarrier}>
-                          <SelectTrigger>
-                            <SelectValue placeholder="통신사를 선택하세요" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="SK텔링크">SK텔링크</SelectItem>
-                            <SelectItem value="SK프리티">SK프리티</SelectItem>
-                            <SelectItem value="SK스테이지파이브">SK스테이지파이브</SelectItem>
-                            <SelectItem value="KT엠모바일">KT엠모바일</SelectItem>
-                            <SelectItem value="KT스카이라이프">KT스카이라이프</SelectItem>
-                            <SelectItem value="KT스테이지파이브">KT스테이지파이브</SelectItem>
-                            <SelectItem value="KT코드모바일">KT코드모바일</SelectItem>
-                            <SelectItem value="LG미디어로그">LG미디어로그</SelectItem>
-                            <SelectItem value="LG헬로모바일">LG헬로모바일</SelectItem>
-                            <SelectItem value="LG프리티">LG프리티</SelectItem>
-                            <SelectItem value="LG밸류컴">LG밸류컴</SelectItem>
-                            <SelectItem value="스마텔LG">스마텔LG</SelectItem>
-                            <SelectItem value="KT">KT</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div className="flex justify-end space-x-2">
-                        <Button type="button" variant="outline" onClick={() => setContactCodeDialogOpen(false)}>
-                          취소
-                        </Button>
-                        <Button type="submit" disabled={createContactCodeMutation.isPending}>
-                          {createContactCodeMutation.isPending ? '생성 중...' : '생성'}
-                        </Button>
-                      </div>
-                    </form>
-                  </DialogContent>
-                </Dialog>
+                <div className="space-x-2">
+                  <input
+                    ref={contactCodeExcelInputRef}
+                    type="file"
+                    accept=".xlsx,.xls"
+                    onChange={handleContactCodeExcelUpload}
+                    className="hidden"
+                  />
+                  <Button
+                    variant="outline"
+                    onClick={handleDownloadTemplate}
+                  >
+                    <Download className="mr-2 h-4 w-4" />
+                    양식 다운로드
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => contactCodeExcelInputRef.current?.click()}
+                    disabled={contactCodeExcelUploadMutation.isPending}
+                  >
+                    <Upload className="mr-2 h-4 w-4" />
+                    {contactCodeExcelUploadMutation.isPending ? '업로드 중...' : '엑셀 업로드'}
+                  </Button>
+                  <Dialog open={contactCodeDialogOpen} onOpenChange={setContactCodeDialogOpen}>
+                    <DialogTrigger asChild>
+                      <Button>
+                        <Plus className="mr-2 h-4 w-4" />
+                        접점코드 추가
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>새 접점코드 추가</DialogTitle>
+                      </DialogHeader>
+                      <form onSubmit={handleCreateContactCode} className="space-y-4">
+                        <div>
+                          <Label htmlFor="contactCodeInput">접점코드</Label>
+                          <Input
+                            id="contactCodeInput"
+                            value={newContactCode}
+                            onChange={(e) => setNewContactCode(e.target.value)}
+                            placeholder="접점코드를 입력하세요"
+                            required
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="dealerName">판매점명</Label>
+                          <Input
+                            id="dealerName"
+                            value={newDealerName}
+                            onChange={(e) => setNewDealerName(e.target.value)}
+                            placeholder="판매점명을 입력하세요"
+                            required
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="carrier">통신사</Label>
+                          <Select value={newCarrier} onValueChange={setNewCarrier}>
+                            <SelectTrigger>
+                              <SelectValue placeholder="통신사를 선택하세요" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="SK텔링크">SK텔링크</SelectItem>
+                              <SelectItem value="SK프리티">SK프리티</SelectItem>
+                              <SelectItem value="SK스테이지파이브">SK스테이지파이브</SelectItem>
+                              <SelectItem value="KT엠모바일">KT엠모바일</SelectItem>
+                              <SelectItem value="KT스카이라이프">KT스카이라이프</SelectItem>
+                              <SelectItem value="KT스테이지파이브">KT스테이지파이브</SelectItem>
+                              <SelectItem value="KT코드모바일">KT코드모바일</SelectItem>
+                              <SelectItem value="LG미디어로그">LG미디어로그</SelectItem>
+                              <SelectItem value="LG헬로모바일">LG헬로모바일</SelectItem>
+                              <SelectItem value="LG프리티">LG프리티</SelectItem>
+                              <SelectItem value="LG밸류컴">LG밸류컴</SelectItem>
+                              <SelectItem value="스마텔LG">스마텔LG</SelectItem>
+                              <SelectItem value="KT">KT</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="flex justify-end space-x-2">
+                          <Button type="button" variant="outline" onClick={() => setContactCodeDialogOpen(false)}>
+                            취소
+                          </Button>
+                          <Button type="submit" disabled={createContactCodeMutation.isPending}>
+                            {createContactCodeMutation.isPending ? '생성 중...' : '생성'}
+                          </Button>
+                        </div>
+                      </form>
+                    </DialogContent>
+                  </Dialog>
+                </div>
               </CardHeader>
               <CardContent>
+                <div className="mb-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                  <h4 className="font-medium text-blue-900 dark:text-blue-100 mb-2">엑셀 업로드 사용법</h4>
+                  <div className="text-sm text-blue-700 dark:text-blue-300">
+                    <p className="mb-2">1. 위의 "양식 다운로드" 버튼을 클릭하여 템플릿을 다운로드하세요.</p>
+                    <p className="mb-2">2. 다운로드한 파일에 접점코드 데이터를 입력하세요:</p>
+                    <ul className="list-disc list-inside ml-4 mb-2">
+                      <li><strong>접점코드</strong>: 개통방명 시 사용할 코드</li>
+                      <li><strong>판매점명</strong>: 자동으로 설정될 판매점 이름</li>
+                      <li><strong>통신사</strong>: 해당 통신사명</li>
+                    </ul>
+                    <p>3. 작성이 완료되면 "엑셀 업로드" 버튼을 클릭하여 파일을 업로드하세요.</p>
+                  </div>
+                </div>
+                
                 {contactCodesLoading ? (
                   <div className="text-center py-8">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-accent mx-auto"></div>

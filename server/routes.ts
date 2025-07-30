@@ -1918,4 +1918,100 @@ router.delete('/api/contact-codes/:id', requireAuth, async (req: any, res) => {
   }
 });
 
+// 접점코드 엑셀 업로드 API
+router.post('/api/contact-codes/upload-excel', upload.single('file'), requireAuth, async (req: any, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: '파일을 업로드해주세요.' });
+    }
+
+    const XLSX = await import('xlsx');
+    const workbook = XLSX.readFile(req.file.path);
+    const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+    
+    if (!worksheet) {
+      return res.status(400).json({ error: '엑셀 파일에 데이터를 찾을 수 없습니다.' });
+    }
+
+    const jsonData = XLSX.utils.sheet_to_json(worksheet);
+    
+    if (!jsonData || jsonData.length === 0) {
+      return res.status(400).json({ error: '엑셀 파일에 데이터가 없습니다.' });
+    }
+
+    let addedCodes = 0;
+    const errors: string[] = [];
+
+    // 각 행에 대해 접점코드 생성
+    for (let i = 0; i < jsonData.length; i++) {
+      const row = jsonData[i] as any;
+      
+      try {
+        // 컬럼명은 한글 또는 영문 모두 지원
+        const code = row['접점코드'] || row['code'] || row['Code'] || row['접점코드'];
+        const dealerName = row['판매점명'] || row['dealerName'] || row['DealerName'] || row['dealer_name'];
+        const carrier = row['통신사'] || row['carrier'] || row['Carrier'] || row['통신사명'];
+        
+        if (!code || !dealerName || !carrier) {
+          errors.push(`${i + 2}행: 필수 정보가 누락되었습니다 (접점코드, 판매점명, 통신사 필수)`);
+          continue;
+        }
+
+        // 기존 접점코드 확인
+        const existingCode = await storage.findContactCodeByCode(code);
+        if (existingCode) {
+          errors.push(`${i + 2}행: 접점코드 '${code}'가 이미 존재합니다`);
+          continue;
+        }
+
+        // 접점코드 생성
+        await storage.createContactCode({
+          code: String(code).trim(),
+          dealerName: String(dealerName).trim(),
+          carrier: String(carrier).trim(),
+          isActive: true
+        });
+        
+        addedCodes++;
+      } catch (error: any) {
+        errors.push(`${i + 2}행: ${error.message}`);
+      }
+    }
+
+    // 임시 파일 삭제
+    try {
+      await import('fs').then(fs => fs.unlinkSync(req.file.path));
+    } catch (error) {
+      console.error('Failed to delete temp file:', error);
+    }
+
+    if (addedCodes === 0 && errors.length > 0) {
+      return res.status(400).json({ 
+        error: '접점코드를 추가하지 못했습니다.',
+        details: errors.slice(0, 5) // 최대 5개 오류만 표시
+      });
+    }
+
+    res.json({
+      addedCodes,
+      errors: errors.length > 0 ? errors.slice(0, 5) : [],
+      message: `${addedCodes}개의 접점코드가 성공적으로 추가되었습니다.${errors.length > 0 ? ` (${errors.length}개 오류)` : ''}`
+    });
+
+  } catch (error: any) {
+    console.error('Contact code excel upload error:', error);
+    
+    // 임시 파일 삭제
+    if (req.file?.path) {
+      try {
+        await import('fs').then(fs => fs.unlinkSync(req.file.path));
+      } catch (deleteError) {
+        console.error('Failed to delete temp file:', deleteError);
+      }
+    }
+    
+    res.status(500).json({ error: '엑셀 업로드 처리 중 오류가 발생했습니다.' });
+  }
+});
+
 export default router;

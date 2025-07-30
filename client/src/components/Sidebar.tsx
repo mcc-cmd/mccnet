@@ -39,11 +39,9 @@ export function Sidebar({ isOpen = true, onClose }: SidebarProps) {
   const isAdmin = user?.userType === 'admin';
   const isWorker = user?.role === 'dealer_worker';
   
-  // 근무자는 접수 신청 메뉴를 제외, 관리자는 정산 관리만 접근 가능
+  // 관리자와 작업자는 모든 메뉴 접근 가능, 일반 대리점 사용자는 정산 관리 제외
   let baseNavigation = navigation;
-  if (isWorker) {
-    baseNavigation = navigation.filter(item => item.name !== '접수 신청');
-  } else if (!isAdmin) {
+  if (!isAdmin && !isWorker) {
     // 일반 대리점 사용자는 정산 관리 제외
     baseNavigation = navigation.filter(item => item.name !== '정산 관리');
   }
