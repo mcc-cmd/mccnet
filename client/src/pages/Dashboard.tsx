@@ -437,7 +437,7 @@ export function Dashboard() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-5">
               <div className="text-center p-4 bg-blue-50 rounded-lg">
                 <div className="text-2xl font-bold text-blue-600">
                   {statsLoading ? (
@@ -458,6 +458,18 @@ export function Dashboard() {
                   )}
                 </div>
                 <div className="text-sm text-yellow-800 mt-1">접수 대기</div>
+                <div className="text-xs text-yellow-700 mt-1">(대기 상태 문서)</div>
+              </div>
+              
+              <div className="text-center p-4 bg-orange-50 rounded-lg">
+                <div className="text-2xl font-bold text-orange-600">
+                  {statsLoading ? (
+                    <Skeleton className="h-8 w-12 mx-auto" />
+                  ) : (
+                    stats?.inProgressCount || 0
+                  )}
+                </div>
+                <div className="text-sm text-orange-800 mt-1">진행중</div>
               </div>
               
               <div className="text-center p-4 bg-green-50 rounded-lg">
@@ -468,18 +480,18 @@ export function Dashboard() {
                     stats?.activatedCount || 0
                   )}
                 </div>
-                <div className="text-sm text-green-800 mt-1">완료</div>
+                <div className="text-sm text-green-800 mt-1">개통완료</div>
               </div>
               
-              <div className="text-center p-4 bg-gray-50 rounded-lg">
-                <div className="text-2xl font-bold text-gray-600">
+              <div className="text-center p-4 bg-red-50 rounded-lg">
+                <div className="text-2xl font-bold text-red-600">
                   {statsLoading ? (
                     <Skeleton className="h-8 w-12 mx-auto" />
                   ) : (
-                    stats?.totalDocuments || 0
+                    stats?.canceledCount || 0
                   )}
                 </div>
-                <div className="text-sm text-gray-800 mt-1">이번 주</div>
+                <div className="text-sm text-red-800 mt-1">취소</div>
               </div>
             </div>
           </CardContent>

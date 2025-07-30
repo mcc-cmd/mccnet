@@ -144,7 +144,7 @@ export function CancelledActivations() {
                         <th className="text-left py-2">고객명</th>
                         <th className="text-left py-2">전화번호</th>
                         <th className="text-left py-2">통신사</th>
-                        <th className="text-left py-2">이전통신사</th>
+                        <th className="text-left py-2">개통번호</th>
                         <th className="text-left py-2">요금제</th>
                         <th className="text-left py-2">가입번호</th>
                         <th className="text-left py-2">취소일</th>
@@ -154,16 +154,16 @@ export function CancelledActivations() {
                     <tbody className="divide-y divide-gray-200">
                       {documents.map((doc) => (
                         <tr key={doc.id} className="hover:bg-gray-50">
-                          <td className="py-2 break-words leading-tight max-w-[100px]">{doc.customer_name}</td>
-                          <td className="py-2 break-words leading-tight max-w-[120px]">{doc.customer_phone}</td>
+                          <td className="py-2 break-words leading-tight max-w-[100px]">{(doc as any).customerName}</td>
+                          <td className="py-2 break-words leading-tight max-w-[120px]">{(doc as any).customerPhone}</td>
                           <td className="py-2 break-words leading-tight max-w-[100px]">{doc.carrier}</td>
-                          <td className="py-2 break-words leading-tight max-w-[80px]">{doc.previous_carrier || '-'}</td>
-                          <td className="py-2 break-words leading-tight max-w-[150px]">{doc.plan_name || '-'}</td>
-                          <td className="py-2 break-words leading-tight max-w-[120px]">{doc.subscription_number || '-'}</td>
+                          <td className="py-2 break-words leading-tight max-w-[120px]">{(doc as any).subscriptionNumber || '-'}</td>
+                          <td className="py-2 break-words leading-tight max-w-[150px]">{(doc as any).servicePlanName || '-'}</td>
+                          <td className="py-2 break-words leading-tight max-w-[120px]">{(doc as any).subscriptionNumber || '-'}</td>
                           <td className="py-2 break-words leading-tight max-w-[100px]">
-                            {doc.activated_at ? format(new Date(doc.activated_at), 'yyyy-MM-dd HH:mm', { locale: ko }) : '-'}
+                            {doc.activatedAt ? format(new Date(doc.activatedAt), 'yyyy-MM-dd', { locale: ko }) : '-'}
                           </td>
-                          <td className="py-2">{getActivationStatusBadge(doc.activation_status)}</td>
+                          <td className="py-2">{getActivationStatusBadge(doc.activationStatus)}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -178,10 +178,10 @@ export function CancelledActivations() {
                         <div className="space-y-2">
                           <div className="flex justify-between items-start">
                             <div>
-                              <div className="font-medium break-words leading-tight">{doc.customer_name}</div>
-                              <div className="text-sm text-gray-500 break-words leading-tight">{doc.customer_phone}</div>
+                              <div className="font-medium break-words leading-tight">{(doc as any).customerName}</div>
+                              <div className="text-sm text-gray-500 break-words leading-tight">{(doc as any).customerPhone}</div>
                             </div>
-                            {getActivationStatusBadge(doc.activation_status)}
+                            {getActivationStatusBadge(doc.activationStatus)}
                           </div>
                           
                           <div className="grid grid-cols-2 gap-2 text-sm">
@@ -190,25 +190,25 @@ export function CancelledActivations() {
                               <div className="break-words leading-tight">{doc.carrier}</div>
                             </div>
                             <div>
-                              <span className="text-gray-500">이전통신사:</span>
-                              <div className="break-words leading-tight">{doc.previous_carrier || '-'}</div>
+                              <span className="text-gray-500">개통번호:</span>
+                              <div className="break-words leading-tight">{(doc as any).subscriptionNumber || '-'}</div>
                             </div>
                           </div>
 
                           <div className="text-sm">
                             <span className="text-gray-500">요금제:</span>
-                            <div className="break-words leading-tight">{doc.plan_name || '-'}</div>
+                            <div className="break-words leading-tight">{(doc as any).servicePlanName || '-'}</div>
                           </div>
 
                           <div className="text-sm">
                             <span className="text-gray-500">가입번호:</span>
-                            <div className="break-words leading-tight">{doc.subscription_number || '-'}</div>
+                            <div className="break-words leading-tight">{(doc as any).subscriptionNumber || '-'}</div>
                           </div>
 
                           <div className="text-sm">
                             <span className="text-gray-500">취소일:</span>
                             <div className="break-words leading-tight">
-                              {doc.activated_at ? format(new Date(doc.activated_at), 'yyyy-MM-dd HH:mm', { locale: ko }) : '-'}
+                              {doc.activatedAt ? format(new Date(doc.activatedAt), 'yyyy-MM-dd', { locale: ko }) : '-'}
                             </div>
                           </div>
                         </div>
