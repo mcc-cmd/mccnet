@@ -290,6 +290,10 @@ This is a document management system built for MCC네트월드 telecommunication
 - July 30, 2025. Enhanced CancelledActivations page to display proper fields: 고객명, 개통번호, 취소일 with correct data mapping
 - July 30, 2025. Removed redundant 4-box statistics section above "당월 개통 현황" per user request
 - July 30, 2025. Aligned CancelledActivations table layout to match CompletedActivations table styling and column structure
+- July 30, 2025. Fixed critical file download authentication errors across all pages by replacing localStorage access with useAuth.getState().sessionId for proper token transmission
+- July 30, 2025. Replaced window.open() file downloads with fetch API and proper authentication headers in AdminPanel document management and pricing table downloads
+- July 30, 2025. Enhanced server-side file download routes with improved null checking and error handling for documents and pricing tables
+- July 30, 2025. Resolved "인증이 필요합니다. :)" errors in Downloads, Documents, PricingTables, and AdminPanel file download functionality
 
 ## User Preferences
 

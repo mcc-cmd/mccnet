@@ -1132,6 +1132,117 @@ export function AdminPanel() {
     exportMutation.mutate();
   };
 
+  const handleTemplateDownload = async (templateId: number, fileName: string) => {
+    try {
+      const sessionId = useAuth.getState().sessionId;
+      const response = await fetch(`/api/document-templates/${templateId}/download`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${sessionId}`
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('다운로드에 실패했습니다.');
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+
+      toast({
+        title: "다운로드 완료",
+        description: `${fileName} 파일이 다운로드되었습니다.`,
+      });
+    } catch (error) {
+      toast({
+        title: "다운로드 실패",
+        description: error instanceof Error ? error.message : "파일 다운로드 중 오류가 발생했습니다.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handlePricingDownload = async (tableId: number, fileName: string) => {
+    try {
+      const sessionId = useAuth.getState().sessionId;
+      const response = await fetch(`/api/files/pricing/${tableId}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${sessionId}`
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('파일 다운로드에 실패했습니다.');
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+
+      toast({
+        title: "다운로드 완료",
+        description: `${fileName} 파일이 다운로드되었습니다.`,
+      });
+    } catch (error) {
+      toast({
+        title: "다운로드 실패",
+        description: error instanceof Error ? error.message : "파일 다운로드 중 오류가 발생했습니다.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDocumentDownload = async (documentId: number, fileName: string) => {
+    try {
+      const sessionId = useAuth.getState().sessionId;
+      const response = await fetch(`/api/files/documents/${documentId}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${sessionId}`
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('파일 다운로드에 실패했습니다.');
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+
+      toast({
+        title: "다운로드 완료",
+        description: `파일이 다운로드되었습니다.`,
+      });
+    } catch (error) {
+      toast({
+        title: "다운로드 실패",
+        description: error instanceof Error ? error.message : "파일 다운로드 중 오류가 발생했습니다.",
+        variant: "destructive",
+      });
+    }
+  };
+
   const handleUploadPricing = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -1952,7 +2063,7 @@ export function AdminPanel() {
                                 <Button
                                   variant="outline"
                                   size="sm"
-                                  onClick={() => window.open(`/api/files/documents/${doc.id}`, '_blank')}
+                                  onClick={() => handleDocumentDownload(doc.id, doc.fileName || `document_${doc.id}`)}
                                 >
                                   <Download className="h-4 w-4" />
                                 </Button>
@@ -2227,7 +2338,7 @@ export function AdminPanel() {
                                 </div>
                                 <Button
                                   variant="outline"
-                                  onClick={() => window.open(`/api/document-templates/${template.id}/download`, '_blank')}
+                                  onClick={() => handleTemplateDownload(template.id, template.fileName)}
                                 >
                                   <Download className="w-4 h-4 mr-2" />
                                   다운로드
@@ -2327,7 +2438,7 @@ export function AdminPanel() {
                           </div>
                           <Button
                             variant="outline"
-                            onClick={() => window.open(`/api/files/pricing/${table.id}`, '_blank')}
+                            onClick={() => handlePricingDownload(table.id, table.fileName)}
                           >
                             <Download className="w-4 h-4 mr-2" />
                             다운로드
