@@ -2028,13 +2028,28 @@ router.delete('/api/contact-codes/:id', requireAuth, async (req: any, res) => {
 
 // 접점코드 엑셀 업로드 API
 router.post('/api/contact-codes/upload-excel', contactCodeUpload.single('file'), requireAuth, async (req: any, res) => {
+  let filePath: string | null = null;
+  
   try {
     if (!req.file) {
       return res.status(400).json({ error: '파일을 업로드해주세요.' });
     }
 
+    filePath = req.file.path;
+    console.log('Processing file:', filePath);
+
+    // 파일 존재 여부 확인
+    if (!fs.existsSync(filePath)) {
+      return res.status(400).json({ error: '업로드된 파일을 찾을 수 없습니다.' });
+    }
+
     const XLSX = await import('xlsx');
-    const workbook = XLSX.default ? XLSX.default.readFile(req.file.path) : XLSX.readFile(req.file.path);
+    const workbook = XLSX.default ? XLSX.default.readFile(filePath) : XLSX.readFile(filePath);
+    
+    if (!workbook.SheetNames || workbook.SheetNames.length === 0) {
+      return res.status(400).json({ error: '엑셀 파일에 시트를 찾을 수 없습니다.' });
+    }
+    
     const worksheet = workbook.Sheets[workbook.SheetNames[0]];
     
     if (!worksheet) {
@@ -2151,15 +2166,18 @@ router.post('/api/contact-codes/upload-excel', contactCodeUpload.single('file'),
     console.error('Contact code excel upload error:', error);
     
     // 임시 파일 삭제
-    if (req.file?.path) {
+    if (filePath) {
       try {
-        await import('fs').then(fs => fs.unlinkSync(req.file.path));
+        fs.unlinkSync(filePath);
       } catch (deleteError) {
         console.error('Failed to delete temp file:', deleteError);
       }
     }
     
-    res.status(500).json({ error: '엑셀 업로드 처리 중 오류가 발생했습니다.' });
+    res.status(500).json({ 
+      error: '파일 처리 중 오류가 발생했습니다.',
+      details: error.message 
+    });
   }
 });
 
