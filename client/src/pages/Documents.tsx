@@ -580,7 +580,7 @@ export function Documents() {
                       <col className="w-20" />
                       <col className="w-16" />
                       <col className="w-20" />
-                      <col className="w-16" />
+                      <col className="w-24" />
                       <col className="w-14" />
                       <col className="w-12" />
                       <col className="w-16" />
@@ -600,7 +600,7 @@ export function Documents() {
                         <th className="px-1 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider truncate">
                           연락처
                         </th>
-                        <th className="px-1 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider truncate">
+                        <th className="px-1 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                           판매점명
                         </th>
                         <th className="px-1 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider truncate">
@@ -640,8 +640,10 @@ export function Documents() {
                           <td className="px-1 py-1 text-xs text-gray-900 truncate">
                             {doc.customerPhone}
                           </td>
-                          <td className="px-1 py-1 text-xs text-gray-500 truncate">
-                            {(doc as any).storeName || '-'}
+                          <td className="px-1 py-1 text-xs text-gray-500">
+                            <div className="leading-tight break-words max-w-full">
+                              {(doc as any).storeName || '-'}
+                            </div>
                           </td>
                           <td className="px-1 py-1 text-xs text-gray-700 truncate">
                             {(doc as any).carrier || '-'}
