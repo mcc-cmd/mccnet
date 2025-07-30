@@ -24,6 +24,7 @@ import { z } from 'zod';
 export default function WorkRequests() {
   const [selectedDocument, setSelectedDocument] = useState<Document | null>(null);
   const [statusDialogOpen, setStatusDialogOpen] = useState(false);
+  const [showCompletionMessage, setShowCompletionMessage] = useState(false);
   const { user } = useAuth();
 
   const queryClient = useQueryClient();
@@ -164,7 +165,7 @@ export default function WorkRequests() {
         </Card>
       ) : (
         <div className="space-y-4">
-          {documents.map((document) => (
+          {documents.map((document: Document) => (
             <Card key={document.id} className="hover:shadow-md transition-shadow">
               <CardContent className="p-6">
                 <div className="flex items-start justify-between">
