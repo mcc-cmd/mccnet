@@ -270,7 +270,7 @@ function CarrierManagement() {
               통신사 추가
             </Button>
           </DialogTrigger>
-          <DialogContent>
+          <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>
                 {editingCarrier ? '통신사 수정' : '새 통신사 추가'}
@@ -309,58 +309,7 @@ function CarrierManagement() {
                     </FormItem>
                   )}
                 />
-                <FormField
-                  control={carrierForm.control}
-                  name="bundleNumber"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>결합 번호</FormLabel>
-                      <FormControl>
-                        <Input placeholder="결합 번호를 입력하세요 (선택사항)" {...field} />
-                      </FormControl>
-                      <FormDescription>
-                        결합 상품이 있는 경우 결합 번호를 입력하세요.
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={carrierForm.control}
-                  name="bundleCarrier"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>결합 통신사</FormLabel>
-                      <FormControl>
-                        <Input placeholder="결합하는 통신사를 입력하세요 (선택사항)" {...field} />
-                      </FormControl>
-                      <FormDescription>
-                        결합 상품이 있는 경우 결합하는 통신사를 입력하세요.
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={carrierForm.control}
-                  name="documentRequired"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                      <div className="space-y-0.5">
-                        <FormLabel className="text-base">서류 업로드 필수</FormLabel>
-                        <FormDescription>
-                          활성화하면 접수 신청 시 서류 업로드가 필수가 됩니다.
-                        </FormDescription>
-                      </div>
-                      <FormControl>
-                        <Switch
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
-                        />
-                      </FormControl>
-                    </FormItem>
-                  )}
-                />
+
                 <div className="space-y-4">
                   <h3 className="text-lg font-medium">접수 신청 필수 입력 필드 설정</h3>
                   <div className="grid grid-cols-2 gap-4">

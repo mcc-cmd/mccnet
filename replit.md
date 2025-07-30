@@ -300,6 +300,12 @@ This is a document management system built for MCC네트월드 telecommunication
 - July 30, 2025. Resolved route conflict where /api/settlements/:id was intercepting /api/settlements/export requests by reordering route definitions
 - July 30, 2025. Enhanced Excel export data processing with safe date parsing and additional services handling to prevent file corruption
 - July 30, 2025. Successfully tested Excel export functionality generating valid 17KB Excel files with proper Korean headers and content
+- July 30, 2025. Implemented comprehensive carrier-specific field configuration system in AdminPanel with checkbox controls for 9 input fields
+- July 30, 2025. Enhanced SubmitApplication form to dynamically show/hide fields based on selected carrier's field requirements 
+- July 30, 2025. Added new form fields: email, bundle number, bundle carrier with conditional validation and display
+- July 30, 2025. Updated carrier database schema with boolean columns for each field requirement (require_customer_name, require_customer_phone, etc.)
+- July 30, 2025. Fixed AdminPanel carrier dialog to be scrollable (max-h-[90vh] overflow-y-auto) and removed duplicate bundle information fields
+- July 30, 2025. Set SK carriers (SK텔링크, SK프리티, SK스테이지파이브) to require document upload by default in database
 
 ## User Preferences
 
