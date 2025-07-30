@@ -112,7 +112,16 @@ function CarrierManagement() {
       isActive: true,
       bundleNumber: '',
       bundleCarrier: '',
-      documentRequired: false
+      documentRequired: false,
+      requireCustomerName: true,
+      requireCustomerPhone: true,
+      requireCustomerEmail: false,
+      requireContactCode: true,
+      requireCarrier: true,
+      requirePreviousCarrier: false,
+      requireDocumentUpload: false,
+      requireBundleNumber: false,
+      requireBundleCarrier: false
     }
   });
 
@@ -203,7 +212,16 @@ function CarrierManagement() {
       isActive: carrier.isActive,
       bundleNumber: carrier.bundleNumber || '',
       bundleCarrier: carrier.bundleCarrier || '',
-      documentRequired: carrier.documentRequired
+      documentRequired: carrier.documentRequired,
+      requireCustomerName: carrier.requireCustomerName,
+      requireCustomerPhone: carrier.requireCustomerPhone,
+      requireCustomerEmail: carrier.requireCustomerEmail,
+      requireContactCode: carrier.requireContactCode,
+      requireCarrier: carrier.requireCarrier,
+      requirePreviousCarrier: carrier.requirePreviousCarrier,
+      requireDocumentUpload: carrier.requireDocumentUpload,
+      requireBundleNumber: carrier.requireBundleNumber,
+      requireBundleCarrier: carrier.requireBundleCarrier
     });
     setCarrierDialogOpen(true);
   };
@@ -216,7 +234,16 @@ function CarrierManagement() {
       isActive: true,
       bundleNumber: '',
       bundleCarrier: '',
-      documentRequired: false
+      documentRequired: false,
+      requireCustomerName: true,
+      requireCustomerPhone: true,
+      requireCustomerEmail: false,
+      requireContactCode: true,
+      requireCarrier: true,
+      requirePreviousCarrier: false,
+      requireDocumentUpload: false,
+      requireBundleNumber: false,
+      requireBundleCarrier: false
     });
     setCarrierDialogOpen(true);
   };
@@ -334,6 +361,165 @@ function CarrierManagement() {
                     </FormItem>
                   )}
                 />
+                <div className="space-y-4">
+                  <h3 className="text-lg font-medium">접수 신청 필수 입력 필드 설정</h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                      control={carrierForm.control}
+                      name="requireCustomerName"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
+                          <div className="space-y-0.5">
+                            <FormLabel className="text-sm">고객명</FormLabel>
+                          </div>
+                          <FormControl>
+                            <Switch
+                              checked={field.value}
+                              onCheckedChange={field.onChange}
+                            />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={carrierForm.control}
+                      name="requireCustomerPhone"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
+                          <div className="space-y-0.5">
+                            <FormLabel className="text-sm">연락처</FormLabel>
+                          </div>
+                          <FormControl>
+                            <Switch
+                              checked={field.value}
+                              onCheckedChange={field.onChange}
+                            />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={carrierForm.control}
+                      name="requireCustomerEmail"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
+                          <div className="space-y-0.5">
+                            <FormLabel className="text-sm">이메일</FormLabel>
+                          </div>
+                          <FormControl>
+                            <Switch
+                              checked={field.value}
+                              onCheckedChange={field.onChange}
+                            />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={carrierForm.control}
+                      name="requireContactCode"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
+                          <div className="space-y-0.5">
+                            <FormLabel className="text-sm">개통방명 코드</FormLabel>
+                          </div>
+                          <FormControl>
+                            <Switch
+                              checked={field.value}
+                              onCheckedChange={field.onChange}
+                            />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={carrierForm.control}
+                      name="requireCarrier"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
+                          <div className="space-y-0.5">
+                            <FormLabel className="text-sm">통신사</FormLabel>
+                          </div>
+                          <FormControl>
+                            <Switch
+                              checked={field.value}
+                              onCheckedChange={field.onChange}
+                            />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={carrierForm.control}
+                      name="requirePreviousCarrier"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
+                          <div className="space-y-0.5">
+                            <FormLabel className="text-sm">이전통신사</FormLabel>
+                          </div>
+                          <FormControl>
+                            <Switch
+                              checked={field.value}
+                              onCheckedChange={field.onChange}
+                            />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={carrierForm.control}
+                      name="requireDocumentUpload"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
+                          <div className="space-y-0.5">
+                            <FormLabel className="text-sm">서류 첨부</FormLabel>
+                          </div>
+                          <FormControl>
+                            <Switch
+                              checked={field.value}
+                              onCheckedChange={field.onChange}
+                            />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={carrierForm.control}
+                      name="requireBundleNumber"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
+                          <div className="space-y-0.5">
+                            <FormLabel className="text-sm">결합번호</FormLabel>
+                          </div>
+                          <FormControl>
+                            <Switch
+                              checked={field.value}
+                              onCheckedChange={field.onChange}
+                            />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={carrierForm.control}
+                      name="requireBundleCarrier"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
+                          <div className="space-y-0.5">
+                            <FormLabel className="text-sm">결합통신사</FormLabel>
+                          </div>
+                          <FormControl>
+                            <Switch
+                              checked={field.value}
+                              onCheckedChange={field.onChange}
+                            />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                </div>
+                
                 <FormField
                   control={carrierForm.control}
                   name="isActive"

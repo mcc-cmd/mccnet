@@ -2439,7 +2439,7 @@ class SqliteStorage implements IStorage {
 
   // ==================== 통신사 관리 ====================
   
-  async getCarriers(): Promise<Array<{ id: number; name: string; displayOrder: number; isActive: boolean; bundleNumber?: string; bundleCarrier?: string; documentRequired: boolean; createdAt: Date; updatedAt: Date }>> {
+  async getCarriers(): Promise<Array<{ id: number; name: string; displayOrder: number; isActive: boolean; bundleNumber?: string; bundleCarrier?: string; documentRequired: boolean; requireCustomerName: boolean; requireCustomerPhone: boolean; requireCustomerEmail: boolean; requireContactCode: boolean; requireCarrier: boolean; requirePreviousCarrier: boolean; requireDocumentUpload: boolean; requireBundleNumber: boolean; requireBundleCarrier: boolean; createdAt: Date; updatedAt: Date }>> {
     const carriers = db.prepare('SELECT * FROM carriers WHERE is_active = 1 ORDER BY display_order ASC, name ASC').all() as any[];
     return carriers.map(carrier => ({
       id: carrier.id,
@@ -2449,22 +2449,43 @@ class SqliteStorage implements IStorage {
       bundleNumber: carrier.bundle_number || undefined,
       bundleCarrier: carrier.bundle_carrier || undefined,
       documentRequired: Boolean(carrier.document_required),
+      requireCustomerName: Boolean(carrier.require_customer_name || 1),
+      requireCustomerPhone: Boolean(carrier.require_customer_phone || 1),
+      requireCustomerEmail: Boolean(carrier.require_customer_email || 0),
+      requireContactCode: Boolean(carrier.require_contact_code || 1),
+      requireCarrier: Boolean(carrier.require_carrier || 1),
+      requirePreviousCarrier: Boolean(carrier.require_previous_carrier || 0),
+      requireDocumentUpload: Boolean(carrier.require_document_upload || 0),
+      requireBundleNumber: Boolean(carrier.require_bundle_number || 0),
+      requireBundleCarrier: Boolean(carrier.require_bundle_carrier || 0),
       createdAt: new Date(carrier.created_at),
       updatedAt: new Date(carrier.updated_at)
     }));
   }
 
-  async createCarrier(data: { name: string; displayOrder?: number; isActive?: boolean; bundleNumber?: string; bundleCarrier?: string; documentRequired?: boolean }): Promise<{ id: number; name: string; displayOrder: number; isActive: boolean; bundleNumber?: string; bundleCarrier?: string; documentRequired: boolean; createdAt: Date; updatedAt: Date }> {
+  async createCarrier(data: { name: string; displayOrder?: number; isActive?: boolean; bundleNumber?: string; bundleCarrier?: string; documentRequired?: boolean; requireCustomerName?: boolean; requireCustomerPhone?: boolean; requireCustomerEmail?: boolean; requireContactCode?: boolean; requireCarrier?: boolean; requirePreviousCarrier?: boolean; requireDocumentUpload?: boolean; requireBundleNumber?: boolean; requireBundleCarrier?: boolean }): Promise<{ id: number; name: string; displayOrder: number; isActive: boolean; bundleNumber?: string; bundleCarrier?: string; documentRequired: boolean; requireCustomerName: boolean; requireCustomerPhone: boolean; requireCustomerEmail: boolean; requireContactCode: boolean; requireCarrier: boolean; requirePreviousCarrier: boolean; requireDocumentUpload: boolean; requireBundleNumber: boolean; requireBundleCarrier: boolean; createdAt: Date; updatedAt: Date }> {
     const insertResult = db.prepare(`
-      INSERT INTO carriers (name, display_order, is_active, bundle_number, bundle_carrier, document_required, created_at, updated_at)
-      VALUES (?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
+      INSERT INTO carriers (name, display_order, is_active, bundle_number, bundle_carrier, document_required, 
+                           require_customer_name, require_customer_phone, require_customer_email, require_contact_code,
+                           require_carrier, require_previous_carrier, require_document_upload, require_bundle_number,
+                           require_bundle_carrier, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
     `).run(
       data.name,
       data.displayOrder || 0,
       data.isActive !== false ? 1 : 0,
       data.bundleNumber || null,
       data.bundleCarrier || null,
-      data.documentRequired ? 1 : 0
+      data.documentRequired ? 1 : 0,
+      data.requireCustomerName !== false ? 1 : 0,
+      data.requireCustomerPhone !== false ? 1 : 0,
+      data.requireCustomerEmail ? 1 : 0,
+      data.requireContactCode !== false ? 1 : 0,
+      data.requireCarrier !== false ? 1 : 0,
+      data.requirePreviousCarrier ? 1 : 0,
+      data.requireDocumentUpload ? 1 : 0,
+      data.requireBundleNumber ? 1 : 0,
+      data.requireBundleCarrier ? 1 : 0
     );
 
     const carrier = db.prepare('SELECT * FROM carriers WHERE id = ?').get(insertResult.lastInsertRowid) as any;
@@ -2477,12 +2498,21 @@ class SqliteStorage implements IStorage {
       bundleNumber: carrier.bundle_number || undefined,
       bundleCarrier: carrier.bundle_carrier || undefined,
       documentRequired: Boolean(carrier.document_required),
+      requireCustomerName: Boolean(carrier.require_customer_name),
+      requireCustomerPhone: Boolean(carrier.require_customer_phone),
+      requireCustomerEmail: Boolean(carrier.require_customer_email),
+      requireContactCode: Boolean(carrier.require_contact_code),
+      requireCarrier: Boolean(carrier.require_carrier),
+      requirePreviousCarrier: Boolean(carrier.require_previous_carrier),
+      requireDocumentUpload: Boolean(carrier.require_document_upload),
+      requireBundleNumber: Boolean(carrier.require_bundle_number),
+      requireBundleCarrier: Boolean(carrier.require_bundle_carrier),
       createdAt: new Date(carrier.created_at),
       updatedAt: new Date(carrier.updated_at)
     };
   }
 
-  async updateCarrier(id: number, data: { name?: string; displayOrder?: number; isActive?: boolean; bundleNumber?: string; bundleCarrier?: string; documentRequired?: boolean }): Promise<{ id: number; name: string; displayOrder: number; isActive: boolean; bundleNumber?: string; bundleCarrier?: string; documentRequired: boolean; createdAt: Date; updatedAt: Date }> {
+  async updateCarrier(id: number, data: { name?: string; displayOrder?: number; isActive?: boolean; bundleNumber?: string; bundleCarrier?: string; documentRequired?: boolean; requireCustomerName?: boolean; requireCustomerPhone?: boolean; requireCustomerEmail?: boolean; requireContactCode?: boolean; requireCarrier?: boolean; requirePreviousCarrier?: boolean; requireDocumentUpload?: boolean; requireBundleNumber?: boolean; requireBundleCarrier?: boolean }): Promise<{ id: number; name: string; displayOrder: number; isActive: boolean; bundleNumber?: string; bundleCarrier?: string; documentRequired: boolean; requireCustomerName: boolean; requireCustomerPhone: boolean; requireCustomerEmail: boolean; requireContactCode: boolean; requireCarrier: boolean; requirePreviousCarrier: boolean; requireDocumentUpload: boolean; requireBundleNumber: boolean; requireBundleCarrier: boolean; createdAt: Date; updatedAt: Date }> {
     const updates: string[] = [];
     const params: any[] = [];
     
@@ -2516,6 +2546,51 @@ class SqliteStorage implements IStorage {
       params.push(data.documentRequired ? 1 : 0);
     }
     
+    if (data.requireCustomerName !== undefined) {
+      updates.push('require_customer_name = ?');
+      params.push(data.requireCustomerName ? 1 : 0);
+    }
+    
+    if (data.requireCustomerPhone !== undefined) {
+      updates.push('require_customer_phone = ?');
+      params.push(data.requireCustomerPhone ? 1 : 0);
+    }
+    
+    if (data.requireCustomerEmail !== undefined) {
+      updates.push('require_customer_email = ?');
+      params.push(data.requireCustomerEmail ? 1 : 0);
+    }
+    
+    if (data.requireContactCode !== undefined) {
+      updates.push('require_contact_code = ?');
+      params.push(data.requireContactCode ? 1 : 0);
+    }
+    
+    if (data.requireCarrier !== undefined) {
+      updates.push('require_carrier = ?');
+      params.push(data.requireCarrier ? 1 : 0);
+    }
+    
+    if (data.requirePreviousCarrier !== undefined) {
+      updates.push('require_previous_carrier = ?');
+      params.push(data.requirePreviousCarrier ? 1 : 0);
+    }
+    
+    if (data.requireDocumentUpload !== undefined) {
+      updates.push('require_document_upload = ?');
+      params.push(data.requireDocumentUpload ? 1 : 0);
+    }
+    
+    if (data.requireBundleNumber !== undefined) {
+      updates.push('require_bundle_number = ?');
+      params.push(data.requireBundleNumber ? 1 : 0);
+    }
+    
+    if (data.requireBundleCarrier !== undefined) {
+      updates.push('require_bundle_carrier = ?');
+      params.push(data.requireBundleCarrier ? 1 : 0);
+    }
+    
     updates.push('updated_at = datetime(\'now\')');
     params.push(id);
     
@@ -2531,6 +2606,15 @@ class SqliteStorage implements IStorage {
       bundleNumber: carrier.bundle_number || undefined,
       bundleCarrier: carrier.bundle_carrier || undefined,
       documentRequired: Boolean(carrier.document_required),
+      requireCustomerName: Boolean(carrier.require_customer_name),
+      requireCustomerPhone: Boolean(carrier.require_customer_phone),
+      requireCustomerEmail: Boolean(carrier.require_customer_email),
+      requireContactCode: Boolean(carrier.require_contact_code),
+      requireCarrier: Boolean(carrier.require_carrier),
+      requirePreviousCarrier: Boolean(carrier.require_previous_carrier),
+      requireDocumentUpload: Boolean(carrier.require_document_upload),
+      requireBundleNumber: Boolean(carrier.require_bundle_number),
+      requireBundleCarrier: Boolean(carrier.require_bundle_carrier),
       createdAt: new Date(carrier.created_at),
       updatedAt: new Date(carrier.updated_at)
     };

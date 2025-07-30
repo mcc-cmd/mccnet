@@ -426,6 +426,16 @@ export interface Carrier {
   bundleNumber?: string; // 결합 번호
   bundleCarrier?: string; // 결합 통신사
   documentRequired: boolean; // 서류 업로드 필수 여부
+  // 접수 신청 시 필수 입력 필드 설정
+  requireCustomerName: boolean; // 고객명 필수
+  requireCustomerPhone: boolean; // 연락처 필수
+  requireCustomerEmail: boolean; // 이메일 필수
+  requireContactCode: boolean; // 개통방명 코드 필수
+  requireCarrier: boolean; // 통신사 필수
+  requirePreviousCarrier: boolean; // 이전통신사 필수
+  requireDocumentUpload: boolean; // 서류 첨부 필수
+  requireBundleNumber: boolean; // 결합번호 필수
+  requireBundleCarrier: boolean; // 결합통신사 필수
   createdAt: Date;
   updatedAt: Date;
 }
@@ -448,7 +458,17 @@ export const createCarrierSchema = z.object({
   isActive: z.boolean().default(true),
   bundleNumber: z.string().optional(),
   bundleCarrier: z.string().optional(),
-  documentRequired: z.boolean().default(false)
+  documentRequired: z.boolean().default(false),
+  // 접수 신청 필드 필수 여부 설정
+  requireCustomerName: z.boolean().default(true),
+  requireCustomerPhone: z.boolean().default(true),
+  requireCustomerEmail: z.boolean().default(false),
+  requireContactCode: z.boolean().default(true),
+  requireCarrier: z.boolean().default(true),
+  requirePreviousCarrier: z.boolean().default(false),
+  requireDocumentUpload: z.boolean().default(false),
+  requireBundleNumber: z.boolean().default(false),
+  requireBundleCarrier: z.boolean().default(false)
 });
 
 export const updateCarrierSchema = createCarrierSchema.partial();

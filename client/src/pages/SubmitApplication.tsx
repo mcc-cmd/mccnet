@@ -22,10 +22,13 @@ export function SubmitApplication() {
   const [formData, setFormData] = useState({
     customerName: '',
     customerPhone: '',
+    customerEmail: '',
     contactCode: '',
     storeName: '',
     carrier: '',
     previousCarrier: '',
+    bundleNumber: '',
+    bundleCarrier: '',
     notes: ''
   });
 
@@ -79,7 +82,7 @@ export function SubmitApplication() {
       });
 
       // Reset form
-      setFormData({ customerName: '', customerPhone: '', contactCode: '', storeName: '', carrier: '', notes: '' });
+      setFormData({ customerName: '', customerPhone: '', customerEmail: '', contactCode: '', storeName: '', carrier: '', previousCarrier: '', bundleNumber: '', bundleCarrier: '', notes: '' });
       setSelectedFile(null);
     },
     onError: (error: Error) => {
@@ -94,40 +97,58 @@ export function SubmitApplication() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.customerName || !formData.customerPhone || !formData.contactCode) {
-      toast({
-        title: "입력 오류",
-        description: "고객명, 연락처, 개통방명 코드를 입력하세요.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (!formData.carrier) {
-      toast({
-        title: "입력 오류",
-        description: "통신사를 선택하세요.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    // 통신사별 서류 업로드 필수 체크
-    if (selectedCarrier?.documentRequired && !selectedFile) {
-      toast({
-        title: "입력 오류",
-        description: `${formData.carrier} 접수 시 서류 업로드는 필수입니다.`,
-        variant: "destructive",
-      });
-      return;
+    // 선택된 통신사의 필수 필드 검증
+    if (selectedCarrier) {
+      const errors: string[] = [];
+      
+      if (selectedCarrier.requireCustomerName && !formData.customerName) {
+        errors.push("고객명");
+      }
+      if (selectedCarrier.requireCustomerPhone && !formData.customerPhone) {
+        errors.push("연락처");
+      }
+      if (selectedCarrier.requireCustomerEmail && !formData.customerEmail) {
+        errors.push("이메일");
+      }
+      if (selectedCarrier.requireContactCode && !formData.contactCode) {
+        errors.push("개통방명 코드");
+      }
+      if (selectedCarrier.requireCarrier && !formData.carrier) {
+        errors.push("통신사");
+      }
+      if (selectedCarrier.requirePreviousCarrier && !formData.previousCarrier) {
+        errors.push("이전통신사");
+      }
+      if (selectedCarrier.requireBundleNumber && !formData.bundleNumber) {
+        errors.push("결합번호");
+      }
+      if (selectedCarrier.requireBundleCarrier && !formData.bundleCarrier) {
+        errors.push("결합통신사");
+      }
+      if (selectedCarrier.requireDocumentUpload && !selectedFile) {
+        errors.push("서류 첨부");
+      }
+      
+      if (errors.length > 0) {
+        toast({
+          title: "입력 오류",
+          description: `다음 필드를 입력해주세요: ${errors.join(", ")}`,
+          variant: "destructive",
+        });
+        return;
+      }
     }
 
     const data = new FormData();
     data.append('customerName', formData.customerName);
     data.append('customerPhone', formData.customerPhone);
+    data.append('customerEmail', formData.customerEmail);
     data.append('contactCode', formData.contactCode);
+    data.append('storeName', formData.storeName);
     data.append('carrier', formData.carrier);
     data.append('previousCarrier', formData.previousCarrier);
+    data.append('bundleNumber', formData.bundleNumber);
+    data.append('bundleCarrier', formData.bundleCarrier);
     data.append('notes', formData.notes);
     
     if (selectedFile) {
@@ -208,48 +229,74 @@ export function SubmitApplication() {
                   고객 정보
                 </h3>
                 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="customerName">고객명 *</Label>
-                    <Input
-                      id="customerName"
-                      name="customerName"
-                      value={formData.customerName}
-                      onChange={handleInputChange}
-                      required
-                      placeholder="고객명을 입력하세요"
-                      className="mt-1"
-                    />
-                  </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {(!selectedCarrier || selectedCarrier.requireCustomerName) && (
+                    <div>
+                      <Label htmlFor="customerName">
+                        고객명 {selectedCarrier?.requireCustomerName && "*"}
+                      </Label>
+                      <Input
+                        id="customerName"
+                        name="customerName"
+                        value={formData.customerName}
+                        onChange={handleInputChange}
+                        placeholder="고객명을 입력하세요"
+                        className="mt-1"
+                      />
+                    </div>
+                  )}
                   
-                  <div>
-                    <Label htmlFor="customerPhone">연락처 *</Label>
-                    <Input
-                      id="customerPhone"
-                      name="customerPhone"
-                      type="tel"
-                      value={formData.customerPhone}
-                      onChange={handleInputChange}
-                      required
-                      placeholder="010-0000-0000"
-                      className="mt-1"
-                    />
-                  </div>
+                  {(!selectedCarrier || selectedCarrier.requireCustomerPhone) && (
+                    <div>
+                      <Label htmlFor="customerPhone">
+                        연락처 {selectedCarrier?.requireCustomerPhone && "*"}
+                      </Label>
+                      <Input
+                        id="customerPhone"
+                        name="customerPhone"
+                        type="tel"
+                        value={formData.customerPhone}
+                        onChange={handleInputChange}
+                        placeholder="010-0000-0000"
+                        className="mt-1"
+                      />
+                    </div>
+                  )}
+                  
+                  {selectedCarrier?.requireCustomerEmail && (
+                    <div>
+                      <Label htmlFor="customerEmail">
+                        이메일 *
+                      </Label>
+                      <Input
+                        id="customerEmail"
+                        name="customerEmail"
+                        type="email"
+                        value={formData.customerEmail}
+                        onChange={handleInputChange}
+                        placeholder="email@example.com"
+                        className="mt-1"
+                      />
+                    </div>
+                  )}
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="contactCode">개통방명 코드 *</Label>
-                    <Input
-                      id="contactCode"
-                      name="contactCode"
-                      value={formData.contactCode}
-                      onChange={(e) => handleContactCodeChange(e.target.value)}
-                      required
-                      placeholder="개통방명 코드를 입력하세요"
-                      className="mt-1"
-                    />
-                  </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {(!selectedCarrier || selectedCarrier.requireContactCode) && (
+                    <div>
+                      <Label htmlFor="contactCode">
+                        개통방명 코드 {selectedCarrier?.requireContactCode && "*"}
+                      </Label>
+                      <Input
+                        id="contactCode"
+                        name="contactCode"
+                        value={formData.contactCode}
+                        onChange={(e) => handleContactCodeChange(e.target.value)}
+                        placeholder="개통방명 코드를 입력하세요"
+                        className="mt-1"
+                      />
+                    </div>
+                  )}
                   
                   <div>
                     <Label htmlFor="storeName">판매점명</Label>
@@ -262,6 +309,38 @@ export function SubmitApplication() {
                       className="mt-1 bg-gray-50 text-gray-700"
                     />
                   </div>
+                  
+                  {selectedCarrier?.requireBundleNumber && (
+                    <div>
+                      <Label htmlFor="bundleNumber">
+                        결합번호 *
+                      </Label>
+                      <Input
+                        id="bundleNumber"
+                        name="bundleNumber"
+                        value={formData.bundleNumber}
+                        onChange={handleInputChange}
+                        placeholder="결합번호를 입력하세요"
+                        className="mt-1"
+                      />
+                    </div>
+                  )}
+                  
+                  {selectedCarrier?.requireBundleCarrier && (
+                    <div>
+                      <Label htmlFor="bundleCarrier">
+                        결합통신사 *
+                      </Label>
+                      <Input
+                        id="bundleCarrier"
+                        name="bundleCarrier"
+                        value={formData.bundleCarrier}
+                        onChange={handleInputChange}
+                        placeholder="결합통신사를 입력하세요"
+                        className="mt-1"
+                      />
+                    </div>
+                  )}
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -284,7 +363,7 @@ export function SubmitApplication() {
                         )}
                       </SelectContent>
                     </Select>
-                    {selectedCarrier?.documentRequired && (
+                    {selectedCarrier?.requireDocumentUpload && (
                       <Alert className="mt-2">
                         <AlertDescription>
                           {formData.carrier} 접수 시 서류 업로드는 필수입니다.
@@ -301,21 +380,25 @@ export function SubmitApplication() {
                     )}
                   </div>
                   
-                  <div>
-                    <Label htmlFor="previousCarrier">이전통신사</Label>
-                    <Select value={formData.previousCarrier} onValueChange={(value) => setFormData(prev => ({ ...prev, previousCarrier: value }))}>
-                      <SelectTrigger className="mt-1">
-                        <SelectValue placeholder="이전통신사를 선택하세요 (선택사항)" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {previousCarriers.map((carrier) => (
-                          <SelectItem key={carrier} value={carrier}>
-                            {carrier}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
+                  {selectedCarrier?.requirePreviousCarrier && (
+                    <div>
+                      <Label htmlFor="previousCarrier">
+                        이전통신사 *
+                      </Label>
+                      <Select value={formData.previousCarrier} onValueChange={(value) => setFormData(prev => ({ ...prev, previousCarrier: value }))}>
+                        <SelectTrigger className="mt-1">
+                          <SelectValue placeholder="이전통신사를 선택하세요" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {previousCarriers.map((carrier) => (
+                            <SelectItem key={carrier} value={carrier}>
+                              {carrier}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
 
                 </div>
 
