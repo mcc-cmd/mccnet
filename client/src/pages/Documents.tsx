@@ -419,6 +419,8 @@ export function Documents() {
         return <Badge variant="outline" className="text-yellow-600 border-yellow-600 text-xs px-1 py-0.5">대기</Badge>;
       case '진행중':
         return <Badge variant="outline" className="text-blue-600 border-blue-600 text-xs px-1 py-0.5">진행</Badge>;
+      case '업무요청중':
+        return <Badge variant="outline" className="text-purple-600 border-purple-600 text-xs px-1 py-0.5">업무요청</Badge>;
       case '개통':
         return <Badge variant="outline" className="text-green-600 border-green-600 text-xs px-1 py-0.5">개통</Badge>;
       case '취소':
@@ -1144,6 +1146,7 @@ export function Documents() {
                   <SelectContent>
                     <SelectItem value="대기">대기</SelectItem>
                     <SelectItem value="진행중">진행중</SelectItem>
+                    <SelectItem value="업무요청중">업무요청중</SelectItem>
                     <SelectItem value="보완필요">보완필요</SelectItem>
                     <SelectItem value="개통">개통완료</SelectItem>
                     <SelectItem value="취소">취소</SelectItem>

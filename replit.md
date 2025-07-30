@@ -306,6 +306,12 @@ This is a document management system built for MCC네트월드 telecommunication
 - July 30, 2025. Updated carrier database schema with boolean columns for each field requirement (require_customer_name, require_customer_phone, etc.)
 - July 30, 2025. Fixed AdminPanel carrier dialog to be scrollable (max-h-[90vh] overflow-y-auto) and removed duplicate bundle information fields
 - July 30, 2025. Set SK carriers (SK텔링크, SK프리티, SK스테이지파이브) to require document upload by default in database
+- July 30, 2025. Enhanced carrier management system with landline/wired carrier designation (isWired field added to database schema)
+- July 30, 2025. Updated activation workflow to include "업무요청중" (work in progress) status as intermediate step before "개통완료" (activation completed)
+- July 30, 2025. Created new WorkRequests page component for managing work-in-progress applications
+- July 30, 2025. Updated navigation sidebar and routing system to include work requests section with Clock icon
+- July 30, 2025. Modified database schema to support new "업무요청중" activation status alongside existing workflow states
+- July 30, 2025. Enhanced Documents page to include "업무요청중" option in activation status selection with purple badge styling
 
 ## User Preferences
 

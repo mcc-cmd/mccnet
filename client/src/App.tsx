@@ -15,6 +15,7 @@ import { Downloads } from '@/pages/Downloads';
 import { AdminPanel } from '@/pages/AdminPanel';
 import { Settlements } from '@/pages/Settlements';
 import { TestPage } from '@/pages/TestPage';
+import WorkRequests from '@/pages/WorkRequests';
 import NotFound from '@/pages/not-found';
 
 const queryClient = new QueryClient({
@@ -39,6 +40,7 @@ function AppRoutes() {
       <Route path="/dashboard" component={Dashboard} />
       <Route path="/submit" component={SubmitApplication} />
       <Route path="/documents" component={Documents} />
+      <Route path="/work-requests" component={WorkRequests} />
       <Route path="/completed" component={CompletedActivations} />
       <Route path="/cancelled" component={CancelledActivations} />
       <Route path="/downloads" component={Downloads} />

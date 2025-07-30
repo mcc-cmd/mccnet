@@ -10,7 +10,8 @@ import {
   TestTube,
   Calculator,
   CheckCircle,
-  X
+  X,
+  Clock
 } from 'lucide-react';
 import logoImage from '@assets/KakaoTalk_20250626_162541112-removebg-preview_1751604392501.png';
 
@@ -18,6 +19,7 @@ const navigation = [
   { name: '대시보드', href: '/dashboard', icon: LayoutDashboard },
   { name: '접수 신청', href: '/submit', icon: FileText },
   { name: '접수 관리', href: '/documents', icon: FileText },
+  { name: '업무 요청중', href: '/work-requests', icon: Clock },
   { name: '개통완료 관리', href: '/completed', icon: CheckCircle },
   { name: '개통취소', href: '/cancelled', icon: X },
   { name: '서식지 다운로드', href: '/downloads', icon: Download },

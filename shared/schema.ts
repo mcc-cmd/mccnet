@@ -54,7 +54,7 @@ export interface Document {
   carrier: string; // 통신사
   previousCarrier?: string; // 이전통신사
   status: '접수' | '보완필요' | '완료';
-  activationStatus: '대기' | '진행중' | '보완필요' | '개통' | '취소';
+  activationStatus: '대기' | '진행중' | '업무요청중' | '보완필요' | '개통' | '취소';
   filePath?: string | null;
   fileName?: string | null;
   fileSize?: number | null;
@@ -205,12 +205,12 @@ export const uploadDocumentSchema = z.object({
 
 export const updateDocumentStatusSchema = z.object({
   status: z.enum(['접수', '보완필요', '완료']),
-  activationStatus: z.enum(['대기', '진행중', '개통', '취소']).optional(),
+  activationStatus: z.enum(['대기', '진행중', '업무요청중', '개통', '취소']).optional(),
   notes: z.string().optional(),
 });
 
 export const updateActivationStatusSchema = z.object({
-  activationStatus: z.enum(['대기', '진행중', '개통', '취소', '보완필요']),
+  activationStatus: z.enum(['대기', '진행중', '업무요청중', '개통', '취소', '보완필요']),
   notes: z.string().optional(),
   supplementNotes: z.string().optional(), // 보완 상세 내용
   activatedBy: z.number().optional(), // 개통완료 처리한 근무자 ID
@@ -423,6 +423,7 @@ export interface Carrier {
   name: string; // 통신사명 (예: "SK텔링크", "KT엠모바일")
   displayOrder: number; // 정렬 순서
   isActive: boolean;
+  isWired: boolean; // 유선 통신사 여부
   bundleNumber?: string; // 결합 번호
   bundleCarrier?: string; // 결합 통신사
   documentRequired: boolean; // 서류 업로드 필수 여부
@@ -456,6 +457,7 @@ export const createCarrierSchema = z.object({
   name: z.string().min(1, "통신사명을 입력해주세요"),
   displayOrder: z.number().min(0, "정렬 순서를 입력해주세요").default(0),
   isActive: z.boolean().default(true),
+  isWired: z.boolean().default(false),
   bundleNumber: z.string().optional(),
   bundleCarrier: z.string().optional(),
   documentRequired: z.boolean().default(false),

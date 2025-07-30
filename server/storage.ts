@@ -96,7 +96,7 @@ db.exec(`
     carrier TEXT NOT NULL,
     previous_carrier TEXT,
     status TEXT NOT NULL CHECK (status IN ('접수', '보완필요', '완료')),
-    activation_status TEXT NOT NULL DEFAULT '대기' CHECK (activation_status IN ('대기', '진행중', '개통', '취소')),
+    activation_status TEXT NOT NULL DEFAULT '대기' CHECK (activation_status IN ('대기', '진행중', '업무요청중', '개통', '취소', '보완필요')),
     file_path TEXT,
     file_name TEXT,
     file_size INTEGER,
