@@ -443,10 +443,10 @@ export function Dashboard() {
                   {statsLoading ? (
                     <Skeleton className="h-8 w-12 mx-auto" />
                   ) : (
-                    stats?.thisMonthSubmissions || 0
+                    stats?.totalDocuments || 0
                   )}
                 </div>
-                <div className="text-sm text-blue-800 mt-1">당월 접수</div>
+                <div className="text-sm text-blue-800 mt-1">총 서류</div>
               </div>
               
               <div className="text-center p-4 bg-yellow-50 rounded-lg">
@@ -458,6 +458,7 @@ export function Dashboard() {
                   )}
                 </div>
                 <div className="text-sm text-yellow-800 mt-1">개통 대기</div>
+                <div className="text-xs text-yellow-700 mt-1">(대기 상태)</div>
               </div>
               
               <div className="text-center p-4 bg-orange-50 rounded-lg">
