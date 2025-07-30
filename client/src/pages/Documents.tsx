@@ -243,6 +243,16 @@ export function Documents() {
   const handleActivationSubmit = () => {
     if (!selectedDocument) return;
     
+    // 개통완료 선택 시 가입번호 필수 체크
+    if (activationForm.activationStatus === '개통' && !activationForm.subscriptionNumber?.trim()) {
+      toast({
+        title: "오류",
+        description: "개통완료 처리 시 가입번호는 필수 입력 사항입니다.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     updateActivationMutation.mutate({
       id: selectedDocument.id,
       data: activationForm

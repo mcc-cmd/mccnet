@@ -52,6 +52,7 @@ export interface Document {
   storeName?: string; // 판매점 이름 (자동 설정)
   contactCode?: string; // 개통방명 코드 입력
   carrier: string; // 통신사
+  previousCarrier?: string; // 이전통신사
   status: '접수' | '보완필요' | '완료';
   activationStatus: '대기' | '진행중' | '보완필요' | '개통' | '취소';
   filePath?: string | null;
@@ -197,6 +198,7 @@ export const uploadDocumentSchema = z.object({
   customerPhone: z.string().min(1, "연락처를 입력하세요"),
   contactCode: z.string().min(1, "개통방명 코드를 입력하세요"),
   carrier: z.string().min(1, "통신사를 선택하세요"),
+  previousCarrier: z.string().optional(),
   subscriptionNumber: z.string().optional(),
   notes: z.string().optional(),
 });

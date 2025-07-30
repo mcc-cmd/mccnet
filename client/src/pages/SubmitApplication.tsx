@@ -24,6 +24,7 @@ export function SubmitApplication() {
     contactCode: '',
     storeName: '',
     carrier: '',
+    previousCarrier: '',
     notes: ''
   });
 
@@ -50,6 +51,11 @@ export function SubmitApplication() {
   const carriers = [
     'SK텔링크', 'SK프리티', 'SK스테이지파이브', 'KT엠모바일', 'KT스카이라이프', 'KT스테이지파이브', 
     'KT코드모바일', 'LG미디어로그', 'LG헬로모바일', 'LG프리티', 'LG밸류컴', '스마텔LG', 'KT'
+  ];
+  
+  // 이전통신사 목록
+  const previousCarriers = [
+    'SK', 'KT', 'LG', 'SK알뜰', 'KT알뜰', 'LG알뜰'
   ];
   
   // SK 계열사 체크 (SK텔링크, SK프리티, SK스테이지파이브)
@@ -122,6 +128,7 @@ export function SubmitApplication() {
     data.append('customerPhone', formData.customerPhone);
     data.append('contactCode', formData.contactCode);
     data.append('carrier', formData.carrier);
+    data.append('previousCarrier', formData.previousCarrier);
     data.append('notes', formData.notes);
     
     if (selectedFile) {
@@ -280,6 +287,21 @@ export function SubmitApplication() {
                     )}
                   </div>
                   
+                  <div>
+                    <Label htmlFor="previousCarrier">이전통신사</Label>
+                    <Select value={formData.previousCarrier} onValueChange={(value) => setFormData(prev => ({ ...prev, previousCarrier: value }))}>
+                      <SelectTrigger className="mt-1">
+                        <SelectValue placeholder="이전통신사를 선택하세요 (선택사항)" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {previousCarriers.map((carrier) => (
+                          <SelectItem key={carrier} value={carrier}>
+                            {carrier}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
 
                 </div>
 

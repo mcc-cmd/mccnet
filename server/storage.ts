@@ -94,6 +94,7 @@ db.exec(`
     store_name TEXT,
     contact_code TEXT,
     carrier TEXT NOT NULL,
+    previous_carrier TEXT,
     status TEXT NOT NULL CHECK (status IN ('접수', '보완필요', '완료')),
     activation_status TEXT NOT NULL DEFAULT '대기' CHECK (activation_status IN ('대기', '진행중', '개통', '취소')),
     file_path TEXT,
@@ -1157,10 +1158,10 @@ class SqliteStorage implements IStorage {
       const insertResult = db.prepare(`
         INSERT INTO documents (
           dealer_id, user_id, document_number, customer_name, customer_phone, 
-          store_name, carrier, contact_code, status, activation_status, 
+          store_name, carrier, previous_carrier, contact_code, status, activation_status, 
           file_path, file_name, file_size, notes
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `).run(
         data.dealerId || null,
         data.userId,
@@ -1169,6 +1170,7 @@ class SqliteStorage implements IStorage {
         data.customerPhone,
         storeName || null,
         data.carrier,
+        (data as any).previousCarrier || null,
         data.contactCode || null,
         '접수',
         '대기',
@@ -1201,6 +1203,7 @@ class SqliteStorage implements IStorage {
         customerPhone: result.customer_phone,
         storeName: result.store_name,
         carrier: result.carrier,
+        previousCarrier: result.previous_carrier,
         contactCode: result.contact_code,
         status: result.status,
         activationStatus: result.activation_status,
