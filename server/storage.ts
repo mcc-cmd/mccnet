@@ -1684,23 +1684,38 @@ class SqliteStorage implements IStorage {
     }
     // admin은 모든 데이터 조회
     
-    // 날짜 필터링 추가
+    // 날짜 필터링을 업로드 날짜 기준으로 변경
+    let uploadDateParams = [...params];
+    let uploadWhereClause = whereClause;
     if (startDate) {
-      whereClause += (whereClause ? ' AND' : ' WHERE') + ' date(activated_at) >= ?';
-      params.push(startDate);
+      uploadWhereClause += (uploadWhereClause ? ' AND' : ' WHERE') + ' date(uploaded_at) >= ?';
+      uploadDateParams.push(startDate);
     }
     if (endDate) {
-      whereClause += (whereClause ? ' AND' : ' WHERE') + ' date(activated_at) <= ?';
-      params.push(endDate);
+      uploadWhereClause += (uploadWhereClause ? ' AND' : ' WHERE') + ' date(uploaded_at) <= ?';
+      uploadDateParams.push(endDate);
     }
 
-    const total = db.prepare(`SELECT COUNT(*) as count FROM documents${whereClause}`).get(...params) as { count: number };
-    const pending = db.prepare(`SELECT COUNT(*) as count FROM documents${whereClause}${whereClause ? ' AND' : ' WHERE'} status = ?`).get(...params, '접수') as { count: number };
-    const completed = db.prepare(`SELECT COUNT(*) as count FROM documents${whereClause}${whereClause ? ' AND' : ' WHERE'} status = ?`).get(...params, '완료') as { count: number };
-    const activated = db.prepare(`SELECT COUNT(*) as count FROM documents${whereClause}${whereClause ? ' AND' : ' WHERE'} activation_status = ?`).get(...params, '개통') as { count: number };
-    const canceled = db.prepare(`SELECT COUNT(*) as count FROM documents${whereClause}${whereClause ? ' AND' : ' WHERE'} activation_status = ?`).get(...params, '취소') as { count: number };
-    const pendingActivations = db.prepare(`SELECT COUNT(*) as count FROM documents${whereClause}${whereClause ? ' AND' : ' WHERE'} activation_status = ?`).get(...params, '대기') as { count: number };
-    const inProgress = db.prepare(`SELECT COUNT(*) as count FROM documents${whereClause}${whereClause ? ' AND' : ' WHERE'} activation_status = ?`).get(...params, '진행중') as { count: number };
+    // 전체 통계는 업로드 날짜 기준
+    const total = db.prepare(`SELECT COUNT(*) as count FROM documents${uploadWhereClause}`).get(...uploadDateParams) as { count: number };
+    const pending = db.prepare(`SELECT COUNT(*) as count FROM documents${uploadWhereClause}${uploadWhereClause ? ' AND' : ' WHERE'} status = ?`).get(...uploadDateParams, '접수') as { count: number };
+    const completed = db.prepare(`SELECT COUNT(*) as count FROM documents${uploadWhereClause}${uploadWhereClause ? ' AND' : ' WHERE'} status = ?`).get(...uploadDateParams, '완료') as { count: number };
+    
+    // 개통 관련 통계는 모든 문서 대상 (날짜 필터 무시)
+    let activationWhereClause = '';
+    let activationParams: any[] = [];
+    if (userType === 'dealer_store' && dealerId) {
+      activationWhereClause = ' WHERE dealer_id = ?';
+      activationParams = [dealerId];
+    } else if (userType === 'dealer_worker' && userId) {
+      activationWhereClause = ' WHERE activated_by = ? OR user_id = ?';
+      activationParams = [userId, userId];
+    }
+    
+    const activated = db.prepare(`SELECT COUNT(*) as count FROM documents${activationWhereClause}${activationWhereClause ? ' AND' : ' WHERE'} activation_status = ?`).get(...activationParams, '개통') as { count: number };
+    const canceled = db.prepare(`SELECT COUNT(*) as count FROM documents${activationWhereClause}${activationWhereClause ? ' AND' : ' WHERE'} activation_status = ?`).get(...activationParams, '취소') as { count: number };
+    const pendingActivations = db.prepare(`SELECT COUNT(*) as count FROM documents${activationWhereClause}${activationWhereClause ? ' AND' : ' WHERE'} activation_status = ?`).get(...activationParams, '대기') as { count: number };
+    const inProgress = db.prepare(`SELECT COUNT(*) as count FROM documents${activationWhereClause}${activationWhereClause ? ' AND' : ' WHERE'} activation_status = ?`).get(...activationParams, '진행중') as { count: number };
 
     const stats: DashboardStats & { carrierStats?: any[]; workerStats?: any[] } = {
       totalDocuments: total.count,

@@ -271,6 +271,10 @@ This is a document management system built for MCC네트월드 telecommunication
 - July 30, 2025. Fixed text truncation issues in Documents page by implementing automatic 2-line display for all table columns
 - July 30, 2025. Modified CompletedActivations page to show activation completion date/time instead of document number
 - July 30, 2025. Applied break-words and leading-tight styling to all table cells for optimal text display without truncation
+- July 30, 2025. Added previous carrier selection feature in application submission form with predefined options (SK, KT, LG, SK알뜰, KT알뜰, LG알뜰)
+- July 30, 2025. Implemented mandatory subscription number validation when selecting completion status in Documents management
+- July 30, 2025. Added previous_carrier column to documents table and updated API endpoints to handle this field
+- July 30, 2025. Fixed dashboard statistics calculation to properly distinguish between reception statistics (based on upload date) and activation statistics (based on current activation status)
 
 ## User Preferences
 
