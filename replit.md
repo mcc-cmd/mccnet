@@ -275,6 +275,8 @@ This is a document management system built for MCC네트월드 telecommunication
 - July 30, 2025. Implemented mandatory subscription number validation when selecting completion status in Documents management
 - July 30, 2025. Added previous_carrier column to documents table and updated API endpoints to handle this field
 - July 30, 2025. Fixed dashboard statistics calculation to properly distinguish between reception statistics (based on upload date) and activation statistics (based on current activation status)
+- July 30, 2025. Resolved dashboard display confusion by changing "당월 접수" to "총 서류" and clarifying "접수 대기" vs "개통 대기" labels
+- July 30, 2025. Added test data with various activation statuses (대기, 진행중, 개통) to demonstrate proper workflow functionality
 
 ## User Preferences
 

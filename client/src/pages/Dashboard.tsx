@@ -457,8 +457,8 @@ export function Dashboard() {
                     stats?.pendingActivations || 0
                   )}
                 </div>
-                <div className="text-sm text-yellow-800 mt-1">개통 대기</div>
-                <div className="text-xs text-yellow-700 mt-1">(대기 상태)</div>
+                <div className="text-sm text-yellow-800 mt-1">접수 대기</div>
+                <div className="text-xs text-yellow-700 mt-1">(대기 상태 문서)</div>
               </div>
               
               <div className="text-center p-4 bg-orange-50 rounded-lg">
