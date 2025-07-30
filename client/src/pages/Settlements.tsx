@@ -43,6 +43,7 @@ import {
   TableRow 
 } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
+import { useApiRequest, useAuth } from '@/lib/auth';
 import { apiRequest } from '@/lib/queryClient';
 import { Users, Clock, CheckCircle, Download, FileText, Calendar, Plus, Search } from 'lucide-react';
 
@@ -120,6 +121,7 @@ type ManualSettlementForm = z.infer<typeof manualSettlementSchema>;
 export function Settlements() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const apiRequestHook = useApiRequest();
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
@@ -338,7 +340,15 @@ export function Settlements() {
       if (startDate) params.append('startDate', startDate);
       if (endDate) params.append('endDate', endDate);
       
-      const response = await apiRequest('GET', `/api/documents/export-excel?${params.toString()}`);
+      // useAuth를 통한 인증 처리
+      const sessionId = useAuth.getState().sessionId;
+      
+      const response = await fetch(`/api/settlements/export?${params.toString()}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${sessionId}`
+        }
+      });
       
       if (!response.ok) throw new Error('다운로드 실패');
       
@@ -376,7 +386,7 @@ export function Settlements() {
   };
 
   return (
-    <Layout>
+    <Layout title="정산 관리">
       <div className="container mx-auto p-6">
         <div className="flex justify-between items-center mb-8">
           <div>

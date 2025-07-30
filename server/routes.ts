@@ -1672,21 +1672,50 @@ router.get('/api/settlements/export', requireAuth, async (req: any, res) => {
     const XLSX = await import('xlsx');
     const workbook = XLSX.utils.book_new();
     
-    const excelData = documents.map(doc => ({
-      '개통날짜': doc.activatedAt ? format(new Date(doc.activatedAt), 'yyyy-MM-dd') : '',
-      '문서번호': doc.documentNumber,
-      '고객명': doc.customerName,
-      '연락처': doc.customerPhone,
-      '판매점명': doc.storeName || doc.dealerName,
-      '통신사': doc.carrier,
-      '접점코드': doc.contactCode || '',
-      '요금제': doc.servicePlanName || '',
-      '부가서비스': doc.additionalServices ? doc.additionalServices.join(', ') : '',
-      '결합여부': doc.bundleApplied ? '결합' : (doc.bundleNotApplied ? '미결합' : '미지정'),
-      '기기모델': doc.deviceModel || '',
-      '유심번호': doc.simNumber || '',
-      '비고': doc.notes || ''
-    }));
+    const excelData = documents.map(doc => {
+      // 날짜 안전 처리
+      let activatedDate = '';
+      try {
+        if (doc.activatedAt) {
+          const date = new Date(doc.activatedAt);
+          if (!isNaN(date.getTime())) {
+            activatedDate = date.toISOString().split('T')[0]; // YYYY-MM-DD 형식
+          }
+        }
+      } catch (error) {
+        console.warn('Date parsing error for document:', doc.id, error);
+      }
+
+      // 부가서비스 안전 처리
+      let additionalServicesText = '';
+      try {
+        if (doc.additionalServices) {
+          if (Array.isArray(doc.additionalServices)) {
+            additionalServicesText = doc.additionalServices.join(', ');
+          } else if (typeof doc.additionalServices === 'string') {
+            additionalServicesText = doc.additionalServices;
+          }
+        }
+      } catch (error) {
+        console.warn('Additional services parsing error for document:', doc.id, error);
+      }
+
+      return {
+        '개통날짜': activatedDate,
+        '문서번호': doc.documentNumber || '',
+        '고객명': doc.customerName || '',
+        '연락처': doc.customerPhone || '',
+        '판매점명': doc.storeName || doc.dealerName || '',
+        '통신사': doc.carrier || '',
+        '접점코드': doc.contactCode || '',
+        '요금제': doc.servicePlanName || '',
+        '부가서비스': additionalServicesText,
+        '결합여부': doc.bundleApplied ? '결합' : (doc.bundleNotApplied ? '미결합' : '미지정'),
+        '기기모델': doc.deviceModel || '',
+        '유심번호': doc.simNumber || '',
+        '비고': doc.notes || ''
+      };
+    });
     
     const worksheet = XLSX.utils.json_to_sheet(excelData);
     XLSX.utils.book_append_sheet(workbook, worksheet, '정산데이터');
@@ -1698,7 +1727,8 @@ router.get('/api/settlements/export', requireAuth, async (req: any, res) => {
     
     res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(filename)}"`);
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-    res.send(buffer);
+    res.setHeader('Content-Length', buffer.length.toString());
+    res.end(buffer, 'binary');
     
   } catch (error: any) {
     console.error('Settlement export error:', error);
