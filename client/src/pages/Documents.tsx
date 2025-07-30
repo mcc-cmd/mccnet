@@ -276,6 +276,25 @@ export function Documents() {
 
   const handleActivationStatusChange = (doc: Document) => {
     setSelectedDocument(doc);
+    
+    // additionalServiceIds 안전 파싱
+    let parsedServiceIds: string[] = [];
+    try {
+      const serviceIds = (doc as any).additionalServiceIds;
+      console.log('Parsing additionalServiceIds for doc:', doc.id, 'serviceIds:', serviceIds, 'type:', typeof serviceIds);
+      
+      if (Array.isArray(serviceIds)) {
+        parsedServiceIds = serviceIds.map(id => id.toString());
+      } else if (typeof serviceIds === 'string' && serviceIds.trim()) {
+        parsedServiceIds = JSON.parse(serviceIds);
+      }
+      
+      console.log('Parsed service IDs:', parsedServiceIds);
+    } catch (error) {
+      console.warn('Failed to parse additionalServiceIds:', (doc as any).additionalServiceIds, error);
+      parsedServiceIds = [];
+    }
+    
     setActivationForm({
       activationStatus: (doc as any).activationStatus || '대기',
       notes: '',
@@ -285,7 +304,7 @@ export function Documents() {
       simNumber: (doc as any).simNumber || '',
       subscriptionNumber: (doc as any).subscriptionNumber || '',
       servicePlanId: (doc as any).servicePlanId?.toString() || '',
-      additionalServiceIds: (doc as any).additionalServiceIds ? JSON.parse((doc as any).additionalServiceIds) : [],
+      additionalServiceIds: parsedServiceIds,
       registrationFeePrepaid: (doc as any).registrationFeePrepaid || false,
       registrationFeePostpaid: (doc as any).registrationFeePostpaid || false,
       simFeePrepaid: (doc as any).simFeePrepaid || false,
