@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/lib/auth';
 import { apiRequest } from '@/lib/queryClient';
+import { Layout } from '@/components/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -138,20 +139,21 @@ export default function WorkRequests() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">업무 요청중</h1>
-          <p className="text-muted-foreground mt-1">
-            업무 요청중인 서류들을 확인하고 완료 처리할 수 있습니다.
-          </p>
+    <Layout>
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold">업무 요청중</h1>
+            <p className="text-muted-foreground mt-1">
+              업무 요청중인 서류들을 확인하고 완료 처리할 수 있습니다.
+            </p>
+          </div>
+          <div className="flex items-center space-x-2">
+            <Badge variant="outline" className="text-lg px-3 py-1">
+              총 {documents.length}건
+            </Badge>
+          </div>
         </div>
-        <div className="flex items-center space-x-2">
-          <Badge variant="outline" className="text-lg px-3 py-1">
-            총 {documents.length}건
-          </Badge>
-        </div>
-      </div>
 
       {documents.length === 0 ? (
         <Card>
@@ -350,6 +352,7 @@ export default function WorkRequests() {
           )}
         </DialogContent>
       </Dialog>
-    </div>
+      </div>
+    </Layout>
   );
 }
