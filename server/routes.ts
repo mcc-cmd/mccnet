@@ -20,6 +20,8 @@ import {
   updateDealerContactCodesSchema,
   createSettlementSchema,
   updateSettlementSchema,
+  createCarrierSchema,
+  updateCarrierSchema,
   type AuthResponse
 } from "../shared/schema";
 
@@ -2158,6 +2160,56 @@ router.post('/api/contact-codes/upload-excel', contactCodeUpload.single('file'),
     }
     
     res.status(500).json({ error: '엑셀 업로드 처리 중 오류가 발생했습니다.' });
+  }
+});
+
+// ==================== 통신사 관리 API ====================
+
+// 모든 통신사 조회 (공개 API)
+router.get('/api/carriers', async (req: any, res) => {
+  try {
+    const carriers = await storage.getCarriers();
+    res.json(carriers);
+  } catch (error: any) {
+    console.error('Get carriers error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// 통신사 생성 (관리자 전용)
+router.post('/api/carriers', requireAuth, requireAdmin, async (req: any, res) => {
+  try {
+    const data = createCarrierSchema.parse(req.body);
+    const carrier = await storage.createCarrier(data);
+    res.json(carrier);
+  } catch (error: any) {
+    console.error('Create carrier error:', error);
+    res.status(400).json({ error: error.message });
+  }
+});
+
+// 통신사 수정 (관리자 전용)
+router.put('/api/carriers/:id', requireAuth, requireAdmin, async (req: any, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const data = updateCarrierSchema.parse(req.body);
+    const carrier = await storage.updateCarrier(id, data);
+    res.json(carrier);
+  } catch (error: any) {
+    console.error('Update carrier error:', error);
+    res.status(400).json({ error: error.message });
+  }
+});
+
+// 통신사 삭제 (관리자 전용)
+router.delete('/api/carriers/:id', requireAuth, requireAdmin, async (req: any, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    await storage.deleteCarrier(id);
+    res.json({ success: true });
+  } catch (error: any) {
+    console.error('Delete carrier error:', error);
+    res.status(500).json({ error: error.message });
   }
 });
 

@@ -417,6 +417,16 @@ export const createChatMessageSchema = z.object({
 
 export type CreateChatMessageForm = z.infer<typeof createChatMessageSchema>;
 
+// 통신사 관리 인터페이스
+export interface Carrier {
+  id: number;
+  name: string; // 통신사명 (예: "SK텔링크", "KT엠모바일")
+  displayOrder: number; // 정렬 순서
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 // 접점코드 관리 인터페이스
 export interface ContactCode {
   id: number;
@@ -427,6 +437,15 @@ export interface ContactCode {
   createdAt: Date;
   updatedAt: Date;
 }
+
+// 통신사 스키마
+export const createCarrierSchema = z.object({
+  name: z.string().min(1, "통신사명을 입력해주세요"),
+  displayOrder: z.number().min(0, "정렬 순서를 입력해주세요").default(0),
+  isActive: z.boolean().default(true)
+});
+
+export const updateCarrierSchema = createCarrierSchema.partial();
 
 // 접점코드 스키마
 export const createContactCodeSchema = z.object({

@@ -15,8 +15,8 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
 import { Switch } from '@/components/ui/switch';
-import { createDealerSchema, createUserSchema, createAdminSchema, createWorkerSchema, updateDocumentStatusSchema, createServicePlanSchema, createAdditionalServiceSchema } from '../../../shared/schema';
-import type { Dealer, User, Document, PricingTable, ServicePlan, AdditionalService, ContactCode } from '../../../shared/schema';
+import { createDealerSchema, createUserSchema, createAdminSchema, createWorkerSchema, updateDocumentStatusSchema, createServicePlanSchema, createAdditionalServiceSchema, createCarrierSchema, updateCarrierSchema } from '../../../shared/schema';
+import type { Dealer, User, Document, PricingTable, ServicePlan, AdditionalService, ContactCode, Carrier } from '../../../shared/schema';
 import { 
   Building2, 
   Users, 
@@ -88,6 +88,294 @@ const CARRIERS = [
   { id: 'mvno-china', name: '중고KT' },
   { id: 'mvno-prepaid', name: 'LG스마텔' },
 ];
+
+// 통신사 관리 컴포넌트
+function CarrierManagement() {
+  const [carrierDialogOpen, setCarrierDialogOpen] = useState(false);
+  const [editingCarrier, setEditingCarrier] = useState<Carrier | null>(null);
+  const apiRequest = useApiRequest();
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  // 통신사 목록 조회
+  const { data: carriers = [], isLoading: carriersLoading } = useQuery({
+    queryKey: ['/api/carriers'],
+    queryFn: () => apiRequest('/api/carriers')
+  });
+
+  // 통신사 생성/수정 폼
+  const carrierForm = useForm({
+    resolver: zodResolver(editingCarrier ? updateCarrierSchema : createCarrierSchema),
+    defaultValues: {
+      name: '',
+      displayOrder: 0,
+      isActive: true
+    }
+  });
+
+  // 통신사 생성
+  const createCarrierMutation = useMutation({
+    mutationFn: (data: any) => apiRequest('/api/carriers', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/carriers'] });
+      setCarrierDialogOpen(false);
+      carrierForm.reset();
+      toast({
+        title: "통신사 추가",
+        description: "새 통신사가 성공적으로 추가되었습니다."
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "추가 실패",
+        description: error.message || "통신사 추가에 실패했습니다.",
+        variant: "destructive"
+      });
+    }
+  });
+
+  // 통신사 수정
+  const updateCarrierMutation = useMutation({
+    mutationFn: ({ id, data }: { id: number; data: any }) => 
+      apiRequest(`/api/carriers/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(data)
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/carriers'] });
+      setCarrierDialogOpen(false);
+      setEditingCarrier(null);
+      carrierForm.reset();
+      toast({
+        title: "통신사 수정",
+        description: "통신사가 성공적으로 수정되었습니다."
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "수정 실패",
+        description: error.message || "통신사 수정에 실패했습니다.",
+        variant: "destructive"
+      });
+    }
+  });
+
+  // 통신사 삭제
+  const deleteCarrierMutation = useMutation({
+    mutationFn: (id: number) => apiRequest(`/api/carriers/${id}`, {
+      method: 'DELETE'
+    }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/carriers'] });
+      toast({
+        title: "통신사 삭제",
+        description: "통신사가 성공적으로 삭제되었습니다."
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "삭제 실패",
+        description: error.message || "통신사 삭제에 실패했습니다.",
+        variant: "destructive"
+      });
+    }
+  });
+
+  const handleCreateOrUpdate = (data: any) => {
+    if (editingCarrier) {
+      updateCarrierMutation.mutate({ id: editingCarrier.id, data });
+    } else {
+      createCarrierMutation.mutate(data);
+    }
+  };
+
+  const handleEditCarrier = (carrier: Carrier) => {
+    setEditingCarrier(carrier);
+    carrierForm.reset({
+      name: carrier.name,
+      displayOrder: carrier.displayOrder,
+      isActive: carrier.isActive
+    });
+    setCarrierDialogOpen(true);
+  };
+
+  const handleAddCarrier = () => {
+    setEditingCarrier(null);
+    carrierForm.reset({
+      name: '',
+      displayOrder: carriers.length,
+      isActive: true
+    });
+    setCarrierDialogOpen(true);
+  };
+
+  const handleDeleteCarrier = (id: number) => {
+    if (confirm('정말로 이 통신사를 삭제하시겠습니까?')) {
+      deleteCarrierMutation.mutate(id);
+    }
+  };
+
+  return (
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between">
+        <div>
+          <CardTitle>통신사 관리</CardTitle>
+          <CardDescription>
+            통신사를 관리하고 정렬 순서를 설정할 수 있습니다.
+          </CardDescription>
+        </div>
+        <Dialog open={carrierDialogOpen} onOpenChange={setCarrierDialogOpen}>
+          <DialogTrigger asChild>
+            <Button onClick={handleAddCarrier}>
+              <Plus className="mr-2 h-4 w-4" />
+              통신사 추가
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>
+                {editingCarrier ? '통신사 수정' : '새 통신사 추가'}
+              </DialogTitle>
+            </DialogHeader>
+            <Form {...carrierForm}>
+              <form onSubmit={carrierForm.handleSubmit(handleCreateOrUpdate)} className="space-y-4">
+                <FormField
+                  control={carrierForm.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>통신사명</FormLabel>
+                      <FormControl>
+                        <Input placeholder="통신사명을 입력하세요" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={carrierForm.control}
+                  name="displayOrder"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>정렬 순서</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          placeholder="정렬 순서를 입력하세요"
+                          {...field}
+                          onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={carrierForm.control}
+                  name="isActive"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                      <div className="space-y-0.5">
+                        <FormLabel className="text-base">활성 상태</FormLabel>
+                        <FormDescription>
+                          비활성화하면 선택 목록에서 제외됩니다.
+                        </FormDescription>
+                      </div>
+                      <FormControl>
+                        <Switch
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+                <div className="flex justify-end space-x-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setCarrierDialogOpen(false)}
+                  >
+                    취소
+                  </Button>
+                  <Button
+                    type="submit"
+                    disabled={createCarrierMutation.isPending || updateCarrierMutation.isPending}
+                  >
+                    {editingCarrier ? '수정' : '추가'}
+                  </Button>
+                </div>
+              </form>
+            </Form>
+          </DialogContent>
+        </Dialog>
+      </CardHeader>
+      <CardContent>
+        {carriersLoading ? (
+          <div className="flex justify-center py-4">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {carriers.length > 0 ? (
+              <div className="grid gap-4">
+                {carriers
+                  .sort((a: Carrier, b: Carrier) => a.displayOrder - b.displayOrder)
+                  .map((carrier: Carrier) => (
+                    <div
+                      key={carrier.id}
+                      className="flex items-center justify-between p-4 border rounded-lg bg-white"
+                    >
+                      <div className="flex items-center space-x-4">
+                        <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center text-sm font-medium">
+                          {carrier.displayOrder}
+                        </div>
+                        <div>
+                          <h4 className="font-medium text-gray-900">{carrier.name}</h4>
+                          <p className="text-sm text-gray-500">
+                            정렬 순서: {carrier.displayOrder}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Badge variant={carrier.isActive ? "default" : "secondary"}>
+                          {carrier.isActive ? '활성' : '비활성'}
+                        </Badge>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleEditCarrier(carrier)}
+                        >
+                          수정
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleDeleteCarrier(carrier.id)}
+                          className="text-red-600 hover:text-red-700"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <Building2 className="mx-auto h-12 w-12 text-gray-400" />
+                <h3 className="mt-2 text-sm font-medium text-gray-900">통신사가 없습니다</h3>
+                <p className="mt-1 text-sm text-gray-500">첫 번째 통신사를 추가해보세요.</p>
+              </div>
+            )}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
 
 function ContactCodeManagement({ dealer }: { dealer: Dealer }) {
   const [isEditing, setIsEditing] = useState(false);
@@ -1366,10 +1654,14 @@ export function AdminPanel() {
 
         {/* Admin Tabs */}
         <Tabs defaultValue="users" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-8">
+          <TabsList className="grid w-full grid-cols-9">
             <TabsTrigger value="contact-codes" className="flex items-center space-x-2">
               <Settings className="h-4 w-4" />
               <span>접점코드</span>
+            </TabsTrigger>
+            <TabsTrigger value="carriers" className="flex items-center space-x-2">
+              <Building2 className="h-4 w-4" />
+              <span>통신사</span>
             </TabsTrigger>
             <TabsTrigger value="users" className="flex items-center space-x-2">
               <Users className="h-4 w-4" />
@@ -1566,6 +1858,11 @@ export function AdminPanel() {
                 )}
               </CardContent>
             </Card>
+          </TabsContent>
+
+          {/* Carriers Tab */}
+          <TabsContent value="carriers">
+            <CarrierManagement />
           </TabsContent>
 
           {/* Users Tab */}
