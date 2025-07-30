@@ -443,7 +443,7 @@ export interface Carrier {
 // 통신사 스키마
 export const createCarrierSchema = z.object({
   name: z.string().min(1, "통신사명을 입력해주세요"),
-  displayOrder: z.number().optional(),
+  displayOrder: z.number().min(0, "정렬 순서는 0 이상이어야 합니다").default(0),
   isActive: z.boolean().default(true),
   isWired: z.boolean().default(false),
   bundleNumber: z.string().optional(),

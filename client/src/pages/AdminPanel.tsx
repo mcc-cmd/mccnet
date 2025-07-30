@@ -215,23 +215,27 @@ function CarrierManagement() {
 
   const handleEditCarrier = (carrier: Carrier) => {
     setEditingCarrier(carrier);
-    // 값을 직접 설정
-    carrierForm.setValue('name', carrier.name || '');
-    carrierForm.setValue('displayOrder', carrier.displayOrder || 0);
-    carrierForm.setValue('isActive', carrier.isActive !== false);
-    carrierForm.setValue('isWired', carrier.isWired || false);
-    carrierForm.setValue('bundleNumber', carrier.bundleNumber || '');
-    carrierForm.setValue('bundleCarrier', carrier.bundleCarrier || '');
-    carrierForm.setValue('documentRequired', carrier.documentRequired || false);
-    carrierForm.setValue('requireCustomerName', carrier.requireCustomerName !== false);
-    carrierForm.setValue('requireCustomerPhone', carrier.requireCustomerPhone !== false);
-    carrierForm.setValue('requireCustomerEmail', carrier.requireCustomerEmail || false);
-    carrierForm.setValue('requireContactCode', carrier.requireContactCode !== false);
-    carrierForm.setValue('requireCarrier', carrier.requireCarrier !== false);
-    carrierForm.setValue('requirePreviousCarrier', carrier.requirePreviousCarrier || false);
-    carrierForm.setValue('requireDocumentUpload', carrier.requireDocumentUpload || false);
-    carrierForm.setValue('requireBundleNumber', carrier.requireBundleNumber || false);
-    carrierForm.setValue('requireBundleCarrier', carrier.requireBundleCarrier || false);
+    // 폼을 완전히 리셋한 후 값 설정
+    setTimeout(() => {
+      carrierForm.reset({
+        name: carrier.name || '',
+        displayOrder: Number(carrier.displayOrder) || 0,
+        isActive: carrier.isActive !== false,
+        isWired: carrier.isWired || false,
+        bundleNumber: carrier.bundleNumber || '',
+        bundleCarrier: carrier.bundleCarrier || '',
+        documentRequired: carrier.documentRequired || false,
+        requireCustomerName: carrier.requireCustomerName !== false,
+        requireCustomerPhone: carrier.requireCustomerPhone !== false,
+        requireCustomerEmail: carrier.requireCustomerEmail || false,
+        requireContactCode: carrier.requireContactCode !== false,
+        requireCarrier: carrier.requireCarrier !== false,
+        requirePreviousCarrier: carrier.requirePreviousCarrier || false,
+        requireDocumentUpload: carrier.requireDocumentUpload || false,
+        requireBundleNumber: carrier.requireBundleNumber || false,
+        requireBundleCarrier: carrier.requireBundleCarrier || false
+      });
+    }, 100);
     setCarrierDialogOpen(true);
   };
 
@@ -342,7 +346,7 @@ function CarrierManagement() {
                         <Input
                           type="number"
                           placeholder="정렬 순서를 입력하세요"
-                          {...field}
+                          value={field.value?.toString() || ''}
                           onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
                         />
                       </FormControl>
