@@ -285,6 +285,7 @@ This is a document management system built for MCC네트월드 telecommunication
 - July 30, 2025. Removed "당월 개통 현황" section from Dashboard per user feedback
 - July 30, 2025. Fixed activation cancellation API endpoint by adding PUT /api/documents/:id/activation-status route
 - July 30, 2025. Resolved "개통취소 실패" error by implementing proper API endpoint for cancellation functionality
+- July 30, 2025. Restored "당월 개통 현황" section in Dashboard with 4 boxes layout per user request
 
 ## User Preferences
 
