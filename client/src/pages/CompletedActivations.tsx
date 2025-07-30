@@ -134,7 +134,7 @@ export function CompletedActivations() {
                   <table className="min-w-full divide-y divide-gray-300">
                     <thead className="bg-gray-50">
                       <tr>
-                        <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">접수번호</th>
+                        <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">개통완료일시</th>
                         <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">고객명</th>
                         <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">연락처</th>
                         <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">통신사</th>
@@ -146,15 +146,31 @@ export function CompletedActivations() {
                     <tbody className="bg-white divide-y divide-gray-200">
                       {documents.map((doc) => (
                         <tr key={doc.id} className="hover:bg-gray-50">
-                          <td className="px-3 py-2 text-sm font-medium text-gray-900">{doc.documentNumber}</td>
-                          <td className="px-3 py-2 text-sm text-gray-900">{doc.customerName}</td>
-                          <td className="px-3 py-2 text-sm text-gray-900">{doc.customerPhone}</td>
-                          <td className="px-3 py-2 text-sm text-gray-900">{doc.carrier}</td>
+                          <td className="px-3 py-2 text-sm font-medium text-gray-900">
+                            <div className="leading-tight break-words max-w-full">
+                              {doc.activatedAt ? format(new Date(doc.activatedAt), 'yyyy-MM-dd HH:mm', { locale: ko }) : '-'}
+                            </div>
+                          </td>
+                          <td className="px-3 py-2 text-sm text-gray-900">
+                            <div className="leading-tight break-words max-w-full">
+                              {doc.customerName}
+                            </div>
+                          </td>
+                          <td className="px-3 py-2 text-sm text-gray-900">
+                            <div className="leading-tight break-words max-w-full">
+                              {doc.customerPhone}
+                            </div>
+                          </td>
+                          <td className="px-3 py-2 text-sm text-gray-900">
+                            <div className="leading-tight break-words max-w-full">
+                              {doc.carrier}
+                            </div>
+                          </td>
                           <td className="px-3 py-2 text-sm text-gray-900">
                             <div className="space-y-1">
                               {/* 요금제 정보 */}
                               {(doc as any).servicePlanName ? (
-                                <div className="font-medium text-blue-600 text-xs">
+                                <div className="font-medium text-blue-600 text-xs leading-tight break-words">
                                   {(doc as any).servicePlanName}
                                 </div>
                               ) : (
@@ -163,7 +179,7 @@ export function CompletedActivations() {
                               
                               {/* 부가서비스 */}
                               {(doc as any).additionalServices && (
-                                <div className="text-xs text-gray-500">
+                                <div className="text-xs text-gray-500 leading-tight break-words">
                                   부가: {(doc as any).additionalServices}
                                 </div>
                               )}
@@ -210,7 +226,9 @@ export function CompletedActivations() {
                             </div>
                           </td>
                           <td className="px-3 py-2 text-sm text-gray-500">
-                            {doc.activatedAt ? format(new Date(doc.activatedAt), 'yyyy-MM-dd', { locale: ko }) : '-'}
+                            <div className="leading-tight break-words max-w-full">
+                              {doc.activatedAt ? format(new Date(doc.activatedAt), 'yyyy-MM-dd', { locale: ko }) : '-'}
+                            </div>
                           </td>
                           <td className="px-3 py-2">
                             {getActivationStatusBadge(doc.activationStatus)}
@@ -229,7 +247,9 @@ export function CompletedActivations() {
                         <div className="flex justify-between items-start">
                           <div>
                             <p className="font-medium">{doc.customerName}</p>
-                            <p className="text-sm text-gray-600">{doc.documentNumber}</p>
+                            <p className="text-sm text-gray-600">
+                              {doc.activatedAt ? format(new Date(doc.activatedAt), 'yyyy-MM-dd HH:mm', { locale: ko }) : '-'}
+                            </p>
                           </div>
                           {getActivationStatusBadge(doc.activationStatus)}
                         </div>

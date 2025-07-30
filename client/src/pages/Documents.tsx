@@ -631,22 +631,30 @@ export function Documents() {
                     <tbody className="bg-white divide-y divide-gray-200">
                       {documents.map((doc) => (
                         <tr key={doc.id} className="hover:bg-gray-50">
-                          <td className="px-1 py-1 text-xs font-medium text-gray-900 truncate">
-                            {doc.documentNumber}
+                          <td className="px-1 py-1 text-xs font-medium text-gray-900">
+                            <div className="leading-tight break-words max-w-full">
+                              {doc.documentNumber}
+                            </div>
                           </td>
-                          <td className="px-1 py-1 text-xs text-gray-900 truncate">
-                            {doc.customerName}
+                          <td className="px-1 py-1 text-xs text-gray-900">
+                            <div className="leading-tight break-words max-w-full">
+                              {doc.customerName}
+                            </div>
                           </td>
-                          <td className="px-1 py-1 text-xs text-gray-900 truncate">
-                            {doc.customerPhone}
+                          <td className="px-1 py-1 text-xs text-gray-900">
+                            <div className="leading-tight break-words max-w-full">
+                              {doc.customerPhone}
+                            </div>
                           </td>
                           <td className="px-1 py-1 text-xs text-gray-500">
                             <div className="leading-tight break-words max-w-full">
                               {(doc as any).storeName || '-'}
                             </div>
                           </td>
-                          <td className="px-1 py-1 text-xs text-gray-700 truncate">
-                            {(doc as any).carrier || '-'}
+                          <td className="px-1 py-1 text-xs text-gray-700">
+                            <div className="leading-tight break-words max-w-full">
+                              {(doc as any).carrier || '-'}
+                            </div>
                           </td>
                           <td className="px-1 py-1">
                             {getStatusBadge(doc.status)}
@@ -660,12 +668,12 @@ export function Documents() {
                               {((doc as any).servicePlanName || (doc as any).additionalServices) ? (
                                 <div className="space-y-0.5">
                                   {(doc as any).servicePlanName && (
-                                    <div className="font-medium text-blue-600 text-xs truncate">
+                                    <div className="font-medium text-blue-600 text-xs leading-tight break-words">
                                       {(doc as any).servicePlanName}
                                     </div>
                                   )}
                                   {(doc as any).additionalServices && (
-                                    <div className="text-xs text-gray-500 truncate">
+                                    <div className="text-xs text-gray-500 leading-tight break-words">
                                       부가: {(doc as any).additionalServices}
                                     </div>
                                   )}
@@ -733,12 +741,16 @@ export function Documents() {
                               )}
                             </div>
                           </td>
-                          <td className="px-1 py-1 text-xs text-gray-500 truncate">
-                            {format(new Date(doc.uploadedAt), 'MM-dd HH:mm', { locale: ko })}
+                          <td className="px-1 py-1 text-xs text-gray-500">
+                            <div className="leading-tight break-words max-w-full">
+                              {format(new Date(doc.uploadedAt), 'MM-dd HH:mm', { locale: ko })}
+                            </div>
                           </td>
                           {isAdmin && (
-                            <td className="px-1 py-1 text-xs text-gray-500 truncate">
-                              {(doc as any).dealerName}
+                            <td className="px-1 py-1 text-xs text-gray-500">
+                              <div className="leading-tight break-words max-w-full">
+                                {(doc as any).dealerName}
+                              </div>
                             </td>
                           )}
                           <td className="px-1 py-1">

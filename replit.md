@@ -268,6 +268,9 @@ This is a document management system built for MCC네트월드 telecommunication
 - July 30, 2025. Resolved document upload permission restrictions allowing all user types to submit applications
 - July 30, 2025. Fixed database schema issues with documents table to support NULL dealerId for admin/worker submissions
 - July 30, 2025. Enhanced document upload API with proper error handling and logging for troubleshooting
+- July 30, 2025. Fixed text truncation issues in Documents page by implementing automatic 2-line display for all table columns
+- July 30, 2025. Modified CompletedActivations page to show activation completion date/time instead of document number
+- July 30, 2025. Applied break-words and leading-tight styling to all table cells for optimal text display without truncation
 
 ## User Preferences
 
