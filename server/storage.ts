@@ -1325,6 +1325,7 @@ class SqliteStorage implements IStorage {
       customerPhone: d.customer_phone,
       storeName: d.store_name,
       carrier: d.carrier,
+      previousCarrier: d.previous_carrier,
       contactCode: d.contact_code,
       status: d.status,
       activationStatus: d.activation_status || '대기',
