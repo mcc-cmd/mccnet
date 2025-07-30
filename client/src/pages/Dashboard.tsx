@@ -428,74 +428,7 @@ export function Dashboard() {
           </Card>
         </div>
 
-        {/* 당월 개통 현황 */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center">
-              <Calculator className="mr-2 h-5 w-5" />
-              당월 개통 현황
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-5">
-              <div className="text-center p-4 bg-blue-50 rounded-lg">
-                <div className="text-2xl font-bold text-blue-600">
-                  {statsLoading ? (
-                    <Skeleton className="h-8 w-12 mx-auto" />
-                  ) : (
-                    stats?.totalDocuments || 0
-                  )}
-                </div>
-                <div className="text-sm text-blue-800 mt-1">총 서류</div>
-              </div>
-              
-              <div className="text-center p-4 bg-yellow-50 rounded-lg">
-                <div className="text-2xl font-bold text-yellow-600">
-                  {statsLoading ? (
-                    <Skeleton className="h-8 w-12 mx-auto" />
-                  ) : (
-                    stats?.pendingActivations || 0
-                  )}
-                </div>
-                <div className="text-sm text-yellow-800 mt-1">접수 대기</div>
-                <div className="text-xs text-yellow-700 mt-1">(대기 상태 문서)</div>
-              </div>
-              
-              <div className="text-center p-4 bg-orange-50 rounded-lg">
-                <div className="text-2xl font-bold text-orange-600">
-                  {statsLoading ? (
-                    <Skeleton className="h-8 w-12 mx-auto" />
-                  ) : (
-                    stats?.inProgressCount || 0
-                  )}
-                </div>
-                <div className="text-sm text-orange-800 mt-1">진행중</div>
-              </div>
-              
-              <div className="text-center p-4 bg-green-50 rounded-lg">
-                <div className="text-2xl font-bold text-green-600">
-                  {statsLoading ? (
-                    <Skeleton className="h-8 w-12 mx-auto" />
-                  ) : (
-                    stats?.activatedCount || 0
-                  )}
-                </div>
-                <div className="text-sm text-green-800 mt-1">개통완료</div>
-              </div>
-              
-              <div className="text-center p-4 bg-red-50 rounded-lg">
-                <div className="text-2xl font-bold text-red-600">
-                  {statsLoading ? (
-                    <Skeleton className="h-8 w-12 mx-auto" />
-                  ) : (
-                    stats?.canceledCount || 0
-                  )}
-                </div>
-                <div className="text-sm text-red-800 mt-1">취소</div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+
 
         {/* Main Content Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
