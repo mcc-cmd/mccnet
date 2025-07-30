@@ -17,7 +17,7 @@ import logoImage from '@assets/KakaoTalk_20250626_162541112-removebg-preview_175
 
 const navigation = [
   { name: '대시보드', href: '/dashboard', icon: LayoutDashboard },
-  { name: '접수 신청', href: '/submit', icon: FileText },
+  { name: '접수 신청', href: '/submit-application', icon: FileText },
   { name: '접수 관리', href: '/documents', icon: FileText },
   { name: '업무 요청중', href: '/work-requests', icon: Clock },
   { name: '개통완료 관리', href: '/completed', icon: CheckCircle },

@@ -38,7 +38,7 @@ function AppRoutes() {
     <Switch>
       <Route path="/" component={() => <Redirect to="/dashboard" />} />
       <Route path="/dashboard" component={Dashboard} />
-      <Route path="/submit" component={SubmitApplication} />
+      <Route path="/submit-application" component={SubmitApplication} />
       <Route path="/documents" component={Documents} />
       <Route path="/work-requests" component={WorkRequests} />
       <Route path="/completed" component={CompletedActivations} />
