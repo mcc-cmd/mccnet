@@ -2443,20 +2443,25 @@ class SqliteStorage implements IStorage {
   // ==================== 통신사 관리 ====================
   
   async getCarriers(): Promise<any[]> {
-    const carriers = db.prepare('SELECT * FROM carriers ORDER BY name').all() as any[];
+    const carriers = db.prepare('SELECT * FROM carriers ORDER BY display_order, name').all() as any[];
     return carriers.map(c => ({
       id: c.id,
       name: c.name,
+      displayOrder: c.display_order || 0,
+      isActive: Boolean(c.is_active),
+      isWired: Boolean(c.is_wired),
+      bundleNumber: c.bundle_number || '',
+      bundleCarrier: c.bundle_carrier || '',
+      documentRequired: Boolean(c.document_required),
       requireCustomerName: Boolean(c.require_customer_name),
       requireCustomerPhone: Boolean(c.require_customer_phone),
       requireContactCode: Boolean(c.require_contact_code),
-      requireEmail: Boolean(c.require_email),
+      requireCustomerEmail: Boolean(c.require_email),
+      requireCarrier: Boolean(c.require_carrier || true),
       requireBundleNumber: Boolean(c.require_bundle_number),
       requireBundleCarrier: Boolean(c.require_bundle_carrier),
       requirePreviousCarrier: Boolean(c.require_previous_carrier),
-      requireStoreName: Boolean(c.require_store_name),
-      requireFileUpload: Boolean(c.require_file_upload),
-      isWired: Boolean(c.is_wired),
+      requireDocumentUpload: Boolean(c.require_file_upload),
       createdAt: new Date(c.created_at)
     }));
   }
@@ -2468,16 +2473,21 @@ class SqliteStorage implements IStorage {
     return {
       id: carrier.id,
       name: carrier.name,
+      displayOrder: carrier.display_order || 0,
+      isActive: Boolean(carrier.is_active),
+      isWired: Boolean(carrier.is_wired),
+      bundleNumber: carrier.bundle_number || '',
+      bundleCarrier: carrier.bundle_carrier || '',
+      documentRequired: Boolean(carrier.document_required),
       requireCustomerName: Boolean(carrier.require_customer_name),
       requireCustomerPhone: Boolean(carrier.require_customer_phone),
       requireContactCode: Boolean(carrier.require_contact_code),
-      requireEmail: Boolean(carrier.require_email),
+      requireCustomerEmail: Boolean(carrier.require_email),
+      requireCarrier: Boolean(carrier.require_carrier || true),
       requireBundleNumber: Boolean(carrier.require_bundle_number),
       requireBundleCarrier: Boolean(carrier.require_bundle_carrier),
       requirePreviousCarrier: Boolean(carrier.require_previous_carrier),
-      requireStoreName: Boolean(carrier.require_store_name),
-      requireFileUpload: Boolean(carrier.require_file_upload),
-      isWired: Boolean(carrier.is_wired),
+      requireDocumentUpload: Boolean(carrier.require_file_upload),
       createdAt: new Date(carrier.created_at)
     };
   }
