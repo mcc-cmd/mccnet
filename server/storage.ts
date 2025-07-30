@@ -408,6 +408,7 @@ export interface IStorage {
   // Carriers
   getCarriers(): Promise<any[]>;
   getCarrierById(id: number): Promise<any | null>;
+  createCarrier(data: any): Promise<any>;
   updateCarrier(id: number, data: any): Promise<any>;
 }
 
@@ -2479,6 +2480,32 @@ class SqliteStorage implements IStorage {
       isWired: Boolean(carrier.is_wired),
       createdAt: new Date(carrier.created_at)
     };
+  }
+
+  async createCarrier(data: any): Promise<any> {
+    const stmt = db.prepare(`
+      INSERT INTO carriers (
+        name, require_customer_name, require_customer_phone, require_contact_code,
+        require_email, require_bundle_number, require_bundle_carrier, require_previous_carrier,
+        require_store_name, require_file_upload, is_wired, created_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+    `);
+    
+    const result = stmt.run(
+      data.name,
+      data.requireCustomerName ? 1 : 0,
+      data.requireCustomerPhone ? 1 : 0,
+      data.requireContactCode ? 1 : 0,
+      data.requireEmail ? 1 : 0,
+      data.requireBundleNumber ? 1 : 0,
+      data.requireBundleCarrier ? 1 : 0,
+      data.requirePreviousCarrier ? 1 : 0,
+      data.requireStoreName ? 1 : 0,
+      data.requireFileUpload ? 1 : 0,
+      data.isWired ? 1 : 0
+    );
+    
+    return this.getCarrierById(result.lastInsertRowid as number);
   }
 
   async updateCarrier(id: number, data: any): Promise<any> {
