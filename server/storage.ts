@@ -2539,11 +2539,12 @@ class SqliteStorage implements IStorage {
       WHERE date(activated_at) = ? AND activation_status = '기타완료'
     `).get(today) as { count: number };
     
-    // 당일 통신사별 개통 현황 - 기타완료 제외
+    // 당일 통신사별 개통 현황 - 기타완료 제외, 기타 통신사들도 제외
     const carrierStats = db.prepare(`
       SELECT carrier, COUNT(*) as count
       FROM documents 
       WHERE date(activated_at) = ? AND activation_status = '개통'
+        AND carrier NOT LIKE '기타%'
       GROUP BY carrier
       ORDER BY count DESC
     `).all(today) as Array<{ carrier: string; count: number }>;

@@ -37,16 +37,29 @@ export function SubmitApplication() {
   const handleContactCodeChange = async (contactCode: string) => {
     setFormData(prev => ({ ...prev, contactCode }));
     
-    if (contactCode.trim() && formData.carrier) {
+    if (contactCode.trim()) {
       try {
         const response = await apiRequest(`/api/contact-codes/search/${contactCode}`);
         if (response?.dealerName) {
           setFormData(prev => ({ ...prev, storeName: response.dealerName }));
+        } else {
+          // 기타 통신사인 경우 접점코드명을 판매점명으로 사용
+          if (formData.carrier.includes('기타')) {
+            setFormData(prev => ({ ...prev, storeName: contactCode }));
+          } else {
+            setFormData(prev => ({ ...prev, storeName: '' }));
+          }
         }
       } catch (error) {
-        // 접점코드가 없으면 판매점명을 비워둠
-        setFormData(prev => ({ ...prev, storeName: '' }));
+        // 기타 통신사인 경우 접점코드명을 판매점명으로 사용
+        if (formData.carrier.includes('기타')) {
+          setFormData(prev => ({ ...prev, storeName: contactCode }));
+        } else {
+          setFormData(prev => ({ ...prev, storeName: '' }));
+        }
       }
+    } else {
+      setFormData(prev => ({ ...prev, storeName: '' }));
     }
   };
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -422,9 +435,10 @@ export function SubmitApplication() {
                       id="storeName"
                       name="storeName"
                       value={formData.storeName}
-                      readOnly
-                      placeholder="접점코드 입력 시 자동 설정"
-                      className="mt-1 bg-gray-50 text-gray-700"
+                      readOnly={!formData.carrier.includes('기타')}
+                      placeholder={formData.carrier.includes('기타') ? "판매점명을 입력하세요" : "접점코드 입력 시 자동 설정"}
+                      className={`mt-1 ${!formData.carrier.includes('기타') ? 'bg-gray-50 text-gray-700' : ''}`}
+                      onChange={formData.carrier.includes('기타') ? handleInputChange : undefined}
                     />
                   </div>
                   
