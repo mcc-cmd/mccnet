@@ -16,7 +16,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
 import { Switch } from '@/components/ui/switch';
 import { createDealerSchema, createUserSchema, createAdminSchema, createWorkerSchema, updateDocumentStatusSchema, createServicePlanSchema, createAdditionalServiceSchema, createCarrierSchema, updateCarrierSchema } from '../../../shared/schema';
-import type { Dealer, User, Document, ServicePlan, AdditionalService, Carrier, ContactCode } from '../../../shared/schema';
+import type { Dealer, User, Document, ServicePlan, AdditionalService, Carrier } from '../../../shared/schema';
 import { 
   Building2, 
   Users, 
@@ -32,6 +32,7 @@ import {
   TrendingUp,
   Trash2,
   Edit,
+  Edit2,
   DollarSign
 } from 'lucide-react';
 import { format } from 'date-fns';
@@ -69,10 +70,15 @@ type UpdateDocumentStatusForm = {
   notes?: string;
 };
 
-type ContactCode = {
-  carrierId: string;
-  carrierName: string;
-  contactCode: string;
+interface ContactCode {
+  id?: number;
+  carrierId?: string;
+  carrierName?: string;
+  contactCode?: string;
+  code?: string;
+  dealerName?: string;
+  carrier?: string;
+  isActive?: boolean;
 };
 
 // 통신사 리스트 (업데이트됨)
@@ -151,8 +157,7 @@ function CarrierManagement() {
   const carrierForm = useForm({
     resolver: zodResolver(createCarrierSchema),
     mode: 'onChange',
-    defaultValues: getDefaultValues(),
-    key: formKey // 폼 재초기화를 위한 key
+    defaultValues: getDefaultValues()
   });
 
   // 통신사 생성
@@ -574,7 +579,7 @@ function CarrierManagement() {
             {carriers.length > 0 ? (
               <div className="grid gap-4">
                 {carriers
-                  .sort((a: Carrier, b: Carrier) => a.displayOrder - b.displayOrder)
+                  .sort((a: Carrier, b: Carrier) => (a.displayOrder || 0) - (b.displayOrder || 0))
                   .map((carrier: Carrier) => (
                     <div
                       key={carrier.id}
@@ -665,9 +670,9 @@ function ContactCodeManagement({ dealer }: { dealer: Dealer }) {
       setTempContactCodes(dealerContactCodes);
     } else {
       // 기본값: 모든 통신사에 빈 접점 코드
-      const defaultCodes = CARRIERS.map(carrier => ({
-        carrierId: carrier.id,
-        carrierName: carrier.name,
+      const defaultCodes = CARRIERS.map((carrier, index) => ({
+        carrierId: typeof carrier === 'string' ? `carrier-${index}` : (carrier.id || `carrier-${index}`),
+        carrierName: typeof carrier === 'string' ? carrier : (carrier.name || carrier),
         contactCode: ''
       }));
       setContactCodes(defaultCodes);
@@ -715,7 +720,7 @@ function ContactCodeManagement({ dealer }: { dealer: Dealer }) {
   const updateContactCode = (carrierId: string, contactCode: string) => {
     setTempContactCodes(prev => 
       prev.map(code => 
-        code.carrierId === carrierId 
+        (code.carrierId || code.carrier) === carrierId 
           ? { ...code, contactCode }
           : code
       )
@@ -765,19 +770,19 @@ function ContactCodeManagement({ dealer }: { dealer: Dealer }) {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {(isEditing ? tempContactCodes : contactCodes).map((code) => (
-          <div key={code.carrierId} className="space-y-2">
-            <Label className="text-sm font-medium">{code.carrierName}</Label>
+        {(isEditing ? tempContactCodes : contactCodes).map((code, index) => (
+          <div key={code.carrierId || code.carrier || index} className="space-y-2">
+            <Label className="text-sm font-medium">{code.carrierName || code.carrier}</Label>
             {isEditing ? (
               <Input
-                value={code.contactCode}
-                onChange={(e) => updateContactCode(code.carrierId, e.target.value)}
+                value={code.contactCode || code.code || ''}
+                onChange={(e) => updateContactCode(code.carrierId || code.carrier || '', e.target.value)}
                 placeholder="접점 코드 입력"
                 className="text-sm"
               />
             ) : (
               <div className="p-2 bg-gray-50 rounded text-sm min-h-[36px] flex items-center">
-                {code.contactCode || '미설정'}
+                {code.contactCode || code.code || '미설정'}
               </div>
             )}
           </div>
@@ -880,7 +885,7 @@ export function AdminPanel() {
 
   const { data: pricingTables } = useQuery({
     queryKey: ['/api/pricing-tables'],
-    queryFn: () => apiRequest('/api/pricing-tables') as Promise<PricingTable[]>,
+    queryFn: () => apiRequest('/api/pricing-tables'),
   });
 
   const { data: documentTemplates } = useQuery({
@@ -2299,7 +2304,7 @@ export function AdminPanel() {
                             <Button
                               variant="outline"
                               size="sm"
-                              onClick={() => handleDeleteContactCode(code.id)}
+                              onClick={() => handleDeleteContactCode(code.id || 0)}
                               className="text-red-600 hover:text-red-700"
                             >
                               <Trash2 className="h-4 w-4" />
@@ -2530,7 +2535,7 @@ export function AdminPanel() {
                             <tr key={worker.workerName} className={index < 3 ? 'bg-green-50' : ''}>
                               <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                                 <button
-                                  onClick={() => handleWorkerClick({ id: worker.workerId, name: worker.workerName })}
+                                  onClick={() => handleWorkerClick({ id: worker.dealerId || 0, name: worker.workerName })}
                                   className="text-blue-600 hover:text-blue-800 underline"
                                 >
                                   {worker.workerName}
@@ -3113,14 +3118,14 @@ export function AdminPanel() {
                   <div className="space-y-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                       {workerStats.map((stat, index) => (
-                        <div key={`${stat.storeName}-${stat.dealerId}`} className="border rounded-lg p-4 bg-white">
+                        <div key={`${stat.workerName}-${stat.dealerId}`} className="border rounded-lg p-4 bg-white">
                           <div className="flex items-center justify-between mb-3">
                             <div className="flex items-center space-x-3">
                               <div className="w-10 h-10 rounded-full bg-accent text-white flex items-center justify-center font-medium">
-                                {stat.storeName?.charAt(0) || 'S'}
+                                {stat.workerName?.charAt(0) || 'W'}
                               </div>
                               <div>
-                                <h4 className="font-medium text-gray-900">{stat.storeName || '판매점 정보 없음'}</h4>
+                                <h4 className="font-medium text-gray-900">{stat.workerName || '근무자 정보 없음'}</h4>
                                 <p className="text-sm text-gray-500">
                                   {dealers?.find(d => d.id === stat.dealerId)?.name || '대리점 정보 없음'}
                                 </p>
@@ -3335,7 +3340,7 @@ export function AdminPanel() {
               <CardContent>
                 {pricingTables && pricingTables.length > 0 ? (
                   <div className="space-y-4">
-                    {pricingTables.map((table) => (
+                    {pricingTables.map((table: any) => (
                       <div key={table.id} className={`border rounded-lg p-4 ${table.isActive ? 'ring-2 ring-accent' : ''}`}>
                         <div className="flex items-center justify-between">
                           <div className="flex items-center space-x-4">
