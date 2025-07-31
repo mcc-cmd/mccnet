@@ -66,6 +66,7 @@ export function Documents() {
     additionalServiceIds: [] as string[],
     registrationFeePrepaid: false, // 가입비 선납
     registrationFeePostpaid: false, // 가입비 후납
+    registrationFeeInstallment: false, // 가입비 분납
     simFeePrepaid: false, // 유심 선납
     simFeePostpaid: false, // 유심 후납
     bundleApplied: false, // 결합
@@ -1275,7 +1276,8 @@ export function Documents() {
                             setActivationForm(prev => ({
                               ...prev,
                               registrationFeePrepaid: e.target.checked,
-                              registrationFeePostpaid: e.target.checked ? false : prev.registrationFeePostpaid
+                              registrationFeePostpaid: e.target.checked ? false : prev.registrationFeePostpaid,
+                              registrationFeeInstallment: e.target.checked ? false : prev.registrationFeeInstallment
                             }));
                           }}
                           className="rounded"
@@ -1290,12 +1292,29 @@ export function Documents() {
                             setActivationForm(prev => ({
                               ...prev,
                               registrationFeePostpaid: e.target.checked,
-                              registrationFeePrepaid: e.target.checked ? false : prev.registrationFeePrepaid
+                              registrationFeePrepaid: e.target.checked ? false : prev.registrationFeePrepaid,
+                              registrationFeeInstallment: e.target.checked ? false : prev.registrationFeeInstallment
                             }));
                           }}
                           className="rounded"
                         />
                         <span className="text-sm">후납</span>
+                      </label>
+                      <label className="flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          checked={activationForm.registrationFeeInstallment}
+                          onChange={(e) => {
+                            setActivationForm(prev => ({
+                              ...prev,
+                              registrationFeeInstallment: e.target.checked,
+                              registrationFeePrepaid: e.target.checked ? false : prev.registrationFeePrepaid,
+                              registrationFeePostpaid: e.target.checked ? false : prev.registrationFeePostpaid
+                            }));
+                          }}
+                          className="rounded"
+                        />
+                        <span className="text-sm">분납</span>
                       </label>
                     </div>
                   </div>

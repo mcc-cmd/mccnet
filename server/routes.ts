@@ -738,7 +738,7 @@ router.patch('/api/documents/:id/activation', requireAuth, async (req: any, res)
 router.patch('/api/documents/:id/service-plan', requireAuth, async (req: any, res) => {
   try {
     const id = parseInt(req.params.id);
-    const { servicePlanId, additionalServiceIds, registrationFeePrepaid, registrationFeePostpaid, simFeePrepaid, simFeePostpaid, bundleApplied, bundleNotApplied, deviceModel, simNumber } = req.body;
+    const { servicePlanId, additionalServiceIds, registrationFeePrepaid, registrationFeePostpaid, registrationFeeInstallment, simFeePrepaid, simFeePostpaid, bundleApplied, bundleNotApplied, deviceModel, simNumber } = req.body;
     
     console.log('Service plan update request:', {
       id,
@@ -746,6 +746,7 @@ router.patch('/api/documents/:id/service-plan', requireAuth, async (req: any, re
       additionalServiceIds,
       registrationFeePrepaid,
       registrationFeePostpaid,
+      registrationFeeInstallment,
       simFeePrepaid,
       simFeePostpaid,
       bundleApplied,
@@ -759,6 +760,7 @@ router.patch('/api/documents/:id/service-plan', requireAuth, async (req: any, re
       additionalServiceIds,
       registrationFeePrepaid: registrationFeePrepaid || false,
       registrationFeePostpaid: registrationFeePostpaid || false,
+      registrationFeeInstallment: registrationFeeInstallment || false,
       simFeePrepaid: simFeePrepaid || false,
       simFeePostpaid: simFeePostpaid || false,
       bundleApplied: bundleApplied || false,

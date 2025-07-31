@@ -75,6 +75,13 @@ export interface Document {
   servicePlanId?: number;
   additionalServiceIds?: string; // JSON 배열 형태로 저장
   registrationFee?: number;
+  registrationFeePrepaid?: boolean; // 가입비 선납
+  registrationFeePostpaid?: boolean; // 가입비 후납
+  registrationFeeInstallment?: boolean; // 가입비 분납
+  simFeePrepaid?: boolean; // 유심비 선납
+  simFeePostpaid?: boolean; // 유심비 후납
+  bundleApplied?: boolean; // 결합 적용
+  bundleNotApplied?: boolean; // 결합 미적용
   bundleDiscount?: number;
   totalMonthlyFee?: number;
   // 단말기 정보
@@ -224,6 +231,7 @@ export const updateActivationStatusSchema = z.object({
   additionalServiceIds: z.array(z.union([z.string(), z.number()])).optional(),
   registrationFeePrepaid: z.boolean().optional(),
   registrationFeePostpaid: z.boolean().optional(),
+  registrationFeeInstallment: z.boolean().optional(),
   simFeePrepaid: z.boolean().optional(),
   simFeePostpaid: z.boolean().optional(),
   bundleApplied: z.boolean().optional(),

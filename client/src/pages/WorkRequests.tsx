@@ -43,19 +43,13 @@ export default function WorkRequests() {
   // 서비스 플랜 조회
   const { data: servicePlans = [] } = useQuery({
     queryKey: ['/api/service-plans'],
-    queryFn: async () => {
-      const response = await apiRequest('GET', '/api/service-plans');
-      return response.json();
-    }
+    queryFn: () => apiRequest('/api/service-plans') as Promise<any[]>
   });
 
   // 부가 서비스 조회
   const { data: additionalServices = [] } = useQuery({
     queryKey: ['/api/additional-services'],
-    queryFn: async () => {
-      const response = await apiRequest('GET', '/api/additional-services');
-      return response.json();
-    }  
+    queryFn: () => apiRequest('/api/additional-services') as Promise<any[]>
   });
 
   // 활성화 상태 변경 폼
@@ -71,6 +65,7 @@ export default function WorkRequests() {
       additionalServices: [],
       registrationFeePrepaid: false,
       registrationFeePostpaid: false,
+      registrationFeeInstallment: false,
       simFeePrepaid: false,
       simFeePostpaid: false,
       bundleApplied: false,
@@ -116,6 +111,7 @@ export default function WorkRequests() {
       additionalServices: document.additionalServices || [],
       registrationFeePrepaid: document.registrationFeePrepaid || false,
       registrationFeePostpaid: document.registrationFeePostpaid || false,
+      registrationFeeInstallment: document.registrationFeeInstallment || false,
       simFeePrepaid: document.simFeePrepaid || false,
       simFeePostpaid: document.simFeePostpaid || false,
       bundleApplied: document.bundleApplied || false,
@@ -385,7 +381,7 @@ export default function WorkRequests() {
                                 />
                               </FormControl>
                               <FormLabel className="text-sm font-normal">
-                                {service.name}
+                                {service.serviceName || service.name}
                               </FormLabel>
                             </FormItem>
                           );
@@ -413,6 +409,7 @@ export default function WorkRequests() {
                                 field.onChange(checked);
                                 if (checked) {
                                   statusForm.setValue('registrationFeePostpaid', false);
+                                  statusForm.setValue('registrationFeeInstallment', false);
                                 }
                               }}
                             />
@@ -433,11 +430,33 @@ export default function WorkRequests() {
                                 field.onChange(checked);
                                 if (checked) {
                                   statusForm.setValue('registrationFeePrepaid', false);
+                                  statusForm.setValue('registrationFeeInstallment', false);
                                 }
                               }}
                             />
                           </FormControl>
                           <FormLabel className="text-sm font-normal">후납</FormLabel>
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={statusForm.control}
+                      name="registrationFeeInstallment"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                          <FormControl>
+                            <Checkbox
+                              checked={field.value}
+                              onCheckedChange={(checked) => {
+                                field.onChange(checked);
+                                if (checked) {
+                                  statusForm.setValue('registrationFeePrepaid', false);
+                                  statusForm.setValue('registrationFeePostpaid', false);
+                                }
+                              }}
+                            />
+                          </FormControl>
+                          <FormLabel className="text-sm font-normal">분납</FormLabel>
                         </FormItem>
                       )}
                     />

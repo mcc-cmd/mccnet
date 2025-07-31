@@ -1023,13 +1023,14 @@ class SqliteStorage implements IStorage {
   }
 
   // Direct service plan update in documents table
-  async updateDocumentServicePlanDirect(id: number, data: { servicePlanId?: number | null; additionalServiceIds?: string; registrationFeePrepaid?: boolean; registrationFeePostpaid?: boolean; simFeePrepaid?: boolean; simFeePostpaid?: boolean; bundleApplied?: boolean; bundleNotApplied?: boolean; deviceModel?: string | null; simNumber?: string | null; subscriptionNumber?: string | null; dealerNotes?: string | null }): Promise<Document> {
+  async updateDocumentServicePlanDirect(id: number, data: { servicePlanId?: number | null; additionalServiceIds?: string; registrationFeePrepaid?: boolean; registrationFeePostpaid?: boolean; registrationFeeInstallment?: boolean; simFeePrepaid?: boolean; simFeePostpaid?: boolean; bundleApplied?: boolean; bundleNotApplied?: boolean; deviceModel?: string | null; simNumber?: string | null; subscriptionNumber?: string | null; dealerNotes?: string | null }): Promise<Document> {
     const query = `
       UPDATE documents 
       SET service_plan_id = ?, 
           additional_service_ids = ?, 
           registration_fee_prepaid = ?, 
           registration_fee_postpaid = ?, 
+          registration_fee_installment = ?,
           sim_fee_prepaid = ?,
           sim_fee_postpaid = ?,
           bundle_applied = ?,
@@ -1047,6 +1048,7 @@ class SqliteStorage implements IStorage {
       data.additionalServiceIds || null, 
       data.registrationFeePrepaid ? 1 : 0, 
       data.registrationFeePostpaid ? 1 : 0, 
+      data.registrationFeeInstallment ? 1 : 0,
       data.simFeePrepaid ? 1 : 0, 
       data.simFeePostpaid ? 1 : 0, 
       data.bundleApplied ? 1 : 0, 
@@ -1083,6 +1085,7 @@ class SqliteStorage implements IStorage {
       additionalServiceIds: document.additional_service_ids,
       registrationFeePrepaid: Boolean(document.registration_fee_prepaid),
       registrationFeePostpaid: Boolean(document.registration_fee_postpaid),
+      registrationFeeInstallment: Boolean(document.registration_fee_installment),
       simFeePrepaid: Boolean(document.sim_fee_prepaid),
       simFeePostpaid: Boolean(document.sim_fee_postpaid),
       bundleApplied: Boolean(document.bundle_applied),
@@ -1408,6 +1411,7 @@ class SqliteStorage implements IStorage {
       additionalServiceIds: d.additional_service_ids,
       registrationFeePrepaid: Boolean(d.registration_fee_prepaid),
       registrationFeePostpaid: Boolean(d.registration_fee_postpaid),
+      registrationFeeInstallment: Boolean(d.registration_fee_installment),
       simFeePrepaid: Boolean(d.sim_fee_prepaid),
       simFeePostpaid: Boolean(d.sim_fee_postpaid),
       bundleApplied: Boolean(d.bundle_applied),
@@ -1600,16 +1604,12 @@ class SqliteStorage implements IStorage {
       additionalServiceIds: result.additional_service_ids,
       registrationFeePrepaid: Boolean(result.registration_fee_prepaid),
       registrationFeePostpaid: Boolean(result.registration_fee_postpaid),
+      registrationFeeInstallment: Boolean(result.registration_fee_installment),
       simFeePrepaid: Boolean(result.sim_fee_prepaid),
       simFeePostpaid: Boolean(result.sim_fee_postpaid),
       bundleApplied: Boolean(result.bundle_applied),
       bundleNotApplied: Boolean(result.bundle_not_applied),
       dealerNotes: result.dealer_notes,
-      registrationFeePostpaid: Boolean(result.registration_fee_postpaid),
-      simFeePrepaid: Boolean(result.sim_fee_prepaid),
-      simFeePostpaid: Boolean(result.sim_fee_postpaid),
-      bundleApplied: Boolean(result.bundle_applied),
-      bundleNotApplied: Boolean(result.bundle_not_applied),
       deviceModel: result.device_model,
       simNumber: result.sim_number,
       subscriptionNumber: result.subscription_number
@@ -1671,6 +1671,7 @@ class SqliteStorage implements IStorage {
       totalMonthlyFee: result.total_monthly_fee,
       registrationFeePrepaid: Boolean(result.registration_fee_prepaid),
       registrationFeePostpaid: Boolean(result.registration_fee_postpaid),
+      registrationFeeInstallment: Boolean(result.registration_fee_installment),
       simFeePrepaid: Boolean(result.sim_fee_prepaid),
       simFeePostpaid: Boolean(result.sim_fee_postpaid),
       bundleApplied: Boolean(result.bundle_applied),
