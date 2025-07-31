@@ -101,6 +101,7 @@ export function Dashboard() {
     queryFn: () => apiRequest('/api/dashboard/today-stats') as Promise<{
       todayReception: number;
       todayActivation: number;
+      carrierStats: Array<{ carrier: string; count: number }>;
     }>,
   });
 
@@ -468,6 +469,26 @@ export function Dashboard() {
                     </div>
                   </div>
                 </div>
+
+                {/* 통신사별 개통 현황 */}
+                {todayStats?.carrierStats && todayStats.carrierStats.length > 0 && (
+                  <div className="mt-6">
+                    <h4 className="text-sm font-medium text-gray-900 mb-3">당일 통신사별 개통 현황</h4>
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                      {todayStats.carrierStats.map((stat, index) => (
+                        <div 
+                          key={stat.carrier} 
+                          className="bg-white border rounded-lg p-3 text-center hover:shadow-sm transition-shadow"
+                        >
+                          <div className="text-lg font-bold text-gray-900">{stat.count}</div>
+                          <div className="text-xs text-gray-600 mt-1 break-words leading-tight">
+                            {stat.carrier}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 {/* 추가 정보 */}
                 <div className="mt-6 p-4 bg-gray-50 rounded-lg border">
