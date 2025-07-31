@@ -1380,12 +1380,14 @@ class SqliteStorage implements IStorage {
   async getDocuments(dealerId?: number, filters?: { status?: string; activationStatus?: string; search?: string; startDate?: string; endDate?: string; workerFilter?: string }, userId?: number): Promise<Array<Document & { dealerName: string; userName: string; activatedByName?: string }>> {
     let query = `
       SELECT d.*, dealers.name as dealer_name, u.name as user_name,
-             COALESCE(activated_user.name, activated_admin.name) as activated_by_name
+             COALESCE(activated_user.name, activated_admin.name) as activated_by_name,
+             sp.plan_name as service_plan_name
       FROM documents d
       LEFT JOIN dealers ON d.dealer_id = dealers.id
       JOIN users u ON d.user_id = u.id
       LEFT JOIN users activated_user ON d.activated_by = activated_user.id
       LEFT JOIN admin_users activated_admin ON d.activated_by = activated_admin.id
+      LEFT JOIN service_plans sp ON d.service_plan_id = sp.id
       WHERE 1=1
     `;
     let params: any[] = [];
@@ -1467,6 +1469,7 @@ class SqliteStorage implements IStorage {
       simNumber: d.sim_number,
       subscriptionNumber: d.subscription_number,
       servicePlanId: d.service_plan_id,
+      servicePlanName: d.service_plan_name,
       additionalServiceIds: d.additional_service_ids,
       registrationFeePrepaid: Boolean(d.registration_fee_prepaid),
       registrationFeePostpaid: Boolean(d.registration_fee_postpaid),
@@ -1480,7 +1483,7 @@ class SqliteStorage implements IStorage {
       dealerName: d.dealer_name,
       userName: d.user_name,
       activatedByName: d.activated_by_name
-    } as Document & { dealerName: string; userName: string; activatedByName?: string }));
+    } as Document & { dealerName: string; userName: string; activatedByName?: string; servicePlanName?: string }));
   }
 
   async checkDuplicateDocument(data: { customerName: string; customerPhone: string; storeName?: string; contactCode?: string }): Promise<Array<Document & { dealerName: string }>> {

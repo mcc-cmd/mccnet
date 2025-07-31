@@ -73,6 +73,7 @@ export interface Document {
   supplementRequiredAt?: Date; // 보완 요청 일시
   // 개통 완료 후 플랜 정보
   servicePlanId?: number;
+  servicePlanName?: string; // 요금제명 (조인으로 가져온 값)
   additionalServiceIds?: string; // JSON 배열 형태로 저장
   registrationFee?: number;
   registrationFeePrepaid?: boolean; // 가입비 선납
