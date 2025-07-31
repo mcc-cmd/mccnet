@@ -678,6 +678,11 @@ router.patch('/api/documents/:id/activation', requireAuth, async (req: any, res)
       data.supplementRequiredBy = req.session.userId;
     }
     
+    // 폐기 상태일 때 처리한 근무자 ID 추가 (관리자 포함)
+    if (data.activationStatus === '폐기') {
+      data.activatedBy = req.session.userId;
+    }
+    
     const workerId = isWorker ? req.session.userId : undefined;
     
     // 개통완료 시 요금제 정보도 함께 저장

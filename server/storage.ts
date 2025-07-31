@@ -1668,8 +1668,8 @@ class SqliteStorage implements IStorage {
       params.push(data.discardReason || null);
     }
 
-    // 개통완료 또는 기타완료 시 작업자 ID와 시간 기록, 그리고 기기/유심/가입번호 정보
-    if ((data.activationStatus === '개통' || data.activationStatus === '기타완료') && data.activatedBy) {
+    // 개통완료, 기타완료, 폐기 시 작업자 ID와 시간 기록
+    if ((data.activationStatus === '개통' || data.activationStatus === '기타완료' || data.activationStatus === '폐기') && data.activatedBy) {
       updateQuery += `, activated_by = ?, activated_at = CURRENT_TIMESTAMP`;
       params.push(data.activatedBy);
     } else if (data.activationStatus === '개통' || data.activationStatus === '기타완료' || data.activationStatus === '취소' || data.activationStatus === '폐기') {
