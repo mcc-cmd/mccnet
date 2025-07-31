@@ -119,6 +119,7 @@ const manualSettlementSchema = z.object({
 type ManualSettlementForm = z.infer<typeof manualSettlementSchema>;
 
 export function Settlements() {
+  const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const apiRequestHook = useApiRequest();
@@ -127,6 +128,24 @@ export function Settlements() {
   const [searchQuery, setSearchQuery] = useState('');
   const [manualDialogOpen, setManualDialogOpen] = useState(false);
   const [uploadedPricingData, setUploadedPricingData] = useState<any[]>([]);
+
+  // 관리자 권한 확인
+  if (user?.userType !== 'admin') {
+    return (
+      <Layout title="정산 관리">
+        <div className="container mx-auto p-6">
+          <div className="text-center py-20">
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4">
+              접근 권한이 없습니다
+            </h1>
+            <p className="text-gray-600 dark:text-gray-400">
+              정산 관리는 관리자만 접근할 수 있습니다.
+            </p>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
   
   // 개통 완료된 문서 조회 (정산 데이터로 활용)
   const { data: completedDocuments, isLoading, refetch } = useQuery({
@@ -873,7 +892,10 @@ export function Settlements() {
                   className="flex-1"
                 />
                 <Button
-                  onClick={() => document.querySelector('input[type="file"]')?.click()}
+                  onClick={() => {
+                    const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
+                    fileInput?.click();
+                  }}
                   className="bg-blue-600 hover:bg-blue-700"
                 >
                   <FileText className="w-4 h-4 mr-2" />

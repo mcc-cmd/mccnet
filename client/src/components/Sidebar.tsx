@@ -43,10 +43,10 @@ export function Sidebar({ isOpen = true, onClose }: SidebarProps) {
   const isAdmin = user?.userType === 'admin';
   const isWorker = user?.role === 'dealer_worker';
   
-  // 관리자와 작업자는 모든 메뉴 접근 가능, 일반 대리점 사용자는 정산 관리 제외
+  // 정산 관리는 관리자만 접근 가능
   let baseNavigation = navigation;
-  if (!isAdmin && !isWorker) {
-    // 일반 대리점 사용자는 정산 관리 제외
+  if (!isAdmin) {
+    // 관리자가 아닌 경우 정산 관리 제외
     baseNavigation = navigation.filter(item => item.name !== '정산 관리');
   }
   
