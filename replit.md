@@ -325,6 +325,9 @@ This is a document management system built for MCC네트월드 telecommunication
 - July 31, 2025. Improved contact code upload API with enhanced logging, file cleanup, and structured error responses
 - July 31, 2025. Added detailed error messaging showing duplicate contact code counts and specific problematic entries
 - July 31, 2025. Implemented user-friendly error display with helpful tips for duplicate file upload scenarios
+- July 31, 2025. Reorganized dashboard layout: expanded daily statistics to full width with 4-column grid (당일 접수건, 당일 개통건, 단가표 최신 공지, 빠른 기능)
+- July 31, 2025. Moved carrier/worker statistics to bottom of page in horizontal layout with unified card design and compact date filter controls
+- July 31, 2025. Enhanced today's statistics section with integrated pricing announcements and quick action buttons for improved user experience
 
 ## User Preferences
 
