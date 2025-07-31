@@ -54,7 +54,7 @@ export interface Document {
   carrier: string; // 통신사
   previousCarrier?: string; // 이전통신사
   status: '접수' | '보완필요' | '완료';
-  activationStatus: '대기' | '진행중' | '업무요청중' | '보완필요' | '개통' | '취소' | '기타완료';
+  activationStatus: '대기' | '진행중' | '업무요청중' | '보완필요' | '개통' | '취소' | '기타완료' | '폐기';
   filePath?: string | null;
   fileName?: string | null;
   fileSize?: number | null;
@@ -89,6 +89,7 @@ export interface Document {
   simNumber?: string; // 유심번호
   subscriptionNumber?: string; // 가입번호/계약번호
   dealerNotes?: string; // 판매점 전달 메모
+  discardReason?: string; // 폐기 사유
 }
 
 export interface ChatRoom {
@@ -212,12 +213,12 @@ export const uploadDocumentSchema = z.object({
 
 export const updateDocumentStatusSchema = z.object({
   status: z.enum(['접수', '보완필요', '완료']),
-  activationStatus: z.enum(['대기', '진행중', '업무요청중', '개통', '취소']).optional(),
+  activationStatus: z.enum(['대기', '진행중', '업무요청중', '개통', '취소', '폐기']).optional(),
   notes: z.string().optional(),
 });
 
 export const updateActivationStatusSchema = z.object({
-  activationStatus: z.enum(['대기', '진행중', '업무요청중', '개통', '취소', '보완필요', '기타완료']),
+  activationStatus: z.enum(['대기', '진행중', '업무요청중', '개통', '취소', '보완필요', '기타완료', '폐기']),
   notes: z.string().optional(),
   supplementNotes: z.string().optional(), // 보완 상세 내용
   activatedBy: z.number().optional(), // 개통완료 처리한 근무자 ID
@@ -239,6 +240,8 @@ export const updateActivationStatusSchema = z.object({
   
   // 판매점 전달 메모
   dealerNotes: z.string().optional(),
+  // 폐기 사유
+  discardReason: z.string().optional(),
 });
 
 // Type exports
@@ -279,6 +282,7 @@ export interface DashboardStats {
   pendingActivations: number;
   inProgressCount: number;
   otherCompletedCount?: number;
+  discardedCount?: number;
 }
 
 // Service Plans types and schemas

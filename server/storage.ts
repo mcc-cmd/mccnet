@@ -96,7 +96,7 @@ db.exec(`
     carrier TEXT NOT NULL,
     previous_carrier TEXT,
     status TEXT NOT NULL CHECK (status IN ('접수', '보완필요', '완료')),
-    activation_status TEXT NOT NULL DEFAULT '대기' CHECK (activation_status IN ('대기', '진행중', '업무요청중', '개통', '취소', '보완필요', '기타완료')),
+    activation_status TEXT NOT NULL DEFAULT '대기' CHECK (activation_status IN ('대기', '진행중', '업무요청중', '개통', '취소', '보완필요', '기타완료', '폐기')),
     file_path TEXT,
     file_name TEXT,
     file_size INTEGER,
@@ -1476,6 +1476,7 @@ class SqliteStorage implements IStorage {
       bundleApplied: Boolean(d.bundle_applied),
       bundleNotApplied: Boolean(d.bundle_not_applied),
       dealerNotes: d.dealer_notes,
+      discardReason: d.discard_reason,
       dealerName: d.dealer_name,
       userName: d.user_name,
       activatedByName: d.activated_by_name
@@ -1661,11 +1662,17 @@ class SqliteStorage implements IStorage {
       params.push(data.supplementNotes || null, data.supplementRequiredBy || null);
     }
 
+    // 폐기 상태일 때 폐기 사유 추가
+    if (data.activationStatus === '폐기') {
+      updateQuery += `, discard_reason = ?`;
+      params.push(data.discardReason || null);
+    }
+
     // 개통완료 또는 기타완료 시 작업자 ID와 시간 기록, 그리고 기기/유심/가입번호 정보
     if ((data.activationStatus === '개통' || data.activationStatus === '기타완료') && data.activatedBy) {
       updateQuery += `, activated_by = ?, activated_at = CURRENT_TIMESTAMP`;
       params.push(data.activatedBy);
-    } else if (data.activationStatus === '개통' || data.activationStatus === '기타완료' || data.activationStatus === '취소') {
+    } else if (data.activationStatus === '개통' || data.activationStatus === '기타완료' || data.activationStatus === '취소' || data.activationStatus === '폐기') {
       updateQuery += `, activated_at = CURRENT_TIMESTAMP`;
     }
     
@@ -1923,10 +1930,11 @@ class SqliteStorage implements IStorage {
     const activated = db.prepare(`SELECT COUNT(*) as count FROM documents${activationWhereClause}${activationWhereClause ? ' AND' : ' WHERE'} activation_status = ?`).get(...activationParams, '개통') as { count: number };
     const otherCompleted = db.prepare(`SELECT COUNT(*) as count FROM documents${activationWhereClause}${activationWhereClause ? ' AND' : ' WHERE'} activation_status = ?`).get(...activationParams, '기타완료') as { count: number };
     const canceled = db.prepare(`SELECT COUNT(*) as count FROM documents${activationWhereClause}${activationWhereClause ? ' AND' : ' WHERE'} activation_status = ?`).get(...activationParams, '취소') as { count: number };
+    const discarded = db.prepare(`SELECT COUNT(*) as count FROM documents${activationWhereClause}${activationWhereClause ? ' AND' : ' WHERE'} activation_status = ?`).get(...activationParams, '폐기') as { count: number };
     const pendingActivations = db.prepare(`SELECT COUNT(*) as count FROM documents${activationWhereClause}${activationWhereClause ? ' AND' : ' WHERE'} activation_status = ?`).get(...activationParams, '대기') as { count: number };
     const inProgress = db.prepare(`SELECT COUNT(*) as count FROM documents${activationWhereClause}${activationWhereClause ? ' AND' : ' WHERE'} activation_status = ?`).get(...activationParams, '진행중') as { count: number };
 
-    const stats: DashboardStats & { carrierStats?: any[]; workerStats?: any[]; otherCompletedCount?: number } = {
+    const stats: DashboardStats & { carrierStats?: any[]; workerStats?: any[]; otherCompletedCount?: number; discardedCount?: number } = {
       totalDocuments: total.count,
       pendingDocuments: pending.count,
       completedDocuments: completed.count,
@@ -1936,7 +1944,8 @@ class SqliteStorage implements IStorage {
       canceledCount: canceled.count,
       pendingActivations: pendingActivations.count,
       inProgressCount: inProgress.count,
-      otherCompletedCount: otherCompleted.count
+      otherCompletedCount: otherCompleted.count,
+      discardedCount: discarded.count
     };
 
     // 관리자에게만 통신사별/근무자별 통계 제공

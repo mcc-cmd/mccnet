@@ -286,7 +286,7 @@ export function Dashboard() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-6">
+            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-7">
               <div className="text-center p-4 bg-blue-50 rounded-lg">
                 <div className="text-2xl font-bold text-blue-600">
                   {statsLoading ? (
@@ -352,6 +352,17 @@ export function Dashboard() {
                   )}
                 </div>
                 <div className="text-sm text-red-800 mt-1">취소</div>
+              </div>
+              
+              <div className="text-center p-4 bg-gray-50 rounded-lg">
+                <div className="text-2xl font-bold text-gray-600">
+                  {statsLoading ? (
+                    <Skeleton className="h-8 w-12 mx-auto" />
+                  ) : (
+                    (stats as any)?.discardedCount || 0
+                  )}
+                </div>
+                <div className="text-sm text-gray-800 mt-1">폐기</div>
               </div>
             </div>
           </CardContent>

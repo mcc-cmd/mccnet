@@ -12,7 +12,8 @@ import {
   CheckCircle,
   X,
   Clock,
-  Star
+  Star,
+  Trash2
 } from 'lucide-react';
 import logoImage from '@assets/KakaoTalk_20250626_162541112-removebg-preview_1751604392501.png';
 
@@ -24,6 +25,7 @@ const navigation = [
   { name: '개통완료 관리', href: '/completed', icon: CheckCircle },
   { name: '기타완료', href: '/other-completions', icon: Star },
   { name: '개통취소', href: '/cancelled', icon: X },
+  { name: '폐기', href: '/discarded', icon: Trash2 },
   { name: '서식지 다운로드', href: '/downloads', icon: Download },
   { name: '정산 관리', href: '/settlements', icon: Calculator },
 ];

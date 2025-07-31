@@ -55,7 +55,8 @@ export function Documents() {
     simFeePrepaid: false,
     simFeePostpaid: false,
     bundleApplied: false,
-    bundleNotApplied: false
+    bundleNotApplied: false,
+    discardReason: ''
   });
   
   const [servicePlanDialogOpen, setServicePlanDialogOpen] = useState(false);
@@ -312,7 +313,8 @@ export function Documents() {
       simFeePrepaid: (doc as any).simFeePrepaid || false,
       simFeePostpaid: (doc as any).simFeePostpaid || false,
       bundleApplied: (doc as any).bundleApplied || false,
-      bundleNotApplied: (doc as any).bundleNotApplied || false
+      bundleNotApplied: (doc as any).bundleNotApplied || false,
+      discardReason: (doc as any).discardReason || ''
     });
     setActivationDialogOpen(true);
   };
@@ -325,6 +327,16 @@ export function Documents() {
       toast({
         title: "오류",
         description: "개통완료 처리 시 가입번호는 필수 입력 사항입니다.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // 폐기 시 폐기 사유 검증
+    if (activationForm.activationStatus === '폐기' && !activationForm.discardReason?.trim()) {
+      toast({
+        title: "오류",
+        description: "폐기 처리 시 폐기 사유는 필수 입력 사항입니다.",
         variant: "destructive"
       });
       return;
@@ -386,7 +398,8 @@ export function Documents() {
         simFeePrepaid: false,
         simFeePostpaid: false,
         bundleApplied: false,
-        bundleNotApplied: false
+        bundleNotApplied: false,
+        discardReason: ''
       });
       toast({
         title: "성공",
@@ -429,6 +442,8 @@ export function Documents() {
         return <Badge variant="outline" className="text-green-600 border-green-600 text-xs px-1 py-0.5">개통</Badge>;
       case '취소':
         return <Badge variant="outline" className="text-red-600 border-red-600 text-xs px-1 py-0.5">취소</Badge>;
+      case '폐기':
+        return <Badge variant="outline" className="text-gray-600 border-gray-600 text-xs px-1 py-0.5">폐기</Badge>;
       default:
         return <Badge variant="secondary" className="text-xs px-1 py-0.5">{status}</Badge>;
     }
@@ -1158,6 +1173,7 @@ export function Documents() {
                       <SelectItem value="기타완료">기타완료</SelectItem>
                     )}
                     <SelectItem value="취소">취소</SelectItem>
+                    <SelectItem value="폐기">폐기</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -1204,6 +1220,29 @@ export function Documents() {
                         placeholder="가입 번호를 입력하세요"
                       />
                     </div>
+                  </div>
+                </div>
+              )}
+
+              {/* 폐기 시 폐기 사유 입력 */}
+              {activationForm.activationStatus === '폐기' && (
+                <div className="bg-gray-50 p-4 rounded-lg space-y-4">
+                  <h4 className="font-medium text-gray-900">폐기 정보</h4>
+                  
+                  <div>
+                    <Label htmlFor="discardReason">폐기 사유 (필수)</Label>
+                    <Textarea
+                      id="discardReason"
+                      placeholder="폐기 사유를 상세히 입력하세요..."
+                      value={activationForm.discardReason || ''}
+                      onChange={(e) => setActivationForm(prev => ({ ...prev, discardReason: e.target.value }))}
+                      rows={3}
+                      required
+                      className="mt-2"
+                    />
+                    <p className="text-sm text-gray-600 mt-1">
+                      문서 폐기 사유를 반드시 기록해주세요.
+                    </p>
                   </div>
                 </div>
               )}
@@ -1486,6 +1525,25 @@ export function Documents() {
                 </div>
               )}
               
+              {/* 폐기 사유 입력 - 폐기 상태에서만 작성 */}
+              {activationForm.activationStatus === '폐기' && (
+                <div>
+                  <Label htmlFor="discardReason">폐기 사유</Label>
+                  <Textarea
+                    id="discardReason"
+                    placeholder="폐기 사유를 상세히 입력하세요..."
+                    value={activationForm.discardReason || ''}
+                    onChange={(e) => setActivationForm(prev => ({ ...prev, discardReason: e.target.value }))}
+                    rows={3}
+                    className="border-gray-200 focus:border-gray-400"
+                    required
+                  />
+                  <div className="text-xs mt-1 text-gray-600">
+                    폐기 사유는 필수 입력 사항입니다.
+                  </div>
+                </div>
+              )}
+
               {/* 판매점 전달 메모 - 개통완료 또는 기타완료 상태에서만 작성 */}
               {(activationForm.activationStatus === '개통' || activationForm.activationStatus === '기타완료') && (
                 <div>
