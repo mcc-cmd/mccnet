@@ -2158,21 +2158,27 @@ router.post('/api/contact-codes/upload-excel', contactCodeUpload.single('file'),
 
     // 임시 파일 삭제
     try {
-      await import('fs').then(fs => fs.unlinkSync(req.file.path));
+      if (filePath) {
+        fs.unlinkSync(filePath);
+      }
     } catch (error) {
       console.error('Failed to delete temp file:', error);
     }
 
+    console.log(`Upload completed: addedCodes=${addedCodes}, errors=${errors.length}`);
+
     if (addedCodes === 0 && errors.length > 0) {
       return res.status(400).json({ 
         error: '접점코드를 추가하지 못했습니다.',
-        details: errors.slice(0, 5) // 최대 5개 오류만 표시
+        details: errors.slice(0, 10), // 최대 10개 오류 표시
+        totalErrors: errors.length
       });
     }
 
     res.json({
       addedCodes,
-      errors: errors.length > 0 ? errors.slice(0, 5) : [],
+      errors: errors.length > 0 ? errors.slice(0, 10) : [],
+      totalErrors: errors.length,
       message: `${addedCodes}개의 접점코드가 성공적으로 추가되었습니다.${errors.length > 0 ? ` (${errors.length}개 오류)` : ''}`
     });
 

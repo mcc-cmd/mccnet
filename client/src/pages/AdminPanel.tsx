@@ -1254,12 +1254,23 @@ export function AdminPanel() {
       console.error('Contact code upload error:', error);
       
       let description = error.message || "접점코드 업로드에 실패했습니다.";
+      
+      // 상세 에러 정보 추가
       if (error.details) {
         if (Array.isArray(error.details)) {
-          description += `\n\n오류 상세:\n${error.details.join('\n')}`;
+          const errorCount = error.totalErrors || error.details.length;
+          description += `\n\n오류 발생 (총 ${errorCount}건):\n${error.details.slice(0, 5).join('\n')}`;
+          if (errorCount > 5) {
+            description += `\n... 외 ${errorCount - 5}건 더`;
+          }
         } else {
           description += `\n\n오류 상세: ${error.details}`;
         }
+      }
+      
+      // 중복 접점코드 오류인 경우 안내 메시지 추가
+      if (description.includes('이미 존재합니다')) {
+        description += '\n\n💡 팁: 동일한 파일을 다시 업로드하면 중복 오류가 발생합니다.';
       }
       
       toast({
