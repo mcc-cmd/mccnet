@@ -96,7 +96,7 @@ db.exec(`
     carrier TEXT NOT NULL,
     previous_carrier TEXT,
     status TEXT NOT NULL CHECK (status IN ('접수', '보완필요', '완료')),
-    activation_status TEXT NOT NULL DEFAULT '대기' CHECK (activation_status IN ('대기', '진행중', '업무요청중', '개통', '취소', '보완필요')),
+    activation_status TEXT NOT NULL DEFAULT '대기' CHECK (activation_status IN ('대기', '진행중', '업무요청중', '개통', '취소', '보완필요', '기타완료')),
     file_path TEXT,
     file_name TEXT,
     file_size INTEGER,
@@ -1660,16 +1660,16 @@ class SqliteStorage implements IStorage {
       params.push(data.supplementNotes || null, data.supplementRequiredBy || null);
     }
 
-    // 개통완료 시 작업자 ID와 시간 기록, 그리고 기기/유심/가입번호 정보
-    if (data.activationStatus === '개통' && data.activatedBy) {
+    // 개통완료 또는 기타완료 시 작업자 ID와 시간 기록, 그리고 기기/유심/가입번호 정보
+    if ((data.activationStatus === '개통' || data.activationStatus === '기타완료') && data.activatedBy) {
       updateQuery += `, activated_by = ?, activated_at = CURRENT_TIMESTAMP`;
       params.push(data.activatedBy);
-    } else if (data.activationStatus === '개통' || data.activationStatus === '취소') {
+    } else if (data.activationStatus === '개통' || data.activationStatus === '기타완료' || data.activationStatus === '취소') {
       updateQuery += `, activated_at = CURRENT_TIMESTAMP`;
     }
     
-    // 개통완료 시 기기/유심/가입번호 정보 및 판매점 메모 업데이트
-    if (data.activationStatus === '개통') {
+    // 개통완료 또는 기타완료 시 기기/유심/가입번호 정보 및 판매점 메모 업데이트
+    if (data.activationStatus === '개통' || data.activationStatus === '기타완료') {
       const now = new Date();
       const activationNumber = `개통${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}-${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}${String(now.getSeconds()).padStart(2, '0')}`;
       
@@ -1907,11 +1907,12 @@ class SqliteStorage implements IStorage {
     }
     
     const activated = db.prepare(`SELECT COUNT(*) as count FROM documents${activationWhereClause}${activationWhereClause ? ' AND' : ' WHERE'} activation_status = ?`).get(...activationParams, '개통') as { count: number };
+    const otherCompleted = db.prepare(`SELECT COUNT(*) as count FROM documents${activationWhereClause}${activationWhereClause ? ' AND' : ' WHERE'} activation_status = ?`).get(...activationParams, '기타완료') as { count: number };
     const canceled = db.prepare(`SELECT COUNT(*) as count FROM documents${activationWhereClause}${activationWhereClause ? ' AND' : ' WHERE'} activation_status = ?`).get(...activationParams, '취소') as { count: number };
     const pendingActivations = db.prepare(`SELECT COUNT(*) as count FROM documents${activationWhereClause}${activationWhereClause ? ' AND' : ' WHERE'} activation_status = ?`).get(...activationParams, '대기') as { count: number };
     const inProgress = db.prepare(`SELECT COUNT(*) as count FROM documents${activationWhereClause}${activationWhereClause ? ' AND' : ' WHERE'} activation_status = ?`).get(...activationParams, '진행중') as { count: number };
 
-    const stats: DashboardStats & { carrierStats?: any[]; workerStats?: any[] } = {
+    const stats: DashboardStats & { carrierStats?: any[]; workerStats?: any[]; otherCompletedCount?: number } = {
       totalDocuments: total.count,
       pendingDocuments: pending.count,
       completedDocuments: completed.count,
@@ -1920,7 +1921,8 @@ class SqliteStorage implements IStorage {
       activatedCount: activated.count,
       canceledCount: canceled.count,
       pendingActivations: pendingActivations.count,
-      inProgressCount: inProgress.count
+      inProgressCount: inProgress.count,
+      otherCompletedCount: otherCompleted.count
     };
 
     // 관리자에게만 통신사별/근무자별 통계 제공
@@ -1943,19 +1945,19 @@ class SqliteStorage implements IStorage {
         }
       }
       
-      // 통신사별 개통 수량
+      // 통신사별 개통 수량 (개통 + 기타완료)
       const carrierQuery = `
         SELECT 
           carrier,
           COUNT(*) as count
         FROM documents 
-        WHERE activation_status = '개통'${carrierDateFilter}
+        WHERE (activation_status = '개통' OR activation_status = '기타완료')${carrierDateFilter}
         GROUP BY carrier
         ORDER BY count DESC
       `;
       stats.carrierStats = db.prepare(carrierQuery).all(...dateParams) as any[];
 
-      // 근무자별 개통 수량
+      // 근무자별 개통 수량 (개통 + 기타완료)
       const workerQuery = `
         SELECT 
           u.id as workerId,
@@ -1963,7 +1965,7 @@ class SqliteStorage implements IStorage {
           COUNT(*) as count
         FROM documents d
         JOIN users u ON d.activated_by = u.id
-        WHERE d.activation_status = '개통'${workerDateFilter}
+        WHERE (d.activation_status = '개통' OR d.activation_status = '기타완료')${workerDateFilter}
         GROUP BY d.activated_by, u.id, u.name
         ORDER BY count DESC
       `;

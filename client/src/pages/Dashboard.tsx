@@ -266,7 +266,7 @@ export function Dashboard() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-5">
+            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-6">
               <div className="text-center p-4 bg-blue-50 rounded-lg">
                 <div className="text-2xl font-bold text-blue-600">
                   {statsLoading ? (
@@ -310,6 +310,17 @@ export function Dashboard() {
                   )}
                 </div>
                 <div className="text-sm text-green-800 mt-1">개통완료</div>
+              </div>
+              
+              <div className="text-center p-4 bg-purple-50 rounded-lg">
+                <div className="text-2xl font-bold text-purple-600">
+                  {statsLoading ? (
+                    <Skeleton className="h-8 w-12 mx-auto" />
+                  ) : (
+                    (stats as any)?.otherCompletedCount || 0
+                  )}
+                </div>
+                <div className="text-sm text-purple-800 mt-1">기타완료</div>
               </div>
               
               <div className="text-center p-4 bg-red-50 rounded-lg">

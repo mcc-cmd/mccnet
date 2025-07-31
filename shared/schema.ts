@@ -54,7 +54,7 @@ export interface Document {
   carrier: string; // 통신사
   previousCarrier?: string; // 이전통신사
   status: '접수' | '보완필요' | '완료';
-  activationStatus: '대기' | '진행중' | '업무요청중' | '보완필요' | '개통' | '취소';
+  activationStatus: '대기' | '진행중' | '업무요청중' | '보완필요' | '개통' | '취소' | '기타완료';
   filePath?: string | null;
   fileName?: string | null;
   fileSize?: number | null;
@@ -217,7 +217,7 @@ export const updateDocumentStatusSchema = z.object({
 });
 
 export const updateActivationStatusSchema = z.object({
-  activationStatus: z.enum(['대기', '진행중', '업무요청중', '개통', '취소', '보완필요']),
+  activationStatus: z.enum(['대기', '진행중', '업무요청중', '개통', '취소', '보완필요', '기타완료']),
   notes: z.string().optional(),
   supplementNotes: z.string().optional(), // 보완 상세 내용
   activatedBy: z.number().optional(), // 개통완료 처리한 근무자 ID
@@ -278,6 +278,7 @@ export interface DashboardStats {
   canceledCount: number;
   pendingActivations: number;
   inProgressCount: number;
+  otherCompletedCount?: number;
 }
 
 // Service Plans types and schemas

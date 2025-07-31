@@ -423,6 +423,8 @@ export function Documents() {
         return <Badge variant="outline" className="text-blue-600 border-blue-600 text-xs px-1 py-0.5">진행</Badge>;
       case '업무요청중':
         return <Badge variant="outline" className="text-purple-600 border-purple-600 text-xs px-1 py-0.5">업무요청</Badge>;
+      case '기타완료':
+        return <Badge variant="outline" className="text-purple-600 border-purple-600 text-xs px-1 py-0.5">기타완료</Badge>;
       case '개통':
         return <Badge variant="outline" className="text-green-600 border-green-600 text-xs px-1 py-0.5">개통</Badge>;
       case '취소':
@@ -1151,6 +1153,10 @@ export function Documents() {
                     <SelectItem value="업무요청중">업무요청중</SelectItem>
                     <SelectItem value="보완필요">보완필요</SelectItem>
                     <SelectItem value="개통">개통완료</SelectItem>
+                    {/* 기타 통신사에 대해서만 기타완료 옵션 표시 */}
+                    {selectedDocument?.carrier?.includes('기타') && (
+                      <SelectItem value="기타완료">기타완료</SelectItem>
+                    )}
                     <SelectItem value="취소">취소</SelectItem>
                   </SelectContent>
                 </Select>
@@ -1167,8 +1173,8 @@ export function Documents() {
                 />
               </div>
               
-              {/* 개통완료 시 요금제 정보 및 개통 정보 입력 */}
-              {activationForm.activationStatus === '개통' && (
+              {/* 개통완료 또는 기타완료 시 요금제 정보 및 개통 정보 입력 */}
+              {(activationForm.activationStatus === '개통' || activationForm.activationStatus === '기타완료') && (
                 <div className="bg-blue-50 p-4 rounded-lg space-y-4">
                   <h4 className="font-medium text-blue-900">개통 정보 입력</h4>
                   
@@ -1445,8 +1451,8 @@ export function Documents() {
                 </div>
               )}
               
-              {/* 판매점 전달 메모 - 개통완료 상태에서만 작성 */}
-              {activationForm.activationStatus === '개통' && (
+              {/* 판매점 전달 메모 - 개통완료 또는 기타완료 상태에서만 작성 */}
+              {(activationForm.activationStatus === '개통' || activationForm.activationStatus === '기타완료') && (
                 <div>
                   <Label htmlFor="dealerNotes">판매점 전달 메모</Label>
                   <Textarea
