@@ -1380,11 +1380,12 @@ class SqliteStorage implements IStorage {
   async getDocuments(dealerId?: number, filters?: { status?: string; activationStatus?: string; search?: string; startDate?: string; endDate?: string; workerFilter?: string }, userId?: number): Promise<Array<Document & { dealerName: string; userName: string; activatedByName?: string }>> {
     let query = `
       SELECT d.*, dealers.name as dealer_name, u.name as user_name,
-             activated_user.name as activated_by_name
+             COALESCE(activated_user.name, activated_admin.name) as activated_by_name
       FROM documents d
       LEFT JOIN dealers ON d.dealer_id = dealers.id
       JOIN users u ON d.user_id = u.id
       LEFT JOIN users activated_user ON d.activated_by = activated_user.id
+      LEFT JOIN admin_users activated_admin ON d.activated_by = activated_admin.id
       WHERE 1=1
     `;
     let params: any[] = [];
