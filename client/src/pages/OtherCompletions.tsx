@@ -162,6 +162,7 @@ export function OtherCompletions() {
                         <th className="text-left py-3 px-2 font-medium text-gray-700 text-sm">통신사</th>
                         <th className="text-left py-3 px-2 font-medium text-gray-700 text-sm">상태</th>
                         <th className="text-left py-3 px-2 font-medium text-gray-700 text-sm">완료일</th>
+                        <th className="text-left py-3 px-2 font-medium text-gray-700 text-sm">유심번호</th>
                         <th className="text-left py-3 px-2 font-medium text-gray-700 text-sm">처리자</th>
                         <th className="text-left py-3 px-2 font-medium text-gray-700 text-sm">작업</th>
                       </tr>
@@ -191,6 +192,9 @@ export function OtherCompletions() {
                           </td>
                           <td className="py-3 px-2 text-sm leading-tight break-words">
                             {doc.activatedAt ? new Date(doc.activatedAt).toLocaleDateString() : '-'}
+                          </td>
+                          <td className="py-3 px-2 text-sm leading-tight break-words">
+                            {doc.simNumber || '-'}
                           </td>
                           <td className="py-3 px-2 text-sm leading-tight break-words">
                             {(doc as any).activatedByName || '-'}
@@ -247,6 +251,7 @@ export function OtherCompletions() {
                       <div className="text-xs text-gray-500 space-y-1">
                         <div>접수번호: {doc.documentNumber}</div>
                         <div>완료일: {doc.activatedAt ? new Date(doc.activatedAt).toLocaleDateString() : '-'}</div>
+                        <div>유심번호: {doc.simNumber || '-'}</div>
                         <div>처리자: {(doc as any).activatedByName || '-'}</div>
                       </div>
 

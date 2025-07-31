@@ -35,30 +35,29 @@ export function SubmitApplication() {
 
   // 접점코드 변경 시 판매점명 자동 조회
   const handleContactCodeChange = async (contactCode: string) => {
-    setFormData(prev => ({ ...prev, contactCode }));
+    setFormData(prev => {
+      const newData = { ...prev, contactCode };
+      
+      // 기타 통신사인 경우 즉시 접점코드명을 판매점명으로 설정
+      if (newData.carrier.includes('기타') && contactCode.trim()) {
+        newData.storeName = contactCode;
+      }
+      
+      return newData;
+    });
     
-    if (contactCode.trim()) {
+    if (contactCode.trim() && !formData.carrier.includes('기타')) {
       try {
         const response = await apiRequest(`/api/contact-codes/search/${contactCode}`);
         if (response?.dealerName) {
           setFormData(prev => ({ ...prev, storeName: response.dealerName }));
         } else {
-          // 기타 통신사인 경우 접점코드명을 판매점명으로 사용
-          if (formData.carrier.includes('기타')) {
-            setFormData(prev => ({ ...prev, storeName: contactCode }));
-          } else {
-            setFormData(prev => ({ ...prev, storeName: '' }));
-          }
-        }
-      } catch (error) {
-        // 기타 통신사인 경우 접점코드명을 판매점명으로 사용
-        if (formData.carrier.includes('기타')) {
-          setFormData(prev => ({ ...prev, storeName: contactCode }));
-        } else {
           setFormData(prev => ({ ...prev, storeName: '' }));
         }
+      } catch (error) {
+        setFormData(prev => ({ ...prev, storeName: '' }));
       }
-    } else {
+    } else if (!contactCode.trim() && !formData.carrier.includes('기타')) {
       setFormData(prev => ({ ...prev, storeName: '' }));
     }
   };
