@@ -1178,16 +1178,19 @@ export function Documents() {
                 </Select>
               </div>
               
-              <div>
-                <Label htmlFor="notes">메모</Label>
-                <Textarea
-                  id="notes"
-                  placeholder="변경 사유나 메모를 입력하세요..."
-                  value={activationForm.notes}
-                  onChange={(e) => setActivationForm(prev => ({ ...prev, notes: e.target.value }))}
-                  rows={3}
-                />
-              </div>
+              {/* 폐기가 아닌 경우에만 일반 메모 필드 표시 */}
+              {activationForm.activationStatus !== '폐기' && (
+                <div>
+                  <Label htmlFor="notes">메모</Label>
+                  <Textarea
+                    id="notes"
+                    placeholder="변경 사유나 메모를 입력하세요..."
+                    value={activationForm.notes}
+                    onChange={(e) => setActivationForm(prev => ({ ...prev, notes: e.target.value }))}
+                    rows={3}
+                  />
+                </div>
+              )}
               
               {/* 기타완료 시 간단한 정보 입력 */}
               {activationForm.activationStatus === '기타완료' && (

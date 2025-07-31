@@ -347,6 +347,11 @@ This is a document management system built for MCC네트월드 telecommunication
 - July 31, 2025. Implemented "기타완료" status for "기타" carrier applications with conditional display in Documents page
 - July 31, 2025. Enhanced dashboard to show separate "기타완료" count without including it in daily activation statistics or carrier breakdown
 - July 31, 2025. Modified carrier and worker statistics to exclude "기타완료" from standard activation counts for cleaner reporting
+- July 31, 2025. Implemented comprehensive disposal (폐기) functionality with mandatory disposal reason tracking
+- July 31, 2025. Added dedicated DiscardedDocuments page for viewing all disposed documents with reasons and processor information
+- July 31, 2025. Enhanced dashboard statistics to include disposal count alongside other activation statuses
+- July 31, 2025. Fixed redundant input fields in disposal dialog by showing only disposal reason field when disposal status is selected
+- July 31, 2025. Updated database schema to properly support disposal status with discard_reason column and constraint validation
 
 ## User Preferences
 
