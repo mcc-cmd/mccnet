@@ -763,6 +763,58 @@ export function Settlements() {
           </Card>
         </div>
 
+        {/* 정산 단가표 다운로드 */}
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle>정산 단가표 다운로드</CardTitle>
+            <CardDescription>
+              정산 계산을 위한 단가표 템플릿을 다운로드하세요.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button 
+              className="bg-emerald-600 hover:bg-emerald-700 mb-4"
+              onClick={async () => {
+                try {
+                  const sessionId = useAuth.getState().sessionId;
+                  const response = await fetch('/api/pricing-tables/template', {
+                    method: 'GET',
+                    headers: {
+                      'Authorization': `Bearer ${sessionId}`
+                    }
+                  });
+                  
+                  if (!response.ok) throw new Error('다운로드 실패');
+                  
+                  const blob = await response.blob();
+                  const url = window.URL.createObjectURL(blob);
+                  const a = document.createElement('a');
+                  a.href = url;
+                  a.download = '정산_단가표_템플릿.xlsx';
+                  document.body.appendChild(a);
+                  a.click();
+                  window.URL.revokeObjectURL(url);
+                  document.body.removeChild(a);
+                  
+                  toast({
+                    title: "다운로드 완료",
+                    description: "정산 단가표 템플릿을 다운로드했습니다.",
+                  });
+                } catch (error) {
+                  toast({
+                    title: "다운로드 실패",
+                    description: "템플릿 다운로드 중 오류가 발생했습니다.",
+                    variant: "destructive",
+                  });
+                }
+              }}
+            >
+              <FileText className="w-4 h-4 mr-2" />
+              정산 단가표 템플릿 다운로드
+            </Button>
+          </CardContent>
+        </Card>
+
         {/* 엑셀 업로드 사용법 */}
         <Card className="mb-6">
           <CardHeader>
@@ -771,7 +823,7 @@ export function Settlements() {
           <CardContent>
             <div className="bg-blue-50 dark:bg-blue-950 p-4 rounded-lg border">
               <ol className="space-y-2 text-sm">
-                <li><span className="font-medium">1.</span> 위의 "정산 단가표" 버튼을 클릭하여 템플릿을 다운로드하세요.</li>
+                <li><span className="font-medium">1.</span> 위의 "정산 단가표 템플릿 다운로드" 버튼을 클릭하여 템플릿을 다운로드하세요.</li>
                 <li><span className="font-medium">2.</span> 다운로드한 파일에서 다음 항목들을 입력하세요:</li>
                 <div className="ml-6 space-y-1">
                   <div>• <span className="font-medium">가입비:</span> 가입을 설정할 설정비용 이름</div>

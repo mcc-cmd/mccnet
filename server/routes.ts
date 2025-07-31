@@ -501,6 +501,51 @@ router.get('/api/pricing-tables/active', requireAuth, async (req, res) => {
   }
 });
 
+// 정산 단가표 템플릿 다운로드
+router.get('/api/pricing-tables/template', requireAuth, async (req, res) => {
+  try {
+    // Excel 템플릿 생성
+    const wb = XLSX.utils.book_new();
+    
+    // 샘플 데이터 생성
+    const templateData = [
+      ['통신사', '요금제', '가입비(선납)', '가입비(후납)', '유심비(선납)', '유심비(후납)', '결합할인', '판매점 수수료', '비고'],
+      ['SK텔링크', '5G 슬림', '30000', '0', '10000', '0', '5000', '50000', '신규가입'],
+      ['KT엠모바일', '5G 라이트', '25000', '0', '8000', '0', '3000', '45000', '번호이동'],
+      ['헬로모바일', 'LTE 베이직', '20000', '0', '5000', '0', '2000', '40000', '기기변경'],
+      ['', '', '', '', '', '', '', '', '']
+    ];
+    
+    const ws = XLSX.utils.aoa_to_sheet(templateData);
+    
+    // 컬럼 너비 설정
+    ws['!cols'] = [
+      { wch: 12 }, // 통신사
+      { wch: 20 }, // 요금제
+      { wch: 12 }, // 가입비(선납)
+      { wch: 12 }, // 가입비(후납)
+      { wch: 12 }, // 유심비(선납)
+      { wch: 12 }, // 유심비(후납)
+      { wch: 10 }, // 결합할인
+      { wch: 15 }, // 판매점 수수료
+      { wch: 15 }  // 비고
+    ];
+    
+    XLSX.utils.book_append_sheet(wb, ws, '정산단가표');
+    
+    // 파일을 버퍼로 생성
+    const buffer = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
+    
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', 'attachment; filename="정산_단가표_템플릿.xlsx"');
+    res.send(buffer);
+    
+  } catch (error: any) {
+    console.error('Template download error:', error);
+    res.status(500).json({ error: '템플릿 다운로드 중 오류가 발생했습니다.' });
+  }
+});
+
 // Document upload route
 router.post('/api/documents', requireAuth, upload.single('file'), async (req: any, res) => {
   try {
