@@ -66,7 +66,15 @@ export default function WorkRequests() {
       notes: '',
       deviceModel: '',
       simNumber: '',
-      subscriptionNumber: ''
+      subscriptionNumber: '',
+      servicePlanId: undefined,
+      additionalServices: [],
+      registrationFeePrepaid: false,
+      registrationFeePostpaid: false,
+      simFeePrepaid: false,
+      simFeePostpaid: false,
+      bundleApplied: false,
+      bundleNotApplied: false
     }
   });
 
@@ -103,7 +111,15 @@ export default function WorkRequests() {
       notes: '',
       deviceModel: document.deviceModel || '',
       simNumber: document.simNumber || '',
-      subscriptionNumber: document.subscriptionNumber || ''
+      subscriptionNumber: document.subscriptionNumber || '',
+      servicePlanId: document.servicePlanId || undefined,
+      additionalServices: document.additionalServices || [],
+      registrationFeePrepaid: document.registrationFeePrepaid || false,
+      registrationFeePostpaid: document.registrationFeePostpaid || false,
+      simFeePrepaid: document.simFeePrepaid || false,
+      simFeePostpaid: document.simFeePostpaid || false,
+      bundleApplied: document.bundleApplied || false,
+      bundleNotApplied: document.bundleNotApplied || false
     });
     setStatusDialogOpen(true);
   };
@@ -311,6 +327,217 @@ export default function WorkRequests() {
                       </FormItem>
                     )}
                   />
+                </div>
+
+                {/* 요금제 선택 */}
+                <FormField
+                  control={statusForm.control}
+                  name="servicePlanId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>요금제 선택</FormLabel>
+                      <FormControl>
+                        <Select value={field.value?.toString()} onValueChange={(value) => field.onChange(parseInt(value))}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="요금제를 선택하세요..." />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {servicePlans
+                              .filter((plan: any) => plan.carrier === selectedDocument?.carrier)
+                              .map((plan: any) => (
+                                <SelectItem key={plan.id} value={plan.id.toString()}>
+                                  {plan.name}
+                                </SelectItem>
+                              ))}
+                          </SelectContent>
+                        </Select>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {/* 부가서비스 선택 */}
+                <div>
+                  <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                    부가서비스 (복수 선택 가능)
+                  </label>
+                  <div className="grid grid-cols-2 gap-2 mt-2">
+                    {additionalServices.map((service: any) => (
+                      <FormField
+                        key={service.id}
+                        control={statusForm.control}
+                        name="additionalServices"
+                        render={({ field }) => (
+                          <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                            <FormControl>
+                              <Checkbox
+                                checked={field.value?.includes(service.id)}
+                                onCheckedChange={(checked) => {
+                                  const current = field.value || [];
+                                  if (checked) {
+                                    field.onChange([...current, service.id]);
+                                  } else {
+                                    field.onChange(current.filter((id: number) => id !== service.id));
+                                  }
+                                }}
+                              />
+                            </FormControl>
+                            <FormLabel className="text-sm font-normal">
+                              {service.name}
+                            </FormLabel>
+                          </FormItem>
+                        )}
+                      />
+                    ))}
+                  </div>
+                </div>
+
+                {/* 가입비 */}
+                <div>
+                  <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                    가입비
+                  </label>
+                  <div className="flex space-x-4 mt-2">
+                    <FormField
+                      control={statusForm.control}
+                      name="registrationFeePrepaid"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                          <FormControl>
+                            <Checkbox
+                              checked={field.value}
+                              onCheckedChange={(checked) => {
+                                field.onChange(checked);
+                                if (checked) {
+                                  statusForm.setValue('registrationFeePostpaid', false);
+                                }
+                              }}
+                            />
+                          </FormControl>
+                          <FormLabel className="text-sm font-normal">선납</FormLabel>
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={statusForm.control}
+                      name="registrationFeePostpaid"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                          <FormControl>
+                            <Checkbox
+                              checked={field.value}
+                              onCheckedChange={(checked) => {
+                                field.onChange(checked);
+                                if (checked) {
+                                  statusForm.setValue('registrationFeePrepaid', false);
+                                }
+                              }}
+                            />
+                          </FormControl>
+                          <FormLabel className="text-sm font-normal">후납</FormLabel>
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                </div>
+
+                {/* 유심비 */}
+                <div>
+                  <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                    유심비
+                  </label>
+                  <div className="flex space-x-4 mt-2">
+                    <FormField
+                      control={statusForm.control}
+                      name="simFeePrepaid"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                          <FormControl>
+                            <Checkbox
+                              checked={field.value}
+                              onCheckedChange={(checked) => {
+                                field.onChange(checked);
+                                if (checked) {
+                                  statusForm.setValue('simFeePostpaid', false);
+                                }
+                              }}
+                            />
+                          </FormControl>
+                          <FormLabel className="text-sm font-normal">선납</FormLabel>
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={statusForm.control}
+                      name="simFeePostpaid"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                          <FormControl>
+                            <Checkbox
+                              checked={field.value}
+                              onCheckedChange={(checked) => {
+                                field.onChange(checked);
+                                if (checked) {
+                                  statusForm.setValue('simFeePrepaid', false);
+                                }
+                              }}
+                            />
+                          </FormControl>
+                          <FormLabel className="text-sm font-normal">후납</FormLabel>
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                </div>
+
+                {/* 결합 */}
+                <div>
+                  <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                    결합
+                  </label>
+                  <div className="flex space-x-4 mt-2">
+                    <FormField
+                      control={statusForm.control}
+                      name="bundleApplied"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                          <FormControl>
+                            <Checkbox
+                              checked={field.value}
+                              onCheckedChange={(checked) => {
+                                field.onChange(checked);
+                                if (checked) {
+                                  statusForm.setValue('bundleNotApplied', false);
+                                }
+                              }}
+                            />
+                          </FormControl>
+                          <FormLabel className="text-sm font-normal">결합</FormLabel>
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={statusForm.control}
+                      name="bundleNotApplied"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                          <FormControl>
+                            <Checkbox
+                              checked={field.value}
+                              onCheckedChange={(checked) => {
+                                field.onChange(checked);
+                                if (checked) {
+                                  statusForm.setValue('bundleApplied', false);
+                                }
+                              }}
+                            />
+                          </FormControl>
+                          <FormLabel className="text-sm font-normal">미결합</FormLabel>
+                        </FormItem>
+                      )}
+                    />
+                  </div>
                 </div>
 
                 <FormField
