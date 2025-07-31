@@ -668,8 +668,8 @@ router.patch('/api/documents/:id/activation', requireAuth, async (req: any, res)
       }
     }
     
-    // 개통완료 시 근무자 ID 추가 (관리자 제외)
-    if (data.activationStatus === '개통' && req.session.userType === 'user') {
+    // 개통완료 또는 기타완료 시 근무자 ID 추가 (관리자 제외)
+    if ((data.activationStatus === '개통' || data.activationStatus === '기타완료') && req.session.userType === 'user') {
       data.activatedBy = req.session.userId;
     }
     
@@ -680,6 +680,11 @@ router.patch('/api/documents/:id/activation', requireAuth, async (req: any, res)
     
     // 폐기 상태일 때 처리한 근무자 ID 추가 (관리자 포함)
     if (data.activationStatus === '폐기') {
+      data.activatedBy = req.session.userId;
+    }
+    
+    // 기타완료 상태일 때도 처리한 근무자 ID 추가 (관리자 포함)  
+    if (data.activationStatus === '기타완료') {
       data.activatedBy = req.session.userId;
     }
     
