@@ -33,7 +33,9 @@ import {
   Trash2,
   Edit,
   Edit2,
-  DollarSign
+  DollarSign,
+  FileSpreadsheet,
+  Image as ImageIcon
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
@@ -3285,6 +3287,133 @@ export function AdminPanel() {
           {/* Service Plans Tab */}
           <TabsContent value="service-plans">
             <div className="space-y-6">
+              {/* Service Plan Upload Cards */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                {/* Excel Template Upload Card */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <FileSpreadsheet className="h-5 w-5" />
+                      엑셀 요금제 업로드
+                    </CardTitle>
+                    <CardDescription>
+                      대량 요금제 데이터를 Excel 파일로 한번에 업로드할 수 있습니다.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    {/* Guidelines */}
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                      <h4 className="font-semibold text-blue-900 mb-2">업로드 가이드라인</h4>
+                      <ul className="text-sm text-blue-800 space-y-1">
+                        <li>• 1단계: 아래 Excel 양식을 다운로드하세요</li>
+                        <li>• 2단계: 양식에 맞춰 요금제 정보를 입력하세요</li>
+                        <li>• 3단계: 완성된 파일을 업로드하세요</li>
+                        <li>• 지원 형식: .xlsx, .xls</li>
+                        <li>• 필수 컬럼: 요금제명, 통신사, 유형, 데이터, 월요금</li>
+                      </ul>
+                    </div>
+
+                    {/* Template Download */}
+                    <div className="flex flex-col space-y-2">
+                      <Button 
+                        variant="outline" 
+                        onClick={handleDownloadServicePlanTemplate}
+                        className="w-full"
+                      >
+                        <Download className="mr-2 h-4 w-4" />
+                        Excel 양식 다운로드
+                      </Button>
+                    </div>
+
+                    {/* File Upload */}
+                    <div className="space-y-4">
+                      <div>
+                        <Label>Excel 파일 선택</Label>
+                        <Input
+                          type="file"
+                          accept=".xlsx,.xls"
+                          className="mt-1"
+                        />
+                        <p className="text-xs text-gray-500 mt-1">
+                          Excel 파일 (XLSX, XLS)만 업로드 가능합니다.
+                        </p>
+                      </div>
+                      <Button className="w-full">
+                        <Upload className="mr-2 h-4 w-4" />
+                        엑셀 파일 업로드
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Image Upload Card */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <ImageIcon className="h-5 w-5" />
+                      이미지 요금제 업로드
+                    </CardTitle>
+                    <CardDescription>
+                      이미지에서 요금제 정보를 읽어 자동으로 추가합니다.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    {/* Guidelines */}
+                    <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                      <h4 className="font-semibold text-green-900 mb-2">이미지 업로드 가이드</h4>
+                      <ul className="text-sm text-green-800 space-y-1">
+                        <li>• 요금제표나 가격표 이미지를 업로드하세요</li>
+                        <li>• 텍스트가 선명하고 읽기 쉬운 이미지 권장</li>
+                        <li>• 지원 형식: JPG, PNG, GIF, BMP, TIFF, WEBP</li>
+                        <li>• 업로드 후 자동으로 텍스트를 분석합니다</li>
+                        <li>• 분석 후 수동으로 정보를 검토해주세요</li>
+                      </ul>
+                    </div>
+
+                    <div className="space-y-4">
+                      <div>
+                        <Label>통신사 선택</Label>
+                        <Select>
+                          <SelectTrigger className="mt-1">
+                            <SelectValue placeholder="통신사를 선택하세요" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="SK텔링크">SK텔링크</SelectItem>
+                            <SelectItem value="SK프리티">SK프리티</SelectItem>
+                            <SelectItem value="SK스테이지파이브">SK스테이지파이브</SelectItem>
+                            <SelectItem value="KT엠모바일">KT엠모바일</SelectItem>
+                            <SelectItem value="KT스카이라이프">KT스카이라이프</SelectItem>
+                            <SelectItem value="KT스테이지파이브">KT스테이지파이브</SelectItem>
+                            <SelectItem value="KT코드모바일">KT코드모바일</SelectItem>
+                            <SelectItem value="LG미디어로그">LG미디어로그</SelectItem>
+                            <SelectItem value="LG헬로모바일">LG헬로모바일</SelectItem>
+                            <SelectItem value="LG프리티">LG프리티</SelectItem>
+                            <SelectItem value="LG밸류컴">LG밸류컴</SelectItem>
+                            <SelectItem value="스마텔LG">스마텔LG</SelectItem>
+                            <SelectItem value="KT">KT</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label>이미지 파일 선택</Label>
+                        <Input
+                          type="file"
+                          accept=".jpg,.jpeg,.png,.gif,.bmp,.tiff,.webp"
+                          className="mt-1"
+                        />
+                        <p className="text-xs text-gray-500 mt-1">
+                          이미지 파일 (JPG, PNG, GIF 등)만 업로드 가능합니다.
+                        </p>
+                      </div>
+                      <Button className="w-full">
+                        <ImageIcon className="mr-2 h-4 w-4" />
+                        이미지 업로드 및 분석
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
               {/* Service Plans Card */}
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between">
@@ -3294,18 +3423,13 @@ export function AdminPanel() {
                       각 통신사의 요금제를 관리할 수 있습니다.
                     </CardDescription>
                   </div>
-                  <div className="flex space-x-2">
-                    <Button variant="outline" onClick={handleDownloadServicePlanTemplate}>
-                      <Download className="mr-2 h-4 w-4" />
-                      Excel 양식 다운로드
-                    </Button>
-                    <Dialog open={servicePlanDialogOpen} onOpenChange={setServicePlanDialogOpen}>
-                      <DialogTrigger asChild>
-                        <Button>
-                          <Plus className="mr-2 h-4 w-4" />
-                          요금제 추가
-                        </Button>
-                      </DialogTrigger>
+                  <Dialog open={servicePlanDialogOpen} onOpenChange={setServicePlanDialogOpen}>
+                    <DialogTrigger asChild>
+                      <Button>
+                        <Plus className="mr-2 h-4 w-4" />
+                        요금제 추가
+                      </Button>
+                    </DialogTrigger>
                     <DialogContent>
                       <DialogHeader>
                         <DialogTitle>새 요금제 추가</DialogTitle>
@@ -3561,7 +3685,6 @@ export function AdminPanel() {
                       </Form>
                     </DialogContent>
                   </Dialog>
-                  </div>
                 </CardHeader>
                 <CardContent>
                   {servicePlansLoading ? (
