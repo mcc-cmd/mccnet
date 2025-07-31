@@ -824,6 +824,8 @@ export function AdminPanel() {
   const [editServicePlanDialogOpen, setEditServicePlanDialogOpen] = useState(false);
   const [editingServicePlan, setEditingServicePlan] = useState<ServicePlan | null>(null);
   const [additionalServiceDialogOpen, setAdditionalServiceDialogOpen] = useState(false);
+  const [editAdditionalServiceDialogOpen, setEditAdditionalServiceDialogOpen] = useState(false);
+  const [editingAdditionalService, setEditingAdditionalService] = useState<AdditionalService | null>(null);
   const [selectedDocument, setSelectedDocument] = useState<Document | null>(null);
   const [selectedDealerForContactCodes, setSelectedDealerForContactCodes] = useState<Dealer | null>(null);
   const [contactCodeDialogOpen, setContactCodeDialogOpen] = useState(false);
@@ -1005,6 +1007,17 @@ export function AdminPanel() {
   });
 
   const additionalServiceForm = useForm({
+    resolver: zodResolver(createAdditionalServiceSchema),
+    defaultValues: {
+      serviceName: '',
+      serviceType: '',
+      monthlyFee: 0,
+      description: '',
+      isActive: true,
+    },
+  });
+
+  const editAdditionalServiceForm = useForm({
     resolver: zodResolver(createAdditionalServiceSchema),
     defaultValues: {
       serviceName: '',
@@ -1531,6 +1544,50 @@ export function AdminPanel() {
     },
   });
 
+  const updateAdditionalServiceMutation = useMutation({
+    mutationFn: ({ id, data }: { id: number; data: any }) => apiRequest(`/api/additional-services/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/additional-services'] });
+      setEditAdditionalServiceDialogOpen(false);
+      setEditingAdditionalService(null);
+      editAdditionalServiceForm.reset();
+      toast({
+        title: '성공',
+        description: '부가서비스가 성공적으로 수정되었습니다.',
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: '오류',
+        description: error.message,
+        variant: 'destructive',
+      });
+    },
+  });
+
+  const deleteAdditionalServiceMutation = useMutation({
+    mutationFn: (id: number) => apiRequest(`/api/additional-services/${id}`, {
+      method: 'DELETE',
+    }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/additional-services'] });
+      toast({
+        title: '성공',
+        description: '부가서비스가 성공적으로 삭제되었습니다.',
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: '오류',
+        description: error.message,
+        variant: 'destructive',
+      });
+    },
+  });
+
   const servicePlanImageMutation = useMutation({
     mutationFn: async (data: { carrier: string; file: File }) => {
       const formData = new FormData();
@@ -1644,6 +1701,56 @@ export function AdminPanel() {
 
   const handleCreateAdditionalService = (data: any) => {
     createAdditionalServiceMutation.mutate(data);
+  };
+
+  const openEditAdditionalServiceDialog = (service: AdditionalService) => {
+    setEditingAdditionalService(service);
+    editAdditionalServiceForm.reset({
+      serviceName: service.serviceName,
+      serviceType: service.serviceType,
+      monthlyFee: service.monthlyFee,
+      description: service.description,
+      isActive: service.isActive,
+    });
+    setEditAdditionalServiceDialogOpen(true);
+  };
+
+  const handleUpdateAdditionalService = (data: any) => {
+    if (editingAdditionalService) {
+      updateAdditionalServiceMutation.mutate({ id: editingAdditionalService.id, data });
+    }
+  };
+
+  const handleDeleteAdditionalService = (id: number) => {
+    if (confirm('정말로 이 부가서비스를 삭제하시겠습니까?')) {
+      deleteAdditionalServiceMutation.mutate(id);
+    }
+  };
+
+  const handleDownloadServicePlanTemplate = () => {
+    // Create Excel template for service plans
+    const template = [
+      ['요금제명', '통신사', '요금제유형', '데이터제공량', '월요금(원)', '활성여부'],
+      ['선)363/1M', 'SK텔링크', 'LTE', '1GB', '36300', 'TRUE'],
+      ['중외)5G 웰컴 5', 'KT엠모바일', '5G', '5GB', '0', 'TRUE'],
+      ['미)이동의즐거움 K', 'LG미디어로그', 'LTE', '무제한', '0', 'TRUE']
+    ];
+    
+    const csvContent = template.map(row => row.join(',')).join('\n');
+    const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', '요금제_업로드_양식.csv');
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    toast({
+      title: '다운로드 완료',
+      description: '요금제 업로드 양식이 다운로드되었습니다.',
+    });
   };
 
   const handleServicePlanImageSubmit = (e: React.FormEvent) => {
@@ -3187,13 +3294,18 @@ export function AdminPanel() {
                       각 통신사의 요금제를 관리할 수 있습니다.
                     </CardDescription>
                   </div>
-                  <Dialog open={servicePlanDialogOpen} onOpenChange={setServicePlanDialogOpen}>
-                    <DialogTrigger asChild>
-                      <Button>
-                        <Plus className="mr-2 h-4 w-4" />
-                        요금제 추가
-                      </Button>
-                    </DialogTrigger>
+                  <div className="flex space-x-2">
+                    <Button variant="outline" onClick={handleDownloadServicePlanTemplate}>
+                      <Download className="mr-2 h-4 w-4" />
+                      Excel 양식 다운로드
+                    </Button>
+                    <Dialog open={servicePlanDialogOpen} onOpenChange={setServicePlanDialogOpen}>
+                      <DialogTrigger asChild>
+                        <Button>
+                          <Plus className="mr-2 h-4 w-4" />
+                          요금제 추가
+                        </Button>
+                      </DialogTrigger>
                     <DialogContent>
                       <DialogHeader>
                         <DialogTitle>새 요금제 추가</DialogTitle>
@@ -3449,6 +3561,7 @@ export function AdminPanel() {
                       </Form>
                     </DialogContent>
                   </Dialog>
+                  </div>
                 </CardHeader>
                 <CardContent>
                   {servicePlansLoading ? (
@@ -3691,6 +3804,113 @@ export function AdminPanel() {
                       </Form>
                     </DialogContent>
                   </Dialog>
+
+                  {/* Edit Additional Service Dialog */}
+                  <Dialog open={editAdditionalServiceDialogOpen} onOpenChange={setEditAdditionalServiceDialogOpen}>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>부가서비스 편집</DialogTitle>
+                      </DialogHeader>
+                      <Form {...editAdditionalServiceForm}>
+                        <form onSubmit={editAdditionalServiceForm.handleSubmit(handleUpdateAdditionalService)} className="space-y-4">
+                          <FormField
+                            control={editAdditionalServiceForm.control}
+                            name="serviceName"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>서비스명</FormLabel>
+                                <FormControl>
+                                  <Input placeholder="서비스명을 입력하세요" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={editAdditionalServiceForm.control}
+                            name="serviceType"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>서비스 유형</FormLabel>
+                                <Select onValueChange={field.onChange} value={field.value}>
+                                  <FormControl>
+                                    <SelectTrigger>
+                                      <SelectValue placeholder="서비스 유형을 선택하세요" />
+                                    </SelectTrigger>
+                                  </FormControl>
+                                  <SelectContent>
+                                    <SelectItem value="부가서비스">부가서비스</SelectItem>
+                                    <SelectItem value="결합상품">결합상품</SelectItem>
+                                    <SelectItem value="콘텐츠">콘텐츠</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={editAdditionalServiceForm.control}
+                            name="monthlyFee"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>월 요금 (원)</FormLabel>
+                                <FormControl>
+                                  <Input 
+                                    type="number" 
+                                    placeholder="월 요금을 입력하세요 (할인 서비스는 0)"
+                                    {...field}
+                                    onChange={(e) => field.onChange(parseInt(e.target.value))}
+                                  />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={editAdditionalServiceForm.control}
+                            name="description"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>설명</FormLabel>
+                                <FormControl>
+                                  <Input placeholder="서비스 설명을 입력하세요" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={editAdditionalServiceForm.control}
+                            name="isActive"
+                            render={({ field }) => (
+                              <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
+                                <div className="space-y-0.5">
+                                  <FormLabel>활성 상태</FormLabel>
+                                  <FormDescription>
+                                    서비스를 활성화하거나 비활성화합니다.
+                                  </FormDescription>
+                                </div>
+                                <FormControl>
+                                  <Switch
+                                    checked={field.value}
+                                    onCheckedChange={field.onChange}
+                                  />
+                                </FormControl>
+                              </FormItem>
+                            )}
+                          />
+                          <div className="flex justify-end space-x-2">
+                            <Button type="button" variant="outline" onClick={() => setEditAdditionalServiceDialogOpen(false)}>
+                              취소
+                            </Button>
+                            <Button type="submit" disabled={updateAdditionalServiceMutation.isPending}>
+                              {updateAdditionalServiceMutation.isPending ? '수정 중...' : '수정'}
+                            </Button>
+                          </div>
+                        </form>
+                      </Form>
+                    </DialogContent>
+                  </Dialog>
                 </CardHeader>
                 <CardContent>
                   {additionalServicesLoading ? (
@@ -3718,6 +3938,9 @@ export function AdminPanel() {
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                               상태
                             </th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              관리
+                            </th>
                           </tr>
                         </thead>
                         <tbody className="bg-white divide-y divide-gray-200">
@@ -3739,6 +3962,24 @@ export function AdminPanel() {
                                 <Badge variant={service.isActive ? "default" : "secondary"}>
                                   {service.isActive ? '활성' : '비활성'}
                                 </Badge>
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                <div className="flex space-x-2">
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => openEditAdditionalServiceDialog(service)}
+                                  >
+                                    편집
+                                  </Button>
+                                  <Button
+                                    variant="destructive"
+                                    size="sm"
+                                    onClick={() => handleDeleteAdditionalService(service.id)}
+                                  >
+                                    삭제
+                                  </Button>
+                                </div>
                               </td>
                             </tr>
                           ))}
