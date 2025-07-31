@@ -1235,9 +1235,15 @@ export function AdminPanel() {
     },
     onSuccess: (data: any) => {
       queryClient.invalidateQueries({ queryKey: ['/api/contact-codes'] });
+      
+      let description = data.message || "접점코드가 성공적으로 업로드되었습니다.";
+      if (data.errors && data.errors.length > 0) {
+        description += `\n\n오류가 발생한 행:\n${data.errors.join('\n')}`;
+      }
+      
       toast({
         title: "업로드 완료",
-        description: data.message || "접점코드가 성공적으로 업로드되었습니다.",
+        description: description,
       });
       // 파일 입력 초기화
       if (contactCodeExcelInputRef.current) {
@@ -1245,9 +1251,20 @@ export function AdminPanel() {
       }
     },
     onError: (error: any) => {
+      console.error('Contact code upload error:', error);
+      
+      let description = error.message || "접점코드 업로드에 실패했습니다.";
+      if (error.details) {
+        if (Array.isArray(error.details)) {
+          description += `\n\n오류 상세:\n${error.details.join('\n')}`;
+        } else {
+          description += `\n\n오류 상세: ${error.details}`;
+        }
+      }
+      
       toast({
         title: "업로드 실패",
-        description: error.message || "접점코드 업로드에 실패했습니다.",
+        description: description,
         variant: "destructive"
       });
       // 파일 입력 초기화

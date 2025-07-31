@@ -2107,6 +2107,8 @@ router.post('/api/contact-codes/upload-excel', contactCodeUpload.single('file'),
       return res.status(400).json({ error: '필수 컬럼을 찾을 수 없습니다. (접점코드, 판매점명, 통신사)' });
     }
 
+    console.log(`Processing ${dataRows.length} rows`);
+    
     // 각 행에 대해 접점코드 생성
     for (let i = 0; i < dataRows.length; i++) {
       const row = dataRows[i] as any[];
@@ -2116,29 +2118,41 @@ router.post('/api/contact-codes/upload-excel', contactCodeUpload.single('file'),
         const dealerName = row[dealerNameIndex];
         const carrier = row[carrierIndex];
         
+        console.log(`Row ${i + 2}: code=${code}, dealer=${dealerName}, carrier=${carrier}`);
+        
         if (!code || !dealerName || !carrier) {
-          errors.push(`${i + 2}행: 필수 정보가 누락되었습니다 (접점코드, 판매점명, 통신사 필수)`);
+          const errorMsg = `${i + 2}행: 필수 정보가 누락되었습니다 (접점코드: ${code || 'X'}, 판매점명: ${dealerName || 'X'}, 통신사: ${carrier || 'X'})`;
+          console.log(errorMsg);
+          errors.push(errorMsg);
           continue;
         }
 
         // 기존 접점코드 확인
-        const existingCode = await storage.findContactCodeByCode(code);
+        const existingCode = await storage.findContactCodeByCode(String(code).trim());
         if (existingCode) {
-          errors.push(`${i + 2}행: 접점코드 '${code}'가 이미 존재합니다`);
+          const errorMsg = `${i + 2}행: 접점코드 '${code}'가 이미 존재합니다`;
+          console.log(errorMsg);
+          errors.push(errorMsg);
           continue;
         }
 
         // 접점코드 생성
-        await storage.createContactCode({
+        const newContactCode = {
           code: String(code).trim(),
           dealerName: String(dealerName).trim(),
           carrier: String(carrier).trim(),
           isActive: true
-        });
+        };
+        
+        console.log(`Creating contact code:`, newContactCode);
+        await storage.createContactCode(newContactCode);
         
         addedCodes++;
+        console.log(`Successfully added contact code: ${code}`);
       } catch (error: any) {
-        errors.push(`${i + 2}행: ${error.message}`);
+        const errorMsg = `${i + 2}행: ${error.message}`;
+        console.error(errorMsg, error);
+        errors.push(errorMsg);
       }
     }
 
@@ -2164,6 +2178,7 @@ router.post('/api/contact-codes/upload-excel', contactCodeUpload.single('file'),
 
   } catch (error: any) {
     console.error('Contact code excel upload error:', error);
+    console.error('Error details:', error.stack);
     
     // 임시 파일 삭제
     if (filePath) {
