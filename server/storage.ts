@@ -1945,19 +1945,19 @@ class SqliteStorage implements IStorage {
         }
       }
       
-      // 통신사별 개통 수량 (개통 + 기타완료)
+      // 통신사별 개통 수량 (개통만 - 기타완료 제외)
       const carrierQuery = `
         SELECT 
           carrier,
           COUNT(*) as count
         FROM documents 
-        WHERE (activation_status = '개통' OR activation_status = '기타완료')${carrierDateFilter}
+        WHERE activation_status = '개통'${carrierDateFilter}
         GROUP BY carrier
         ORDER BY count DESC
       `;
       stats.carrierStats = db.prepare(carrierQuery).all(...dateParams) as any[];
 
-      // 근무자별 개통 수량 (개통 + 기타완료)
+      // 근무자별 개통 수량 (개통만 - 기타완료 제외)
       const workerQuery = `
         SELECT 
           u.id as workerId,
@@ -1965,7 +1965,7 @@ class SqliteStorage implements IStorage {
           COUNT(*) as count
         FROM documents d
         JOIN users u ON d.activated_by = u.id
-        WHERE (d.activation_status = '개통' OR d.activation_status = '기타완료')${workerDateFilter}
+        WHERE d.activation_status = '개통'${workerDateFilter}
         GROUP BY d.activated_by, u.id, u.name
         ORDER BY count DESC
       `;
@@ -2513,6 +2513,7 @@ class SqliteStorage implements IStorage {
   async getTodayStats(): Promise<{ 
     todayReception: number; 
     todayActivation: number;
+    todayOtherCompleted: number;
     carrierStats: Array<{ carrier: string; count: number }>;
   }> {
     const today = new Date().toISOString().split('T')[0];
@@ -2524,14 +2525,21 @@ class SqliteStorage implements IStorage {
       WHERE date(uploaded_at) = ?
     `).get(today) as { count: number };
     
-    // 당일 개통건 (개통 완료 날짜 기준)
+    // 당일 개통건 (개통 완료 날짜 기준) - 기타완료 제외
     const todayActivation = db.prepare(`
       SELECT COUNT(*) as count 
       FROM documents 
       WHERE date(activated_at) = ? AND activation_status = '개통'
     `).get(today) as { count: number };
     
-    // 당일 통신사별 개통 현황
+    // 당일 기타완료건 (기타완료 날짜 기준)
+    const todayOtherCompleted = db.prepare(`
+      SELECT COUNT(*) as count 
+      FROM documents 
+      WHERE date(activated_at) = ? AND activation_status = '기타완료'
+    `).get(today) as { count: number };
+    
+    // 당일 통신사별 개통 현황 - 기타완료 제외
     const carrierStats = db.prepare(`
       SELECT carrier, COUNT(*) as count
       FROM documents 
@@ -2543,6 +2551,7 @@ class SqliteStorage implements IStorage {
     return {
       todayReception: todayReception.count,
       todayActivation: todayActivation.count,
+      todayOtherCompleted: todayOtherCompleted.count,
       carrierStats: carrierStats
     };
   }

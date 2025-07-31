@@ -101,6 +101,7 @@ export function Dashboard() {
     queryFn: () => apiRequest('/api/dashboard/today-stats') as Promise<{
       todayReception: number;
       todayActivation: number;
+      todayOtherCompleted: number;
       carrierStats: Array<{ carrier: string; count: number }>;
     }>,
   });
@@ -176,48 +177,69 @@ export function Dashboard() {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* 당일 접수건 */}
-                <div className="bg-blue-50 rounded-lg p-6 border border-blue-200">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h3 className="text-lg font-semibold text-blue-900 mb-2">당일 접수건</h3>
-                      <p className="text-sm text-blue-700">오늘 새로 접수된 건수</p>
-                    </div>
-                    <Upload className="h-8 w-8 text-blue-600" />
-                  </div>
-                  <div className="mt-4">
-                    {todayStatsLoading ? (
-                      <Skeleton className="h-12 w-20" />
-                    ) : (
-                      <div className="text-3xl font-bold text-blue-600">
-                        {todayStats?.todayReception || 0}
+              <div className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* 당일 접수건 */}
+                  <div className="bg-blue-50 rounded-lg p-6 border border-blue-200">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h3 className="text-lg font-semibold text-blue-900 mb-2">당일 접수건</h3>
+                        <p className="text-sm text-blue-700">오늘 새로 접수된 건수</p>
                       </div>
-                    )}
-                    <div className="text-sm text-blue-600 mt-1">건</div>
+                      <Upload className="h-8 w-8 text-blue-600" />
+                    </div>
+                    <div className="mt-4">
+                      {todayStatsLoading ? (
+                        <Skeleton className="h-12 w-20" />
+                      ) : (
+                        <div className="text-3xl font-bold text-blue-600">
+                          {todayStats?.todayReception || 0}
+                        </div>
+                      )}
+                      <div className="text-sm text-blue-600 mt-1">건</div>
+                    </div>
+                  </div>
+
+                  {/* 당일 개통건 */}
+                  <div className="bg-green-50 rounded-lg p-6 border border-green-200">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h3 className="text-lg font-semibold text-green-900 mb-2">당일 개통건</h3>
+                        <p className="text-sm text-green-700">오늘 개통 완료된 건수</p>
+                      </div>
+                      <CheckCircle className="h-8 w-8 text-green-600" />
+                    </div>
+                    <div className="mt-4">
+                      {todayStatsLoading ? (
+                        <Skeleton className="h-12 w-20" />
+                      ) : (
+                        <div className="text-3xl font-bold text-green-600">
+                          {todayStats?.todayActivation || 0}
+                        </div>
+                      )}
+                      <div className="text-sm text-green-600 mt-1">건</div>
+                    </div>
                   </div>
                 </div>
 
-                {/* 당일 개통건 */}
-                <div className="bg-green-50 rounded-lg p-6 border border-green-200">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h3 className="text-lg font-semibold text-green-900 mb-2">당일 개통건</h3>
-                      <p className="text-sm text-green-700">오늘 개통 완료된 건수</p>
-                    </div>
-                    <CheckCircle className="h-8 w-8 text-green-600" />
-                  </div>
-                  <div className="mt-4">
-                    {todayStatsLoading ? (
-                      <Skeleton className="h-12 w-20" />
-                    ) : (
-                      <div className="text-3xl font-bold text-green-600">
-                        {todayStats?.todayActivation || 0}
+                {/* 당일 기타완료건 - 별도 표시 */}
+                {(todayStats?.todayOtherCompleted || 0) > 0 && (
+                  <div className="bg-purple-50 rounded-lg p-4 border border-purple-200">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h4 className="text-base font-medium text-purple-900 mb-1">당일 기타완료</h4>
+                        <p className="text-xs text-purple-700">기타 처리 완료된 건수</p>
                       </div>
-                    )}
-                    <div className="text-sm text-green-600 mt-1">건</div>
+                      <div className="text-2xl font-bold text-purple-600">
+                        {todayStatsLoading ? (
+                          <Skeleton className="h-8 w-12" />
+                        ) : (
+                          `${todayStats?.todayOtherCompleted || 0}건`
+                        )}
+                      </div>
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
 
               {/* 통신사별 개통 현황 */}

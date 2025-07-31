@@ -344,6 +344,9 @@ This is a document management system built for MCC네트월드 telecommunication
 - July 31, 2025. Created checkDuplicateDocument method in storage to find matching customer name, phone, and store/contact code
 - July 31, 2025. Enhanced application submission workflow with duplicate confirmation dialog showing existing application details
 - July 31, 2025. Added comprehensive duplicate validation preventing overlapping submissions while allowing user override
+- July 31, 2025. Implemented "기타완료" status for "기타" carrier applications with conditional display in Documents page
+- July 31, 2025. Enhanced dashboard to show separate "기타완료" count without including it in daily activation statistics or carrier breakdown
+- July 31, 2025. Modified carrier and worker statistics to exclude "기타완료" from standard activation counts for cleaner reporting
 
 ## User Preferences
 
