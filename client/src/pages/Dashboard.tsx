@@ -159,8 +159,271 @@ export function Dashboard() {
     <Layout title="대시보드">
       <div className="space-y-6">
 
+        {/* Main Content Grid - 당일 현황을 제일 위로 이동 */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Today's Statistics */}
+          <div className="lg:col-span-2">
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle>당일 현황</CardTitle>
+                  <Button 
+                    variant="link" 
+                    size="sm"
+                    onClick={() => window.location.href = '/documents'}
+                  >
+                    전체보기
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* 당일 접수건 */}
+                  <div className="bg-blue-50 rounded-lg p-6 border border-blue-200">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h3 className="text-lg font-semibold text-blue-900 mb-2">당일 접수건</h3>
+                        <p className="text-sm text-blue-700">오늘 새로 접수된 건수</p>
+                      </div>
+                      <Upload className="h-8 w-8 text-blue-600" />
+                    </div>
+                    <div className="mt-4">
+                      {todayStatsLoading ? (
+                        <Skeleton className="h-12 w-20" />
+                      ) : (
+                        <div className="text-3xl font-bold text-blue-600">
+                          {todayStats?.todayReception || 0}
+                        </div>
+                      )}
+                      <div className="text-sm text-blue-600 mt-1">건</div>
+                    </div>
+                  </div>
 
-        {/* Role-based additional stats for admin and workers */}
+                  {/* 당일 개통건 */}
+                  <div className="bg-green-50 rounded-lg p-6 border border-green-200">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h3 className="text-lg font-semibold text-green-900 mb-2">당일 개통건</h3>
+                        <p className="text-sm text-green-700">오늘 개통 완료된 건수</p>
+                      </div>
+                      <CheckCircle className="h-8 w-8 text-green-600" />
+                    </div>
+                    <div className="mt-4">
+                      {todayStatsLoading ? (
+                        <Skeleton className="h-12 w-20" />
+                      ) : (
+                        <div className="text-3xl font-bold text-green-600">
+                          {todayStats?.todayActivation || 0}
+                        </div>
+                      )}
+                      <div className="text-sm text-green-600 mt-1">건</div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 통신사별 개통 현황 */}
+                {todayStats?.carrierStats && todayStats.carrierStats.length > 0 && (
+                  <div className="mt-6">
+                    <h4 className="text-sm font-medium text-gray-900 mb-3">당일 통신사별 개통 현황</h4>
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                      {todayStats.carrierStats.map((stat, index) => (
+                        <div 
+                          key={stat.carrier} 
+                          className="bg-white border rounded-lg p-3 text-center hover:shadow-sm transition-shadow"
+                        >
+                          <div className="text-lg font-bold text-gray-900">{stat.count}</div>
+                          <div className="text-xs text-gray-600 mt-1 break-words leading-tight">
+                            {stat.carrier}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* 추가 정보 */}
+                <div className="mt-6 p-4 bg-gray-50 rounded-lg border">
+                  <div className="flex items-center justify-center space-x-8 text-sm text-gray-600">
+                    <div className="flex items-center space-x-2">
+                      <Calendar className="h-4 w-4" />
+                      <span>{format(new Date(), 'yyyy년 MM월 dd일', { locale: ko })}</span>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Clock className="h-4 w-4" />
+                      <span>실시간 업데이트</span>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Right Sidebar */}
+          <div className="space-y-6">
+            {/* Pricing Announcements */}
+            <Card>
+              <CardHeader>
+                <CardTitle>단가표 최신 공지</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {activePricingTable ? (
+                  <div className="p-3 bg-blue-50 rounded-lg border-l-4 border-accent">
+                    <div className="flex items-start space-x-3">
+                      <Calculator className="h-5 w-5 text-accent flex-shrink-0 mt-0.5" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-gray-900">
+                          {activePricingTable.title}
+                        </p>
+                        <p className="text-xs text-gray-500 mt-1">
+                          {formatSafeDate(activePricingTable.uploadedAt, 'yyyy-MM-dd') + ' 게시'}
+                        </p>
+                        <Button
+                          variant="link"
+                          size="sm"
+                          className="text-xs p-0 h-auto mt-2"
+                          onClick={handleDownloadPricing}
+                        >
+                          다운로드
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-center py-4">
+                    <Calculator className="mx-auto h-8 w-8 text-gray-400" />
+                    <p className="mt-2 text-sm text-gray-500">등록된 단가표가 없습니다.</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Quick Actions */}
+            <Card>
+              <CardHeader>
+                <CardTitle>빠른 기능</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <Button 
+                  onClick={() => window.location.href = '/submit'}
+                  className="w-full justify-start"
+                  variant="outline"
+                >
+                  <Upload className="mr-2 h-4 w-4" />
+                  접수 신청
+                </Button>
+                <Button 
+                  onClick={() => window.location.href = '/downloads'}
+                  className="w-full justify-start"
+                  variant="outline"
+                >
+                  <Download className="mr-2 h-4 w-4" />
+                  서식지 다운로드
+                </Button>
+                <Button 
+                  onClick={() => window.location.href = '/pricing-tables'}
+                  className="w-full justify-start"
+                  variant="outline"
+                >
+                  <Calculator className="mr-2 h-4 w-4" />
+                  단가표
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+
+        {/* 당월 개통 현황 */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <Calculator className="mr-2 h-5 w-5" />
+              당월 개통 현황
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-5">
+              <div className="text-center p-4 bg-blue-50 rounded-lg">
+                <div className="text-2xl font-bold text-blue-600">
+                  {statsLoading ? (
+                    <Skeleton className="h-8 w-12 mx-auto" />
+                  ) : (
+                    stats?.totalDocuments || 0
+                  )}
+                </div>
+                <div className="text-sm text-blue-800 mt-1">총 서류</div>
+              </div>
+              
+              <div className="text-center p-4 bg-yellow-50 rounded-lg">
+                <div className="text-2xl font-bold text-yellow-600">
+                  {statsLoading ? (
+                    <Skeleton className="h-8 w-12 mx-auto" />
+                  ) : (
+                    stats?.pendingActivations || 0
+                  )}
+                </div>
+                <div className="text-sm text-yellow-800 mt-1">접수 대기</div>
+                <div className="text-xs text-yellow-700 mt-1">(대기 상태 문서)</div>
+              </div>
+              
+              <div className="text-center p-4 bg-orange-50 rounded-lg">
+                <div className="text-2xl font-bold text-orange-600">
+                  {statsLoading ? (
+                    <Skeleton className="h-8 w-12 mx-auto" />
+                  ) : (
+                    stats?.inProgressCount || 0
+                  )}
+                </div>
+                <div className="text-sm text-orange-800 mt-1">진행중</div>
+              </div>
+              
+              <div className="text-center p-4 bg-green-50 rounded-lg">
+                <div className="text-2xl font-bold text-green-600">
+                  {statsLoading ? (
+                    <Skeleton className="h-8 w-12 mx-auto" />
+                  ) : (
+                    stats?.activatedCount || 0
+                  )}
+                </div>
+                <div className="text-sm text-green-800 mt-1">개통완료</div>
+              </div>
+              
+              <div className="text-center p-4 bg-red-50 rounded-lg">
+                <div className="text-2xl font-bold text-red-600">
+                  {statsLoading ? (
+                    <Skeleton className="h-8 w-12 mx-auto" />
+                  ) : (
+                    stats?.canceledCount || 0
+                  )}
+                </div>
+                <div className="text-sm text-red-800 mt-1">취소</div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Worker personal stats */}
+        {user?.userRole === 'dealer_worker' && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg font-semibold">내 개통 실적</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center justify-between p-4 bg-blue-50 rounded-lg">
+                <div className="flex items-center">
+                  <CheckCircle className="h-8 w-8 text-blue-600 mr-3" />
+                  <div>
+                    <div className="text-sm text-gray-600">내가 개통한 건수</div>
+                    <div className="text-2xl font-bold text-blue-600">
+                      {stats?.activatedCount || 0}건
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Role-based additional stats for admin and workers - 맨 아래로 이동 */}
         {user?.userType === 'admin' && (
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
             {/* 통신사별 개통 수량 */}
@@ -315,276 +578,7 @@ export function Dashboard() {
           </div>
         )}
 
-        {/* Worker personal stats */}
-        {user?.userRole === 'dealer_worker' && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg font-semibold">내 개통 실적</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center justify-between p-4 bg-blue-50 rounded-lg">
-                <div className="flex items-center">
-                  <CheckCircle className="h-8 w-8 text-blue-600 mr-3" />
-                  <div>
-                    <div className="text-sm text-gray-600">내가 개통한 건수</div>
-                    <div className="text-2xl font-bold text-blue-600">
-                      {stats?.activatedCount || 0}건
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-
-
-        {/* 당월 개통 현황 */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center">
-              <Calculator className="mr-2 h-5 w-5" />
-              당월 개통 현황
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-5">
-              <div className="text-center p-4 bg-blue-50 rounded-lg">
-                <div className="text-2xl font-bold text-blue-600">
-                  {statsLoading ? (
-                    <Skeleton className="h-8 w-12 mx-auto" />
-                  ) : (
-                    stats?.totalDocuments || 0
-                  )}
-                </div>
-                <div className="text-sm text-blue-800 mt-1">총 서류</div>
-              </div>
-              
-              <div className="text-center p-4 bg-yellow-50 rounded-lg">
-                <div className="text-2xl font-bold text-yellow-600">
-                  {statsLoading ? (
-                    <Skeleton className="h-8 w-12 mx-auto" />
-                  ) : (
-                    stats?.pendingActivations || 0
-                  )}
-                </div>
-                <div className="text-sm text-yellow-800 mt-1">접수 대기</div>
-                <div className="text-xs text-yellow-700 mt-1">(대기 상태 문서)</div>
-              </div>
-              
-              <div className="text-center p-4 bg-orange-50 rounded-lg">
-                <div className="text-2xl font-bold text-orange-600">
-                  {statsLoading ? (
-                    <Skeleton className="h-8 w-12 mx-auto" />
-                  ) : (
-                    stats?.inProgressCount || 0
-                  )}
-                </div>
-                <div className="text-sm text-orange-800 mt-1">진행중</div>
-              </div>
-              
-              <div className="text-center p-4 bg-green-50 rounded-lg">
-                <div className="text-2xl font-bold text-green-600">
-                  {statsLoading ? (
-                    <Skeleton className="h-8 w-12 mx-auto" />
-                  ) : (
-                    stats?.activatedCount || 0
-                  )}
-                </div>
-                <div className="text-sm text-green-800 mt-1">개통완료</div>
-              </div>
-              
-              <div className="text-center p-4 bg-red-50 rounded-lg">
-                <div className="text-2xl font-bold text-red-600">
-                  {statsLoading ? (
-                    <Skeleton className="h-8 w-12 mx-auto" />
-                  ) : (
-                    stats?.canceledCount || 0
-                  )}
-                </div>
-                <div className="text-sm text-red-800 mt-1">취소</div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Main Content Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Today's Statistics */}
-          <div className="lg:col-span-2">
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle>당일 현황</CardTitle>
-                  <Button 
-                    variant="link" 
-                    size="sm"
-                    onClick={() => window.location.href = '/documents'}
-                  >
-                    전체보기
-                  </Button>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {/* 당일 접수건 */}
-                  <div className="bg-blue-50 rounded-lg p-6 border border-blue-200">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h3 className="text-lg font-semibold text-blue-900 mb-2">당일 접수건</h3>
-                        <p className="text-sm text-blue-700">오늘 새로 접수된 건수</p>
-                      </div>
-                      <Upload className="h-8 w-8 text-blue-600" />
-                    </div>
-                    <div className="mt-4">
-                      {todayStatsLoading ? (
-                        <Skeleton className="h-12 w-20" />
-                      ) : (
-                        <div className="text-3xl font-bold text-blue-600">
-                          {todayStats?.todayReception || 0}
-                        </div>
-                      )}
-                      <div className="text-sm text-blue-600 mt-1">건</div>
-                    </div>
-                  </div>
-
-                  {/* 당일 개통건 */}
-                  <div className="bg-green-50 rounded-lg p-6 border border-green-200">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h3 className="text-lg font-semibold text-green-900 mb-2">당일 개통건</h3>
-                        <p className="text-sm text-green-700">오늘 개통 완료된 건수</p>
-                      </div>
-                      <CheckCircle className="h-8 w-8 text-green-600" />
-                    </div>
-                    <div className="mt-4">
-                      {todayStatsLoading ? (
-                        <Skeleton className="h-12 w-20" />
-                      ) : (
-                        <div className="text-3xl font-bold text-green-600">
-                          {todayStats?.todayActivation || 0}
-                        </div>
-                      )}
-                      <div className="text-sm text-green-600 mt-1">건</div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* 통신사별 개통 현황 */}
-                {todayStats?.carrierStats && todayStats.carrierStats.length > 0 && (
-                  <div className="mt-6">
-                    <h4 className="text-sm font-medium text-gray-900 mb-3">당일 통신사별 개통 현황</h4>
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                      {todayStats.carrierStats.map((stat, index) => (
-                        <div 
-                          key={stat.carrier} 
-                          className="bg-white border rounded-lg p-3 text-center hover:shadow-sm transition-shadow"
-                        >
-                          <div className="text-lg font-bold text-gray-900">{stat.count}</div>
-                          <div className="text-xs text-gray-600 mt-1 break-words leading-tight">
-                            {stat.carrier}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* 추가 정보 */}
-                <div className="mt-6 p-4 bg-gray-50 rounded-lg border">
-                  <div className="flex items-center justify-center space-x-8 text-sm text-gray-600">
-                    <div className="flex items-center space-x-2">
-                      <Calendar className="h-4 w-4" />
-                      <span>{format(new Date(), 'yyyy년 MM월 dd일', { locale: ko })}</span>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Clock className="h-4 w-4" />
-                      <span>실시간 업데이트</span>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Right Sidebar */}
-          <div className="space-y-6">
-            {/* Pricing Announcements */}
-            <Card>
-              <CardHeader>
-                <CardTitle>단가표 최신 공지</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {activePricingTable ? (
-                  <div className="p-3 bg-blue-50 rounded-lg border-l-4 border-accent">
-                    <div className="flex items-start space-x-3">
-                      <Calculator className="h-5 w-5 text-accent flex-shrink-0 mt-0.5" />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-gray-900">
-                          {activePricingTable.title}
-                        </p>
-                        <p className="text-xs text-gray-500 mt-1">
-                          {formatSafeDate(activePricingTable.uploadedAt, 'yyyy-MM-dd') + ' 게시'}
-                        </p>
-                        <Button
-                          variant="link"
-                          size="sm"
-                          className="text-xs p-0 h-auto mt-2"
-                          onClick={handleDownloadPricing}
-                        >
-                          다운로드
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="text-center py-4">
-                    <Calculator className="mx-auto h-8 w-8 text-gray-400" />
-                    <p className="mt-2 text-sm text-gray-500">등록된 단가표가 없습니다.</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Quick Actions */}
-            <Card>
-              <CardHeader>
-                <CardTitle>바로가기</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {user?.userType === 'user' && (
-                    <Button
-                      className="w-full"
-                      onClick={handleUploadDocument}
-                    >
-                      <Upload className="mr-2 h-5 w-5" />
-                      서류 업로드
-                    </Button>
-                  )}
-                  
-                  <Button
-                    variant="outline"
-                    className="w-full"
-                    onClick={handleDownloadPricing}
-                  >
-                    <Download className="mr-2 h-5 w-5" />
-                    서식지 다운로드
-                  </Button>
-                  
-                  <Button
-                    variant="outline"
-                    className="w-full"
-                    onClick={() => window.location.href = '/downloads'}
-                  >
-                    <Calculator className="mr-2 h-5 w-5" />
-                    단가표
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
+        {/* Dialog modals */}
 
         {/* Carrier Details Dialog */}
         <Dialog open={carrierDetailsOpen} onOpenChange={setCarrierDetailsOpen}>
