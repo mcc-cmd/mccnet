@@ -176,7 +176,7 @@ export function Dashboard() {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* 당일 접수건 */}
                 <div className="bg-blue-50 rounded-lg p-6 border border-blue-200">
                   <div className="flex items-center justify-between">
@@ -216,74 +216,6 @@ export function Dashboard() {
                       </div>
                     )}
                     <div className="text-sm text-green-600 mt-1">건</div>
-                  </div>
-                </div>
-
-                {/* 단가표 최신 공지 */}
-                <div className="bg-blue-50 rounded-lg p-6 border border-blue-200">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h3 className="text-lg font-semibold text-blue-900 mb-2">단가표 최신 공지</h3>
-                      <p className="text-sm text-blue-700">최신 업로드된 단가표</p>
-                    </div>
-                    <Calculator className="h-8 w-8 text-blue-600" />
-                  </div>
-                  <div className="mt-4">
-                    {activePricingTable ? (
-                      <div>
-                        <div className="text-sm font-medium text-blue-900 truncate">
-                          {activePricingTable.title}
-                        </div>
-                        <div className="text-xs text-blue-700 mt-1">
-                          {formatSafeDate(activePricingTable.uploadedAt, 'yyyy-MM-dd') + ' 게시'}
-                        </div>
-                        <Button
-                          variant="link"
-                          size="sm"
-                          className="text-xs p-0 h-auto mt-2"
-                          onClick={handleDownloadPricing}
-                        >
-                          다운로드
-                        </Button>
-                      </div>
-                    ) : (
-                      <div className="text-sm text-blue-700">등록된 단가표가 없습니다.</div>
-                    )}
-                  </div>
-                </div>
-
-                {/* 빠른 기능 */}
-                <div className="bg-gray-50 rounded-lg p-6 border border-gray-200">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h3 className="text-lg font-semibold text-gray-900 mb-2">빠른 기능</h3>
-                      <p className="text-sm text-gray-700">자주 사용하는 메뉴</p>
-                    </div>
-                    <div className="flex space-x-1">
-                      <Upload className="h-4 w-4 text-gray-600" />
-                      <Download className="h-4 w-4 text-gray-600" />
-                      <Calculator className="h-4 w-4 text-gray-600" />
-                    </div>
-                  </div>
-                  <div className="mt-4 space-y-2">
-                    <Button 
-                      onClick={() => window.location.href = '/submit'}
-                      className="w-full justify-start text-xs"
-                      variant="outline"
-                      size="sm"
-                    >
-                      <Upload className="mr-1 h-3 w-3" />
-                      접수 신청
-                    </Button>
-                    <Button 
-                      onClick={() => window.location.href = '/downloads'}
-                      className="w-full justify-start text-xs"
-                      variant="outline"
-                      size="sm"
-                    >
-                      <Download className="mr-1 h-3 w-3" />
-                      서식지 다운로드
-                    </Button>
                   </div>
                 </div>
               </div>
@@ -543,6 +475,100 @@ export function Dashboard() {
             </CardContent>
           </Card>
         )}
+
+        {/* 단가표 최신 공지 & 빠른 기능 - 가로 배치 */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* 단가표 최신 공지 */}
+          <Card>
+            <CardHeader>
+              <div className="flex items-center space-x-2">
+                <Calculator className="h-5 w-5 text-blue-600" />
+                <CardTitle className="text-lg font-semibold">단가표 최신 공지</CardTitle>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {activePricingTable ? (
+                <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <div className="text-sm font-medium text-blue-900 mb-1">
+                        최신 업로드된 단가표
+                      </div>
+                      <div className="text-base font-semibold text-blue-800 mb-2">
+                        {activePricingTable.title}
+                      </div>
+                      <div className="text-xs text-blue-700">
+                        {formatSafeDate(activePricingTable.uploadedAt, 'yyyy-MM-dd') + ' 게시'}
+                      </div>
+                    </div>
+                    <div className="flex flex-col items-center ml-4">
+                      <div className="bg-blue-100 p-2 rounded-full mb-2">
+                        <Download className="h-6 w-6 text-blue-600" />
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="text-xs"
+                        onClick={handleDownloadPricing}
+                      >
+                        다운로드
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <div className="bg-gray-100 p-3 rounded-full w-16 h-16 mx-auto mb-3 flex items-center justify-center">
+                    <Calculator className="h-8 w-8 text-gray-400" />
+                  </div>
+                  <p className="text-sm text-gray-500">등록된 단가표가 없습니다.</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* 빠른 기능 */}
+          <Card>
+            <CardHeader>
+              <div className="flex items-center space-x-2">
+                <div className="flex space-x-1">
+                  <Upload className="h-4 w-4 text-gray-600" />
+                  <Download className="h-4 w-4 text-gray-600" />
+                </div>
+                <CardTitle className="text-lg font-semibold">빠른 기능</CardTitle>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                <div className="text-sm text-gray-600 mb-4">자주 사용하는 메뉴</div>
+                
+                <Button 
+                  onClick={() => window.location.href = '/submit'}
+                  className="w-full justify-start"
+                  variant="outline"
+                >
+                  <Upload className="mr-3 h-5 w-5" />
+                  <div className="text-left">
+                    <div className="font-medium">접수 신청</div>
+                    <div className="text-xs text-gray-500">새로운 서류 접수</div>
+                  </div>
+                </Button>
+                
+                <Button 
+                  onClick={() => window.location.href = '/downloads'}
+                  className="w-full justify-start"
+                  variant="outline"
+                >
+                  <Download className="mr-3 h-5 w-5" />
+                  <div className="text-left">
+                    <div className="font-medium">서식지 다운로드</div>
+                    <div className="text-xs text-gray-500">서류 양식 다운로드</div>
+                  </div>
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
 
         {/* Dialog modals */}
 
