@@ -331,6 +331,10 @@ This is a document management system built for MCC네트월드 telecommunication
 - July 31, 2025. Implemented admin-only access restriction for settlement management: only administrators can view and access settlement functionality
 - July 31, 2025. Updated sidebar navigation to hide settlement management menu from non-admin users (dealers and workers)
 - July 31, 2025. Removed pricing table upload/download features from settlement management due to implementation issues and user request
+- July 31, 2025. Completely removed pricing policy management functionality from AdminPanel including tabs, state variables, mutations, and related handlers
+- July 31, 2025. Cleaned up AdminPanel tab structure from 10 to 9 tabs by removing "정책표 관리" (pricing policies) tab
+- July 31, 2025. Simplified Templates and Pricing tabs to show placeholder content with preparation status messages
+- July 31, 2025. Fixed WorkerStatistics component undefined error by implementing proper tab content structure
 
 ## User Preferences
 

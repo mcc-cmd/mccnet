@@ -28,7 +28,6 @@ const navigation = [
 
 const adminNavigation = [
   { name: '관리자 패널', href: '/admin', icon: Settings },
-  { name: '테스트 페이지', href: '/test', icon: TestTube },
 ];
 
 interface SidebarProps {
