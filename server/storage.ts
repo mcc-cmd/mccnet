@@ -1908,15 +1908,16 @@ class SqliteStorage implements IStorage {
     const pending = db.prepare(`SELECT COUNT(*) as count FROM documents${uploadWhereClause}${uploadWhereClause ? ' AND' : ' WHERE'} status = ?`).get(...uploadDateParams, '접수') as { count: number };
     const completed = db.prepare(`SELECT COUNT(*) as count FROM documents${uploadWhereClause}${uploadWhereClause ? ' AND' : ' WHERE'} status = ?`).get(...uploadDateParams, '완료') as { count: number };
     
-    // 개통 관련 통계는 모든 문서 대상 (날짜 필터 무시)
+    // 개통 관련 통계는 근무자의 경우 자신이 처리한 건만, 판매점/관리자는 모든 데이터
     let activationWhereClause = '';
     let activationParams: any[] = [];
     if (userType === 'dealer_store' && dealerId) {
       activationWhereClause = ' WHERE dealer_id = ?';
       activationParams = [dealerId];
     } else if (userType === 'dealer_worker' && userId) {
-      activationWhereClause = ' WHERE activated_by = ? OR user_id = ?';
-      activationParams = [userId, userId];
+      // 근무자는 자신이 처리한 건만 표시 (activated_by 기준)
+      activationWhereClause = ' WHERE activated_by = ?';
+      activationParams = [userId];
     }
     
     const activated = db.prepare(`SELECT COUNT(*) as count FROM documents${activationWhereClause}${activationWhereClause ? ' AND' : ' WHERE'} activation_status = ?`).get(...activationParams, '개통') as { count: number };
@@ -2523,7 +2524,7 @@ class SqliteStorage implements IStorage {
   }
 
   // 당일 통계 조회
-  async getTodayStats(): Promise<{ 
+  async getTodayStats(userId?: number, userType?: string): Promise<{ 
     todayReception: number; 
     todayActivation: number;
     todayOtherCompleted: number;
@@ -2531,7 +2532,16 @@ class SqliteStorage implements IStorage {
   }> {
     const today = new Date().toISOString().split('T')[0];
     
-    // 당일 접수건 (업로드 날짜 기준)
+    let whereClause = '';
+    let params: any[] = [today];
+    
+    // 근무자의 경우 자신이 처리한 건만 조회
+    if (userType === 'dealer_worker' && userId) {
+      whereClause = ' AND activated_by = ?';
+      params.push(userId);
+    }
+    
+    // 당일 접수건 (업로드 날짜 기준) - 모든 사용자에게 동일하게 표시
     const todayReception = db.prepare(`
       SELECT COUNT(*) as count 
       FROM documents 
@@ -2542,25 +2552,25 @@ class SqliteStorage implements IStorage {
     const todayActivation = db.prepare(`
       SELECT COUNT(*) as count 
       FROM documents 
-      WHERE date(activated_at) = ? AND activation_status = '개통'
-    `).get(today) as { count: number };
+      WHERE date(activated_at) = ? AND activation_status = '개통'${whereClause}
+    `).get(...params) as { count: number };
     
     // 당일 기타완료건 (기타완료 날짜 기준)
     const todayOtherCompleted = db.prepare(`
       SELECT COUNT(*) as count 
       FROM documents 
-      WHERE date(activated_at) = ? AND activation_status = '기타완료'
-    `).get(today) as { count: number };
+      WHERE date(activated_at) = ? AND activation_status = '기타완료'${whereClause}
+    `).get(...params) as { count: number };
     
     // 당일 통신사별 개통 현황 - 기타완료 제외, 기타 통신사들도 제외
     const carrierStats = db.prepare(`
       SELECT carrier, COUNT(*) as count
       FROM documents 
       WHERE date(activated_at) = ? AND activation_status = '개통'
-        AND carrier NOT LIKE '기타%'
+        AND carrier NOT LIKE '기타%'${whereClause}
       GROUP BY carrier
       ORDER BY count DESC
-    `).all(today) as Array<{ carrier: string; count: number }>;
+    `).all(...params) as Array<{ carrier: string; count: number }>;
     
     return {
       todayReception: todayReception.count,
