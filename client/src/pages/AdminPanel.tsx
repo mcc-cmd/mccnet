@@ -817,7 +817,7 @@ export function AdminPanel() {
   const [userDialogOpen, setUserDialogOpen] = useState(false);
   const [adminDialogOpen, setAdminDialogOpen] = useState(false);
   const [workerDialogOpen, setWorkerDialogOpen] = useState(false);
-  const [pricingDialogOpen, setPricingDialogOpen] = useState(false);
+
   const [templateDialogOpen, setTemplateDialogOpen] = useState(false);
   const [statusDialogOpen, setStatusDialogOpen] = useState(false);
   const [servicePlanDialogOpen, setServicePlanDialogOpen] = useState(false);
@@ -880,10 +880,7 @@ export function AdminPanel() {
     queryFn: () => apiRequest('/api/admin/documents') as Promise<Array<Document & { dealerName: string; userName: string }>>,
   });
 
-  const { data: pricingTables } = useQuery({
-    queryKey: ['/api/pricing-tables'],
-    queryFn: () => apiRequest('/api/pricing-tables'),
-  });
+
 
   const { data: documentTemplates } = useQuery({
     queryKey: ['/api/document-templates'],
@@ -3176,102 +3173,7 @@ export function AdminPanel() {
             </Card>
           </TabsContent>
 
-          {/* Pricing Tab */}
-          <TabsContent value="pricing">
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle>단가표 관리</CardTitle>
-                <Dialog open={pricingDialogOpen} onOpenChange={setPricingDialogOpen}>
-                  <DialogTrigger asChild>
-                    <Button>
-                      <Upload className="mr-2 h-4 w-4" />
-                      단가표 업로드
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>새 단가표 업로드</DialogTitle>
-                    </DialogHeader>
-                    <form onSubmit={handleUploadPricing} className="space-y-4">
-                      <div>
-                        <Label htmlFor="pricingTitle">제목</Label>
-                        <Input
-                          id="pricingTitle"
-                          value={pricingTitle}
-                          onChange={(e) => setPricingTitle(e.target.value)}
-                          placeholder="단가표 제목을 입력하세요"
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="pricingFile">파일</Label>
-                        <Input
-                          id="pricingFile"
-                          type="file"
-                          accept=".xlsx,.xls,.pdf,.jpg,.jpeg"
-                          onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
-                          required
-                        />
-                        <p className="text-xs text-gray-500 mt-1">
-                          Excel 파일(.xlsx, .xls), PDF, JPG, JPEG 파일 업로드 가능 (최대 50MB)
-                        </p>
-                      </div>
-                      <div className="flex justify-end space-x-2">
-                        <Button type="button" variant="outline" onClick={() => setPricingDialogOpen(false)}>
-                          취소
-                        </Button>
-                        <Button type="submit" disabled={uploadPricingMutation.isPending}>
-                          {uploadPricingMutation.isPending ? '업로드 중...' : '업로드'}
-                        </Button>
-                      </div>
-                    </form>
-                  </DialogContent>
-                </Dialog>
-              </CardHeader>
-              <CardContent>
-                {pricingTables && pricingTables.length > 0 ? (
-                  <div className="space-y-4">
-                    {pricingTables.map((table: any) => (
-                      <div key={table.id} className={`border rounded-lg p-4 ${table.isActive ? 'ring-2 ring-accent' : ''}`}>
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center space-x-4">
-                            <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-                              table.isActive ? 'bg-accent text-white' : 'bg-gray-100 text-gray-400'
-                            }`}>
-                              <Calculator className="w-5 h-5" />
-                            </div>
-                            <div>
-                              <div className="flex items-center space-x-2">
-                                <h4 className="font-medium text-gray-900">{table.title}</h4>
-                                {table.isActive && (
-                                  <Badge className="bg-accent text-white">활성</Badge>
-                                )}
-                              </div>
-                              <p className="text-sm text-gray-500">
-                                {format(new Date(table.uploadedAt), 'yyyy-MM-dd HH:mm', { locale: ko })}
-                              </p>
-                            </div>
-                          </div>
-                          <Button
-                            variant="outline"
-                            onClick={() => handlePricingDownload(table.id, table.fileName)}
-                          >
-                            <Download className="w-4 h-4 mr-2" />
-                            다운로드
-                          </Button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-8">
-                    <Calculator className="mx-auto h-12 w-12 text-gray-400" />
-                    <h3 className="mt-2 text-sm font-medium text-gray-900">단가표가 없습니다</h3>
-                    <p className="mt-1 text-sm text-gray-500">첫 번째 단가표를 업로드해보세요.</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
+
 
           {/* Service Plans Tab */}
           <TabsContent value="service-plans">
