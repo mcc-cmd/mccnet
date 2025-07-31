@@ -266,13 +266,13 @@ export default function WorkRequests() {
       )}
 
       {/* 완료 처리 다이얼로그 */}
-      <Dialog open={statusDialogOpen} onOpenChange={setStatusDialogOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>업무 완료 처리</DialogTitle>
-          </DialogHeader>
-          
-          {selectedDocument && (
+      {selectedDocument && (
+        <Dialog open={statusDialogOpen} onOpenChange={setStatusDialogOpen}>
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>업무 완료 처리</DialogTitle>
+            </DialogHeader>
+            
             <Form {...statusForm}>
               <form onSubmit={statusForm.handleSubmit(onSubmitStatus)} className="space-y-6">
                 <div className="bg-gray-50 p-4 rounded-lg">
@@ -363,31 +363,33 @@ export default function WorkRequests() {
                     부가서비스 (복수 선택 가능)
                   </label>
                   <div className="grid grid-cols-2 gap-2 mt-2">
-                    {additionalServices.map((service: any) => (
+                    {additionalServices?.length > 0 && additionalServices.map((service: any) => (
                       <FormField
                         key={service.id}
                         control={statusForm.control}
                         name="additionalServices"
-                        render={({ field }) => (
-                          <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                            <FormControl>
-                              <Checkbox
-                                checked={field.value?.includes(service.id)}
-                                onCheckedChange={(checked) => {
-                                  const current = field.value || [];
-                                  if (checked) {
-                                    field.onChange([...current, service.id]);
-                                  } else {
-                                    field.onChange(current.filter((id: number) => id !== service.id));
-                                  }
-                                }}
-                              />
-                            </FormControl>
-                            <FormLabel className="text-sm font-normal">
-                              {service.name}
-                            </FormLabel>
-                          </FormItem>
-                        )}
+                        render={({ field }) => {
+                          const currentValue = field.value || [];
+                          return (
+                            <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                              <FormControl>
+                                <Checkbox
+                                  checked={currentValue.includes(service.id)}
+                                  onCheckedChange={(checked) => {
+                                    if (checked) {
+                                      field.onChange([...currentValue, service.id]);
+                                    } else {
+                                      field.onChange(currentValue.filter((id: number) => id !== service.id));
+                                    }
+                                  }}
+                                />
+                              </FormControl>
+                              <FormLabel className="text-sm font-normal">
+                                {service.name}
+                              </FormLabel>
+                            </FormItem>
+                          );
+                        }}
                       />
                     ))}
                   </div>
@@ -576,9 +578,9 @@ export default function WorkRequests() {
                 </div>
               </form>
             </Form>
-          )}
-        </DialogContent>
-      </Dialog>
+          </DialogContent>
+        </Dialog>
+      )}
       </div>
     </Layout>
   );
