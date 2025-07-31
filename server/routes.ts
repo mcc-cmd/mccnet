@@ -546,6 +546,66 @@ router.get('/api/pricing-tables/template', requireAuth, async (req, res) => {
   }
 });
 
+// 정산 단가표 업로드
+router.post('/api/pricing-tables/upload', requireAuth, pricingUpload.single('file'), async (req: any, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: '파일을 선택해주세요.' });
+    }
+
+    // Excel 파일 읽기
+    const workbook = XLSX.readFile(req.file.path);
+    const sheetName = workbook.SheetNames[0];
+    const worksheet = workbook.Sheets[sheetName];
+    
+    // JSON으로 변환
+    const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+    
+    if (jsonData.length < 2) {
+      return res.status(400).json({ error: '올바른 형식의 엑셀 파일이 아닙니다.' });
+    }
+
+    // 헤더 행 제거하고 데이터 파싱
+    const dataRows = jsonData.slice(1) as any[][];
+    const parsedData = dataRows
+      .filter(row => row[0] && row[1]) // 통신사와 요금제가 있는 행만
+      .map((row, index) => ({
+        carrier: row[0] || '',
+        plan: row[1] || '',
+        registrationPrepaid: parseInt(row[2]) || 0,
+        registrationPostpaid: parseInt(row[3]) || 0,
+        simPrepaid: parseInt(row[4]) || 0,
+        simPostpaid: parseInt(row[5]) || 0,
+        bundleDiscount: parseInt(row[6]) || 0,
+        commission: parseInt(row[7]) || 0,
+        notes: row[8] || ''
+      }));
+
+    // 파일 정리
+    fs.unlinkSync(req.file.path);
+
+    res.json({
+      success: true,
+      message: `${parsedData.length}개의 단가 정보가 업로드되었습니다.`,
+      data: parsedData
+    });
+
+  } catch (error: any) {
+    console.error('Pricing table upload error:', error);
+    
+    // 업로드된 파일 정리
+    if (req.file?.path) {
+      try {
+        fs.unlinkSync(req.file.path);
+      } catch (e) {
+        console.error('File cleanup error:', e);
+      }
+    }
+    
+    res.status(500).json({ error: '파일 업로드 중 오류가 발생했습니다.' });
+  }
+});
+
 // Document upload route
 router.post('/api/documents', requireAuth, upload.single('file'), async (req: any, res) => {
   try {
