@@ -154,8 +154,13 @@ export const useApiRequest = () => {
         status: response.status,
         statusText: response.statusText
       });
-      const error = await response.json().catch(() => ({ error: '요청에 실패했습니다.' }));
-      throw new Error(error.error || '요청에 실패했습니다.');
+      const errorData = await response.json().catch(() => ({ error: '요청에 실패했습니다.' }));
+      const error = new Error(errorData.error || '요청에 실패했습니다.') as any;
+      // 상세 정보를 에러 객체에 포함
+      error.details = errorData.details;
+      error.totalErrors = errorData.totalErrors;
+      error.addedCodes = errorData.addedCodes;
+      throw error;
     }
 
     return response.json();
