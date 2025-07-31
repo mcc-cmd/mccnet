@@ -2111,8 +2111,9 @@ export function AdminPanel() {
                   </div>
                 ) : contactCodes && contactCodes.length > 0 ? (
                   <div className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {contactCodes.map((code) => (
+                    <div className="max-h-[600px] overflow-y-auto border border-gray-200 rounded-lg p-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {contactCodes.map((code) => (
                         <div key={code.id} className="border rounded-lg p-4 bg-white">
                           <div className="flex items-center justify-between mb-3">
                             <div>
@@ -2139,7 +2140,8 @@ export function AdminPanel() {
                             </Button>
                           </div>
                         </div>
-                      ))}
+                        ))}
+                      </div>
                     </div>
                   </div>
                 ) : (
