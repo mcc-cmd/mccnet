@@ -2293,4 +2293,71 @@ router.delete('/api/carriers/:id', requireAuth, requireAdmin, async (req: any, r
   }
 });
 
+// Pricing Policies API
+router.get('/api/pricing-policies', requireAdmin, async (req, res) => {
+  try {
+    const policies = await storage.getPricingPolicies();
+    res.json(policies);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.post('/api/pricing-policies', requireAdmin, async (req: any, res) => {
+  try {
+    const data = req.body;
+    const policy = await storage.createPricingPolicy(data);
+    res.json(policy);
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+router.get('/api/pricing-policies/:id', requireAdmin, async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const policy = await storage.getPricingPolicy(id);
+    
+    if (!policy) {
+      return res.status(404).json({ error: '단가표 정책을 찾을 수 없습니다.' });
+    }
+    
+    res.json(policy);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.put('/api/pricing-policies/:id', requireAdmin, async (req: any, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const data = req.body;
+    const policy = await storage.updatePricingPolicy(id, data);
+    res.json(policy);
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+router.delete('/api/pricing-policies/:id', requireAdmin, async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    await storage.deletePricingPolicy(id);
+    res.json({ success: true });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// 자동 커미션 계산 API
+router.post('/api/pricing-policies/calculate-commission', requireAuth, async (req: any, res) => {
+  try {
+    const { carrier, servicePlanName } = req.body;
+    const commissionAmount = await storage.calculateCommissionForDocument(carrier, servicePlanName);
+    res.json({ commissionAmount });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 export default router;

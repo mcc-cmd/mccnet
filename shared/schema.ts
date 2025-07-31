@@ -311,6 +311,17 @@ export interface AdditionalService {
   updatedAt: Date;
 }
 
+export interface PricingPolicy {
+  id: number;
+  carrier: string;
+  servicePlanName: string;
+  commissionAmount: number; // 커미션 금액 (원)
+  policyType: string; // 'commission', 'bonus', etc.
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 export interface DocumentServicePlan {
   id: number;
   documentId: number;
@@ -385,6 +396,7 @@ export interface Settlement {
   settlementAmount?: number; // 정산 금액 (원 단위)
   commissionRate?: number; // 수수료율 (%)
   settlementStatus: '대기' | '계산완료' | '지급완료' | '보류';
+  autoCalculated?: boolean; // 자동 계산 여부
   
   // 정산 일자
   settlementDate?: Date;
@@ -472,6 +484,28 @@ export const updateCarrierSchema = createCarrierSchema.partial();
 
 export type CreateCarrierForm = z.infer<typeof createCarrierSchema>;
 export type UpdateCarrierForm = z.infer<typeof updateCarrierSchema>;
+
+export const createPricingPolicySchema = z.object({
+  carrier: z.string().min(1, "통신사를 선택하세요"),
+  servicePlanName: z.string().min(1, "요금제명을 입력하세요"),
+  commissionAmount: z.number().min(0, "커미션 금액을 입력하세요"),
+  policyType: z.string().default("commission"),
+  isActive: z.boolean().default(true),
+});
+
+export type CreatePricingPolicyForm = z.infer<typeof createPricingPolicySchema>;
+
+// 단가표 정책 관리 인터페이스
+export interface PricingPolicy {
+  id: number;
+  carrier: string; // 통신사
+  servicePlanName: string; // 요금제명
+  commissionAmount: number; // 커미션 금액
+  policyType: string; // 정책 유형 (기본값: commission)
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
 
 // 접점코드 관리 인터페이스
 export interface ContactCode {

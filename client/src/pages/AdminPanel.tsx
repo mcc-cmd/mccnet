@@ -31,7 +31,8 @@ import {
   AlertTriangle,
   TrendingUp,
   Trash2,
-  Edit
+  Edit,
+  DollarSign
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
@@ -822,6 +823,9 @@ export function AdminPanel() {
   const [selectedDealerForContactCodes, setSelectedDealerForContactCodes] = useState<Dealer | null>(null);
   const [contactCodeDialogOpen, setContactCodeDialogOpen] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [pricingPolicyDialogOpen, setPricingPolicyDialogOpen] = useState(false);
+  const [editPricingPolicyDialogOpen, setEditPricingPolicyDialogOpen] = useState(false);
+  const [editingPricingPolicy, setEditingPricingPolicy] = useState<any>(null);
   const [templateFile, setTemplateFile] = useState<File | null>(null);
   const [pricingTitle, setPricingTitle] = useState('');
   const [templateTitle, setTemplateTitle] = useState('');
@@ -917,6 +921,12 @@ export function AdminPanel() {
     queryFn: () => apiRequest('/api/contact-codes') as Promise<ContactCode[]>,
   });
 
+  // Pricing Policies Query
+  const { data: pricingPolicies, isLoading: pricingPoliciesLoading } = useQuery({
+    queryKey: ['/api/pricing-policies'],
+    queryFn: () => apiRequest('/api/pricing-policies'),
+  });
+
   // Forms
   const dealerForm = useForm<CreateDealerForm>({
     resolver: zodResolver(createDealerSchema),
@@ -981,6 +991,16 @@ export function AdminPanel() {
       planType: '',
       dataAllowance: '',
       monthlyFee: 0,
+      isActive: true,
+    },
+  });
+
+  const pricingPolicyForm = useForm({
+    defaultValues: {
+      carrier: '',
+      servicePlanName: '',
+      commissionAmount: 0,
+      policyType: 'commission',
       isActive: true,
     },
   });
@@ -1524,6 +1544,76 @@ export function AdminPanel() {
     },
   });
 
+  // Pricing Policy Mutations
+  const createPricingPolicyMutation = useMutation({
+    mutationFn: (data: any) => 
+      apiRequest('/api/pricing-policies', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/pricing-policies'] });
+      setPricingPolicyDialogOpen(false);
+      pricingPolicyForm.reset();
+      toast({
+        title: '성공',
+        description: '단가표 정책이 생성되었습니다.',
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: '오류',
+        description: error.message,
+        variant: 'destructive',
+      });
+    },
+  });
+
+  const updatePricingPolicyMutation = useMutation({
+    mutationFn: ({ id, data }: { id: number; data: any }) => 
+      apiRequest(`/api/pricing-policies/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(data),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/pricing-policies'] });
+      setEditPricingPolicyDialogOpen(false);
+      setEditingPricingPolicy(null);
+      toast({
+        title: '성공',
+        description: '단가표 정책이 수정되었습니다.',
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: '오류',
+        description: error.message,
+        variant: 'destructive',
+      });
+    },
+  });
+
+  const deletePricingPolicyMutation = useMutation({
+    mutationFn: (id: number) => 
+      apiRequest(`/api/pricing-policies/${id}`, {
+        method: 'DELETE',
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/pricing-policies'] });
+      toast({
+        title: '성공',
+        description: '단가표 정책이 삭제되었습니다.',
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: '오류',
+        description: error.message,
+        variant: 'destructive',
+      });
+    },
+  });
+
   const servicePlanImageMutation = useMutation({
     mutationFn: async (data: { carrier: string; file: File }) => {
       const formData = new FormData();
@@ -2015,7 +2105,7 @@ export function AdminPanel() {
 
         {/* Admin Tabs */}
         <Tabs defaultValue="users" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-9">
+          <TabsList className="grid w-full grid-cols-10">
             <TabsTrigger value="contact-codes" className="flex items-center space-x-2">
               <Settings className="h-4 w-4" />
               <span>접점코드</span>
@@ -2036,6 +2126,10 @@ export function AdminPanel() {
               <FileText className="h-4 w-4" />
               <span>서류 관리</span>
             </TabsTrigger>
+            <TabsTrigger value="pricing-policies" className="flex items-center space-x-2">
+              <DollarSign className="h-4 w-4" />
+              <span>정책표 관리</span>
+            </TabsTrigger>
             <TabsTrigger value="service-plans" className="flex items-center space-x-2">
               <Settings className="h-4 w-4" />
               <span>서비스 플랜</span>
@@ -2051,6 +2145,10 @@ export function AdminPanel() {
             <TabsTrigger value="pricing" className="flex items-center space-x-2">
               <Calculator className="h-4 w-4" />
               <span>단가표</span>
+            </TabsTrigger>
+            <TabsTrigger value="pricing-policies" className="flex items-center space-x-2">
+              <DollarSign className="h-4 w-4" />
+              <span>정책표</span>
             </TabsTrigger>
           </TabsList>
 
@@ -3855,6 +3953,195 @@ export function AdminPanel() {
                       <Settings className="mx-auto h-12 w-12 text-gray-400" />
                       <h3 className="mt-2 text-sm font-medium text-gray-900">부가서비스가 없습니다</h3>
                       <p className="mt-1 text-sm text-gray-500">첫 번째 부가서비스를 추가해보세요.</p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+
+          {/* Pricing Policies Tab */}
+          <TabsContent value="pricing-policies" className="space-y-6">
+            <div className="grid grid-cols-1 gap-6">
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between">
+                  <div>
+                    <CardTitle>단가표 정책 관리</CardTitle>
+                    <CardDescription>
+                      통신사별, 요금제별 커미션 정책을 관리하여 정산을 자동화할 수 있습니다.
+                    </CardDescription>
+                  </div>
+                  <Dialog open={pricingPolicyDialogOpen} onOpenChange={setPricingPolicyDialogOpen}>
+                    <DialogTrigger asChild>
+                      <Button>
+                        <Plus className="mr-2 h-4 w-4" />
+                        정책 추가
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>단가표 정책 추가</DialogTitle>
+                      </DialogHeader>
+                      <Form {...pricingPolicyForm}>
+                        <form onSubmit={pricingPolicyForm.handleSubmit((data) => createPricingPolicyMutation.mutate(data))} className="space-y-4">
+                          <FormField
+                            control={pricingPolicyForm.control}
+                            name="carrier"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>통신사</FormLabel>
+                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                  <FormControl>
+                                    <SelectTrigger>
+                                      <SelectValue placeholder="통신사를 선택하세요" />
+                                    </SelectTrigger>
+                                  </FormControl>
+                                  <SelectContent>
+                                    <SelectItem value="SK텔링크">SK텔링크</SelectItem>
+                                    <SelectItem value="SK프리티">SK프리티</SelectItem>
+                                    <SelectItem value="SK스테이지파이브">SK스테이지파이브</SelectItem>
+                                    <SelectItem value="KT엠모바일">KT엠모바일</SelectItem>
+                                    <SelectItem value="KT스카이라이프">KT스카이라이프</SelectItem>
+                                    <SelectItem value="KT스테이지파이브">KT스테이지파이브</SelectItem>
+                                    <SelectItem value="KT코드모바일">KT코드모바일</SelectItem>
+                                    <SelectItem value="LG미디어로그">LG미디어로그</SelectItem>
+                                    <SelectItem value="LG헬로모바일">LG헬로모바일</SelectItem>
+                                    <SelectItem value="LG프리티">LG프리티</SelectItem>
+                                    <SelectItem value="LG밸류컴">LG밸류컴</SelectItem>
+                                    <SelectItem value="스마텔LG">스마텔LG</SelectItem>
+                                    <SelectItem value="KT">KT</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={pricingPolicyForm.control}
+                            name="servicePlanName"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>요금제명</FormLabel>
+                                <FormControl>
+                                  <Input placeholder="요금제명을 입력하세요" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={pricingPolicyForm.control}
+                            name="commissionAmount"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>커미션 금액</FormLabel>
+                                <FormControl>
+                                  <Input
+                                    type="number"
+                                    placeholder="커미션 금액을 입력하세요"
+                                    {...field}
+                                    onChange={(e) => field.onChange(Number(e.target.value))}
+                                  />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <div className="flex justify-end space-x-2">
+                            <Button type="button" variant="outline" onClick={() => setPricingPolicyDialogOpen(false)}>
+                              취소
+                            </Button>
+                            <Button type="submit" disabled={createPricingPolicyMutation.isPending}>
+                              {createPricingPolicyMutation.isPending ? '생성 중...' : '생성'}
+                            </Button>
+                          </div>
+                        </form>
+                      </Form>
+                    </DialogContent>
+                  </Dialog>
+                </CardHeader>
+                <CardContent>
+                  {pricingPoliciesLoading ? (
+                    <div className="text-center py-8">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
+                      <p className="mt-2 text-sm text-gray-500">정책을 불러오는 중...</p>
+                    </div>
+                  ) : pricingPolicies && pricingPolicies.length > 0 ? (
+                    <div className="overflow-x-auto">
+                      <table className="min-w-full divide-y divide-gray-200">
+                        <thead className="bg-gray-50">
+                          <tr>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              통신사
+                            </th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              요금제명
+                            </th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              커미션 금액
+                            </th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              정책 유형
+                            </th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              상태
+                            </th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              작업
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody className="bg-white divide-y divide-gray-200">
+                          {pricingPolicies.map((policy: any) => (
+                            <tr key={policy.id}>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                {policy.carrier}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                {policy.servicePlanName}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                {policy.commissionAmount?.toLocaleString()}원
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                {policy.policyType}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap">
+                                <Badge variant={policy.isActive ? "default" : "secondary"}>
+                                  {policy.isActive ? '활성' : '비활성'}
+                                </Badge>
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                <div className="flex space-x-2">
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => {
+                                      setEditingPricingPolicy(policy);
+                                      setEditPricingPolicyDialogOpen(true);
+                                    }}
+                                  >
+                                    <Edit2 className="h-4 w-4" />
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="destructive"
+                                    onClick={() => deletePricingPolicyMutation.mutate(policy.id)}
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  ) : (
+                    <div className="text-center py-8">
+                      <DollarSign className="mx-auto h-12 w-12 text-gray-400" />
+                      <h3 className="mt-2 text-sm font-medium text-gray-900">단가표 정책이 없습니다</h3>
+                      <p className="mt-1 text-sm text-gray-500">첫 번째 정책을 추가하여 자동 정산을 시작해보세요.</p>
                     </div>
                   )}
                 </CardContent>

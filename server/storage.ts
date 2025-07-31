@@ -321,6 +321,43 @@ if (additionalServicesExists.count === 0) {
   }
 }
 
+// 단가표 정책 테이블 생성
+db.exec(`
+  CREATE TABLE IF NOT EXISTS pricing_policies (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    carrier TEXT NOT NULL,
+    service_plan_name TEXT NOT NULL,
+    commission_amount INTEGER NOT NULL DEFAULT 0,
+    policy_type TEXT NOT NULL DEFAULT 'commission',
+    is_active INTEGER NOT NULL DEFAULT 1,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  );
+`);
+
+// 기본 단가표 정책 샘플 데이터 추가
+const pricingPoliciesExists = db.prepare('SELECT COUNT(*) as count FROM pricing_policies').get() as { count: number };
+if (pricingPoliciesExists.count === 0) {
+  const pricingPolicies = [
+    { carrier: 'SK텔링크', service_plan_name: '5G플러스', commission_amount: 50000, policy_type: 'commission' },
+    { carrier: 'SK텔링크', service_plan_name: '5G스탠다드', commission_amount: 40000, policy_type: 'commission' },
+    { carrier: 'KT', service_plan_name: 'Y25플러스', commission_amount: 45000, policy_type: 'commission' },
+    { carrier: 'KT', service_plan_name: 'Y25베이직', commission_amount: 35000, policy_type: 'commission' },
+    { carrier: 'LG미디어로그', service_plan_name: 'U+5G베이직', commission_amount: 30000, policy_type: 'commission' },
+    { carrier: 'LG미디어로그', service_plan_name: 'U+5G프리미엄', commission_amount: 55000, policy_type: 'commission' },
+  ];
+  
+  for (const policy of pricingPolicies) {
+    db.prepare('INSERT INTO pricing_policies (carrier, service_plan_name, commission_amount, policy_type, is_active) VALUES (?, ?, ?, ?, ?)').run(
+      policy.carrier,
+      policy.service_plan_name,
+      policy.commission_amount,
+      policy.policy_type,
+      1
+    );
+  }
+}
+
 export interface IStorage {
   // Authentication
   authenticateAdmin(username: string, password: string): Promise<Admin | null>;
@@ -412,6 +449,13 @@ export interface IStorage {
   getCarrierById(id: number): Promise<any | null>;
   createCarrier(data: any): Promise<any>;
   updateCarrier(id: number, data: any): Promise<any>;
+  
+  // Pricing Policies
+  getPricingPolicies(): Promise<PricingPolicy[]>;
+  getPricingPolicyById(id: number): Promise<PricingPolicy | null>;
+  createPricingPolicy(data: CreatePricingPolicyForm): Promise<PricingPolicy>;
+  updatePricingPolicy(id: number, data: Partial<PricingPolicy>): Promise<PricingPolicy>;
+  deletePricingPolicy(id: number): Promise<void>;
 }
 
 class SqliteStorage implements IStorage {
@@ -2706,6 +2750,140 @@ class SqliteStorage implements IStorage {
     }
     
     return this.getCarrierById(id);
+  }
+
+  // Pricing Policies Management
+  async createPricingPolicy(data: Omit<PricingPolicy, 'id' | 'createdAt' | 'updatedAt'>): Promise<PricingPolicy> {
+    const result = db.prepare(`
+      INSERT INTO pricing_policies (carrier, service_plan_name, commission_amount, policy_type, is_active)
+      VALUES (?, ?, ?, ?, ?)
+    `).run(data.carrier, data.servicePlanName, data.commissionAmount, data.policyType, data.isActive ? 1 : 0);
+
+    const policy = db.prepare('SELECT * FROM pricing_policies WHERE id = ?').get(result.lastInsertRowid) as any;
+    
+    return {
+      id: policy.id,
+      carrier: policy.carrier,
+      servicePlanName: policy.service_plan_name,
+      commissionAmount: policy.commission_amount,
+      policyType: policy.policy_type,
+      isActive: Boolean(policy.is_active),
+      createdAt: new Date(policy.created_at),
+      updatedAt: new Date(policy.updated_at)
+    };
+  }
+
+  async getPricingPolicies(): Promise<PricingPolicy[]> {
+    const policies = db.prepare('SELECT * FROM pricing_policies WHERE is_active = 1 ORDER BY carrier, service_plan_name').all() as any[];
+    return policies.map(policy => ({
+      id: policy.id,
+      carrier: policy.carrier,
+      servicePlanName: policy.service_plan_name,
+      commissionAmount: policy.commission_amount,
+      policyType: policy.policy_type,
+      isActive: Boolean(policy.is_active),
+      createdAt: new Date(policy.created_at),
+      updatedAt: new Date(policy.updated_at)
+    }));
+  }
+
+  async getPricingPolicy(id: number): Promise<PricingPolicy | null> {
+    const policy = db.prepare('SELECT * FROM pricing_policies WHERE id = ?').get(id) as any;
+    if (!policy) return null;
+
+    return {
+      id: policy.id,
+      carrier: policy.carrier,
+      servicePlanName: policy.service_plan_name,
+      commissionAmount: policy.commission_amount,
+      policyType: policy.policy_type,
+      isActive: Boolean(policy.is_active),
+      createdAt: new Date(policy.created_at),
+      updatedAt: new Date(policy.updated_at)
+    };
+  }
+
+  async updatePricingPolicy(id: number, data: Partial<Omit<PricingPolicy, 'id' | 'createdAt' | 'updatedAt'>>): Promise<PricingPolicy> {
+    const setParts = [];
+    const values = [];
+
+    if (data.carrier !== undefined) {
+      setParts.push('carrier = ?');
+      values.push(data.carrier);
+    }
+    if (data.servicePlanName !== undefined) {
+      setParts.push('service_plan_name = ?');
+      values.push(data.servicePlanName);
+    }
+    if (data.commissionAmount !== undefined) {
+      setParts.push('commission_amount = ?');
+      values.push(data.commissionAmount);
+    }
+    if (data.policyType !== undefined) {
+      setParts.push('policy_type = ?');
+      values.push(data.policyType);
+    }
+    if (data.isActive !== undefined) {
+      setParts.push('is_active = ?');
+      values.push(data.isActive ? 1 : 0);
+    }
+
+    setParts.push('updated_at = CURRENT_TIMESTAMP');
+    values.push(id);
+
+    db.prepare(`UPDATE pricing_policies SET ${setParts.join(', ')} WHERE id = ?`).run(...values);
+
+    const policy = db.prepare('SELECT * FROM pricing_policies WHERE id = ?').get(id) as any;
+    return {
+      id: policy.id,
+      carrier: policy.carrier,
+      servicePlanName: policy.service_plan_name,
+      commissionAmount: policy.commission_amount,
+      policyType: policy.policy_type,
+      isActive: Boolean(policy.is_active),
+      createdAt: new Date(policy.created_at),
+      updatedAt: new Date(policy.updated_at)
+    };
+  }
+
+  async deletePricingPolicy(id: number): Promise<void> {
+    db.prepare('UPDATE pricing_policies SET is_active = 0 WHERE id = ?').run(id);
+  }
+
+  // 통신사와 요금제에 따른 자동 커미션 계산
+  async calculateCommissionForDocument(carrier: string, servicePlanName: string): Promise<number> {
+    const policy = db.prepare(`
+      SELECT commission_amount 
+      FROM pricing_policies 
+      WHERE carrier = ? AND service_plan_name = ? AND is_active = 1
+      LIMIT 1
+    `).get(carrier, servicePlanName) as any;
+
+    return policy ? policy.commission_amount : 0;
+  }
+
+  // 정산 데이터 자동 계산으로 업데이트
+  async updateSettlementWithAutoCalculation(documentId: number): Promise<void> {
+    const document = await this.getDocument(documentId);
+    if (!document || !document.servicePlanId) return;
+
+    const servicePlan = await this.getServicePlan(document.servicePlanId);
+    if (!servicePlan) return;
+
+    const commissionAmount = await this.calculateCommissionForDocument(document.carrier, servicePlan.planName);
+    
+    if (commissionAmount > 0) {
+      // settlements 테이블이 있다면 업데이트, 없다면 해당 로직 생략
+      try {
+        db.prepare(`
+          UPDATE settlements 
+          SET settlement_amount = ?, auto_calculated = 1, settlement_status = '계산완료', updated_at = unixepoch()
+          WHERE document_id = ?
+        `).run(commissionAmount, documentId);
+      } catch (error) {
+        console.warn('Settlements table not found or update failed:', error);
+      }
+    }
   }
 }
 
