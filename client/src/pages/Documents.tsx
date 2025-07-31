@@ -1173,8 +1173,43 @@ export function Documents() {
                 />
               </div>
               
-              {/* 개통완료 또는 기타완료 시 요금제 정보 및 개통 정보 입력 */}
-              {(activationForm.activationStatus === '개통' || activationForm.activationStatus === '기타완료') && (
+              {/* 기타완료 시 간단한 정보 입력 */}
+              {activationForm.activationStatus === '기타완료' && (
+                <div className="bg-purple-50 p-4 rounded-lg space-y-4">
+                  <h4 className="font-medium text-purple-900">기타 완료 정보</h4>
+                  
+                  {/* 기기 모델 */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <Label>기기 모델</Label>
+                      <Input
+                        value={activationForm.deviceModel}
+                        onChange={(e) => setActivationForm(prev => ({ ...prev, deviceModel: e.target.value }))}
+                        placeholder="기기 모델을 입력하세요"
+                      />
+                    </div>
+                    <div>
+                      <Label>유심 번호</Label>
+                      <Input
+                        value={activationForm.simNumber}
+                        onChange={(e) => setActivationForm(prev => ({ ...prev, simNumber: e.target.value }))}
+                        placeholder="유심 번호를 입력하세요"
+                      />
+                    </div>
+                    <div>
+                      <Label>가입 번호</Label>
+                      <Input
+                        value={activationForm.subscriptionNumber}
+                        onChange={(e) => setActivationForm(prev => ({ ...prev, subscriptionNumber: e.target.value }))}
+                        placeholder="가입 번호를 입력하세요"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* 개통완료 시에만 요금제 정보 및 개통 정보 입력 */}
+              {activationForm.activationStatus === '개통' && (
                 <div className="bg-blue-50 p-4 rounded-lg space-y-4">
                   <h4 className="font-medium text-blue-900">개통 정보 입력</h4>
                   
