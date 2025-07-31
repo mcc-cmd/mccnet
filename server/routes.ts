@@ -2130,13 +2130,25 @@ router.post('/api/contact-codes/upload-excel', contactCodeUpload.single('file'),
         // 기존 접점코드 확인
         const existingCode = await storage.findContactCodeByCode(String(code).trim());
         if (existingCode) {
-          const errorMsg = `${i + 2}행: 접점코드 '${code}'가 이미 존재합니다`;
-          console.log(errorMsg);
-          errors.push(errorMsg);
+          // 통신사가 다르면 업데이트, 같으면 스킵
+          const newCarrier = String(carrier).trim();
+          if (existingCode.carrier !== newCarrier) {
+            console.log(`Updating contact code ${code}: ${existingCode.carrier} -> ${newCarrier}`);
+            await storage.updateContactCode(existingCode.id, {
+              carrier: newCarrier,
+              dealerName: String(dealerName).trim()
+            });
+            addedCodes++;
+            console.log(`Successfully updated contact code: ${code}`);
+          } else {
+            const errorMsg = `${i + 2}행: 접점코드 '${code}'가 이미 존재합니다 (통신사: ${existingCode.carrier})`;
+            console.log(errorMsg);
+            errors.push(errorMsg);
+          }
           continue;
         }
 
-        // 접점코드 생성
+        // 새 접점코드 생성
         const newContactCode = {
           code: String(code).trim(),
           dealerName: String(dealerName).trim(),
