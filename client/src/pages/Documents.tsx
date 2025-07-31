@@ -190,6 +190,16 @@ export function Documents() {
     }
   });
 
+  // Helper function to format date for reception number
+  const formatReceptionDateTime = (dateString: string) => {
+    const date = new Date(dateString);
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const hour = String(date.getHours()).padStart(2, '0');
+    const minute = String(date.getMinutes()).padStart(2, '0');
+    return `${month}/${day}/${hour}시${minute}분`;
+  };
+
   const handleUpload = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -683,31 +693,25 @@ export function Documents() {
                 <div className="hidden lg:block overflow-x-auto">
                   <table className="w-full table-fixed divide-y divide-gray-300 text-sm">
                     <colgroup>
-                      <col className="w-20" />
+                      <col className="w-24" />
                       <col className="w-16" />
                       <col className="w-20" />
-                      <col className="w-24" />
                       <col className="w-14" />
                       <col className="w-12" />
                       <col className="w-16" />
-                      <col className="w-18" />
-                      <col className="w-18" />
                       {isAdmin && <col className="w-16" />}
                       <col className="w-16" />
                     </colgroup>
                     <thead className="bg-gray-50">
                       <tr>
                         <th className="px-1 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider truncate">
-                          접수번호
+                          접수일시
                         </th>
                         <th className="px-1 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider truncate">
                           고객명
                         </th>
                         <th className="px-1 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider truncate">
                           연락처
-                        </th>
-                        <th className="px-1 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          판매점명
                         </th>
                         <th className="px-1 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider truncate">
                           통신사
@@ -717,12 +721,6 @@ export function Documents() {
                         </th>
                         <th className="px-1 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider truncate">
                           개통상태
-                        </th>
-                        <th className="px-1 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider truncate">
-                          요금제정보
-                        </th>
-                        <th className="px-1 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider truncate">
-                          업로드일
                         </th>
                         {isAdmin && (
                           <th className="px-1 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider truncate">
@@ -739,7 +737,7 @@ export function Documents() {
                         <tr key={doc.id} className="hover:bg-gray-50">
                           <td className="px-1 py-1 text-xs font-medium text-gray-900">
                             <div className="leading-tight break-words max-w-full">
-                              {doc.documentNumber}
+                              {formatReceptionDateTime(doc.uploadedAt)}
                             </div>
                           </td>
                           <td className="px-1 py-1 text-xs text-gray-900">
@@ -752,11 +750,6 @@ export function Documents() {
                               {doc.customerPhone}
                             </div>
                           </td>
-                          <td className="px-1 py-1 text-xs text-gray-500">
-                            <div className="leading-tight break-words max-w-full">
-                              {(doc as any).storeName || '-'}
-                            </div>
-                          </td>
                           <td className="px-1 py-1 text-xs text-gray-700">
                             <div className="leading-tight break-words max-w-full">
                               {(doc as any).carrier || '-'}
@@ -766,54 +759,8 @@ export function Documents() {
                             {getStatusBadge(doc.status)}
                           </td>
                           <td className="px-1 py-1">
-                            {getActivationStatusBadge((doc as any).activationStatus || '대기')}
-                          </td>
-                          <td className="px-1 py-1 text-xs text-gray-700">
                             <div className="space-y-1">
-                              {/* 요금제 정보 - 모든 상태에서 표시 */}
-                              {((doc as any).servicePlanName || (doc as any).additionalServices) ? (
-                                <div className="space-y-0.5">
-                                  {(doc as any).servicePlanName && (
-                                    <div className="font-medium text-blue-600 text-xs leading-tight break-words">
-                                      {(doc as any).servicePlanName}
-                                    </div>
-                                  )}
-                                  {(doc as any).additionalServices && (
-                                    <div className="text-xs text-gray-500 leading-tight break-words">
-                                      부가: {(doc as any).additionalServices}
-                                    </div>
-                                  )}
-                                  {/* 가입비/유심비/결합 정보 */}
-                                  {((doc as any).registrationFeePrepaid || (doc as any).registrationFeePostpaid || 
-                                    (doc as any).simFeePrepaid || (doc as any).simFeePostpaid ||
-                                    (doc as any).bundleApplied || (doc as any).bundleNotApplied) && (
-                                    <div className="text-xs text-gray-600 space-y-0.5">
-                                      {((doc as any).registrationFeePrepaid || (doc as any).registrationFeePostpaid) && (
-                                        <div>
-                                          가입비: {(doc as any).registrationFeePrepaid ? '선납' : ''}{(doc as any).registrationFeePrepaid && (doc as any).registrationFeePostpaid ? '/' : ''}{(doc as any).registrationFeePostpaid ? '후납' : ''}
-                                        </div>
-                                      )}
-                                      {((doc as any).simFeePrepaid || (doc as any).simFeePostpaid) && (
-                                        <div>
-                                          유심비: {(doc as any).simFeePrepaid ? '선납' : ''}{(doc as any).simFeePrepaid && (doc as any).simFeePostpaid ? '/' : ''}{(doc as any).simFeePostpaid ? '후납' : ''}
-                                        </div>
-                                      )}
-                                      {((doc as any).bundleApplied || (doc as any).bundleNotApplied) && (
-                                        <div>
-                                          결합: {(doc as any).bundleApplied ? '적용' : ''}{(doc as any).bundleApplied && (doc as any).bundleNotApplied ? '/' : ''}{(doc as any).bundleNotApplied ? '미적용' : ''}
-                                        </div>
-                                      )}
-                                    </div>
-                                  )}
-                                  {(doc as any).totalMonthlyFee && (
-                                    <div className="text-xs font-medium text-green-600">
-                                      월 {(doc as any).totalMonthlyFee.toLocaleString()}원
-                                    </div>
-                                  )}
-                                </div>
-                              ) : (
-                                <span className="text-gray-400">-</span>
-                              )}
+                              {getActivationStatusBadge((doc as any).activationStatus || '대기')}
                               
                               {/* 보완 메모 표시 - 모든 상태에서 표시 */}
                               {(doc as any).supplementNotes && (
@@ -845,11 +792,6 @@ export function Documents() {
                                   </div>
                                 </div>
                               )}
-                            </div>
-                          </td>
-                          <td className="px-1 py-1 text-xs text-gray-500">
-                            <div className="leading-tight break-words max-w-full">
-                              {format(new Date(doc.uploadedAt), 'MM-dd HH:mm', { locale: ko })}
                             </div>
                           </td>
                           {isAdmin && (
@@ -934,7 +876,7 @@ export function Documents() {
                     <div key={doc.id} className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
                       <div className="flex justify-between items-start mb-3">
                         <div>
-                          <h3 className="text-sm font-medium text-gray-900">{doc.documentNumber}</h3>
+                          <h3 className="text-sm font-medium text-gray-900">{formatReceptionDateTime(doc.uploadedAt)}</h3>
                           <p className="text-sm text-gray-600">{doc.customerName}</p>
                         </div>
                         <div className="flex space-x-1">
@@ -948,22 +890,10 @@ export function Documents() {
                           <span className="text-gray-500">연락처:</span>
                           <span className="ml-1 text-gray-900">{doc.customerPhone}</span>
                         </div>
-                        {(doc as any).storeName && (
-                          <div>
-                            <span className="text-gray-500">판매점:</span>
-                            <span className="ml-1 text-gray-900">{(doc as any).storeName}</span>
-                          </div>
-                        )}
                         {(doc as any).carrier && (
                           <div>
                             <span className="text-gray-500">통신사:</span>
                             <span className="ml-1 text-gray-900">{(doc as any).carrier}</span>
-                          </div>
-                        )}
-                        {(doc as any).subscriptionNumber && (
-                          <div>
-                            <span className="text-gray-500">가입번호:</span>
-                            <span className="ml-1 text-gray-900 font-mono text-xs">{(doc as any).subscriptionNumber}</span>
                           </div>
                         )}
                         {isAdmin && (
@@ -972,64 +902,6 @@ export function Documents() {
                             <span className="ml-1 text-gray-900">{(doc as any).dealerName}</span>
                           </div>
                         )}
-                        {/* 요금제 정보 - 모든 상태에서 표시 */}
-                        {((doc as any).servicePlanName || (doc as any).additionalServices) && (
-                          <div className="col-span-2">
-                            <span className="text-gray-500">요금제:</span>
-                            <div className="ml-1 mt-1 space-y-1">
-                              {(doc as any).servicePlanName && (
-                                <div className="text-sm font-medium text-blue-600">
-                                  {(doc as any).servicePlanName}
-                                </div>
-                              )}
-                              {(doc as any).additionalServices && (
-                                <div className="text-xs text-gray-500">
-                                  부가: {(doc as any).additionalServices}
-                                </div>
-                              )}
-                              {/* 가입비/유심비/결합 정보 */}
-                              {((doc as any).registrationFeePrepaid || (doc as any).registrationFeePostpaid || 
-                                (doc as any).simFeePrepaid || (doc as any).simFeePostpaid ||
-                                (doc as any).bundleApplied || (doc as any).bundleNotApplied) && (
-                                <div className="text-xs text-gray-600 space-y-0.5 bg-gray-50 p-2 rounded">
-                                  {((doc as any).registrationFeePrepaid || (doc as any).registrationFeePostpaid) && (
-                                    <div className="flex">
-                                      <span className="font-medium w-12">가입비:</span>
-                                      <span>{(doc as any).registrationFeePrepaid ? '선납' : ''}{(doc as any).registrationFeePrepaid && (doc as any).registrationFeePostpaid ? '/' : ''}{(doc as any).registrationFeePostpaid ? '후납' : ''}</span>
-                                    </div>
-                                  )}
-                                  {((doc as any).simFeePrepaid || (doc as any).simFeePostpaid) && (
-                                    <div className="flex">
-                                      <span className="font-medium w-12">유심비:</span>
-                                      <span>{(doc as any).simFeePrepaid ? '선납' : ''}{(doc as any).simFeePrepaid && (doc as any).simFeePostpaid ? '/' : ''}{(doc as any).simFeePostpaid ? '후납' : ''}</span>
-                                    </div>
-                                  )}
-                                  {((doc as any).bundleApplied || (doc as any).bundleNotApplied) && (
-                                    <div className="flex">
-                                      <span className="font-medium w-12">결합:</span>
-                                      <span>{(doc as any).bundleApplied ? '적용' : ''}{(doc as any).bundleApplied && (doc as any).bundleNotApplied ? '/' : ''}{(doc as any).bundleNotApplied ? '미적용' : ''}</span>
-                                    </div>
-                                  )}
-                                </div>
-                              )}
-                              {(doc as any).totalMonthlyFee && (
-                                <div className="text-xs font-medium text-green-600">
-                                  월 {(doc as any).totalMonthlyFee.toLocaleString()}원
-                                </div>
-                              )}
-                              {((doc as any).deviceModel || (doc as any).simNumber || (doc as any).subscriptionNumber) && (
-                                <div className="text-xs text-gray-500">
-                                  {(doc as any).deviceModel && `단말기: ${(doc as any).deviceModel}`}
-                                  {(doc as any).deviceModel && ((doc as any).simNumber || (doc as any).subscriptionNumber) && ' | '}
-                                  {(doc as any).simNumber && `유심: ${(doc as any).simNumber}`}
-                                  {(doc as any).simNumber && (doc as any).subscriptionNumber && ' | '}
-                                  {(doc as any).subscriptionNumber && `가입번호: ${(doc as any).subscriptionNumber}`}
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        )}
-                        
                       </div>
 
                       {/* 보완 메모 표시 - 더 눈에 띄게 */}
@@ -1066,7 +938,7 @@ export function Documents() {
                       
                       <div className="flex justify-between items-center">
                         <span className="text-xs text-gray-500">
-                          {format(new Date(doc.uploadedAt), 'yyyy-MM-dd HH:mm', { locale: ko })}
+                          {formatReceptionDateTime(doc.uploadedAt)}
                         </span>
                         <div className="flex space-x-2">
                           {doc.filePath && (
