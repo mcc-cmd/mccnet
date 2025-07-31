@@ -18,6 +18,10 @@ export function OtherCompletions() {
   const [search, setSearch] = useState('');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
+  const [selectedDocument, setSelectedDocument] = useState<Document | null>(null);
+  const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [editNotes, setEditNotes] = useState('');
 
   // 기타완료 문서 조회
   const { data: documents = [], isLoading, refetch } = useQuery<Document[]>({
@@ -70,6 +74,36 @@ export function OtherCompletions() {
     if (!doc.fileName) return '';
     const extension = doc.fileName.split('.').pop();
     return `${doc.customerName}_서류.${extension}`;
+  };
+
+  const handleDetailsClick = (doc: Document) => {
+    setSelectedDocument(doc);
+    setEditNotes(doc.notes || '');
+    setIsEditMode(false);
+    setIsDetailsDialogOpen(true);
+  };
+
+  const handleSaveNotes = async () => {
+    if (!selectedDocument) return;
+    
+    try {
+      await apiRequest(`/api/documents/${selectedDocument.id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          notes: editNotes
+        })
+      });
+      
+      // 데이터 새로고침
+      refetch();
+      setIsEditMode(false);
+      setIsDetailsDialogOpen(false);
+    } catch (error) {
+      console.error('메모 수정 오류:', error);
+    }
   };
 
   return (
@@ -198,7 +232,16 @@ export function OtherCompletions() {
                           <td className="py-3 px-2 text-sm leading-tight break-words max-w-xs">
                             <div className="space-y-1">
                               {doc.deviceModel && <div>기기: {doc.deviceModel}</div>}
-                              {doc.notes && <div className="text-blue-600 font-medium">작업내용: {doc.notes}</div>}
+                              {doc.notes ? (
+                                <div 
+                                  className="text-blue-600 font-medium cursor-pointer hover:text-blue-800 hover:underline"
+                                  onClick={() => handleDetailsClick(doc)}
+                                >
+                                  작업내용: {doc.notes.length > 30 ? `${doc.notes.substring(0, 30)}...` : doc.notes}
+                                </div>
+                              ) : (
+                                <div className="text-gray-400">작업내용 없음</div>
+                              )}
                               {!doc.deviceModel && !doc.notes && '-'}
                             </div>
                           </td>
@@ -263,7 +306,16 @@ export function OtherCompletions() {
                       <div className="text-xs text-gray-500 space-y-1">
                         <div>접수일: {new Date(doc.uploadedAt).toLocaleDateString('ko-KR', { month: '2-digit', day: '2-digit' })}</div>
                         {doc.deviceModel && <div>기기모델: {doc.deviceModel}</div>}
-                        {doc.notes && <div className="text-blue-600 font-medium">작업내용: {doc.notes}</div>}
+                        {doc.notes ? (
+                          <div 
+                            className="text-blue-600 font-medium cursor-pointer hover:text-blue-800"
+                            onClick={() => handleDetailsClick(doc)}
+                          >
+                            작업내용: {doc.notes.length > 20 ? `${doc.notes.substring(0, 20)}...` : doc.notes}
+                          </div>
+                        ) : (
+                          <div className="text-gray-400">작업내용 없음</div>
+                        )}
                         <div>유심번호: {doc.simNumber || '-'}</div>
                         <div>가입번호: {doc.subscriptionNumber || '-'}</div>
                         <div>처리자: {(doc as any).activatedByName || '-'}</div>
@@ -287,6 +339,104 @@ export function OtherCompletions() {
             )}
           </CardContent>
         </Card>
+
+        {/* 작업내용 상세보기 다이얼로그 */}
+        <Dialog open={isDetailsDialogOpen} onOpenChange={setIsDetailsDialogOpen}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle className="flex items-center">
+                <Eye className="mr-2 h-5 w-5" />
+                작업내용 상세보기
+              </DialogTitle>
+              <DialogDescription>
+                {selectedDocument?.customerName}님의 기타완료 작업내용입니다.
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div>
+                  <span className="font-medium text-gray-700">고객명:</span>
+                  <span className="ml-2">{selectedDocument?.customerName}</span>
+                </div>
+                <div>
+                  <span className="font-medium text-gray-700">연락처:</span>
+                  <span className="ml-2">{selectedDocument?.customerPhone}</span>
+                </div>
+                <div>
+                  <span className="font-medium text-gray-700">통신사:</span>
+                  <span className="ml-2">{selectedDocument?.carrier}</span>
+                </div>
+                <div>
+                  <span className="font-medium text-gray-700">처리자:</span>
+                  <span className="ml-2">{(selectedDocument as any)?.activatedByName || '-'}</span>
+                </div>
+                {selectedDocument?.deviceModel && (
+                  <div>
+                    <span className="font-medium text-gray-700">기기모델:</span>
+                    <span className="ml-2">{selectedDocument.deviceModel}</span>
+                  </div>
+                )}
+                {selectedDocument?.simNumber && (
+                  <div>
+                    <span className="font-medium text-gray-700">유심번호:</span>
+                    <span className="ml-2">{selectedDocument.simNumber}</span>
+                  </div>
+                )}
+              </div>
+              
+              <div className="border-t pt-4">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="font-medium text-gray-700">작업내용:</span>
+                  {user?.role === 'admin' && !isEditMode && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setIsEditMode(true)}
+                    >
+                      수정
+                    </Button>
+                  )}
+                </div>
+                
+                {isEditMode ? (
+                  <div className="space-y-3">
+                    <textarea
+                      value={editNotes}
+                      onChange={(e) => setEditNotes(e.target.value)}
+                      className="w-full h-32 p-3 border border-gray-300 rounded-md resize-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="작업내용을 입력하세요..."
+                    />
+                    <div className="flex justify-end space-x-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setIsEditMode(false);
+                          setEditNotes(selectedDocument?.notes || '');
+                        }}
+                      >
+                        취소
+                      </Button>
+                      <Button
+                        size="sm"
+                        onClick={handleSaveNotes}
+                      >
+                        저장
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="bg-gray-50 p-4 rounded-md min-h-24">
+                    <pre className="whitespace-pre-wrap text-sm text-gray-800">
+                      {selectedDocument?.notes || '작업내용이 없습니다.'}
+                    </pre>
+                  </div>
+                )}
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </Layout>
   );

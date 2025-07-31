@@ -1750,6 +1750,18 @@ class SqliteStorage implements IStorage {
     db.prepare('DELETE FROM documents WHERE id = ?').run(id);
   }
 
+  async updateDocumentNotes(id: number, notes: string): Promise<void> {
+    const result = db.prepare(`
+      UPDATE documents 
+      SET notes = ?, updated_at = CURRENT_TIMESTAMP 
+      WHERE id = ?
+    `).run(notes, id);
+    
+    if (result.changes === 0) {
+      throw new Error('문서를 찾을 수 없습니다.');
+    }
+  }
+
   async getDocument(id: number): Promise<(Document & { assignedWorkerId?: number; assignedAt?: Date }) | null> {
     const result = db.prepare(`
       SELECT d.*, dealers.name as dealer_name, u.name as user_name, sp.plan_name

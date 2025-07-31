@@ -927,6 +927,19 @@ router.post('/api/documents', requireDealerOrWorker, upload.single('file'), asyn
   }
 });
 
+// Document notes update endpoint (for admin only)
+router.patch('/api/documents/:id', requireAdmin, async (req: any, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const { notes } = req.body;
+    
+    await storage.updateDocumentNotes(id, notes);
+    res.json({ success: true, message: '작업내용이 수정되었습니다.' });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 router.delete('/api/documents/:id', requireAdmin, async (req: any, res) => {
   try {
     const id = parseInt(req.params.id);
