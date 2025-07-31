@@ -328,6 +328,9 @@ This is a document management system built for MCC네트월드 telecommunication
 - July 31, 2025. Reorganized dashboard layout: expanded daily statistics to full width with 4-column grid (당일 접수건, 당일 개통건, 단가표 최신 공지, 빠른 기능)
 - July 31, 2025. Moved carrier/worker statistics to bottom of page in horizontal layout with unified card design and compact date filter controls
 - July 31, 2025. Enhanced today's statistics section with integrated pricing announcements and quick action buttons for improved user experience
+- July 31, 2025. Implemented admin-only access restriction for settlement management: only administrators can view and access settlement functionality
+- July 31, 2025. Updated sidebar navigation to hide settlement management menu from non-admin users (dealers and workers)
+- July 31, 2025. Removed pricing table upload/download features from settlement management due to implementation issues and user request
 
 ## User Preferences
 

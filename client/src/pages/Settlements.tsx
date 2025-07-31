@@ -127,7 +127,7 @@ export function Settlements() {
   const [endDate, setEndDate] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [manualDialogOpen, setManualDialogOpen] = useState(false);
-  const [uploadedPricingData, setUploadedPricingData] = useState<any[]>([]);
+
 
   // 관리자 권한 확인
   if (user?.userType !== 'admin') {
@@ -353,38 +353,7 @@ export function Settlements() {
     createManualSettlement.mutate(data);
   };
 
-  // 정산 단가표 업로드 처리
-  const handlePricingTableUpload = async (file: File) => {
-    try {
-      const formData = new FormData();
-      formData.append('file', file);
-      
-      const sessionId = useAuth.getState().sessionId;
-      const response = await fetch('/api/pricing-tables/upload', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${sessionId}`
-        },
-        body: formData
-      });
-      
-      if (!response.ok) throw new Error('업로드 실패');
-      
-      const result = await response.json();
-      setUploadedPricingData(result.data || []);
-      
-      toast({
-        title: "업로드 완료",
-        description: `${result.data?.length || 0}개의 단가 정보가 업로드되었습니다.`,
-      });
-    } catch (error) {
-      toast({
-        title: "업로드 실패",
-        description: "파일 업로드 중 오류가 발생했습니다.",
-        variant: "destructive",
-      });
-    }
-  };
+
 
   // 엑셀 다운로드 함수
   const handleExcelDownload = async () => {
@@ -816,174 +785,7 @@ export function Settlements() {
           </Card>
         </div>
 
-        {/* 정산 단가표 다운로드 */}
-        <Card className="mb-6">
-          <CardHeader>
-            <CardTitle>정산 단가표 다운로드</CardTitle>
-            <CardDescription>
-              정산 계산을 위한 단가표 템플릿을 다운로드하세요.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button 
-              className="bg-emerald-600 hover:bg-emerald-700 mb-4"
-              onClick={async () => {
-                try {
-                  const sessionId = useAuth.getState().sessionId;
-                  const response = await fetch('/api/pricing-tables/template', {
-                    method: 'GET',
-                    headers: {
-                      'Authorization': `Bearer ${sessionId}`
-                    }
-                  });
-                  
-                  if (!response.ok) throw new Error('다운로드 실패');
-                  
-                  const blob = await response.blob();
-                  const url = window.URL.createObjectURL(blob);
-                  const a = document.createElement('a');
-                  a.href = url;
-                  a.download = '정산_단가표_템플릿.xlsx';
-                  document.body.appendChild(a);
-                  a.click();
-                  window.URL.revokeObjectURL(url);
-                  document.body.removeChild(a);
-                  
-                  toast({
-                    title: "다운로드 완료",
-                    description: "정산 단가표 템플릿을 다운로드했습니다.",
-                  });
-                } catch (error) {
-                  toast({
-                    title: "다운로드 실패",
-                    description: "템플릿 다운로드 중 오류가 발생했습니다.",
-                    variant: "destructive",
-                  });
-                }
-              }}
-            >
-              <FileText className="w-4 h-4 mr-2" />
-              정산 단가표 템플릿 다운로드
-            </Button>
-          </CardContent>
-        </Card>
 
-        {/* 엑셀 업로드 */}
-        <Card className="mb-6">
-          <CardHeader>
-            <CardTitle>정산 단가표 업로드</CardTitle>
-            <CardDescription>
-              작성한 정산 단가표 엑셀 파일을 업로드하세요.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="flex items-center gap-4">
-                <Input
-                  type="file"
-                  accept=".xlsx,.xls"
-                  onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    if (file) {
-                      // 파일 업로드 처리
-                      handlePricingTableUpload(file);
-                    }
-                  }}
-                  className="flex-1"
-                />
-                <Button
-                  onClick={() => {
-                    const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
-                    fileInput?.click();
-                  }}
-                  className="bg-blue-600 hover:bg-blue-700"
-                >
-                  <FileText className="w-4 h-4 mr-2" />
-                  파일 선택
-                </Button>
-              </div>
-              <div className="text-sm text-muted-foreground">
-                지원 형식: .xlsx, .xls (최대 50MB)
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* 엑셀 업로드 사용법 */}
-        <Card className="mb-6">
-          <CardHeader>
-            <CardTitle>엑셀 업로드 사용법</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="bg-blue-50 dark:bg-blue-950 p-4 rounded-lg border">
-              <ol className="space-y-2 text-sm">
-                <li><span className="font-medium">1.</span> 위의 "정산 단가표 템플릿 다운로드" 버튼을 클릭하여 템플릿을 다운로드하세요.</li>
-                <li><span className="font-medium">2.</span> 다운로드한 파일에서 다음 항목들을 입력하세요:</li>
-                <div className="ml-6 space-y-1">
-                  <div>• <span className="font-medium">가입비:</span> 가입을 설정할 설정비용 이름</div>
-                  <div>• <span className="font-medium">판매점명:</span> 가입을 설정할 설정 판매점 이름</div>
-                  <div>• <span className="font-medium">통신사:</span> 해당 통신사명</div>
-                </div>
-                <li><span className="font-medium">3.</span> 작성이 완료되면 위의 "파일 선택" 버튼을 클릭하여 파일을 업로드하세요.</li>
-              </ol>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* 정산 금액 확인 */}
-        <Card className="mb-6">
-          <CardHeader>
-            <CardTitle>정산 금액 확인</CardTitle>
-            <CardDescription>
-              업로드된 단가표를 기반으로 한 정산 금액을 확인하세요.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {uploadedPricingData.length > 0 ? (
-              <div className="space-y-4">
-                <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead className="whitespace-nowrap text-xs">통신사</TableHead>
-                        <TableHead className="whitespace-nowrap text-xs">요금제</TableHead>
-                        <TableHead className="whitespace-nowrap text-xs">가입비(선납)</TableHead>
-                        <TableHead className="whitespace-nowrap text-xs">가입비(후납)</TableHead>
-                        <TableHead className="whitespace-nowrap text-xs">유심비(선납)</TableHead>
-                        <TableHead className="whitespace-nowrap text-xs">유심비(후납)</TableHead>
-                        <TableHead className="whitespace-nowrap text-xs">결합할인</TableHead>
-                        <TableHead className="whitespace-nowrap text-xs">판매점 수수료</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {uploadedPricingData.map((row, index) => (
-                        <TableRow key={index}>
-                          <TableCell className="whitespace-nowrap text-xs">{row.carrier || '-'}</TableCell>
-                          <TableCell className="whitespace-nowrap text-xs max-w-[120px] truncate">{row.plan || '-'}</TableCell>
-                          <TableCell className="whitespace-nowrap text-xs">{row.registrationPrepaid ? `${row.registrationPrepaid.toLocaleString()}원` : '-'}</TableCell>
-                          <TableCell className="whitespace-nowrap text-xs">{row.registrationPostpaid ? `${row.registrationPostpaid.toLocaleString()}원` : '-'}</TableCell>
-                          <TableCell className="whitespace-nowrap text-xs">{row.simPrepaid ? `${row.simPrepaid.toLocaleString()}원` : '-'}</TableCell>
-                          <TableCell className="whitespace-nowrap text-xs">{row.simPostpaid ? `${row.simPostpaid.toLocaleString()}원` : '-'}</TableCell>
-                          <TableCell className="whitespace-nowrap text-xs">{row.bundleDiscount ? `${row.bundleDiscount.toLocaleString()}원` : '-'}</TableCell>
-                          <TableCell className="whitespace-nowrap text-xs">{row.commission ? `${row.commission.toLocaleString()}원` : '-'}</TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-                <div className="bg-green-50 dark:bg-green-950 p-4 rounded-lg border">
-                  <div className="text-sm font-medium text-green-800 dark:text-green-200">
-                    총 {uploadedPricingData.length}개의 단가 정보가 업로드되었습니다.
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <div className="text-center py-8 text-muted-foreground">
-                정산 단가표를 업로드하면 여기에서 확인할 수 있습니다.
-              </div>
-            )}
-          </CardContent>
-        </Card>
 
         {/* 필터링 및 다운로드 */}
         <Card className="mb-6">
