@@ -339,6 +339,11 @@ This is a document management system built for MCC네트월드 telecommunication
 - July 31, 2025. Enhanced CompletedActivations page to display the name of the worker who completed each activation
 - July 31, 2025. Updated database queries to include activated_by_name field for tracking activation completion workers
 - July 31, 2025. Added LEFT JOIN with users table in getDocuments to properly retrieve activation processor names
+- July 31, 2025. Implemented duplicate application checking system in SubmitApplication form with warning popup
+- July 31, 2025. Added server-side API endpoint /api/documents/check-duplicate for checking existing submissions
+- July 31, 2025. Created checkDuplicateDocument method in storage to find matching customer name, phone, and store/contact code
+- July 31, 2025. Enhanced application submission workflow with duplicate confirmation dialog showing existing application details
+- July 31, 2025. Added comprehensive duplicate validation preventing overlapping submissions while allowing user override
 
 ## User Preferences
 

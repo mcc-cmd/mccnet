@@ -417,6 +417,7 @@ export interface IStorage {
   updateDocumentStatus(id: number, data: UpdateDocumentStatusForm): Promise<Document>;
   updateDocumentActivationStatus(id: number, data: any): Promise<Document>;
   deleteDocument(id: number): Promise<void>;
+  checkDuplicateDocument(data: { customerName: string; customerPhone: string; storeName?: string; contactCode?: string }): Promise<Array<Document & { dealerName: string }>>;
   
   // Document templates
   uploadDocumentTemplate(data: { title: string; category: string; filePath: string; fileName: string; fileSize: number; uploadedBy: number }): Promise<any>;
@@ -1467,6 +1468,68 @@ class SqliteStorage implements IStorage {
       userName: d.user_name,
       activatedByName: d.activated_by_name
     } as Document & { dealerName: string; userName: string; activatedByName?: string }));
+  }
+
+  async checkDuplicateDocument(data: { customerName: string; customerPhone: string; storeName?: string; contactCode?: string }): Promise<Array<Document & { dealerName: string }>> {
+    let query = `
+      SELECT d.*, dealers.name as dealer_name
+      FROM documents d
+      LEFT JOIN dealers ON d.dealer_id = dealers.id
+      WHERE d.customer_name = ? AND d.customer_phone = ?
+    `;
+    let params: any[] = [data.customerName, data.customerPhone];
+
+    // 판매점명 또는 접점코드로 추가 조건 검색
+    if (data.storeName) {
+      query += ` AND d.store_name = ?`;
+      params.push(data.storeName);
+    } else if (data.contactCode) {
+      query += ` AND d.contact_code = ?`;
+      params.push(data.contactCode);
+    }
+
+    // 활성 상태인 문서만 조회 (취소되지 않은 문서)
+    query += ` AND d.activation_status != ? ORDER BY d.uploaded_at DESC`;
+    params.push('취소');
+
+    const documents = db.prepare(query).all(...params) as any[];
+    return documents.map(d => ({
+      id: d.id,
+      dealerId: d.dealer_id,
+      userId: d.user_id,
+      documentNumber: d.document_number,
+      customerName: d.customer_name,
+      customerPhone: d.customer_phone,
+      storeName: d.store_name,
+      carrier: d.carrier,
+      previousCarrier: d.previous_carrier,
+      contactCode: d.contact_code,
+      status: d.status,
+      activationStatus: d.activation_status || '대기',
+      filePath: d.file_path,
+      fileName: d.file_name,
+      fileSize: d.file_size,
+      uploadedAt: new Date(d.uploaded_at),
+      updatedAt: new Date(d.updated_at),
+      activatedAt: d.activated_at ? new Date(d.activated_at) : undefined,
+      activatedBy: d.activated_by,
+      notes: d.notes,
+      supplementNotes: d.supplement_notes,
+      deviceModel: d.device_model,
+      simNumber: d.sim_number,
+      subscriptionNumber: d.subscription_number,
+      servicePlanId: d.service_plan_id,
+      additionalServiceIds: d.additional_service_ids,
+      registrationFeePrepaid: Boolean(d.registration_fee_prepaid),
+      registrationFeePostpaid: Boolean(d.registration_fee_postpaid),
+      registrationFeeInstallment: Boolean(d.registration_fee_installment),
+      simFeePrepaid: Boolean(d.sim_fee_prepaid),
+      simFeePostpaid: Boolean(d.sim_fee_postpaid),
+      bundleApplied: Boolean(d.bundle_applied),
+      bundleNotApplied: Boolean(d.bundle_not_applied),
+      dealerNotes: d.dealer_notes,
+      dealerName: d.dealer_name
+    } as Document & { dealerName: string }));
   }
 
   // 부가서비스 이름 가져오기 헬퍼 함수

@@ -9,8 +9,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
-import { Upload, Loader2, FileText, Phone, User } from 'lucide-react';
+import { Upload, Loader2, FileText, Phone, User, AlertTriangle } from 'lucide-react';
 import { Carrier } from '@shared/schema';
 
 export function SubmitApplication() {
@@ -50,6 +51,9 @@ export function SubmitApplication() {
   };
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [dragActive, setDragActive] = useState(false);
+  const [duplicateCheckDialog, setDuplicateCheckDialog] = useState(false);
+  const [duplicateData, setDuplicateData] = useState<any[]>([]);
+  const [isCheckingDuplicate, setIsCheckingDuplicate] = useState(false);
   
   // 통신사 목록을 데이터베이스에서 가져오기
   const { data: carriers = [], isLoading: carriersLoading } = useQuery<Carrier[]>({
@@ -66,6 +70,41 @@ export function SubmitApplication() {
   
   // 선택된 통신사의 정보 가져오기
   const selectedCarrier = carriers.find(c => c.name === formData.carrier);
+
+  // 중복 체크 함수
+  const checkDuplicate = async () => {
+    if (!formData.customerName || !formData.customerPhone || (!formData.storeName && !formData.contactCode)) {
+      return false; // 필수 정보가 없으면 중복 체크하지 않음
+    }
+
+    setIsCheckingDuplicate(true);
+    try {
+      const response = await apiRequest('/api/documents/check-duplicate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          customerName: formData.customerName,
+          customerPhone: formData.customerPhone,
+          storeName: formData.storeName,
+          contactCode: formData.contactCode
+        })
+      });
+
+      if (response.duplicates && response.duplicates.length > 0) {
+        setDuplicateData(response.duplicates);
+        setDuplicateCheckDialog(true);
+        return true; // 중복 발견
+      }
+      return false; // 중복 없음
+    } catch (error) {
+      console.error('중복 체크 오류:', error);
+      return false;
+    } finally {
+      setIsCheckingDuplicate(false);
+    }
+  };
 
   const uploadMutation = useMutation({
     mutationFn: async (data: FormData) => {
@@ -141,6 +180,17 @@ export function SubmitApplication() {
       }
     }
 
+    // 중복 체크 수행
+    const hasDuplicate = await checkDuplicate();
+    if (hasDuplicate) {
+      return; // 중복이 있으면 팝업에서 사용자 결정을 기다림
+    }
+
+    // 중복이 없으면 바로 제출
+    submitForm();
+  };
+
+  const submitForm = () => {
     const data = new FormData();
     data.append('customerName', formData.customerName);
     data.append('customerPhone', formData.customerPhone);
@@ -527,6 +577,70 @@ export function SubmitApplication() {
             접수 상태는 '접수 관리' 페이지에서 확인할 수 있습니다.
           </AlertDescription>
         </Alert>
+
+        {/* 중복 확인 다이얼로그 */}
+        <Dialog open={duplicateCheckDialog} onOpenChange={setDuplicateCheckDialog}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle className="flex items-center text-orange-600">
+                <AlertTriangle className="mr-2 h-5 w-5" />
+                기존 접수건이 발견되었습니다
+              </DialogTitle>
+              <DialogDescription>
+                동일한 고객 정보로 이미 접수된 건이 있습니다. 계속 진행하시겠습니까?
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="max-h-60 overflow-y-auto">
+              {duplicateData.map((doc, index) => (
+                <div key={doc.id} className="p-3 border rounded-lg mb-2 bg-orange-50">
+                  <div className="grid grid-cols-2 gap-2 text-sm">
+                    <div><strong>고객명:</strong> {doc.customerName}</div>
+                    <div><strong>연락처:</strong> {doc.customerPhone}</div>
+                    <div><strong>판매점:</strong> {doc.storeName || doc.dealerName}</div>
+                    <div><strong>통신사:</strong> {doc.carrier}</div>
+                    <div><strong>접수일:</strong> {new Date(doc.uploadedAt).toLocaleDateString()}</div>
+                    <div><strong>상태:</strong> 
+                      <span className={`ml-1 px-2 py-1 rounded text-xs ${
+                        doc.activationStatus === '대기' ? 'bg-yellow-100 text-yellow-700' :
+                        doc.activationStatus === '진행중' ? 'bg-blue-100 text-blue-700' :
+                        doc.activationStatus === '업무요청중' ? 'bg-purple-100 text-purple-700' :
+                        doc.activationStatus === '개통' ? 'bg-green-100 text-green-700' :
+                        doc.activationStatus === '보완필요' ? 'bg-orange-100 text-orange-700' :
+                        'bg-red-100 text-red-700'
+                      }`}>
+                        {doc.activationStatus}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+            
+            <div className="flex justify-end space-x-3 pt-4 border-t">
+              <Button 
+                variant="outline" 
+                onClick={() => setDuplicateCheckDialog(false)}
+                disabled={uploadMutation.isPending}
+              >
+                취소
+              </Button>
+              <Button 
+                onClick={() => {
+                  setDuplicateCheckDialog(false);
+                  submitForm();
+                }}
+                disabled={uploadMutation.isPending}
+                className="bg-orange-600 hover:bg-orange-700"
+              >
+                {uploadMutation.isPending && (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                )}
+                계속 진행
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </Layout>
   );

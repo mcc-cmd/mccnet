@@ -885,6 +885,29 @@ router.get('/api/documents', requireAuth, async (req: any, res) => {
   }
 });
 
+// 중복 접수 체크 API
+router.post('/api/documents/check-duplicate', requireAuth, async (req: any, res) => {
+  try {
+    const { customerName, customerPhone, storeName, contactCode } = req.body;
+    
+    if (!customerName || !customerPhone || (!storeName && !contactCode)) {
+      return res.status(400).json({ error: '필수 정보가 누락되었습니다.' });
+    }
+    
+    const duplicates = await storage.checkDuplicateDocument({
+      customerName,
+      customerPhone,
+      storeName,
+      contactCode
+    });
+    
+    res.json({ duplicates });
+  } catch (error: any) {
+    console.error('Duplicate check error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 router.post('/api/documents', requireDealerOrWorker, upload.single('file'), async (req: any, res) => {
   try {
     const data = uploadDocumentSchema.parse(req.body);
