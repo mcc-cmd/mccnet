@@ -804,6 +804,16 @@ router.get('/api/dashboard/worker-stats', requireAuth, async (req: any, res) => 
   }
 });
 
+// 당일 통계 API
+router.get('/api/dashboard/today-stats', requireAuth, async (req: any, res) => {
+  try {
+    const stats = await storage.getTodayStats();
+    res.json(stats);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 router.get('/api/documents', requireAuth, async (req: any, res) => {
   try {
     const { status, activationStatus, search, startDate, endDate } = req.query;

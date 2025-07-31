@@ -95,14 +95,13 @@ export function Dashboard() {
     enabled: user?.userType === 'admin',
   });
 
-  const { data: recentDocuments, isLoading: documentsLoading } = useQuery({
-    queryKey: ['/api/documents', { recent: true }],
-    queryFn: () => {
-      const params = new URLSearchParams({
-        startDate: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
-      });
-      return apiRequest(`/api/documents?${params}`) as Promise<Document[]>;
-    },
+  // 당일 통계 조회
+  const { data: todayStats, isLoading: todayStatsLoading } = useQuery({
+    queryKey: ['/api/dashboard/today-stats'],
+    queryFn: () => apiRequest('/api/dashboard/today-stats') as Promise<{
+      todayReception: number;
+      todayActivation: number;
+    }>,
   });
 
   const { data: activePricingTable } = useQuery({
@@ -410,12 +409,12 @@ export function Dashboard() {
 
         {/* Main Content Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Recent Documents */}
+          {/* Today's Statistics */}
           <div className="lg:col-span-2">
             <Card>
               <CardHeader>
                 <div className="flex items-center justify-between">
-                  <CardTitle>서류 접수 내역 (최근 7일)</CardTitle>
+                  <CardTitle>당일 현황</CardTitle>
                   <Button 
                     variant="link" 
                     size="sm"
@@ -426,63 +425,63 @@ export function Dashboard() {
                 </div>
               </CardHeader>
               <CardContent>
-                {documentsLoading ? (
-                  <div className="space-y-3">
-                    {[...Array(5)].map((_, i) => (
-                      <div key={i} className="flex items-center space-x-4">
-                        <Skeleton className="h-4 w-20" />
-                        <Skeleton className="h-4 w-24" />
-                        <Skeleton className="h-4 w-16" />
-                        <Skeleton className="h-4 w-32" />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* 당일 접수건 */}
+                  <div className="bg-blue-50 rounded-lg p-6 border border-blue-200">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h3 className="text-lg font-semibold text-blue-900 mb-2">당일 접수건</h3>
+                        <p className="text-sm text-blue-700">오늘 새로 접수된 건수</p>
                       </div>
-                    ))}
+                      <Upload className="h-8 w-8 text-blue-600" />
+                    </div>
+                    <div className="mt-4">
+                      {todayStatsLoading ? (
+                        <Skeleton className="h-12 w-20" />
+                      ) : (
+                        <div className="text-3xl font-bold text-blue-600">
+                          {todayStats?.todayReception || 0}
+                        </div>
+                      )}
+                      <div className="text-sm text-blue-600 mt-1">건</div>
+                    </div>
                   </div>
-                ) : recentDocuments && recentDocuments.length > 0 ? (
-                  <div className="overflow-x-auto">
-                    <table className="min-w-full divide-y divide-gray-300">
-                      <thead>
-                        <tr>
-                          <th className="py-3.5 pl-4 pr-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">
-                            접수번호
-                          </th>
-                          <th className="px-6 py-3.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">
-                            고객명
-                          </th>
-                          <th className="px-6 py-3.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">
-                            상태
-                          </th>
-                          <th className="px-6 py-3.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">
-                            접수일시
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-gray-200 bg-white">
-                        {recentDocuments.slice(0, 5).map((doc) => (
-                          <tr key={doc.id}>
-                            <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900">
-                              {doc.documentNumber}
-                            </td>
-                            <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-900">
-                              {doc.customerName}
-                            </td>
-                            <td className="whitespace-nowrap px-6 py-4 text-sm">
-                              {getStatusBadge(doc.status)}
-                            </td>
-                            <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
-                              {formatSafeDate(doc.uploadedAt, 'yyyy-MM-dd HH:mm')}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
+
+                  {/* 당일 개통건 */}
+                  <div className="bg-green-50 rounded-lg p-6 border border-green-200">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h3 className="text-lg font-semibold text-green-900 mb-2">당일 개통건</h3>
+                        <p className="text-sm text-green-700">오늘 개통 완료된 건수</p>
+                      </div>
+                      <CheckCircle className="h-8 w-8 text-green-600" />
+                    </div>
+                    <div className="mt-4">
+                      {todayStatsLoading ? (
+                        <Skeleton className="h-12 w-20" />
+                      ) : (
+                        <div className="text-3xl font-bold text-green-600">
+                          {todayStats?.todayActivation || 0}
+                        </div>
+                      )}
+                      <div className="text-sm text-green-600 mt-1">건</div>
+                    </div>
                   </div>
-                ) : (
-                  <div className="text-center py-6">
-                    <FileText className="mx-auto h-12 w-12 text-gray-400" />
-                    <h3 className="mt-2 text-sm font-medium text-gray-900">서류가 없습니다</h3>
-                    <p className="mt-1 text-sm text-gray-500">최근 7일간 접수된 서류가 없습니다.</p>
+                </div>
+
+                {/* 추가 정보 */}
+                <div className="mt-6 p-4 bg-gray-50 rounded-lg border">
+                  <div className="flex items-center justify-center space-x-8 text-sm text-gray-600">
+                    <div className="flex items-center space-x-2">
+                      <Calendar className="h-4 w-4" />
+                      <span>{format(new Date(), 'yyyy년 MM월 dd일', { locale: ko })}</span>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Clock className="h-4 w-4" />
+                      <span>실시간 업데이트</span>
+                    </div>
                   </div>
-                )}
+                </div>
               </CardContent>
             </Card>
           </div>

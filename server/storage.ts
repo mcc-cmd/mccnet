@@ -2316,6 +2316,30 @@ class SqliteStorage implements IStorage {
     stmt.run(new Date().toISOString(), messageId);
   }
 
+  // 당일 통계 조회
+  async getTodayStats(): Promise<{ todayReception: number; todayActivation: number }> {
+    const today = new Date().toISOString().split('T')[0];
+    
+    // 당일 접수건 (업로드 날짜 기준)
+    const todayReception = db.prepare(`
+      SELECT COUNT(*) as count 
+      FROM documents 
+      WHERE date(uploaded_at) = ?
+    `).get(today) as { count: number };
+    
+    // 당일 개통건 (개통 완료 날짜 기준)
+    const todayActivation = db.prepare(`
+      SELECT COUNT(*) as count 
+      FROM documents 
+      WHERE date(activated_at) = ? AND activation_status = '개통'
+    `).get(today) as { count: number };
+    
+    return {
+      todayReception: todayReception.count,
+      todayActivation: todayActivation.count
+    };
+  }
+
   // 접점코드 관리 기능
   async createContactCode(data: CreateContactCodeForm): Promise<ContactCode> {
     const stmt = db.prepare(`
