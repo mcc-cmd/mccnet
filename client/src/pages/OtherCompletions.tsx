@@ -98,7 +98,7 @@ export function OtherCompletions() {
       });
       
       // 데이터 새로고침
-      refetch();
+      await refetch();
       setIsEditMode(false);
       setIsDetailsDialogOpen(false);
     } catch (error) {
@@ -388,7 +388,7 @@ export function OtherCompletions() {
               <div className="border-t pt-4">
                 <div className="flex items-center justify-between mb-2">
                   <span className="font-medium text-gray-700">작업내용:</span>
-                  {user?.role === 'admin' && !isEditMode && (
+                  {user?.userType === 'admin' && !isEditMode && (
                     <Button
                       variant="outline"
                       size="sm"
