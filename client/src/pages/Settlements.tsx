@@ -763,6 +763,27 @@ export function Settlements() {
           </Card>
         </div>
 
+        {/* 엑셀 업로드 사용법 */}
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle>엑셀 업로드 사용법</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="bg-blue-50 dark:bg-blue-950 p-4 rounded-lg border">
+              <ol className="space-y-2 text-sm">
+                <li><span className="font-medium">1.</span> 위의 "정산 단가표" 버튼을 클릭하여 템플릿을 다운로드하세요.</li>
+                <li><span className="font-medium">2.</span> 다운로드한 파일에서 다음 항목들을 입력하세요:</li>
+                <div className="ml-6 space-y-1">
+                  <div>• <span className="font-medium">가입비:</span> 가입을 설정할 설정비용 이름</div>
+                  <div>• <span className="font-medium">판매점명:</span> 가입을 설정할 설정 판매점 이름</div>
+                  <div>• <span className="font-medium">통신사:</span> 해당 통신사명</div>
+                </div>
+                <li><span className="font-medium">3.</span> 작성이 완료되면 "엑셀 업로드" 버튼을 클릭하여 파일을 업로드하세요.</li>
+              </ol>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* 필터링 및 다운로드 */}
         <Card className="mb-6">
           <CardHeader>
@@ -840,76 +861,76 @@ export function Settlements() {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>개통날짜</TableHead>
-                      <TableHead>고객명</TableHead>
-                      <TableHead>연락처</TableHead>
-                      <TableHead>판매점명</TableHead>
-                      <TableHead>통신사</TableHead>
-                      <TableHead>요금제</TableHead>
-                      <TableHead>부가서비스</TableHead>
-                      <TableHead>결합여부</TableHead>
-                      <TableHead>가입번호</TableHead>
-                      <TableHead>기기/유심</TableHead>
+                      <TableHead className="whitespace-nowrap text-xs font-medium">개통날짜</TableHead>
+                      <TableHead className="whitespace-nowrap text-xs font-medium">고객명</TableHead>
+                      <TableHead className="whitespace-nowrap text-xs font-medium">연락처</TableHead>
+                      <TableHead className="whitespace-nowrap text-xs font-medium">판매점명</TableHead>
+                      <TableHead className="whitespace-nowrap text-xs font-medium">통신사</TableHead>
+                      <TableHead className="whitespace-nowrap text-xs font-medium">요금제</TableHead>
+                      <TableHead className="whitespace-nowrap text-xs font-medium">부가서비스</TableHead>
+                      <TableHead className="whitespace-nowrap text-xs font-medium">결합여부</TableHead>
+                      <TableHead className="whitespace-nowrap text-xs font-medium">가입번호</TableHead>
+                      <TableHead className="whitespace-nowrap text-xs font-medium">기기/유심</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {completedDocuments.map((doc) => (
                       <TableRow key={doc.id}>
-                        <TableCell>
+                        <TableCell className="whitespace-nowrap text-xs">
                           {doc.activatedAt ? (() => {
                             try {
                               const date = new Date(doc.activatedAt);
-                              return isValid(date) ? format(date, 'yyyy-MM-dd', { locale: ko }) : '-';
+                              return isValid(date) ? format(date, 'MM-dd', { locale: ko }) : '-';
                             } catch (e) {
                               return '-';
                             }
                           })() : '-'}
                         </TableCell>
-                        <TableCell>{doc.customerName}</TableCell>
-                        <TableCell>{doc.customerPhone}</TableCell>
-                        <TableCell>{doc.storeName || doc.dealerName}</TableCell>
-                        <TableCell>
-                          <Badge variant="outline">{doc.carrier}</Badge>
+                        <TableCell className="whitespace-nowrap text-sm">{doc.customerName}</TableCell>
+                        <TableCell className="whitespace-nowrap text-sm">{doc.customerPhone}</TableCell>
+                        <TableCell className="whitespace-nowrap text-sm max-w-[120px] truncate">{doc.storeName || doc.dealerName}</TableCell>
+                        <TableCell className="whitespace-nowrap">
+                          <Badge variant="outline" className="text-xs">{doc.carrier}</Badge>
                         </TableCell>
-                        <TableCell>{doc.servicePlanName || '-'}</TableCell>
-                        <TableCell>
+                        <TableCell className="whitespace-nowrap text-sm max-w-[140px] truncate">{doc.servicePlanName || '-'}</TableCell>
+                        <TableCell className="whitespace-nowrap">
                           {doc.additionalServices ? (
-                            <div className="flex flex-wrap gap-1">
+                            <div className="flex gap-1">
                               {typeof doc.additionalServices === 'string' ? (
-                                doc.additionalServices.split(', ').slice(0, 2).map((service, index) => (
+                                doc.additionalServices.split(', ').slice(0, 1).map((service, index) => (
                                   <Badge key={index} variant="secondary" className="text-xs">
                                     {service}
                                   </Badge>
                                 ))
                               ) : (
-                                doc.additionalServices.slice(0, 2).map((service, index) => (
+                                doc.additionalServices.slice(0, 1).map((service, index) => (
                                   <Badge key={index} variant="secondary" className="text-xs">
                                     {service}
                                   </Badge>
                                 ))
                               )}
-                              {((typeof doc.additionalServices === 'string' ? doc.additionalServices.split(', ').length : doc.additionalServices.length) > 2) && (
+                              {((typeof doc.additionalServices === 'string' ? doc.additionalServices.split(', ').length : doc.additionalServices.length) > 1) && (
                                 <Badge variant="secondary" className="text-xs">
-                                  +{(typeof doc.additionalServices === 'string' ? doc.additionalServices.split(', ').length : doc.additionalServices.length) - 2}
+                                  +{(typeof doc.additionalServices === 'string' ? doc.additionalServices.split(', ').length : doc.additionalServices.length) - 1}
                                 </Badge>
                               )}
                             </div>
                           ) : (
-                            <span className="text-muted-foreground text-sm">없음</span>
+                            <span className="text-muted-foreground text-xs">없음</span>
                           )}
                         </TableCell>
-                        <TableCell>
+                        <TableCell className="whitespace-nowrap">
                           {getStatusBadge(doc.bundleApplied, doc.bundleNotApplied)}
                         </TableCell>
-                        <TableCell>
-                          <span className="text-sm font-mono">
+                        <TableCell className="whitespace-nowrap">
+                          <span className="text-xs font-mono">
                             {doc.subscriptionNumber || '-'}
                           </span>
                         </TableCell>
-                        <TableCell>
-                          <div className="text-sm">
-                            {doc.deviceModel && <div>기기: {doc.deviceModel}</div>}
-                            {doc.simNumber && <div>유심: {doc.simNumber}</div>}
+                        <TableCell className="whitespace-nowrap">
+                          <div className="text-xs space-y-0">
+                            {doc.deviceModel && <div className="truncate max-w-[100px]">{doc.deviceModel}</div>}
+                            {doc.simNumber && <div className="truncate max-w-[100px]">{doc.simNumber}</div>}
                             {!doc.deviceModel && !doc.simNumber && <span className="text-muted-foreground">-</span>}
                           </div>
                         </TableCell>
