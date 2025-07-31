@@ -155,14 +155,15 @@ export function OtherCompletions() {
                   <table className="w-full">
                     <thead>
                       <tr className="border-b border-gray-200">
-                        <th className="text-left py-3 px-2 font-medium text-gray-700 text-sm">접수번호</th>
+                        <th className="text-left py-3 px-2 font-medium text-gray-700 text-sm">접수일</th>
                         <th className="text-left py-3 px-2 font-medium text-gray-700 text-sm">고객명</th>
                         <th className="text-left py-3 px-2 font-medium text-gray-700 text-sm">연락처</th>
                         <th className="text-left py-3 px-2 font-medium text-gray-700 text-sm">판매점명</th>
                         <th className="text-left py-3 px-2 font-medium text-gray-700 text-sm">통신사</th>
                         <th className="text-left py-3 px-2 font-medium text-gray-700 text-sm">상태</th>
-                        <th className="text-left py-3 px-2 font-medium text-gray-700 text-sm">완료일</th>
+                        <th className="text-left py-3 px-2 font-medium text-gray-700 text-sm">기기모델</th>
                         <th className="text-left py-3 px-2 font-medium text-gray-700 text-sm">유심번호</th>
+                        <th className="text-left py-3 px-2 font-medium text-gray-700 text-sm">가입번호</th>
                         <th className="text-left py-3 px-2 font-medium text-gray-700 text-sm">처리자</th>
                         <th className="text-left py-3 px-2 font-medium text-gray-700 text-sm">작업</th>
                       </tr>
@@ -171,7 +172,10 @@ export function OtherCompletions() {
                       {documents.map((doc) => (
                         <tr key={doc.id} className="border-b border-gray-100 hover:bg-gray-50">
                           <td className="py-3 px-2 text-sm leading-tight break-words">
-                            {doc.documentNumber}
+                            {new Date(doc.uploadedAt).toLocaleDateString('ko-KR', { 
+                              month: '2-digit', 
+                              day: '2-digit' 
+                            })}
                           </td>
                           <td className="py-3 px-2 text-sm leading-tight break-words font-medium">
                             {doc.customerName}
@@ -180,7 +184,7 @@ export function OtherCompletions() {
                             {doc.customerPhone}
                           </td>
                           <td className="py-3 px-2 text-sm leading-tight break-words">
-                            {doc.storeName || (doc as any).dealerName || '-'}
+                            {doc.storeName || doc.contactCode || (doc as any).dealerName || '-'}
                           </td>
                           <td className="py-3 px-2 text-sm leading-tight break-words">
                             {doc.carrier}
@@ -191,10 +195,13 @@ export function OtherCompletions() {
                             </Badge>
                           </td>
                           <td className="py-3 px-2 text-sm leading-tight break-words">
-                            {doc.activatedAt ? new Date(doc.activatedAt).toLocaleDateString() : '-'}
+                            {doc.deviceModel || '-'}
                           </td>
                           <td className="py-3 px-2 text-sm leading-tight break-words">
                             {doc.simNumber || '-'}
+                          </td>
+                          <td className="py-3 px-2 text-sm leading-tight break-words">
+                            {doc.subscriptionNumber || '-'}
                           </td>
                           <td className="py-3 px-2 text-sm leading-tight break-words">
                             {(doc as any).activatedByName || '-'}
@@ -235,7 +242,7 @@ export function OtherCompletions() {
                           <div className="flex items-center">
                             <Building2 className="h-4 w-4 mr-2 text-gray-500" />
                             <span className="text-sm text-gray-600 break-words leading-tight">
-                              {doc.storeName || (doc as any).dealerName || '-'}
+                              {doc.storeName || doc.contactCode || (doc as any).dealerName || '-'}
                             </span>
                           </div>
                           <div className="flex items-center">
@@ -249,9 +256,10 @@ export function OtherCompletions() {
                       </div>
                       
                       <div className="text-xs text-gray-500 space-y-1">
-                        <div>접수번호: {doc.documentNumber}</div>
-                        <div>완료일: {doc.activatedAt ? new Date(doc.activatedAt).toLocaleDateString() : '-'}</div>
+                        <div>접수일: {new Date(doc.uploadedAt).toLocaleDateString('ko-KR', { month: '2-digit', day: '2-digit' })}</div>
+                        <div>기기모델: {doc.deviceModel || '-'}</div>
                         <div>유심번호: {doc.simNumber || '-'}</div>
+                        <div>가입번호: {doc.subscriptionNumber || '-'}</div>
                         <div>처리자: {(doc as any).activatedByName || '-'}</div>
                       </div>
 
