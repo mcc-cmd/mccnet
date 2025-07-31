@@ -7,7 +7,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { FileText, Search, Calendar, User, Phone, Building2, Smartphone, Download } from 'lucide-react';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { FileText, Search, Calendar, User, Phone, Building2, Smartphone, Download, Eye } from 'lucide-react';
 import { Document } from '@shared/schema';
 
 export function OtherCompletions() {
