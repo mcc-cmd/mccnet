@@ -792,7 +792,7 @@ export function Settlements() {
                 />
               </div>
               <div className="flex-1 min-w-[200px]">
-                <Label htmlFor="search-query">검색 (고객명/문서번호)</Label>
+                <Label htmlFor="search-query">검색 (고객명/연락처)</Label>
                 <Input
                   id="search-query"
                   type="text"
@@ -841,7 +841,6 @@ export function Settlements() {
                   <TableHeader>
                     <TableRow>
                       <TableHead>개통날짜</TableHead>
-                      <TableHead>문서번호</TableHead>
                       <TableHead>고객명</TableHead>
                       <TableHead>연락처</TableHead>
                       <TableHead>판매점명</TableHead>
@@ -866,7 +865,6 @@ export function Settlements() {
                             }
                           })() : '-'}
                         </TableCell>
-                        <TableCell className="font-medium">{doc.documentNumber}</TableCell>
                         <TableCell>{doc.customerName}</TableCell>
                         <TableCell>{doc.customerPhone}</TableCell>
                         <TableCell>{doc.storeName || doc.dealerName}</TableCell>
