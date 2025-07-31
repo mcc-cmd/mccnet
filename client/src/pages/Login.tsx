@@ -19,12 +19,12 @@ export function Login() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [formData, setFormData] = useState({
-    email: '',
+    username: '',
     password: ''
   });
   const [registerData, setRegisterData] = useState({
     kpNumber: '',
-    email: '',
+    username: '',
     password: '',
     name: ''
   });
@@ -45,7 +45,7 @@ export function Login() {
       if (success) {
         setLocation('/dashboard');
       } else {
-        setError('이메일 또는 비밀번호가 올바르지 않습니다.');
+        setError('아이디 또는 비밀번호가 올바르지 않습니다.');
       }
     } catch (err: any) {
       setError(err.message || '로그인 중 오류가 발생했습니다.');
@@ -148,7 +148,7 @@ export function Login() {
           description: '판매점 계정이 성공적으로 생성되었습니다. 로그인해주세요.',
           variant: 'default'
         });
-        setRegisterData({ kpNumber: '', email: '', password: '', name: '' });
+        setRegisterData({ kpNumber: '', username: '', password: '', name: '' });
         setKpValidation({ isValid: false, dealerName: '', location: '', isChecking: false });
       } else {
         const errorData = await response.json();
@@ -207,15 +207,15 @@ export function Login() {
                   )}
 
                   <div>
-                    <Label htmlFor="email">이메일</Label>
+                    <Label htmlFor="username">아이디</Label>
                     <Input
-                      id="email"
-                      name="email"
-                      type="email"
+                      id="username"
+                      name="username"
+                      type="text"
                       required
-                      value={formData.email}
+                      value={formData.username}
                       onChange={handleChange}
-                      placeholder="이메일을 입력하세요"
+                      placeholder="아이디를 입력하세요"
                       className="mt-1"
                     />
                   </div>
@@ -315,15 +315,15 @@ export function Login() {
                   </div>
 
                   <div>
-                    <Label htmlFor="register-email">이메일</Label>
+                    <Label htmlFor="register-username">아이디</Label>
                     <Input
-                      id="register-email"
-                      name="email"
-                      type="email"
+                      id="register-username"
+                      name="username"
+                      type="text"
                       required
-                      value={registerData.email}
+                      value={registerData.username}
                       onChange={handleRegisterChange}
-                      placeholder="이메일을 입력하세요"
+                      placeholder="아이디를 입력하세요 (최소 3자)"
                       className="mt-1"
                     />
                   </div>

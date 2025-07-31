@@ -4,7 +4,7 @@ import { createInsertSchema } from "drizzle-zod";
 // Database schema types
 export interface Admin {
   id: number;
-  email: string;
+  username: string;
   password: string;
   name: string;
   createdAt: Date;
@@ -35,7 +35,7 @@ export interface KPDealerInfo {
 export interface User {
   id: number;
   dealerId?: number; // nullable로 변경
-  email: string;
+  username: string; // email을 username으로 변경
   password: string;
   name: string;
   role: 'dealer_store' | 'dealer_worker'; // 판매점/근무자 구분
@@ -138,7 +138,7 @@ export interface AuthSession {
 
 // Zod schemas for validation
 export const loginSchema = z.object({
-  email: z.string().email("올바른 이메일을 입력하세요"),
+  username: z.string().min(3, "아이디는 최소 3자 이상이어야 합니다"),
   password: z.string().min(6, "비밀번호는 최소 6자 이상이어야 합니다"),
 });
 
@@ -168,26 +168,26 @@ export const updateDealerContactCodesSchema = z.object({
 });
 
 export const createAdminSchema = z.object({
-  email: z.string().email("올바른 이메일을 입력하세요"),
+  username: z.string().min(3, "아이디는 최소 3자 이상이어야 합니다"),
   password: z.string().min(6, "비밀번호는 최소 6자 이상이어야 합니다"),
   name: z.string().min(1, "이름을 입력하세요"),
 });
 
 export const createWorkerSchema = z.object({
-  email: z.string().email("올바른 이메일을 입력하세요"),
+  username: z.string().min(3, "아이디는 최소 3자 이상이어야 합니다"),
   password: z.string().min(6, "비밀번호는 최소 6자 이상이어야 합니다"),
   name: z.string().min(1, "이름을 입력하세요"),
 });
 
 export const createDealerAccountSchema = z.object({
   kpNumber: z.string().min(1, "KP번호를 입력하세요"),
-  email: z.string().email("올바른 이메일을 입력하세요"),
+  username: z.string().min(3, "아이디는 최소 3자 이상이어야 합니다"),
   password: z.string().min(6, "비밀번호는 최소 6자 이상이어야 합니다"),
   name: z.string().min(1, "이름을 입력하세요"),
 });
 
 export const createUserSchema = z.object({
-  email: z.string().email("올바른 이메일을 입력하세요"),
+  username: z.string().min(3, "아이디는 최소 3자 이상이어야 합니다"),
   password: z.string().min(6, "비밀번호는 최소 6자 이상이어야 합니다"),
   name: z.string().min(1, "이름을 입력하세요"),
   role: z.enum(['dealer_store', 'dealer_worker']),
@@ -250,7 +250,7 @@ export interface AuthResponse {
   user?: {
     id: number;
     name: string;
-    email: string;
+    username: string;
     userType: 'admin' | 'user';
     dealerId?: number;
     dealerName?: string;

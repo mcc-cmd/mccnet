@@ -36,7 +36,7 @@ const db = new Database(dbPath);
 db.exec(`
   CREATE TABLE IF NOT EXISTS admin_users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    email TEXT UNIQUE NOT NULL,
+    username TEXT UNIQUE NOT NULL,
     password TEXT NOT NULL,
     name TEXT NOT NULL,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
@@ -65,11 +65,11 @@ db.exec(`
 
   CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    dealer_id INTEGER NOT NULL,
-    email TEXT UNIQUE NOT NULL,
+    dealer_id INTEGER,
+    username TEXT UNIQUE NOT NULL,
     password TEXT NOT NULL,
     name TEXT NOT NULL,
-    role TEXT NOT NULL CHECK (role IN ('dealer_store', 'dealer_worker')),
+    user_type TEXT NOT NULL CHECK (user_type IN ('dealer_store', 'dealer_worker', 'admin')),
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (dealer_id) REFERENCES dealers (id)
   );
@@ -323,8 +323,8 @@ if (additionalServicesExists.count === 0) {
 
 export interface IStorage {
   // Authentication
-  authenticateAdmin(email: string, password: string): Promise<Admin | null>;
-  authenticateUser(email: string, password: string): Promise<{ user: User; dealer: Dealer } | null>;
+  authenticateAdmin(username: string, password: string): Promise<Admin | null>;
+  authenticateUser(username: string, password: string): Promise<{ user: User; dealer: Dealer } | null>;
   createSession(userId: number, userType: 'admin' | 'user', dealerId?: number, userRole?: string): Promise<string>;
   getSession(sessionId: string): Promise<AuthSession | null>;
   deleteSession(sessionId: string): Promise<void>;
@@ -367,7 +367,7 @@ export interface IStorage {
   getDealers(): Promise<Dealer[]>;
   getUsers(dealerId?: number): Promise<Array<User & { dealerName: string }>>;
   getAllUsers(): Promise<Array<User & { dealerName: string; userType: string }>>;
-  updateUser(id: number, data: { email?: string; password?: string; name?: string }): Promise<User>;
+  updateUser(id: number, data: { username?: string; password?: string; name?: string }): Promise<User>;
   
   // Contact codes management
   updateDealerContactCodes(dealerId: number, contactCodes: Array<{ carrierId: string; carrierName: string; contactCode: string }>): Promise<void>;
@@ -415,27 +415,27 @@ export interface IStorage {
 }
 
 class SqliteStorage implements IStorage {
-  async authenticateAdmin(email: string, password: string): Promise<Admin | null> {
-    const admin = db.prepare('SELECT * FROM users WHERE email = ? AND user_type = ?').get(email, 'admin') as any;
+  async authenticateAdmin(username: string, password: string): Promise<Admin | null> {
+    const admin = db.prepare('SELECT * FROM users WHERE username = ? AND user_type = ?').get(username, 'admin') as any;
     if (!admin || !bcrypt.compareSync(password, admin.password)) {
       return null;
     }
     return {
       id: admin.id,
-      email: admin.email,
+      username: admin.username,
       password: admin.password,
       name: admin.name,
       createdAt: new Date(admin.created_at)
     };
   }
 
-  async authenticateUser(email: string, password: string): Promise<{ user: User; dealer?: Dealer } | null> {
+  async authenticateUser(username: string, password: string): Promise<{ user: User; dealer?: Dealer } | null> {
     const result = db.prepare(`
       SELECT u.*, d.name as dealer_name, d.created_at as dealer_created_at
       FROM users u
       LEFT JOIN dealers d ON u.dealer_id = d.id
-      WHERE u.email = ? AND u.user_type != ?
-    `).get(email, 'admin') as any;
+      WHERE u.username = ? AND u.user_type != ?
+    `).get(username, 'admin') as any;
     
     if (!result || !bcrypt.compareSync(password, result.password)) {
       return null;
@@ -444,7 +444,7 @@ class SqliteStorage implements IStorage {
     const user: User = {
       id: result.id,
       dealerId: result.dealer_id,
-      email: result.email,
+      username: result.username,
       password: result.password,
       name: result.name,
       role: result.user_type,
@@ -1152,7 +1152,7 @@ class SqliteStorage implements IStorage {
     return users.map(u => ({
       id: u.id,
       dealerId: u.dealer_id,
-      email: u.email,
+      username: u.username,
       password: u.password,
       name: u.name,
       role: u.user_type,
@@ -1162,13 +1162,13 @@ class SqliteStorage implements IStorage {
     }));
   }
 
-  async updateUser(id: number, data: { email?: string; password?: string; name?: string }): Promise<User> {
+  async updateUser(id: number, data: { username?: string; password?: string; name?: string }): Promise<User> {
     const updates: string[] = [];
     const params: any[] = [];
 
-    if (data.email) {
-      updates.push('email = ?');
-      params.push(data.email);
+    if (data.username) {
+      updates.push('username = ?');
+      params.push(data.username);
     }
     if (data.password) {
       const hashedPassword = bcrypt.hashSync(data.password, 10);
@@ -1193,7 +1193,7 @@ class SqliteStorage implements IStorage {
     return {
       id: result.id,
       dealerId: result.dealer_id,
-      email: result.email,
+      username: result.username,
       password: result.password,
       name: result.name,
       role: result.user_type,

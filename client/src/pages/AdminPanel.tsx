@@ -44,20 +44,20 @@ type CreateDealerForm = {
 };
 
 type CreateUserForm = {
-  email: string;
+  username: string;
   password: string;
   name: string;
   role: 'dealer_store' | 'dealer_worker';
 };
 
 type CreateAdminForm = {
-  email: string;
+  username: string;
   password: string;
   name: string;
 };
 
 type CreateWorkerForm = {
-  email: string;
+  username: string;
   password: string;
   name: string;
 };
@@ -931,7 +931,7 @@ export function AdminPanel() {
   const userForm = useForm<CreateUserForm>({
     resolver: zodResolver(createUserSchema),
     defaultValues: {
-      email: '',
+      username: '',
       password: '',
       name: '',
       role: 'dealer_store',
@@ -941,7 +941,7 @@ export function AdminPanel() {
   const adminForm = useForm<CreateAdminForm>({
     resolver: zodResolver(createAdminSchema),
     defaultValues: {
-      email: '',
+      username: '',
       password: '',
       name: '',
     },
@@ -950,7 +950,7 @@ export function AdminPanel() {
   const workerForm = useForm<CreateWorkerForm>({
     resolver: zodResolver(createWorkerSchema),
     defaultValues: {
-      email: '',
+      username: '',
       password: '',
       name: '',
     },
@@ -958,7 +958,7 @@ export function AdminPanel() {
 
   const editUserForm = useForm({
     defaultValues: {
-      email: '',
+      username: '',
       password: '',
       name: '',
     },
@@ -1212,7 +1212,7 @@ export function AdminPanel() {
 
   // 사용자 수정 뮤테이션
   const updateUserMutation = useMutation({
-    mutationFn: ({ id, data }: { id: number; data: { email?: string; password?: string; name?: string } }) =>
+    mutationFn: ({ id, data }: { id: number; data: { username?: string; password?: string; name?: string } }) =>
       apiRequest(`/api/admin/users/${id}`, {
         method: 'PUT',
         body: JSON.stringify(data),
@@ -1239,18 +1239,18 @@ export function AdminPanel() {
   const handleEditUser = (user: User & { dealerName: string; userType: string }) => {
     setEditingUser(user);
     editUserForm.reset({
-      email: user.email,
+      username: user.username,
       password: '',
       name: user.name,
     });
     setEditUserDialogOpen(true);
   };
 
-  const handleUpdateUser = (data: { email: string; password: string; name: string }) => {
+  const handleUpdateUser = (data: { username: string; password: string; name: string }) => {
     if (!editingUser) return;
     
     const updateData: any = {};
-    if (data.email !== editingUser.email) updateData.email = data.email;
+    if (data.username !== editingUser.username) updateData.username = data.username;
     if (data.password) updateData.password = data.password;
     if (data.name !== editingUser.name) updateData.name = data.name;
     
@@ -2261,12 +2261,12 @@ export function AdminPanel() {
                         />
                         <FormField
                           control={userForm.control}
-                          name="email"
+                          name="username"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>이메일</FormLabel>
+                              <FormLabel>아이디</FormLabel>
                               <FormControl>
-                                <Input type="email" placeholder="이메일을 입력하세요" {...field} />
+                                <Input type="text" placeholder="아이디를 입력하세요" {...field} />
                               </FormControl>
                               <FormMessage />
                             </FormItem>
@@ -2333,7 +2333,7 @@ export function AdminPanel() {
                             이름
                           </th>
                           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            이메일
+                            아이디
                           </th>
                           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                             대리점
@@ -2356,7 +2356,7 @@ export function AdminPanel() {
                               {user.name}
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                              {user.email}
+                              {user.username}
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                               {user.dealerName}
@@ -2505,12 +2505,12 @@ export function AdminPanel() {
                             />
                             <FormField
                               control={adminForm.control}
-                              name="email"
+                              name="username"
                               render={({ field }) => (
                                 <FormItem>
-                                  <FormLabel>이메일</FormLabel>
+                                  <FormLabel>아이디</FormLabel>
                                   <FormControl>
-                                    <Input type="email" placeholder="이메일을 입력하세요" {...field} />
+                                    <Input type="text" placeholder="아이디를 입력하세요" {...field} />
                                   </FormControl>
                                   <FormMessage />
                                 </FormItem>
@@ -2582,12 +2582,12 @@ export function AdminPanel() {
                             />
                             <FormField
                               control={workerForm.control}
-                              name="email"
+                              name="username"
                               render={({ field }) => (
                                 <FormItem>
-                                  <FormLabel>이메일</FormLabel>
+                                  <FormLabel>아이디</FormLabel>
                                   <FormControl>
-                                    <Input type="email" placeholder="이메일을 입력하세요" {...field} />
+                                    <Input type="text" placeholder="아이디를 입력하세요" {...field} />
                                   </FormControl>
                                   <FormMessage />
                                 </FormItem>
@@ -2640,7 +2640,7 @@ export function AdminPanel() {
                               이름
                             </th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                              이메일
+                              아이디
                             </th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                               계정 유형
@@ -2663,7 +2663,7 @@ export function AdminPanel() {
                                 {user.name}
                               </td>
                               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                {user.email}
+                                {user.username}
                               </td>
                               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                 <Badge variant={user.userType === 'admin' ? 'default' : 'secondary'}>
@@ -2735,12 +2735,12 @@ export function AdminPanel() {
                       />
                       <FormField
                         control={editUserForm.control}
-                        name="email"
+                        name="username"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>이메일</FormLabel>
+                            <FormLabel>아이디</FormLabel>
                             <FormControl>
-                              <Input type="email" placeholder="이메일을 입력하세요" {...field} />
+                              <Input type="text" placeholder="아이디를 입력하세요" {...field} />
                             </FormControl>
                             <FormMessage />
                           </FormItem>

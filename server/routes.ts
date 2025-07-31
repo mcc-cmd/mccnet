@@ -194,10 +194,10 @@ router.get('/api/service-plans', async (req: any, res) => {
 // Authentication routes
 router.post('/api/auth/login', async (req, res) => {
   try {
-    const { email, password } = loginSchema.parse(req.body);
+    const { username, password } = loginSchema.parse(req.body);
     
     // Try admin login first
-    const admin = await storage.authenticateAdmin(email, password);
+    const admin = await storage.authenticateAdmin(username, password);
     if (admin) {
       const sessionId = await storage.createSession(admin.id, 'admin');
       const response: AuthResponse = {
@@ -205,7 +205,7 @@ router.post('/api/auth/login', async (req, res) => {
         user: {
           id: admin.id,
           name: admin.name,
-          email: admin.email,
+          username: admin.username,
           userType: 'admin'
         },
         sessionId
@@ -214,7 +214,7 @@ router.post('/api/auth/login', async (req, res) => {
     }
 
     // Try user login
-    const userResult = await storage.authenticateUser(email, password);
+    const userResult = await storage.authenticateUser(username, password);
     if (userResult) {
       const { user, dealer } = userResult;
       const sessionId = await storage.createSession(user.id, 'user', user.dealerId, user.role);
@@ -223,7 +223,7 @@ router.post('/api/auth/login', async (req, res) => {
         user: {
           id: user.id,
           name: user.name,
-          email: user.email,
+          username: user.username,
           userType: 'user',
           dealerId: user.dealerId,
           dealerName: dealer?.name || null,
@@ -234,7 +234,7 @@ router.post('/api/auth/login', async (req, res) => {
       return res.json(response);
     }
 
-    res.status(401).json({ success: false, error: '이메일 또는 비밀번호가 올바르지 않습니다.' });
+    res.status(401).json({ success: false, error: '아이디 또는 비밀번호가 올바르지 않습니다.' });
   } catch (error: any) {
     res.status(400).json({ success: false, error: error.message });
   }
@@ -260,7 +260,7 @@ router.get('/api/auth/me', requireAuth, async (req: any, res) => {
           user: {
             id: admin.id,
             name: admin.name,
-            email: admin.email,
+            username: admin.username,
             userType: 'admin'
           }
         });
@@ -275,7 +275,7 @@ router.get('/api/auth/me', requireAuth, async (req: any, res) => {
           user: {
             id: user.id,
             name: user.name,
-            email: user.email,
+            username: user.username,
             userType: 'user',
             dealerId: user.dealerId,
             dealerName: user.dealerName
@@ -431,10 +431,10 @@ router.get('/api/admin/users', requireAdmin, async (req, res) => {
 router.put('/api/admin/users/:id', requireAdmin, async (req, res) => {
   try {
     const id = parseInt(req.params.id);
-    const { email, password, name } = req.body;
+    const { username, password, name } = req.body;
     
     const updateData: any = {};
-    if (email) updateData.email = email;
+    if (username) updateData.username = username;
     if (password) updateData.password = password;
     if (name) updateData.name = name;
     
