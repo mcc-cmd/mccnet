@@ -80,8 +80,9 @@ export function Documents() {
     queryKey: ['/api/documents', filters],
     queryFn: () => {
       const params = new URLSearchParams();
-      // 접수 관리에서는 대기/진행중 상태만 표시
+      // 접수 관리는 모든 근무자가 볼 수 있도록 설정 (대기/진행중 상태만 표시)
       params.append('activationStatus', '대기,진행중');
+      params.append('allWorkers', 'true'); // 모든 근무자가 볼 수 있도록 설정
       Object.entries(filters).forEach(([key, value]) => {
         if (value && value !== 'all' && key !== 'activationStatus') params.append(key, value);
       });

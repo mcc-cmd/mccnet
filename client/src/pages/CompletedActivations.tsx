@@ -34,6 +34,8 @@ export function CompletedActivations() {
       if (user?.userType === 'dealer_worker') {
         params.append('workerFilter', 'my');
       }
+      // 개통 처리자 이름을 포함하도록 요청
+      params.append('includeActivatedBy', 'true');
       Object.entries(filters).forEach(([key, value]) => {
         if (value) params.append(key, value);
       });
@@ -177,7 +179,7 @@ export function CompletedActivations() {
                         <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">연락처</th>
                         <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">통신사</th>
                         <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">요금제 정보</th>
-                        <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">개통일</th>
+                        <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">개통 처리자</th>
                         <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">상태</th>
                         <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">액션</th>
                       </tr>
@@ -264,9 +266,9 @@ export function CompletedActivations() {
                               )}
                             </div>
                           </td>
-                          <td className="px-3 py-2 text-sm text-gray-500">
+                          <td className="px-3 py-2 text-sm text-gray-900">
                             <div className="leading-tight break-words max-w-full">
-                              {doc.activatedAt ? format(new Date(doc.activatedAt), 'yyyy-MM-dd', { locale: ko }) : '-'}
+                              {(doc as any).activatedByName || '알 수 없음'}
                             </div>
                           </td>
                           <td className="px-3 py-2">
@@ -300,6 +302,9 @@ export function CompletedActivations() {
                             <p className="font-medium">{doc.customerName}</p>
                             <p className="text-sm text-gray-600">
                               {doc.activatedAt ? format(new Date(doc.activatedAt), 'yyyy-MM-dd HH:mm', { locale: ko }) : '-'}
+                            </p>
+                            <p className="text-xs text-blue-600">
+                              처리자: {(doc as any).activatedByName || '알 수 없음'}
                             </p>
                           </div>
                           {getActivationStatusBadge(doc.activationStatus)}

@@ -413,7 +413,7 @@ export interface IStorage {
   // Document operations
   uploadDocument(data: UploadDocumentForm & { dealerId: number; userId: number; filePath: string; fileName: string; fileSize: number }): Promise<Document>;
   getDocument(id: number): Promise<Document | null>;
-  getDocuments(dealerId?: number, filters?: { status?: string; activationStatus?: string; search?: string; startDate?: string; endDate?: string }): Promise<Array<Document & { dealerName: string; userName: string }>>;
+  getDocuments(dealerId?: number, filters?: { status?: string; activationStatus?: string; search?: string; startDate?: string; endDate?: string }): Promise<Array<Document & { dealerName: string; userName: string; activatedByName?: string }>>;
   updateDocumentStatus(id: number, data: UpdateDocumentStatusForm): Promise<Document>;
   updateDocumentActivationStatus(id: number, data: any): Promise<Document>;
   deleteDocument(id: number): Promise<void>;
@@ -1365,12 +1365,14 @@ class SqliteStorage implements IStorage {
     return matchingCode ? matchingCode.contactCode : null;
   }
 
-  async getDocuments(dealerId?: number, filters?: { status?: string; activationStatus?: string; search?: string; startDate?: string; endDate?: string; workerFilter?: string }, userId?: number): Promise<Array<Document & { dealerName: string; userName: string }>> {
+  async getDocuments(dealerId?: number, filters?: { status?: string; activationStatus?: string; search?: string; startDate?: string; endDate?: string; workerFilter?: string }, userId?: number): Promise<Array<Document & { dealerName: string; userName: string; activatedByName?: string }>> {
     let query = `
-      SELECT d.*, dealers.name as dealer_name, u.name as user_name
+      SELECT d.*, dealers.name as dealer_name, u.name as user_name,
+             activated_user.name as activated_by_name
       FROM documents d
       LEFT JOIN dealers ON d.dealer_id = dealers.id
       JOIN users u ON d.user_id = u.id
+      LEFT JOIN users activated_user ON d.activated_by = activated_user.id
       WHERE 1=1
     `;
     let params: any[] = [];
@@ -1462,8 +1464,9 @@ class SqliteStorage implements IStorage {
       bundleNotApplied: Boolean(d.bundle_not_applied),
       dealerNotes: d.dealer_notes,
       dealerName: d.dealer_name,
-      userName: d.user_name
-    } as Document & { dealerName: string; userName: string }));
+      userName: d.user_name,
+      activatedByName: d.activated_by_name
+    } as Document & { dealerName: string; userName: string; activatedByName?: string }));
   }
 
   // 부가서비스 이름 가져오기 헬퍼 함수

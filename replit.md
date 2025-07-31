@@ -335,6 +335,10 @@ This is a document management system built for MCC네트월드 telecommunication
 - July 31, 2025. Cleaned up AdminPanel tab structure from 10 to 9 tabs by removing "정책표 관리" (pricing policies) tab
 - July 31, 2025. Simplified Templates and Pricing tabs to show placeholder content with preparation status messages
 - July 31, 2025. Fixed WorkerStatistics component undefined error by implementing proper tab content structure
+- July 31, 2025. Modified reception management (접수 관리) access to be visible to all workers instead of worker-specific filtering
+- July 31, 2025. Enhanced CompletedActivations page to display the name of the worker who completed each activation
+- July 31, 2025. Updated database queries to include activated_by_name field for tracking activation completion workers
+- July 31, 2025. Added LEFT JOIN with users table in getDocuments to properly retrieve activation processor names
 
 ## User Preferences
 
