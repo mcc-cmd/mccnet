@@ -296,7 +296,22 @@ export function SubmitApplication() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="carrier">통신사 *</Label>
-                    <Select value={formData.carrier} onValueChange={(value) => setFormData(prev => ({ ...prev, carrier: value }))}>
+                    <Select value={formData.carrier} onValueChange={(value) => {
+                      setFormData(prev => {
+                        const newData = { ...prev, carrier: value };
+                        // 기타 통신사 선택 시 접점코드를 판매점명으로 설정
+                        if (value.includes('기타') && newData.contactCode.trim()) {
+                          newData.storeName = newData.contactCode;
+                        } else if (!value.includes('기타')) {
+                          // 기타가 아닌 통신사 선택 시 기존 로직대로 처리
+                          if (newData.contactCode.trim()) {
+                            // 접점코드가 있으면 자동 조회 시도
+                            handleContactCodeChange(newData.contactCode);
+                          }
+                        }
+                        return newData;
+                      });
+                    }}>
                       <SelectTrigger className="mt-1">
                         <SelectValue placeholder="통신사를 선택하세요" />
                       </SelectTrigger>

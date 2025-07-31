@@ -354,6 +354,9 @@ This is a document management system built for MCC네트월드 telecommunication
 - July 31, 2025. Updated database schema to properly support disposal status with discard_reason column and constraint validation
 - July 31, 2025. Enhanced disposal workflow to properly track processor names: added activated_by field recording for disposal status changes
 - July 31, 2025. Removed duplicate disposal reason input fields, now showing only one organized disposal information section
+- July 31, 2025. Fixed "기타완료" status processor attribution by updating API routes to properly record activated_by field for 기타완료 status changes
+- July 31, 2025. Updated existing "기타완료" documents in database to include processor information for proper tracking and display
+- July 31, 2025. Fixed "기타" carrier store name display issue: enhanced carrier selection handler to automatically set store name to contact code when "기타" carrier is selected
 
 ## User Preferences
 
