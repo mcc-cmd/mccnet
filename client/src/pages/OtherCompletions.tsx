@@ -161,11 +161,11 @@ export function OtherCompletions() {
                         <th className="text-left py-3 px-2 font-medium text-gray-700 text-sm">판매점명</th>
                         <th className="text-left py-3 px-2 font-medium text-gray-700 text-sm">통신사</th>
                         <th className="text-left py-3 px-2 font-medium text-gray-700 text-sm">상태</th>
-                        <th className="text-left py-3 px-2 font-medium text-gray-700 text-sm">기기모델</th>
+                        <th className="text-left py-3 px-2 font-medium text-gray-700 text-sm">작업내용</th>
                         <th className="text-left py-3 px-2 font-medium text-gray-700 text-sm">유심번호</th>
                         <th className="text-left py-3 px-2 font-medium text-gray-700 text-sm">가입번호</th>
                         <th className="text-left py-3 px-2 font-medium text-gray-700 text-sm">처리자</th>
-                        <th className="text-left py-3 px-2 font-medium text-gray-700 text-sm">작업</th>
+                        <th className="text-left py-3 px-2 font-medium text-gray-700 text-sm">다운로드</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -194,8 +194,12 @@ export function OtherCompletions() {
                               기타완료
                             </Badge>
                           </td>
-                          <td className="py-3 px-2 text-sm leading-tight break-words">
-                            {doc.deviceModel || '-'}
+                          <td className="py-3 px-2 text-sm leading-tight break-words max-w-xs">
+                            <div className="space-y-1">
+                              {doc.deviceModel && <div>기기: {doc.deviceModel}</div>}
+                              {doc.notes && <div className="text-blue-600 font-medium">작업내용: {doc.notes}</div>}
+                              {!doc.deviceModel && !doc.notes && '-'}
+                            </div>
                           </td>
                           <td className="py-3 px-2 text-sm leading-tight break-words">
                             {doc.simNumber || '-'}
@@ -257,7 +261,8 @@ export function OtherCompletions() {
                       
                       <div className="text-xs text-gray-500 space-y-1">
                         <div>접수일: {new Date(doc.uploadedAt).toLocaleDateString('ko-KR', { month: '2-digit', day: '2-digit' })}</div>
-                        <div>기기모델: {doc.deviceModel || '-'}</div>
+                        {doc.deviceModel && <div>기기모델: {doc.deviceModel}</div>}
+                        {doc.notes && <div className="text-blue-600 font-medium">작업내용: {doc.notes}</div>}
                         <div>유심번호: {doc.simNumber || '-'}</div>
                         <div>가입번호: {doc.subscriptionNumber || '-'}</div>
                         <div>처리자: {(doc as any).activatedByName || '-'}</div>
