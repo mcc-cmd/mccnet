@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
+import { useLocation } from 'wouter';
 import { Layout } from '@/components/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -27,6 +28,7 @@ import { ko } from 'date-fns/locale';
 export function Dashboard() {
   const apiRequest = useApiRequest();
   const { user } = useAuth();
+  const [location, setLocation] = useLocation();
 
   // 안전한 날짜 포맷팅 함수
   const formatSafeDate = (dateString: string | null | undefined, formatString: string = 'yyyy-MM-dd HH:mm') => {
@@ -585,7 +587,7 @@ export function Dashboard() {
                 <div className="text-sm text-gray-600 mb-4">자주 사용하는 메뉴</div>
                 
                 <Button 
-                  onClick={() => window.location.href = '/submit'}
+                  onClick={() => setLocation('/submit-application')}
                   className="w-full justify-start"
                   variant="outline"
                 >
@@ -597,7 +599,7 @@ export function Dashboard() {
                 </Button>
                 
                 <Button 
-                  onClick={() => window.location.href = '/downloads'}
+                  onClick={() => setLocation('/downloads')}
                   className="w-full justify-start"
                   variant="outline"
                 >
