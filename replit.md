@@ -357,6 +357,7 @@ This is a document management system built for MCC네트월드 telecommunication
 - July 31, 2025. Fixed "기타완료" status processor attribution by updating API routes to properly record activated_by field for 기타완료 status changes
 - July 31, 2025. Updated existing "기타완료" documents in database to include processor information for proper tracking and display
 - July 31, 2025. Fixed "기타" carrier store name display issue: enhanced carrier selection handler to automatically set store name to contact code when "기타" carrier is selected
+- July 31, 2025. Updated Documents page UI layout: removed dealer column from both desktop and mobile views, changed document number to show reception date/time format (MM/DD/HH시MM분), removed service plan information column for cleaner reception management interface
 
 ## User Preferences
 

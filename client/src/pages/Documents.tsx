@@ -699,7 +699,6 @@ export function Documents() {
                       <col className="w-14" />
                       <col className="w-12" />
                       <col className="w-16" />
-                      {isAdmin && <col className="w-16" />}
                       <col className="w-16" />
                     </colgroup>
                     <thead className="bg-gray-50">
@@ -722,11 +721,6 @@ export function Documents() {
                         <th className="px-1 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider truncate">
                           개통상태
                         </th>
-                        {isAdmin && (
-                          <th className="px-1 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider truncate">
-                            대리점
-                          </th>
-                        )}
                         <th className="px-1 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider truncate">
                           작업
                         </th>
@@ -794,13 +788,6 @@ export function Documents() {
                               )}
                             </div>
                           </td>
-                          {isAdmin && (
-                            <td className="px-1 py-1 text-xs text-gray-500">
-                              <div className="leading-tight break-words max-w-full">
-                                {(doc as any).dealerName}
-                              </div>
-                            </td>
-                          )}
                           <td className="px-1 py-1">
                             <div className="flex flex-wrap gap-1">
                               {doc.filePath && (
@@ -894,12 +881,6 @@ export function Documents() {
                           <div>
                             <span className="text-gray-500">통신사:</span>
                             <span className="ml-1 text-gray-900">{(doc as any).carrier}</span>
-                          </div>
-                        )}
-                        {isAdmin && (
-                          <div className="col-span-2">
-                            <span className="text-gray-500">대리점:</span>
-                            <span className="ml-1 text-gray-900">{(doc as any).dealerName}</span>
                           </div>
                         )}
                       </div>
