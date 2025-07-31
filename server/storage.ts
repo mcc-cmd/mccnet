@@ -1250,8 +1250,19 @@ class SqliteStorage implements IStorage {
   }
 
   async uploadDocument(data: UploadDocumentForm & { dealerId: number; userId: number; filePath?: string | null; fileName?: string | null; fileSize?: number | null }): Promise<Document> {
-    // 한글 접수번호 생성
-    const documentNumber = this.generateKoreanDocumentNumber();
+    // 고유한 한글 접수번호 생성
+    let documentNumber: string;
+    let attempts = 0;
+    
+    do {
+      documentNumber = this.generateKoreanDocumentNumber();
+      const existing = db.prepare('SELECT id FROM documents WHERE document_number = ?').get(documentNumber);
+      if (!existing) break;
+      
+      // 중복인 경우 1밀리초 대기 후 재시도
+      await new Promise(resolve => setTimeout(resolve, 1));
+      attempts++;
+    } while (attempts < 10); // 최대 10번 시도
     
     // 접점코드로 판매점명 자동 설정
     const storeName = data.contactCode ? await this.getStoreName(data.contactCode, data.carrier) : null;
@@ -2648,8 +2659,10 @@ class SqliteStorage implements IStorage {
     const day = now.getDate().toString().padStart(2, '0');
     const hour = now.getHours().toString().padStart(2, '0');
     const minute = now.getMinutes().toString().padStart(2, '0');
+    const second = now.getSeconds().toString().padStart(2, '0');
+    const millisecond = now.getMilliseconds().toString().padStart(3, '0');
     
-    return `접수${month}월${day}일${hour}시${minute}분`;
+    return `접수${month}월${day}일${hour}시${minute}분${second}초${millisecond}`;
   }
 
   // 개통방명 코드로 판매점명 자동 설정
