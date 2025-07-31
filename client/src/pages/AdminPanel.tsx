@@ -30,7 +30,8 @@ import {
   Clock,
   AlertTriangle,
   TrendingUp,
-  Trash2
+  Trash2,
+  Edit
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
@@ -839,6 +840,10 @@ export function AdminPanel() {
   const [selectedCarrier, setSelectedCarrier] = useState<string>('');
   const [workerCarrierDetails, setWorkerCarrierDetails] = useState<Array<{ carrier: string; count: number }>>([]);
   const [carrierDealerDetails, setCarrierDealerDetails] = useState<Array<{ dealerName: string; count: number }>>([]);
+
+  // User management states
+  const [editUserDialogOpen, setEditUserDialogOpen] = useState(false);
+  const [editingUser, setEditingUser] = useState<(User & { dealerName: string; userType: string }) | null>(null);
   
   // 요금제 이미지 업로드 관련
   const [servicePlanImageForm, setServicePlanImageForm] = useState({
@@ -861,7 +866,7 @@ export function AdminPanel() {
 
   const { data: users, isLoading: usersLoading } = useQuery({
     queryKey: ['/api/admin/users'],
-    queryFn: () => apiRequest('/api/admin/users') as Promise<Array<User & { dealerName: string }>>,
+    queryFn: () => apiRequest('/api/admin/users') as Promise<Array<User & { dealerName: string; userType: string }>>,
   });
 
   const { data: documents, isLoading: documentsLoading } = useQuery({
@@ -944,6 +949,14 @@ export function AdminPanel() {
 
   const workerForm = useForm<CreateWorkerForm>({
     resolver: zodResolver(createWorkerSchema),
+    defaultValues: {
+      email: '',
+      password: '',
+      name: '',
+    },
+  });
+
+  const editUserForm = useForm({
     defaultValues: {
       email: '',
       password: '',
@@ -1195,6 +1208,61 @@ export function AdminPanel() {
 
   const handleCreateUser = (data: CreateUserForm) => {
     createUserMutation.mutate(data);
+  };
+
+  // 사용자 수정 뮤테이션
+  const updateUserMutation = useMutation({
+    mutationFn: ({ id, data }: { id: number; data: { email?: string; password?: string; name?: string } }) =>
+      apiRequest(`/api/admin/users/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(data),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/users'] });
+      setEditUserDialogOpen(false);
+      setEditingUser(null);
+      editUserForm.reset();
+      toast({
+        title: '성공',
+        description: '사용자 정보가 업데이트되었습니다.',
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: '오류',
+        description: error.message,
+        variant: 'destructive',
+      });
+    },
+  });
+
+  const handleEditUser = (user: User & { dealerName: string; userType: string }) => {
+    setEditingUser(user);
+    editUserForm.reset({
+      email: user.email,
+      password: '',
+      name: user.name,
+    });
+    setEditUserDialogOpen(true);
+  };
+
+  const handleUpdateUser = (data: { email: string; password: string; name: string }) => {
+    if (!editingUser) return;
+    
+    const updateData: any = {};
+    if (data.email !== editingUser.email) updateData.email = data.email;
+    if (data.password) updateData.password = data.password;
+    if (data.name !== editingUser.name) updateData.name = data.name;
+    
+    if (Object.keys(updateData).length === 0) {
+      toast({
+        title: '알림',
+        description: '변경된 내용이 없습니다.',
+      });
+      return;
+    }
+    
+    updateUserMutation.mutate({ id: editingUser.id, data: updateData });
   };
 
   // 사용자 삭제 함수
@@ -2553,6 +2621,156 @@ export function AdminPanel() {
                   </div>
                 </CardContent>
               </Card>
+
+              {/* Existing Users List */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>기존 계정 관리</CardTitle>
+                  <CardDescription>
+                    기존 사용자 계정을 조회하고 수정할 수 있습니다.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {users && users.length > 0 ? (
+                    <div className="overflow-x-auto">
+                      <table className="min-w-full divide-y divide-gray-200">
+                        <thead className="bg-gray-50">
+                          <tr>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              이름
+                            </th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              이메일
+                            </th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              계정 유형
+                            </th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              소속
+                            </th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              생성일
+                            </th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              작업
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody className="bg-white divide-y divide-gray-200">
+                          {users.map((user) => (
+                            <tr key={user.id}>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                {user.name}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                {user.email}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                <Badge variant={user.userType === 'admin' ? 'default' : 'secondary'}>
+                                  {user.userType === 'admin' ? '관리자' : 
+                                   user.userType === 'dealer_worker' ? '근무자' : 
+                                   user.userType === 'dealer_store' ? '판매점' : user.userType}
+                                </Badge>
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                {user.dealerName || '-'}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                {format(new Date(user.createdAt), 'yyyy-MM-dd', { locale: ko })}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                <div className="flex space-x-2">
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => handleEditUser(user)}
+                                  >
+                                    <Edit className="h-4 w-4" />
+                                  </Button>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => handleDeleteUser(user.id)}
+                                    className="text-red-600 hover:text-red-700"
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  ) : (
+                    <div className="text-center py-8">
+                      <Users className="mx-auto h-12 w-12 text-gray-400" />
+                      <h3 className="mt-2 text-sm font-medium text-gray-900">사용자가 없습니다</h3>
+                      <p className="mt-1 text-sm text-gray-500">첫 번째 사용자를 추가해보세요.</p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Edit User Dialog */}
+              <Dialog open={editUserDialogOpen} onOpenChange={setEditUserDialogOpen}>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>사용자 정보 수정</DialogTitle>
+                  </DialogHeader>
+                  <Form {...editUserForm}>
+                    <form onSubmit={editUserForm.handleSubmit(handleUpdateUser)} className="space-y-4">
+                      <FormField
+                        control={editUserForm.control}
+                        name="name"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>이름</FormLabel>
+                            <FormControl>
+                              <Input placeholder="이름을 입력하세요" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={editUserForm.control}
+                        name="email"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>이메일</FormLabel>
+                            <FormControl>
+                              <Input type="email" placeholder="이메일을 입력하세요" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={editUserForm.control}
+                        name="password"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>새 비밀번호</FormLabel>
+                            <FormControl>
+                              <Input type="password" placeholder="변경할 경우에만 입력하세요" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <div className="flex justify-end space-x-2">
+                        <Button type="button" variant="outline" onClick={() => setEditUserDialogOpen(false)}>
+                          취소
+                        </Button>
+                        <Button type="submit" disabled={updateUserMutation.isPending}>
+                          {updateUserMutation.isPending ? '수정 중...' : '수정'}
+                        </Button>
+                      </div>
+                    </form>
+                  </Form>
+                </DialogContent>
+              </Dialog>
             </div>
           </TabsContent>
 

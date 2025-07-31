@@ -366,6 +366,8 @@ export interface IStorage {
   createUser(data: CreateUserForm): Promise<User>;
   getDealers(): Promise<Dealer[]>;
   getUsers(dealerId?: number): Promise<Array<User & { dealerName: string }>>;
+  getAllUsers(): Promise<Array<User & { dealerName: string; userType: string }>>;
+  updateUser(id: number, data: { email?: string; password?: string; name?: string }): Promise<User>;
   
   // Contact codes management
   updateDealerContactCodes(dealerId: number, contactCodes: Array<{ carrierId: string; carrierName: string; contactCode: string }>): Promise<void>;
@@ -604,7 +606,7 @@ class SqliteStorage implements IStorage {
 
   async createWorker(data: CreateWorkerForm): Promise<User> {
     const hashedPassword = bcrypt.hashSync(data.password, 10);
-    const insertResult = db.prepare('INSERT INTO users (email, password, name, role) VALUES (?, ?, ?, ?)').run(
+    const insertResult = db.prepare('INSERT INTO users (email, password, name, user_type) VALUES (?, ?, ?, ?)').run(
       data.email,
       hashedPassword,
       data.name,
@@ -619,7 +621,7 @@ class SqliteStorage implements IStorage {
       email: result.email,
       password: result.password,
       name: result.name,
-      role: result.role,
+      role: result.user_type,
       createdAt: new Date(result.created_at)
     };
   }
@@ -1108,7 +1110,7 @@ class SqliteStorage implements IStorage {
     let query = `
       SELECT u.*, d.name as dealer_name
       FROM users u
-      JOIN dealers d ON u.dealer_id = d.id
+      LEFT JOIN dealers d ON u.dealer_id = d.id
     `;
     let params: any[] = [];
 
@@ -1126,10 +1128,77 @@ class SqliteStorage implements IStorage {
       email: u.email,
       password: u.password,
       name: u.name,
-      role: u.role,
+      role: u.user_type,
       createdAt: new Date(u.created_at),
-      dealerName: u.dealer_name
+      dealerName: u.dealer_name || '관리자'
     }));
+  }
+
+  async getAllUsers(): Promise<Array<User & { dealerName: string; userType: string }>> {
+    const query = `
+      SELECT u.*, d.name as dealer_name, 
+        CASE 
+          WHEN u.user_type = 'admin' THEN '관리자'
+          WHEN u.user_type = 'dealer_worker' THEN '근무자'
+          WHEN u.user_type = 'dealer_store' THEN '판매점'
+          ELSE u.user_type
+        END as user_type_name
+      FROM users u
+      LEFT JOIN dealers d ON u.dealer_id = d.id
+      ORDER BY u.user_type, u.name
+    `;
+
+    const users = db.prepare(query).all() as any[];
+    return users.map(u => ({
+      id: u.id,
+      dealerId: u.dealer_id,
+      email: u.email,
+      password: u.password,
+      name: u.name,
+      role: u.user_type,
+      createdAt: new Date(u.created_at),
+      dealerName: u.dealer_name || '관리자',
+      userType: u.user_type_name
+    }));
+  }
+
+  async updateUser(id: number, data: { email?: string; password?: string; name?: string }): Promise<User> {
+    const updates: string[] = [];
+    const params: any[] = [];
+
+    if (data.email) {
+      updates.push('email = ?');
+      params.push(data.email);
+    }
+    if (data.password) {
+      const hashedPassword = bcrypt.hashSync(data.password, 10);
+      updates.push('password = ?');
+      params.push(hashedPassword);
+    }
+    if (data.name) {
+      updates.push('name = ?');
+      params.push(data.name);
+    }
+
+    if (updates.length === 0) {
+      throw new Error('업데이트할 필드가 없습니다.');
+    }
+
+    params.push(id);
+    
+    const query = `UPDATE users SET ${updates.join(', ')} WHERE id = ?`;
+    db.prepare(query).run(...params);
+
+    const result = db.prepare('SELECT * FROM users WHERE id = ?').get(id) as any;
+    return {
+      id: result.id,
+      dealerId: result.dealer_id,
+      email: result.email,
+      password: result.password,
+      name: result.name,
+      role: result.user_type,
+      createdAt: new Date(result.created_at)
+    };
   }
 
   async uploadDocument(data: UploadDocumentForm & { dealerId: number; userId: number; filePath?: string | null; fileName?: string | null; fileSize?: number | null }): Promise<Document> {
