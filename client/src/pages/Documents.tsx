@@ -1528,24 +1528,7 @@ export function Documents() {
                 </div>
               )}
               
-              {/* 폐기 사유 입력 - 폐기 상태에서만 작성 */}
-              {activationForm.activationStatus === '폐기' && (
-                <div>
-                  <Label htmlFor="discardReason">폐기 사유</Label>
-                  <Textarea
-                    id="discardReason"
-                    placeholder="폐기 사유를 상세히 입력하세요..."
-                    value={activationForm.discardReason || ''}
-                    onChange={(e) => setActivationForm(prev => ({ ...prev, discardReason: e.target.value }))}
-                    rows={3}
-                    className="border-gray-200 focus:border-gray-400"
-                    required
-                  />
-                  <div className="text-xs mt-1 text-gray-600">
-                    폐기 사유는 필수 입력 사항입니다.
-                  </div>
-                </div>
-              )}
+
 
               {/* 판매점 전달 메모 - 개통완료 또는 기타완료 상태에서만 작성 */}
               {(activationForm.activationStatus === '개통' || activationForm.activationStatus === '기타완료') && (

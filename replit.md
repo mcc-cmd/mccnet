@@ -352,6 +352,8 @@ This is a document management system built for MCC네트월드 telecommunication
 - July 31, 2025. Enhanced dashboard statistics to include disposal count alongside other activation statuses
 - July 31, 2025. Fixed redundant input fields in disposal dialog by showing only disposal reason field when disposal status is selected
 - July 31, 2025. Updated database schema to properly support disposal status with discard_reason column and constraint validation
+- July 31, 2025. Enhanced disposal workflow to properly track processor names: added activated_by field recording for disposal status changes
+- July 31, 2025. Removed duplicate disposal reason input fields, now showing only one organized disposal information section
 
 ## User Preferences
 
