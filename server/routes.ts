@@ -1451,6 +1451,22 @@ router.get('/api/settlements/export', requireAuth, async (req: any, res) => {
       endDate: endDate as string
     });
     
+    // 정산단가 정보 조회
+    const settlementPrices = await storage.getActiveSettlementUnitPrices();
+    
+    // 정산금액 계산 함수
+    const calculateSettlementAmount = (doc: any) => {
+      if (!doc.servicePlanId) return 0;
+      
+      const priceInfo = settlementPrices.find(p => p.servicePlanId === doc.servicePlanId && p.isActive);
+      if (!priceInfo) return 0;
+      
+      // 번호이동 여부 확인 (이전 통신사가 있고 현재 통신사와 다른 경우)
+      const isPortIn = doc.previousCarrier && doc.previousCarrier !== doc.carrier;
+      
+      return isPortIn ? (priceInfo.portInPrice || 0) : (priceInfo.newCustomerPrice || 0);
+    };
+    
     // 엑셀 데이터 생성
     const XLSX = await import('xlsx');
     const workbook = XLSX.utils.book_new();
@@ -1496,6 +1512,8 @@ router.get('/api/settlements/export', requireAuth, async (req: any, res) => {
         '결합여부': doc.bundleApplied ? '결합' : (doc.bundleNotApplied ? '미결합' : '미지정'),
         '기기모델': doc.deviceModel || '',
         '유심번호': doc.simNumber || '',
+        '가입번호': doc.subscriptionNumber || '',
+        '정산금액': calculateSettlementAmount(doc).toLocaleString() + '원',
         '비고': doc.notes || ''
       };
     });
