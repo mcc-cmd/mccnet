@@ -3222,6 +3222,17 @@ class SqliteStorage implements IStorage {
 
   // ==================== 통신사 관리 ====================
   
+  async getCarriersFromDocuments(): Promise<string[]> {
+    const query = `
+      SELECT DISTINCT carrier 
+      FROM documents 
+      WHERE carrier IS NOT NULL AND carrier != ''
+      ORDER BY carrier
+    `;
+    const results = db.prepare(query).all() as any[];
+    return results.map(row => row.carrier);
+  }
+  
   async getCarriers(): Promise<any[]> {
     const carriers = db.prepare('SELECT * FROM carriers ORDER BY display_order, name').all() as any[];
     return carriers.map(c => ({

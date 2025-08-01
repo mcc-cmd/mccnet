@@ -26,6 +26,12 @@ export function CompletedActivations() {
     carrier: ''
   });
 
+  // 등록된 통신사 목록 조회
+  const { data: carriers } = useQuery({
+    queryKey: ['/api/carriers/from-documents'],
+    queryFn: () => apiRequest('/api/carriers/from-documents') as Promise<string[]>
+  });
+
   const { data: documents, isLoading } = useQuery({
     queryKey: ['/api/documents/completed', filters],
     queryFn: () => {
@@ -213,14 +219,9 @@ export function CompletedActivations() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">전체</SelectItem>
-                    <SelectItem value="KT">KT</SelectItem>
-                    <SelectItem value="SK브로드밴드">SK브로드밴드</SelectItem>
-                    <SelectItem value="SKT">SKT</SelectItem>
-                    <SelectItem value="SK프리티">SK프리티</SelectItem>
-                    <SelectItem value="LG미디어로그">LG미디어로그</SelectItem>
-                    <SelectItem value="LG유플러스">LG유플러스</SelectItem>
-                    <SelectItem value="KTM">KTM</SelectItem>
-                    <SelectItem value="KT프리미어">KT프리미어</SelectItem>
+                    {carriers?.map(carrier => (
+                      <SelectItem key={carrier} value={carrier}>{carrier}</SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>

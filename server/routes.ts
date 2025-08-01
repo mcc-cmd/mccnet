@@ -2687,6 +2687,17 @@ router.get('/api/carriers', async (req: any, res) => {
   }
 });
 
+// 등록된 문서의 통신사 목록 조회
+router.get('/api/carriers/from-documents', async (req: any, res) => {
+  try {
+    const carriers = await storage.getCarriersFromDocuments();
+    res.json(carriers);
+  } catch (error: any) {
+    console.error('Get carriers from documents error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // 통신사 생성 (관리자 전용)
 router.post('/api/carriers', requireAuth, requireAdmin, async (req: any, res) => {
   try {
