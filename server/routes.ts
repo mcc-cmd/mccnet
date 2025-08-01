@@ -867,8 +867,8 @@ router.get('/api/dashboard/today-stats', requireAuth, async (req: any, res) => {
 
 router.get('/api/documents', requireAuth, async (req: any, res) => {
   try {
-    const { status, activationStatus, search, startDate, endDate } = req.query;
-    console.log('Documents API request:', { status, activationStatus, search, startDate, endDate });
+    const { status, activationStatus, search, startDate, endDate, carrier } = req.query;
+    console.log('Documents API request:', { status, activationStatus, search, startDate, endDate, carrier });
     console.log('Session data:', { 
       userId: req.session.userId, 
       dealerId: req.session.dealerId, 
@@ -904,6 +904,7 @@ router.get('/api/documents', requireAuth, async (req: any, res) => {
       search: search as string,
       startDate: startDate as string,
       endDate: endDate as string,
+      carrier: carrier as string,
       workerFilter: req.query.workerFilter as string
     }, req.session.userId);
     
@@ -918,7 +919,7 @@ router.get('/api/documents', requireAuth, async (req: any, res) => {
 // 개통완료 목록 엑셀 다운로드
 router.get('/api/documents/export/excel', requireAuth, async (req: any, res) => {
   try {
-    const { activationStatus, search, startDate, endDate } = req.query;
+    const { activationStatus, search, startDate, endDate, carrier } = req.query;
     
     // 관리자와 근무자는 모든 문서를, 판매점은 해당 대리점 문서만 조회
     const isWorker = req.session.userRole === 'dealer_worker';
@@ -943,6 +944,7 @@ router.get('/api/documents/export/excel', requireAuth, async (req: any, res) => 
       activationStatus: decodedActivationStatus,
       search: search as string,
       startDate: startDate as string,
+      carrier: carrier as string,
       endDate: endDate as string
     }, req.session.userId);
     
