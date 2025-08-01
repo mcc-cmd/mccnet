@@ -600,6 +600,33 @@ export const updateContactCodeSchema = createContactCodeSchema.partial();
 export type CreateContactCodeForm = z.infer<typeof createContactCodeSchema>;
 export type UpdateContactCodeForm = z.infer<typeof updateContactCodeSchema>;
 
+// Additional Service Deduction Management
+export interface AdditionalServiceDeduction {
+  id: number;
+  additionalServiceId: number;
+  additionalServiceName: string;
+  deductionAmount: number;
+  isActive: boolean;
+  effectiveFrom: Date;
+  effectiveUntil?: Date;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export const createAdditionalServiceDeductionSchema = z.object({
+  additionalServiceId: z.number().min(1, "부가서비스를 선택하세요"),
+  deductionAmount: z.number().min(0, "차감 금액을 입력하세요"),
+  effectiveFrom: z.string().min(1, "적용 시작일을 선택하세요")
+});
+
+export const updateAdditionalServiceDeductionSchema = z.object({
+  deductionAmount: z.number().min(0, "차감 금액을 입력하세요").optional(),
+  effectiveFrom: z.string().min(1, "적용 시작일을 선택하세요").optional()
+});
+
+export type CreateAdditionalServiceDeductionForm = z.infer<typeof createAdditionalServiceDeductionSchema>;
+export type UpdateAdditionalServiceDeductionForm = z.infer<typeof updateAdditionalServiceDeductionSchema>;
+
 
 
 
