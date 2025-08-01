@@ -2104,6 +2104,7 @@ class SqliteStorage implements IStorage {
       updatedAt: new Date(result.updated_at),
       activatedAt: result.activated_at ? new Date(result.activated_at) : undefined,
       activatedBy: result.activated_by,
+      cancelledBy: result.cancelled_by,
       notes: result.notes,
       supplementNotes: result.supplement_notes,
       supplementRequiredBy: result.supplement_required_by,

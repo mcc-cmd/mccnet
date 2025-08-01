@@ -1477,12 +1477,12 @@ router.get('/api/settlements/export', requireAuth, async (req: any, res) => {
       // 기본 정산금액 계산
       let baseAmount = isPortIn ? (priceInfo.portInPrice || 0) : (priceInfo.newCustomerPrice || 0);
       
-      // 부가서비스 차감 적용
+      // 부가서비스 차감 적용 - 부가서비스가 실제로 있을 때만 차감
       let totalDeduction = 0;
-      if (doc.additionalServiceIds) {
+      if (doc.additionalServiceIds && doc.additionalServiceIds !== '[]') {
         try {
           const additionalServiceIds = JSON.parse(doc.additionalServiceIds || '[]');
-          if (Array.isArray(additionalServiceIds)) {
+          if (Array.isArray(additionalServiceIds) && additionalServiceIds.length > 0) {
             additionalServiceIds.forEach(serviceId => {
               const deduction = deductionPolicies.find(d => 
                 d.additionalServiceId === parseInt(serviceId) && d.isActive
