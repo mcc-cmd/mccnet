@@ -1459,6 +1459,9 @@ router.get('/api/settlements/export', requireAuth, async (req: any, res) => {
     // 정산단가 정보 조회
     const settlementPrices = await storage.getActiveSettlementUnitPrices();
     
+    // 부가서비스 차감 정책 조회
+    const deductionPolicies = await storage.getAdditionalServiceDeductions();
+    
     // 정산금액 계산 함수
     const calculateSettlementAmount = (doc: any) => {
       if (!doc.servicePlanId) return 0;
@@ -1469,7 +1472,30 @@ router.get('/api/settlements/export', requireAuth, async (req: any, res) => {
       // 번호이동 여부 확인 (이전 통신사가 있고 현재 통신사와 다른 경우)
       const isPortIn = doc.previousCarrier && doc.previousCarrier !== doc.carrier;
       
-      return isPortIn ? (priceInfo.portInPrice || 0) : (priceInfo.newCustomerPrice || 0);
+      // 기본 정산금액 계산
+      let baseAmount = isPortIn ? (priceInfo.portInPrice || 0) : (priceInfo.newCustomerPrice || 0);
+      
+      // 부가서비스 차감 적용
+      let totalDeduction = 0;
+      if (doc.additionalServiceIds) {
+        try {
+          const additionalServiceIds = JSON.parse(doc.additionalServiceIds || '[]');
+          if (Array.isArray(additionalServiceIds)) {
+            additionalServiceIds.forEach(serviceId => {
+              const deduction = deductionPolicies.find(d => 
+                d.additionalServiceId === parseInt(serviceId) && d.isActive
+              );
+              if (deduction) {
+                totalDeduction += deduction.deductionAmount;
+              }
+            });
+          }
+        } catch (error) {
+          console.warn('Error parsing additional service IDs for document:', doc.id, error);
+        }
+      }
+      
+      return Math.max(0, baseAmount - totalDeduction); // 음수가 되지 않도록 보장
     };
     
     // 엑셀 데이터 생성

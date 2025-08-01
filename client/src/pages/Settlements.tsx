@@ -309,8 +309,17 @@ export function Settlements() {
     },
   });
 
+  // 부가서비스 차감 정책 조회
+  const { data: deductionPolicies } = useQuery({
+    queryKey: ['/api/additional-service-deductions'],
+    queryFn: async () => {
+      const response = await apiRequest('GET', '/api/additional-service-deductions');
+      return response.json();
+    },
+  });
+
   // 정산 금액 계산 함수
-  const calculateSettlementAmount = (doc: CompletedDocument, settlementPrices: any[]) => {
+  const calculateSettlementAmount = (doc: CompletedDocument, settlementPrices: any[], deductionPolicies?: any[]) => {
     if (!doc.servicePlanId || !settlementPrices) return 0;
     
     const price = settlementPrices.find(p => p.servicePlanId === doc.servicePlanId && p.isActive);
@@ -318,10 +327,34 @@ export function Settlements() {
     
     // 기본적으로 신규고객 가격을 사용하고, 번호이동이 있는 경우 해당 가격 사용
     // previousCarrier가 있으면 번호이동, 없으면 신규 가입으로 판단
+    let baseAmount = 0;
     if (doc.previousCarrier && doc.previousCarrier !== doc.carrier) {
-      return price.portInPrice || 0;
+      baseAmount = price.portInPrice || 0;
+    } else {
+      baseAmount = price.newCustomerPrice || 0;
     }
-    return price.newCustomerPrice || 0;
+    
+    // 부가서비스 차감 적용
+    let totalDeduction = 0;
+    if (doc.additionalServiceIds && deductionPolicies) {
+      try {
+        const additionalServiceIds = JSON.parse(doc.additionalServiceIds || '[]');
+        if (Array.isArray(additionalServiceIds)) {
+          additionalServiceIds.forEach(serviceId => {
+            const deduction = deductionPolicies.find(d => 
+              d.additionalServiceId === parseInt(serviceId) && d.isActive
+            );
+            if (deduction) {
+              totalDeduction += deduction.deductionAmount;
+            }
+          });
+        }
+      } catch (error) {
+        console.warn('Error parsing additional service IDs for document:', doc.id, error);
+      }
+    }
+    
+    return Math.max(0, baseAmount - totalDeduction); // 음수가 되지 않도록 보장
   };
 
   const stats: SettlementStats = React.useMemo(() => {
@@ -337,7 +370,7 @@ export function Settlements() {
     let totalAmount = 0;
     
     allCompletedDocuments.forEach(doc => {
-      const amount = calculateSettlementAmount(doc, settlementPrices);
+      const amount = calculateSettlementAmount(doc, settlementPrices, deductionPolicies);
       totalAmount += amount;
       
       if (doc.activatedAt) {
@@ -892,7 +925,7 @@ export function Settlements() {
                     <div className="text-2xl font-bold text-teal-900 dark:text-teal-100">
                       {completedDocuments && settlementPrices ? 
                         completedDocuments
-                          .reduce((sum, doc) => sum + calculateSettlementAmount(doc, settlementPrices), 0)
+                          .reduce((sum, doc) => sum + calculateSettlementAmount(doc, settlementPrices, deductionPolicies), 0)
                           .toLocaleString()
                         : '0'
                       }원
@@ -1016,7 +1049,7 @@ export function Settlements() {
                         <TableCell className="whitespace-nowrap">
                           {settlementPrices ? (
                             <div className="text-sm font-medium">
-                              {calculateSettlementAmount(doc, settlementPrices).toLocaleString()}원
+                              {calculateSettlementAmount(doc, settlementPrices, deductionPolicies).toLocaleString()}원
                             </div>
                           ) : (
                             <span className="text-xs text-orange-600">단가 미설정</span>
