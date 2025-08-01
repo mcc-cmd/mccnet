@@ -4443,6 +4443,7 @@ export function AdminPanel() {
                                 onClick={() => {
                                   setSelectedServicePlan(plan);
                                   settlementPriceForm.reset({
+                                    servicePlanId: plan.id,
                                     unitPrice: currentPrice?.unitPrice || 0
                                   });
                                   setSettlementPriceDialogOpen(true);
@@ -4485,7 +4486,15 @@ export function AdminPanel() {
                   </DialogDescription>
                 </DialogHeader>
                 <Form {...settlementPriceForm}>
-                  <form onSubmit={settlementPriceForm.handleSubmit(onSubmitSettlementPrice)} className="space-y-4">
+                  <form onSubmit={settlementPriceForm.handleSubmit(
+                    (data) => {
+                      console.log('Form validation passed, calling onSubmitSettlementPrice');
+                      onSubmitSettlementPrice(data);
+                    },
+                    (errors) => {
+                      console.log('Form validation errors:', errors);
+                    }
+                  )} className="space-y-4">
                     <FormField
                       control={settlementPriceForm.control}
                       name="servicePlanId"
