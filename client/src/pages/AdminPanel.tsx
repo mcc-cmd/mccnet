@@ -15,8 +15,8 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
 import { Switch } from '@/components/ui/switch';
-import { createDealerSchema, createUserSchema, createAdminSchema, createWorkerSchema, updateDocumentStatusSchema, createServicePlanSchema, createAdditionalServiceSchema, createCarrierSchema, updateCarrierSchema, createSettlementUnitPriceSchema, updateSettlementUnitPriceSchema } from '../../../shared/schema';
-import type { Dealer, User, Document, ServicePlan, AdditionalService, Carrier, SettlementUnitPrice, CreateSettlementUnitPriceForm, UpdateSettlementUnitPriceForm } from '../../../shared/schema';
+import { createDealerSchema, createUserSchema, createAdminSchema, createWorkerSchema, updateDocumentStatusSchema, createServicePlanSchema, createAdditionalServiceSchema, createCarrierSchema, updateCarrierSchema, createSettlementUnitPriceSchema, updateSettlementUnitPriceSchema, createAdditionalServiceDeductionSchema, updateAdditionalServiceDeductionSchema } from '../../../shared/schema';
+import type { Dealer, User, Document, ServicePlan, AdditionalService, Carrier, SettlementUnitPrice, CreateSettlementUnitPriceForm, UpdateSettlementUnitPriceForm, AdditionalServiceDeduction, CreateAdditionalServiceDeductionForm, UpdateAdditionalServiceDeductionForm } from '../../../shared/schema';
 import { 
   Building2, 
   Users, 
@@ -4504,6 +4504,22 @@ export function AdminPanel() {
               </CardContent>
             </Card>
 
+            {/* Additional Service Deduction Management Card */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <DollarSign className="h-5 w-5" />
+                  부가서비스 차감 정책 관리
+                </CardTitle>
+                <CardDescription>
+                  부가서비스별 차감 금액을 설정하여 정산 시 자동으로 차감할 수 있습니다.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <AdditionalServiceDeductionManagement />
+              </CardContent>
+            </Card>
+
             {/* Settlement Unit Price Dialog */}
             <Dialog open={settlementPriceDialogOpen} onOpenChange={setSettlementPriceDialogOpen}>
               <DialogContent className="max-w-md">
@@ -4649,5 +4665,310 @@ export function AdminPanel() {
         </Dialog>
       </div>
     </Layout>
+  );
+}
+
+// Additional Service Deduction Management Component
+function AdditionalServiceDeductionManagement() {
+  const [deductionDialogOpen, setDeductionDialogOpen] = useState(false);
+  const [editingDeduction, setEditingDeduction] = useState<AdditionalServiceDeduction | null>(null);
+  const apiRequest = useApiRequest();
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  // Additional service deductions query
+  const { data: deductions = [], isLoading: deductionsLoading } = useQuery({
+    queryKey: ['/api/additional-service-deductions'],
+    queryFn: () => apiRequest('/api/additional-service-deductions')
+  });
+
+  // Additional services query for dropdown
+  const { data: additionalServices = [] } = useQuery({
+    queryKey: ['/api/additional-services'],
+    queryFn: () => apiRequest('/api/additional-services')
+  });
+
+  // Create deduction form
+  const deductionForm = useForm<CreateAdditionalServiceDeductionForm>({
+    resolver: zodResolver(createAdditionalServiceDeductionSchema),
+    defaultValues: {
+      additionalServiceId: 0,
+      deductionAmount: 0,
+      effectiveFrom: new Date().toISOString().split('T')[0]
+    }
+  });
+
+  // Create mutation
+  const createDeductionMutation = useMutation({
+    mutationFn: (data: CreateAdditionalServiceDeductionForm) => 
+      apiRequest('/api/additional-service-deductions', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/additional-service-deductions'] });
+      setDeductionDialogOpen(false);
+      deductionForm.reset();
+      toast({
+        title: '성공',
+        description: '부가서비스 차감 정책이 성공적으로 생성되었습니다.',
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: '오류',
+        description: error.message,
+        variant: 'destructive',
+      });
+    },
+  });
+
+  // Update mutation
+  const updateDeductionMutation = useMutation({
+    mutationFn: ({ additionalServiceId, data }: { additionalServiceId: number; data: UpdateAdditionalServiceDeductionForm }) => 
+      apiRequest(`/api/additional-service-deductions/${additionalServiceId}`, {
+        method: 'PUT',
+        body: JSON.stringify(data),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/additional-service-deductions'] });
+      setDeductionDialogOpen(false);
+      setEditingDeduction(null);
+      deductionForm.reset();
+      toast({
+        title: '성공',
+        description: '부가서비스 차감 정책이 성공적으로 수정되었습니다.',
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: '오류',
+        description: error.message,
+        variant: 'destructive',
+      });
+    },
+  });
+
+  // Delete mutation
+  const deleteDeductionMutation = useMutation({
+    mutationFn: (additionalServiceId: number) => 
+      apiRequest(`/api/additional-service-deductions/${additionalServiceId}`, {
+        method: 'DELETE',
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/additional-service-deductions'] });
+      toast({
+        title: '성공',
+        description: '부가서비스 차감 정책이 성공적으로 삭제되었습니다.',
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: '오류',
+        description: error.message,
+        variant: 'destructive',
+      });
+    },
+  });
+
+  const handleCreateDeduction = (data: CreateAdditionalServiceDeductionForm) => {
+    createDeductionMutation.mutate(data);
+  };
+
+  const handleUpdateDeduction = (data: UpdateAdditionalServiceDeductionForm) => {
+    if (editingDeduction) {
+      updateDeductionMutation.mutate({ 
+        additionalServiceId: editingDeduction.additionalServiceId, 
+        data 
+      });
+    }
+  };
+
+  const openEditDialog = (deduction: AdditionalServiceDeduction) => {
+    setEditingDeduction(deduction);
+    deductionForm.reset({
+      additionalServiceId: deduction.additionalServiceId,
+      deductionAmount: deduction.deductionAmount,
+      effectiveFrom: deduction.effectiveFrom.toISOString().split('T')[0]
+    });
+    setDeductionDialogOpen(true);
+  };
+
+  const openCreateDialog = () => {
+    setEditingDeduction(null);
+    deductionForm.reset({
+      additionalServiceId: 0,
+      deductionAmount: 0,
+      effectiveFrom: new Date().toISOString().split('T')[0]
+    });
+    setDeductionDialogOpen(true);
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="flex justify-between items-center">
+        <div>
+          <h3 className="text-lg font-semibold">부가서비스 차감 정책</h3>
+          <p className="text-sm text-gray-500">부가서비스별로 정산 시 차감할 금액을 설정합니다.</p>
+        </div>
+        <Dialog open={deductionDialogOpen} onOpenChange={setDeductionDialogOpen}>
+          <DialogTrigger asChild>
+            <Button onClick={openCreateDialog}>
+              <Plus className="mr-2 h-4 w-4" />
+              차감 정책 추가
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>
+                {editingDeduction ? '차감 정책 수정' : '새 차감 정책 추가'}
+              </DialogTitle>
+              <DialogDescription>
+                부가서비스별로 정산 시 차감할 금액을 설정할 수 있습니다.
+              </DialogDescription>
+            </DialogHeader>
+            <Form {...deductionForm}>
+              <form 
+                onSubmit={deductionForm.handleSubmit(editingDeduction ? handleUpdateDeduction : handleCreateDeduction)} 
+                className="space-y-4"
+              >
+                <FormField
+                  control={deductionForm.control}
+                  name="additionalServiceId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>부가서비스</FormLabel>
+                      <Select 
+                        onValueChange={(value) => field.onChange(parseInt(value))} 
+                        value={field.value.toString()}
+                        disabled={!!editingDeduction}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="부가서비스를 선택하세요" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {additionalServices.map((service: AdditionalService) => (
+                            <SelectItem key={service.id} value={service.id.toString()}>
+                              {service.serviceName}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={deductionForm.control}
+                  name="deductionAmount"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>차감 금액 (원)</FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="number" 
+                          placeholder="차감할 금액을 입력하세요" 
+                          {...field} 
+                          onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                        />
+                      </FormControl>
+                      <FormDescription>
+                        해당 부가서비스가 포함된 정산 건에서 자동으로 차감될 금액입니다.
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={deductionForm.control}
+                  name="effectiveFrom"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>적용 시작일</FormLabel>
+                      <FormControl>
+                        <Input type="date" {...field} />
+                      </FormControl>
+                      <FormDescription>
+                        해당 날짜부터 차감 정책이 적용됩니다.
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <div className="flex justify-end space-x-2">
+                  <Button type="button" variant="outline" onClick={() => setDeductionDialogOpen(false)}>
+                    취소
+                  </Button>
+                  <Button 
+                    type="submit" 
+                    disabled={createDeductionMutation.isPending || updateDeductionMutation.isPending}
+                  >
+                    {createDeductionMutation.isPending || updateDeductionMutation.isPending 
+                      ? '처리 중...' 
+                      : editingDeduction ? '수정' : '추가'
+                    }
+                  </Button>
+                </div>
+              </form>
+            </Form>
+          </DialogContent>
+        </Dialog>
+      </div>
+
+      {deductionsLoading ? (
+        <div className="flex items-center justify-center py-8">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        </div>
+      ) : deductions.length > 0 ? (
+        <div className="space-y-4">
+          {deductions.map((deduction: AdditionalServiceDeduction) => (
+            <Card key={deduction.id}>
+              <CardContent className="pt-6">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-1">
+                    <h4 className="font-medium">{deduction.additionalServiceName}</h4>
+                    <div className="flex items-center space-x-4 text-sm text-gray-500">
+                      <span>차감금액: {deduction.deductionAmount.toLocaleString()}원</span>
+                      <span>시작일: {format(deduction.effectiveFrom, 'yyyy-MM-dd')}</span>
+                      <Badge variant={deduction.isActive ? 'default' : 'secondary'}>
+                        {deduction.isActive ? '활성' : '비활성'}
+                      </Badge>
+                    </div>
+                  </div>
+                  <div className="flex space-x-2">
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => openEditDialog(deduction)}
+                    >
+                      <Edit2 className="h-4 w-4" />
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => {
+                        if (confirm('정말로 이 차감 정책을 삭제하시겠습니까?')) {
+                          deleteDeductionMutation.mutate(deduction.additionalServiceId);
+                        }
+                      }}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      ) : (
+        <div className="text-center py-8">
+          <DollarSign className="mx-auto h-12 w-12 text-gray-400" />
+          <h3 className="mt-2 text-sm font-medium text-gray-900">차감 정책이 없습니다</h3>
+          <p className="mt-1 text-sm text-gray-500">첫 번째 차감 정책을 추가해보세요.</p>
+        </div>
+      )}
+    </div>
   );
 }

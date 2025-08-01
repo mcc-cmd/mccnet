@@ -389,6 +389,20 @@ export interface SettlementUnitPrice {
   createdBy: number; // 등록한 관리자 ID
 }
 
+// 부가서비스 차감 정책 인터페이스
+export interface AdditionalServiceDeduction {
+  id: number;
+  additionalServiceId: number;
+  additionalServiceName: string;
+  deductionAmount: number; // 차감 금액 (원)
+  isActive: boolean;
+  effectiveFrom: Date;
+  effectiveUntil?: Date;
+  createdAt: Date;
+  updatedAt: Date;
+  createdBy: number;
+}
+
 export interface Settlement {
   id: number;
   documentId: number;
@@ -462,10 +476,24 @@ export const updateSettlementUnitPriceSchema = z.object({
   effectiveFrom: z.date().optional(),
 });
 
+// 부가서비스 차감 정책 스키마
+export const createAdditionalServiceDeductionSchema = z.object({
+  additionalServiceId: z.number().min(1, "부가서비스를 선택해주세요"),
+  deductionAmount: z.number().min(0, "차감 금액을 입력해주세요"),
+  effectiveFrom: z.date().optional(),
+});
+
+export const updateAdditionalServiceDeductionSchema = z.object({
+  deductionAmount: z.number().min(0, "차감 금액을 입력해주세요"),
+  effectiveFrom: z.date().optional(),
+});
+
 export type CreateSettlementForm = z.infer<typeof createSettlementSchema>;
 export type UpdateSettlementForm = z.infer<typeof updateSettlementSchema>;
 export type CreateSettlementUnitPriceForm = z.infer<typeof createSettlementUnitPriceSchema>;
 export type UpdateSettlementUnitPriceForm = z.infer<typeof updateSettlementUnitPriceSchema>;
+export type CreateAdditionalServiceDeductionForm = z.infer<typeof createAdditionalServiceDeductionSchema>;
+export type UpdateAdditionalServiceDeductionForm = z.infer<typeof updateAdditionalServiceDeductionSchema>;
 
 // Chat schemas
 export const createChatMessageSchema = z.object({

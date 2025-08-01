@@ -24,6 +24,8 @@ import {
   updateCarrierSchema,
   createSettlementUnitPriceSchema,
   updateSettlementUnitPriceSchema,
+  createAdditionalServiceDeductionSchema,
+  updateAdditionalServiceDeductionSchema,
   type AuthResponse
 } from "../shared/schema";
 
@@ -2764,6 +2766,80 @@ router.post('/api/admin/settlement-pricing/excel-upload', contactCodeUpload.sing
     res.status(500).json({ 
       error: '정산단가 업로드 중 오류가 발생했습니다: ' + error.message 
     });
+  }
+});
+
+// Additional service deduction routes
+router.get('/api/additional-service-deductions', requireAuth, async (req, res) => {
+  try {
+    const deductions = await storage.getAdditionalServiceDeductions();
+    res.json(deductions);
+  } catch (error) {
+    console.error('Error fetching additional service deductions:', error);
+    res.status(500).json({ error: 'Failed to fetch additional service deductions' });
+  }
+});
+
+router.post('/api/additional-service-deductions', requireAuth, async (req, res) => {
+  try {
+    const session = req.session as any;
+    if (!session?.userId || session.userType !== 'admin') {
+      return res.status(403).json({ error: '관리자만 차감 정책을 추가할 수 있습니다.' });
+    }
+
+    const validation = createAdditionalServiceDeductionSchema.safeParse(req.body);
+    if (!validation.success) {
+      return res.status(400).json({ error: validation.error.errors[0].message });
+    }
+
+    const deduction = await storage.createAdditionalServiceDeduction({
+      ...validation.data,
+      createdBy: session.userId
+    });
+    res.json(deduction);
+  } catch (error: any) {
+    console.error('Error creating additional service deduction:', error);
+    res.status(500).json({ error: error.message || 'Failed to create additional service deduction' });
+  }
+});
+
+router.put('/api/additional-service-deductions/:id', requireAuth, async (req, res) => {
+  try {
+    const session = req.session as any;
+    if (!session?.userId || session.userType !== 'admin') {
+      return res.status(403).json({ error: '관리자만 차감 정책을 수정할 수 있습니다.' });
+    }
+
+    const additionalServiceId = parseInt(req.params.id);
+    const validation = updateAdditionalServiceDeductionSchema.safeParse(req.body);
+    if (!validation.success) {
+      return res.status(400).json({ error: validation.error.errors[0].message });
+    }
+
+    const deduction = await storage.updateAdditionalServiceDeduction(additionalServiceId, {
+      ...validation.data,
+      updatedBy: session.userId
+    });
+    res.json(deduction);
+  } catch (error: any) {
+    console.error('Error updating additional service deduction:', error);
+    res.status(500).json({ error: error.message || 'Failed to update additional service deduction' });
+  }
+});
+
+router.delete('/api/additional-service-deductions/:id', requireAuth, async (req, res) => {
+  try {
+    const session = req.session as any;
+    if (!session?.userId || session.userType !== 'admin') {
+      return res.status(403).json({ error: '관리자만 차감 정책을 삭제할 수 있습니다.' });
+    }
+
+    const additionalServiceId = parseInt(req.params.id);
+    await storage.deleteAdditionalServiceDeduction(additionalServiceId);
+    res.json({ message: 'Additional service deduction deleted successfully' });
+  } catch (error: any) {
+    console.error('Error deleting additional service deduction:', error);
+    res.status(500).json({ error: error.message || 'Failed to delete additional service deduction' });
   }
 });
 

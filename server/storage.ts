@@ -1003,6 +1003,146 @@ class SqliteStorage implements IStorage {
     db.prepare('UPDATE additional_services SET is_active = 0 WHERE id = ?').run(id);
   }
 
+  // Additional service deduction management
+  async createAdditionalServiceDeduction(data: CreateAdditionalServiceDeductionForm & { createdBy: number }): Promise<AdditionalServiceDeduction> {
+    // First, deactivate any existing active deduction for this additional service
+    db.prepare(`
+      UPDATE additional_service_deductions 
+      SET is_active = 0, effective_until = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
+      WHERE additional_service_id = ? AND is_active = 1
+    `).run(data.additionalServiceId);
+
+    // Get additional service details
+    const additionalService = db.prepare('SELECT service_name FROM additional_services WHERE id = ?').get(data.additionalServiceId) as any;
+    if (!additionalService) {
+      throw new Error('Additional service not found');
+    }
+
+    // Insert new deduction policy
+    const result = db.prepare(`
+      INSERT INTO additional_service_deductions 
+      (additional_service_id, additional_service_name, deduction_amount, effective_from, created_by) 
+      VALUES (?, ?, ?, ?, ?)
+    `).run(
+      data.additionalServiceId,
+      additionalService.service_name,
+      data.deductionAmount,
+      data.effectiveFrom || new Date().toISOString(),
+      data.createdBy
+    );
+
+    const deduction = db.prepare('SELECT * FROM additional_service_deductions WHERE id = ?').get(result.lastInsertRowid) as any;
+    return {
+      id: deduction.id,
+      additionalServiceId: deduction.additional_service_id,
+      additionalServiceName: deduction.additional_service_name,
+      deductionAmount: deduction.deduction_amount,
+      isActive: Boolean(deduction.is_active),
+      effectiveFrom: new Date(deduction.effective_from),
+      effectiveUntil: deduction.effective_until ? new Date(deduction.effective_until) : undefined,
+      createdAt: new Date(deduction.created_at),
+      updatedAt: new Date(deduction.updated_at),
+      createdBy: deduction.created_by
+    };
+  }
+
+  async getAdditionalServiceDeductions(): Promise<AdditionalServiceDeduction[]> {
+    const deductions = db.prepare(`
+      SELECT asd.*, as_table.service_name as additional_service_name
+      FROM additional_service_deductions asd
+      JOIN additional_services as_table ON asd.additional_service_id = as_table.id
+      ORDER BY asd.created_at DESC
+    `).all() as any[];
+
+    return deductions.map(d => ({
+      id: d.id,
+      additionalServiceId: d.additional_service_id,
+      additionalServiceName: d.additional_service_name,
+      deductionAmount: d.deduction_amount,
+      isActive: Boolean(d.is_active),
+      effectiveFrom: new Date(d.effective_from),
+      effectiveUntil: d.effective_until ? new Date(d.effective_until) : undefined,
+      createdAt: new Date(d.created_at),
+      updatedAt: new Date(d.updated_at),
+      createdBy: d.created_by
+    }));
+  }
+
+  async getAdditionalServiceDeductionByServiceId(additionalServiceId: number): Promise<AdditionalServiceDeduction | null> {
+    const deduction = db.prepare(`
+      SELECT asd.*, as_table.service_name as additional_service_name
+      FROM additional_service_deductions asd
+      JOIN additional_services as_table ON asd.additional_service_id = as_table.id
+      WHERE asd.additional_service_id = ? AND asd.is_active = 1
+      LIMIT 1
+    `).get(additionalServiceId) as any;
+
+    if (!deduction) return null;
+
+    return {
+      id: deduction.id,
+      additionalServiceId: deduction.additional_service_id,
+      additionalServiceName: deduction.additional_service_name,
+      deductionAmount: deduction.deduction_amount,
+      isActive: Boolean(deduction.is_active),
+      effectiveFrom: new Date(deduction.effective_from),
+      effectiveUntil: deduction.effective_until ? new Date(deduction.effective_until) : undefined,
+      createdAt: new Date(deduction.created_at),
+      updatedAt: new Date(deduction.updated_at),
+      createdBy: deduction.created_by
+    };
+  }
+
+  async updateAdditionalServiceDeduction(additionalServiceId: number, data: UpdateAdditionalServiceDeductionForm & { updatedBy: number }): Promise<AdditionalServiceDeduction> {
+    // Deactivate current active deduction
+    db.prepare(`
+      UPDATE additional_service_deductions 
+      SET is_active = 0, effective_until = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
+      WHERE additional_service_id = ? AND is_active = 1
+    `).run(additionalServiceId);
+
+    // Get additional service details
+    const additionalService = db.prepare('SELECT service_name FROM additional_services WHERE id = ?').get(additionalServiceId) as any;
+    if (!additionalService) {
+      throw new Error('Additional service not found');
+    }
+
+    // Insert new deduction policy
+    const result = db.prepare(`
+      INSERT INTO additional_service_deductions 
+      (additional_service_id, additional_service_name, deduction_amount, effective_from, created_by) 
+      VALUES (?, ?, ?, ?, ?)
+    `).run(
+      additionalServiceId,
+      additionalService.service_name,
+      data.deductionAmount,
+      data.effectiveFrom || new Date().toISOString(),
+      data.updatedBy
+    );
+
+    const deduction = db.prepare('SELECT * FROM additional_service_deductions WHERE id = ?').get(result.lastInsertRowid) as any;
+    return {
+      id: deduction.id,
+      additionalServiceId: deduction.additional_service_id,
+      additionalServiceName: deduction.additional_service_name,
+      deductionAmount: deduction.deduction_amount,
+      isActive: Boolean(deduction.is_active),
+      effectiveFrom: new Date(deduction.effective_from),
+      effectiveUntil: deduction.effective_until ? new Date(deduction.effective_until) : undefined,
+      createdAt: new Date(deduction.created_at),
+      updatedAt: new Date(deduction.updated_at),
+      createdBy: deduction.created_by
+    };
+  }
+
+  async deleteAdditionalServiceDeduction(additionalServiceId: number): Promise<void> {
+    db.prepare(`
+      UPDATE additional_service_deductions 
+      SET is_active = 0, effective_until = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
+      WHERE additional_service_id = ? AND is_active = 1
+    `).run(additionalServiceId);
+  }
+
   // Settlement unit pricing management
   async createSettlementUnitPrice(data: CreateSettlementUnitPriceForm & { createdBy: number }): Promise<SettlementUnitPrice> {
     // First, deactivate any existing active pricing for this service plan
