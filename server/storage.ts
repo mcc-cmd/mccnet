@@ -2161,11 +2161,24 @@ class SqliteStorage implements IStorage {
     const canceled = db.prepare(`SELECT COUNT(*) as count FROM documents${activationWhereClause}${activationWhereClause ? ' AND' : ' WHERE'} activation_status = ?`).get(...activationParams, '취소') as { count: number };
     const discarded = db.prepare(`SELECT COUNT(*) as count FROM documents${activationWhereClause}${activationWhereClause ? ' AND' : ' WHERE'} activation_status = ?`).get(...activationParams, '폐기') as { count: number };
     
-    // 접수 대기: status = '접수'인 문서들 (업로드 날짜 기준으로 유지)
-    const pendingActivations = db.prepare(`SELECT COUNT(*) as count FROM documents${uploadWhereClause}${uploadWhereClause ? ' AND' : ' WHERE'} status = ?`).get(...uploadDateParams, '접수') as { count: number };
+    // 접수 대기와 진행중은 현재 진행중인 업무이므로 날짜 필터링 없이 전체 조회
+    let basicWhereClause = '';
+    let basicParams: any[] = [];
     
-    // 진행중: activation_status = '업무요청중'인 문서들 (업로드 날짜 기준으로 유지)
-    const inProgress = db.prepare(`SELECT COUNT(*) as count FROM documents${uploadWhereClause}${uploadWhereClause ? ' AND' : ' WHERE'} activation_status = ?`).get(...uploadDateParams, '업무요청중') as { count: number };
+    // 사용자 권한 필터링만 적용 (날짜 필터링 제외)
+    if (userType === 'dealer_store' && dealerId) {
+      basicWhereClause = ' WHERE dealer_id = ?';
+      basicParams = [dealerId];
+    } else if (userType === 'dealer_worker' && userId) {
+      basicWhereClause = ' WHERE user_id = ?';
+      basicParams = [userId];
+    }
+    
+    // 접수 대기: status = '접수'인 문서들 (전체 기간)
+    const pendingActivations = db.prepare(`SELECT COUNT(*) as count FROM documents${basicWhereClause}${basicWhereClause ? ' AND' : ' WHERE'} status = ?`).get(...basicParams, '접수') as { count: number };
+    
+    // 진행중: activation_status = '업무요청중'인 문서들 (전체 기간)
+    const inProgress = db.prepare(`SELECT COUNT(*) as count FROM documents${basicWhereClause}${basicWhereClause ? ' AND' : ' WHERE'} activation_status = ?`).get(...basicParams, '업무요청중') as { count: number };
 
     const stats: DashboardStats & { carrierStats?: any[]; workerStats?: any[]; otherCompletedCount?: number; discardedCount?: number } = {
       totalDocuments: total.count,
