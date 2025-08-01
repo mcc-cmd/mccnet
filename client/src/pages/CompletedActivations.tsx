@@ -207,12 +207,12 @@ export function CompletedActivations() {
               </div>
               <div>
                 <label className="text-sm font-medium">통신사</label>
-                <Select value={filters.carrier} onValueChange={(value) => setFilters({ ...filters, carrier: value })}>
+                <Select value={filters.carrier || 'all'} onValueChange={(value) => setFilters({ ...filters, carrier: value === 'all' ? '' : value })}>
                   <SelectTrigger>
                     <SelectValue placeholder="전체" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">전체</SelectItem>
+                    <SelectItem value="all">전체</SelectItem>
                     <SelectItem value="KT">KT</SelectItem>
                     <SelectItem value="SK브로드밴드">SK브로드밴드</SelectItem>
                     <SelectItem value="SKT">SKT</SelectItem>
