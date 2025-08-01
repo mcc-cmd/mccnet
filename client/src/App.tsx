@@ -19,6 +19,9 @@ import { Settlements } from '@/pages/Settlements';
 import { TestPage } from '@/pages/TestPage';
 import WorkRequests from '@/pages/WorkRequests';
 import NotFound from '@/pages/not-found';
+import SalesTeamManagement from '@/pages/SalesTeamManagement';
+import SalesManagerLogin from '@/pages/SalesManagerLogin';
+import SalesManagerDashboard from '@/pages/SalesManagerDashboard';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -55,6 +58,7 @@ function AppRoutes() {
       {user?.userType === 'admin' && (
         <>
           <Route path="/admin" component={AdminPanel} />
+          <Route path="/sales-team-management" component={SalesTeamManagement} />
           <Route path="/test" component={TestPage} />
         </>
       )}
@@ -63,12 +67,39 @@ function AppRoutes() {
   );
 }
 
+// 영업과장 전용 라우터 (인증 없이 접근 가능)
+function SalesManagerRoutes() {
+  return (
+    <Switch>
+      <Route path="/sales-manager-login" component={SalesManagerLogin} />
+      <Route path="/sales-manager-dashboard" component={SalesManagerDashboard} />
+      <Route component={() => <Redirect to="/sales-manager-login" />} />
+    </Switch>
+  );
+}
+
+// 메인 앱 라우터
+function MainApp() {
+  return (
+    <Switch>
+      {/* 영업과장 전용 라우트 (인증 우회) */}
+      <Route path="/sales-manager-login" component={SalesManagerLogin} />
+      <Route path="/sales-manager-dashboard" component={SalesManagerDashboard} />
+      
+      {/* 기존 인증이 필요한 라우트 */}
+      <Route>
+        <AuthGuard fallback={<Login />}>
+          <AppRoutes />
+        </AuthGuard>
+      </Route>
+    </Switch>
+  );
+}
+
 export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthGuard fallback={<Login />}>
-        <AppRoutes />
-      </AuthGuard>
+      <MainApp />
       <Toaster />
     </QueryClientProvider>
   );

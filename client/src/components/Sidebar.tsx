@@ -13,7 +13,8 @@ import {
   X,
   Clock,
   Star,
-  Trash2
+  Trash2,
+  Users
 } from 'lucide-react';
 import logoImage from '@assets/KakaoTalk_20250626_162541112-removebg-preview_1751604392501.png';
 
@@ -32,6 +33,7 @@ const navigation = [
 
 const adminNavigation = [
   { name: '관리자 패널', href: '/admin', icon: Settings },
+  { name: '영업조직 관리', href: '/sales-team-management', icon: Users },
 ];
 
 interface SidebarProps {

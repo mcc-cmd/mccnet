@@ -1,5 +1,80 @@
 import { z } from "zod";
 import { createInsertSchema } from "drizzle-zod";
+import { sql } from 'drizzle-orm';
+import {
+  index,
+  jsonb,
+  pgTable,
+  timestamp,
+  varchar,
+  integer,
+  boolean,
+  text,
+  decimal,
+  serial,
+  primaryKey,
+} from "drizzle-orm/pg-core";
+
+//===============================================
+// PostgreSQL 데이터베이스 테이블 정의
+//===============================================
+
+// 세션 저장소 테이블 (필수)
+export const sessions = pgTable(
+  "sessions",
+  {
+    sid: varchar("sid").primaryKey(),
+    sess: jsonb("sess").notNull(),
+    expire: timestamp("expire").notNull(),
+  },
+  (table) => [index("IDX_session_expire").on(table.expire)],
+);
+
+// 영업팀 테이블 (신규 추가)
+export const salesTeams = pgTable("sales_teams", {
+  id: serial("id").primaryKey(),
+  teamName: varchar("team_name", { length: 100 }).notNull(), // 영업팀명
+  teamCode: varchar("team_code", { length: 20 }).unique().notNull(), // 영업팀 코드
+  description: text("description"), // 팀 설명
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// 영업과장 테이블 (신규 추가)
+export const salesManagers = pgTable("sales_managers", {
+  id: serial("id").primaryKey(),
+  teamId: integer("team_id").references(() => salesTeams.id).notNull(),
+  managerName: varchar("manager_name", { length: 100 }).notNull(), // 과장명
+  managerCode: varchar("manager_code", { length: 20 }).unique().notNull(), // 과장 코드
+  username: varchar("username", { length: 50 }).unique().notNull(), // 로그인 ID
+  password: varchar("password", { length: 255 }).notNull(), // 해시된 비밀번호
+  contactPhone: varchar("contact_phone", { length: 20 }),
+  email: varchar("email", { length: 100 }),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// 접점 코드와 영업과장 매핑 테이블 (신규 추가)
+export const contactCodeMappings = pgTable("contact_code_mappings", {
+  id: serial("id").primaryKey(),
+  managerId: integer("manager_id").references(() => salesManagers.id).notNull(),
+  carrier: varchar("carrier", { length: 50 }).notNull(), // 통신사
+  contactCode: varchar("contact_code", { length: 50 }).notNull(), // 접점 코드
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// 관리자 테이블
+export const admins = pgTable("admins", {
+  id: serial("id").primaryKey(),
+  username: varchar("username", { length: 50 }).unique().notNull(),
+  password: varchar("password", { length: 255 }).notNull(),
+  name: varchar("name", { length: 100 }).notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
 
 // Database schema types
 export interface Admin {
@@ -8,6 +83,43 @@ export interface Admin {
   password: string;
   name: string;
   createdAt: Date;
+}
+
+// 영업팀 타입
+export interface SalesTeam {
+  id: number;
+  teamName: string;
+  teamCode: string;
+  description?: string;
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+// 영업과장 타입
+export interface SalesManager {
+  id: number;
+  teamId: number;
+  managerName: string;
+  managerCode: string;
+  username: string;
+  password: string;
+  contactPhone?: string;
+  email?: string;
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+// 접점 코드 매핑 타입
+export interface ContactCodeMapping {
+  id: number;
+  managerId: number;
+  carrier: string;
+  contactCode: string;
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 export interface Dealer {
@@ -144,9 +256,11 @@ export interface WorkerStats {
 export interface AuthSession {
   id: string;
   userId: number;
-  userType: 'admin' | 'user';
+  userType: 'admin' | 'user' | 'sales_manager'; // 영업과장 추가
   userRole?: string;
   dealerId?: number;
+  managerId?: number; // 영업과장 ID 추가
+  teamId?: number; // 영업팀 ID 추가
   expiresAt: Date;
 }
 
@@ -565,6 +679,56 @@ export const createCarrierSchema = z.object({
 export const updateCarrierSchema = createCarrierSchema.partial();
 
 export type CreateCarrierForm = z.infer<typeof createCarrierSchema>;
+
+//===============================================
+// 영업팀 및 영업과장 관리 스키마
+//===============================================
+
+// 영업팀 관리 스키마
+export const createSalesTeamSchema = z.object({
+  teamName: z.string().min(1, "팀명을 입력해주세요"),
+  teamCode: z.string().min(1, "팀 코드를 입력해주세요"),
+  description: z.string().optional(),
+});
+
+export const updateSalesTeamSchema = createSalesTeamSchema.partial();
+
+// 영업과장 관리 스키마
+export const createSalesManagerSchema = z.object({
+  teamId: z.number().min(1, "영업팀을 선택해주세요"),
+  managerName: z.string().min(1, "과장명을 입력해주세요"),
+  managerCode: z.string().min(1, "과장 코드를 입력해주세요"),
+  username: z.string().min(3, "로그인 ID는 최소 3자 이상이어야 합니다"),
+  password: z.string().min(6, "비밀번호는 최소 6자 이상이어야 합니다"),
+  contactPhone: z.string().optional(),
+  email: z.string().email("올바른 이메일을 입력해주세요").optional().or(z.literal("")),
+});
+
+export const updateSalesManagerSchema = createSalesManagerSchema.partial().omit({ password: true });
+
+// 접점 코드 매핑 스키마
+export const createContactCodeMappingSchema = z.object({
+  managerId: z.number().min(1, "영업과장을 선택해주세요"),
+  carrier: z.string().min(1, "통신사를 입력해주세요"),
+  contactCode: z.string().min(1, "접점 코드를 입력해주세요"),
+});
+
+export const updateContactCodeMappingSchema = createContactCodeMappingSchema.partial();
+
+// 영업과장 로그인 스키마 (기존 로그인과 동일하지만 구분하기 위해)
+export const salesManagerLoginSchema = z.object({
+  username: z.string().min(3, "아이디는 최소 3자 이상이어야 합니다"),
+  password: z.string().min(6, "비밀번호는 최소 6자 이상이어야 합니다"),
+});
+
+// 타입 정의
+export type CreateSalesTeamForm = z.infer<typeof createSalesTeamSchema>;
+export type UpdateSalesTeamForm = z.infer<typeof updateSalesTeamSchema>;
+export type CreateSalesManagerForm = z.infer<typeof createSalesManagerSchema>;
+export type UpdateSalesManagerForm = z.infer<typeof updateSalesManagerSchema>;
+export type CreateContactCodeMappingForm = z.infer<typeof createContactCodeMappingSchema>;
+export type UpdateContactCodeMappingForm = z.infer<typeof updateContactCodeMappingSchema>;
+export type SalesManagerLoginForm = z.infer<typeof salesManagerLoginSchema>;
 export type UpdateCarrierForm = z.infer<typeof updateCarrierSchema>;
 
 export const createPricingPolicySchema = z.object({

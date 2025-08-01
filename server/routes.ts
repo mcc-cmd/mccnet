@@ -2,10 +2,20 @@ import { Router } from "express";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
+import bcrypt from "bcrypt";
 import * as XLSX from 'xlsx';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { storage } from "./storage";
+import { 
+  createSalesTeamSchema,
+  createSalesManagerSchema,
+  createContactCodeMappingSchema,
+  updateSalesTeamSchema, 
+  updateSalesManagerSchema,
+  updateContactCodeMappingSchema,
+  salesManagerLoginSchema
+} from "@shared/schema";
 import {
   loginSchema,
   createDealerSchema,
@@ -3055,6 +3065,266 @@ router.delete('/api/additional-service-deductions/:id', requireAuth, async (req,
   } catch (error: any) {
     console.error('Error deleting additional service deduction:', error);
     res.status(500).json({ error: error.message || 'Failed to delete additional service deduction' });
+  }
+});
+
+//===============================================
+// 영업팀 및 영업과장 관리 API
+//===============================================
+
+// 영업과장 로그인 API (기존 로그인과 분리)
+router.post('/api/auth/sales-manager-login', async (req, res) => {
+  try {
+    const { username, password } = salesManagerLoginSchema.parse(req.body);
+    
+    const manager = await storage.getSalesManagerByUsername(username);
+    if (!manager) {
+      return res.status(401).json({ 
+        success: false, 
+        error: '아이디 또는 비밀번호가 올바르지 않습니다.' 
+      });
+    }
+    
+    const isValidPassword = await bcrypt.compare(password, manager.password);
+    if (!isValidPassword) {
+      return res.status(401).json({ 
+        success: false, 
+        error: '아이디 또는 비밀번호가 올바르지 않습니다.' 
+      });
+    }
+    
+    const sessionId = await storage.createSession(
+      manager.id, 
+      'sales_manager', 
+      manager.id, 
+      manager.teamId
+    );
+    
+    const response: AuthResponse = {
+      success: true,
+      user: {
+        id: manager.id,
+        name: manager.managerName,
+        username: manager.username,
+        userType: 'sales_manager',
+      },
+      sessionId
+    };
+    
+    res.json(response);
+  } catch (error: any) {
+    console.error('Sales manager login error:', error);
+    res.status(400).json({ 
+      success: false, 
+      error: error.message || '로그인 중 오류가 발생했습니다.' 
+    });
+  }
+});
+
+// 영업팀 관리 API
+router.post('/api/admin/sales-teams', requireAdmin, async (req: any, res) => {
+  try {
+    const data = createSalesTeamSchema.parse(req.body);
+    const team = await storage.createSalesTeam(data);
+    res.json(team);
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+router.get('/api/admin/sales-teams', requireAdmin, async (req: any, res) => {
+  try {
+    const teams = await storage.getSalesTeams();
+    res.json(teams);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.get('/api/admin/sales-teams/:id', requireAdmin, async (req: any, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const team = await storage.getSalesTeamById(id);
+    
+    if (!team) {
+      return res.status(404).json({ error: '영업팀을 찾을 수 없습니다.' });
+    }
+    
+    res.json(team);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.put('/api/admin/sales-teams/:id', requireAdmin, async (req: any, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const data = updateSalesTeamSchema.parse(req.body);
+    const team = await storage.updateSalesTeam(id, data);
+    res.json(team);
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+router.delete('/api/admin/sales-teams/:id', requireAdmin, async (req: any, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    await storage.deleteSalesTeam(id);
+    res.json({ success: true });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// 영업과장 관리 API
+router.post('/api/admin/sales-managers', requireAdmin, async (req: any, res) => {
+  try {
+    const data = createSalesManagerSchema.parse(req.body);
+    const manager = await storage.createSalesManager(data);
+    res.json(manager);
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+router.get('/api/admin/sales-managers', requireAdmin, async (req: any, res) => {
+  try {
+    const { teamId } = req.query;
+    const managers = teamId 
+      ? await storage.getSalesManagersByTeamId(parseInt(teamId as string))
+      : await storage.getSalesManagers();
+    res.json(managers);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.get('/api/admin/sales-managers/:id', requireAdmin, async (req: any, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const manager = await storage.getSalesManagerById(id);
+    
+    if (!manager) {
+      return res.status(404).json({ error: '영업과장을 찾을 수 없습니다.' });
+    }
+    
+    res.json(manager);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.put('/api/admin/sales-managers/:id', requireAdmin, async (req: any, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const data = updateSalesManagerSchema.parse(req.body);
+    const manager = await storage.updateSalesManager(id, data);
+    res.json(manager);
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+router.delete('/api/admin/sales-managers/:id', requireAdmin, async (req: any, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    await storage.deleteSalesManager(id);
+    res.json({ success: true });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// 접점 코드 매핑 관리 API
+router.post('/api/admin/contact-code-mappings', requireAdmin, async (req: any, res) => {
+  try {
+    const data = createContactCodeMappingSchema.parse(req.body);
+    const mapping = await storage.createContactCodeMapping(data);
+    res.json(mapping);
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+router.get('/api/admin/contact-code-mappings', requireAdmin, async (req: any, res) => {
+  try {
+    const { managerId, contactCode } = req.query;
+    
+    let mappings;
+    if (managerId) {
+      mappings = await storage.getContactCodeMappingsByManagerId(parseInt(managerId as string));
+    } else if (contactCode) {
+      mappings = await storage.getContactCodeMappingsByContactCode(contactCode as string);
+    } else {
+      mappings = await storage.getContactCodeMappings();
+    }
+    
+    res.json(mappings);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.put('/api/admin/contact-code-mappings/:id', requireAdmin, async (req: any, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const data = updateContactCodeMappingSchema.parse(req.body);
+    const mapping = await storage.updateContactCodeMapping(id, data);
+    res.json(mapping);
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+router.delete('/api/admin/contact-code-mappings/:id', requireAdmin, async (req: any, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    await storage.deleteContactCodeMapping(id);
+    res.json({ success: true });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// 영업과장용 실적 조회 API (접점 코드 기반 필터링)
+router.get('/api/sales-manager/performance', requireAuth, async (req: any, res) => {
+  try {
+    // 영업과장 권한 체크
+    if (req.session.userType !== 'sales_manager') {
+      return res.status(403).json({ error: '영업과장 권한이 필요합니다.' });
+    }
+    
+    const managerId = req.session.managerId;
+    
+    // 해당 영업과장의 접점 코드 목록 가져오기
+    const contactMappings = await storage.getContactCodeMappingsByManagerId(managerId);
+    const contactCodes = contactMappings.map(mapping => mapping.contactCode);
+    
+    if (contactCodes.length === 0) {
+      return res.json({
+        totalDocuments: 0,
+        activatedCount: 0,
+        canceledCount: 0,
+        pendingCount: 0,
+        contactCodes: []
+      });
+    }
+    
+    // 접점 코드 기반으로 실적 데이터 조회 (실제 구현은 기존 문서 시스템과 연동 필요)
+    const performanceData = {
+      totalDocuments: 0, // contactCodes 기반 문서 수
+      activatedCount: 0,
+      canceledCount: 0, 
+      pendingCount: 0,
+      contactCodes: contactCodes,
+      teamId: req.session.teamId,
+      managerId: managerId
+    };
+    
+    res.json(performanceData);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
   }
 });
 
