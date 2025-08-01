@@ -2105,6 +2105,16 @@ class SqliteStorage implements IStorage {
     }
     // admin은 모든 데이터 조회
     
+    // 날짜 필터가 없으면 현재 월의 첫째 날부터 현재 날짜까지로 설정
+    if (!startDate && !endDate) {
+      const now = new Date();
+      const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+      const currentDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      
+      startDate = currentMonthStart.toISOString().split('T')[0]; // YYYY-MM-DD 형식
+      endDate = currentDate.toISOString().split('T')[0]; // YYYY-MM-DD 형식
+    }
+    
     // 날짜 필터링을 업로드 날짜 기준으로 변경
     let uploadDateParams = [...params];
     let uploadWhereClause = whereClause;
