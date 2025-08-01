@@ -332,18 +332,6 @@ export function CompletedActivations() {
                               )}
                             </div>
                           </td>
-                          <td className="px-3 py-2 text-sm text-gray-900">
-                            <div className="leading-tight break-words max-w-full">
-                              <div className="font-medium text-blue-600">
-                                {(doc as any).activatedByName || '알 수 없음'}
-                              </div>
-                              {doc.activatedBy && (
-                                <div className="text-xs text-gray-500">
-                                  ID: {doc.activatedBy}
-                                </div>
-                              )}
-                            </div>
-                          </td>
                           <td className="px-3 py-2">
                             {getActivationStatusBadge(doc.activationStatus)}
                           </td>
@@ -356,7 +344,7 @@ export function CompletedActivations() {
                               className="text-xs"
                             >
                               <X className="h-3 w-3 mr-1" />
-                              개통취소
+                              14일내 개취
                             </Button>
                           </td>
                         </tr>
@@ -466,7 +454,7 @@ export function CompletedActivations() {
                             className="w-full text-sm"
                           >
                             <X className="h-4 w-4 mr-2" />
-                            개통취소
+                            14일내 개취
                           </Button>
                         </div>
                       </div>
