@@ -669,8 +669,8 @@ class SqliteStorage implements IStorage {
 
   async createAdmin(data: CreateAdminForm): Promise<Admin> {
     const hashedPassword = bcrypt.hashSync(data.password, 10);
-    const insertResult = db.prepare('INSERT INTO admin_users (email, password, name) VALUES (?, ?, ?)').run(
-      data.email,
+    const insertResult = db.prepare('INSERT INTO admin_users (username, password, name) VALUES (?, ?, ?)').run(
+      data.username,
       hashedPassword,
       data.name
     );
@@ -679,7 +679,7 @@ class SqliteStorage implements IStorage {
 
     return {
       id: result.id,
-      email: result.email,
+      username: result.username,
       password: result.password,
       name: result.name,
       createdAt: new Date(result.created_at)
@@ -688,8 +688,8 @@ class SqliteStorage implements IStorage {
 
   async createWorker(data: CreateWorkerForm): Promise<User> {
     const hashedPassword = bcrypt.hashSync(data.password, 10);
-    const insertResult = db.prepare('INSERT INTO users (email, password, name, user_type) VALUES (?, ?, ?, ?)').run(
-      data.email,
+    const insertResult = db.prepare('INSERT INTO users (username, password, name, user_type) VALUES (?, ?, ?, ?)').run(
+      data.username,
       hashedPassword,
       data.name,
       'dealer_worker'
@@ -700,7 +700,7 @@ class SqliteStorage implements IStorage {
     return {
       id: result.id,
       dealerId: result.dealer_id,
-      email: result.email,
+      username: result.username,
       password: result.password,
       name: result.name,
       role: result.user_type,
