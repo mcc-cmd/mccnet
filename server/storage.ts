@@ -1305,13 +1305,15 @@ class SqliteStorage implements IStorage {
     // Create new pricing record
     const result = db.prepare(`
       INSERT INTO settlement_unit_prices 
-      (service_plan_id, service_plan_name, carrier, unit_price, effective_from, created_by) 
-      VALUES (?, ?, ?, ?, ?, ?)
+      (service_plan_id, service_plan_name, carrier, unit_price, new_customer_price, port_in_price, effective_from, created_by) 
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     `).run(
       servicePlanId,
       servicePlan.plan_name,
       servicePlan.carrier,
-      data.unitPrice,
+      data.newCustomerPrice, // Use newCustomerPrice as the default unit_price
+      data.newCustomerPrice,
+      data.portInPrice,
       data.effectiveFrom || new Date().toISOString(),
       data.updatedBy
     );
@@ -1322,7 +1324,8 @@ class SqliteStorage implements IStorage {
       servicePlanId: settlementPrice.service_plan_id,
       servicePlanName: settlementPrice.service_plan_name,
       carrier: settlementPrice.carrier,
-      unitPrice: settlementPrice.unit_price,
+      newCustomerPrice: settlementPrice.new_customer_price || settlementPrice.unit_price,
+      portInPrice: settlementPrice.port_in_price || settlementPrice.unit_price,
       isActive: Boolean(settlementPrice.is_active),
       effectiveFrom: new Date(settlementPrice.effective_from),
       effectiveUntil: settlementPrice.effective_until ? new Date(settlementPrice.effective_until) : undefined,
