@@ -1827,49 +1827,75 @@ class SqliteStorage implements IStorage {
     console.log('SQL Params:', params);
     const documents = db.prepare(query).all(...params) as any[];
     console.log('Raw documents found:', documents.length);
-    return documents.map(d => ({
-      id: d.id,
-      dealerId: d.dealer_id,
-      userId: d.user_id,
-      documentNumber: d.document_number,
-      customerName: d.customer_name,
-      customerPhone: d.customer_phone,
-      storeName: d.store_name,
-      carrier: d.carrier,
-      previousCarrier: d.previous_carrier,
-      contactCode: d.contact_code,
-      status: d.status,
-      activationStatus: d.activation_status || '대기',
-      filePath: d.file_path,
-      fileName: d.file_name,
-      fileSize: d.file_size,
-      uploadedAt: new Date(d.uploaded_at),
-      updatedAt: new Date(d.updated_at),
-      activatedAt: d.activated_at ? new Date(d.activated_at) : undefined,
-      activatedBy: d.activated_by,
-      cancelledBy: d.cancelled_by,
-      notes: d.notes,
-      supplementNotes: d.supplement_notes,
-      deviceModel: d.device_model,
-      simNumber: d.sim_number,
-      subscriptionNumber: d.subscription_number,
-      servicePlanId: d.service_plan_id,
-      servicePlanName: d.service_plan_name,
-      additionalServiceIds: d.additional_service_ids,
-      registrationFeePrepaid: Boolean(d.registration_fee_prepaid),
-      registrationFeePostpaid: Boolean(d.registration_fee_postpaid),
-      registrationFeeInstallment: Boolean(d.registration_fee_installment),
-      simFeePrepaid: Boolean(d.sim_fee_prepaid),
-      simFeePostpaid: Boolean(d.sim_fee_postpaid),
-      bundleApplied: Boolean(d.bundle_applied),
-      bundleNotApplied: Boolean(d.bundle_not_applied),
-      dealerNotes: d.dealer_notes,
-      discardReason: d.discard_reason,
-      dealerName: d.dealer_name,
-      userName: d.user_name,
-      activatedByName: d.activated_by_name,
-      cancelledByName: d.cancelled_by_name
-    } as Document & { dealerName: string; userName: string; activatedByName?: string; cancelledByName?: string; servicePlanName?: string }));
+    
+    // 부가서비스 이름 조회를 위한 매핑
+    const additionalServicesMap = new Map();
+    const allAdditionalServices = db.prepare('SELECT id, service_name FROM additional_services').all() as any[];
+    allAdditionalServices.forEach(service => {
+      additionalServicesMap.set(service.id, service.service_name);
+    });
+    
+    return documents.map(d => {
+      // 부가서비스 이름 변환
+      let additionalServices: string[] = [];
+      if (d.additional_service_ids && d.additional_service_ids !== '[]') {
+        try {
+          const serviceIds = JSON.parse(d.additional_service_ids);
+          if (Array.isArray(serviceIds)) {
+            additionalServices = serviceIds
+              .map(id => additionalServicesMap.get(parseInt(id)))
+              .filter(name => name); // undefined 제거
+          }
+        } catch (error) {
+          console.warn('Error parsing additional service IDs for document:', d.id, error);
+        }
+      }
+      
+      return {
+        id: d.id,
+        dealerId: d.dealer_id,
+        userId: d.user_id,
+        documentNumber: d.document_number,
+        customerName: d.customer_name,
+        customerPhone: d.customer_phone,
+        storeName: d.store_name,
+        carrier: d.carrier,
+        previousCarrier: d.previous_carrier,
+        contactCode: d.contact_code,
+        status: d.status,
+        activationStatus: d.activation_status || '대기',
+        filePath: d.file_path,
+        fileName: d.file_name,
+        fileSize: d.file_size,
+        uploadedAt: new Date(d.uploaded_at),
+        updatedAt: new Date(d.updated_at),
+        activatedAt: d.activated_at ? new Date(d.activated_at) : undefined,
+        activatedBy: d.activated_by,
+        cancelledBy: d.cancelled_by,
+        notes: d.notes,
+        supplementNotes: d.supplement_notes,
+        deviceModel: d.device_model,
+        simNumber: d.sim_number,
+        subscriptionNumber: d.subscription_number,
+        servicePlanId: d.service_plan_id,
+        servicePlanName: d.service_plan_name,
+        additionalServiceIds: d.additional_service_ids,
+        additionalServices: additionalServices, // 부가서비스 이름 배열 추가
+        registrationFeePrepaid: Boolean(d.registration_fee_prepaid),
+        registrationFeePostpaid: Boolean(d.registration_fee_postpaid),
+        registrationFeeInstallment: Boolean(d.registration_fee_installment),
+        simFeePrepaid: Boolean(d.sim_fee_prepaid),
+        simFeePostpaid: Boolean(d.sim_fee_postpaid),
+        bundleApplied: Boolean(d.bundle_applied),
+        bundleNotApplied: Boolean(d.bundle_not_applied),
+        dealerNotes: d.dealer_notes,
+        discardReason: d.discard_reason,
+        dealerName: d.dealer_name,
+        userName: d.user_name,
+        activatedByName: d.activated_by_name,
+        cancelledByName: d.cancelled_by_name
+      } as Document & { dealerName: string; userName: string; activatedByName?: string; cancelledByName?: string; servicePlanName?: string; additionalServices?: string[] };
+    });
   }
 
   async checkDuplicateDocument(data: { customerName: string; customerPhone: string; storeName?: string; contactCode?: string }): Promise<Array<Document & { dealerName: string }>> {
