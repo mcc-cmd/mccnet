@@ -2480,4 +2480,184 @@ router.post('/api/pricing-policies/calculate-commission', requireAuth, async (re
   }
 });
 
+// 정산단가 엑셀 업로드 API
+router.post('/api/admin/settlement-pricing/excel-upload', contactCodeUpload.single('file'), requireAuth, async (req: any, res) => {
+  let filePath: string | null = null;
+  
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: '파일을 업로드해주세요.' });
+    }
+
+    filePath = req.file.path;
+    console.log('Processing settlement pricing file:', filePath);
+
+    if (!fs.existsSync(filePath)) {
+      return res.status(400).json({ error: '업로드된 파일을 찾을 수 없습니다.' });
+    }
+
+    const XLSX = await import('xlsx');
+    const workbook = XLSX.default ? XLSX.default.readFile(filePath) : XLSX.readFile(filePath);
+    
+    if (!workbook.SheetNames || workbook.SheetNames.length === 0) {
+      return res.status(400).json({ error: '엑셀 파일에 시트를 찾을 수 없습니다.' });
+    }
+    
+    const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+    
+    if (!worksheet) {
+      return res.status(400).json({ error: '엑셀 파일에 데이터를 찾을 수 없습니다.' });
+    }
+
+    const rawData = XLSX.default ? XLSX.default.utils.sheet_to_json(worksheet, { header: 1 }) : XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+    
+    if (!rawData || rawData.length < 2) {
+      return res.status(400).json({ error: '엑셀 파일에 데이터가 없습니다.' });
+    }
+
+    let processedCount = 0;
+    const errors: string[] = [];
+
+    // 헤더 행 찾기 (통신사, 요금제명, 정산단가가 포함된 행)
+    let headerIndex = -1;
+    for (let i = 0; i < Math.min(5, rawData.length); i++) {
+      const row = rawData[i] as any[];
+      if (row && row.length >= 3) {
+        const hasCarrier = row.some(cell => cell && String(cell).includes('통신사'));
+        const hasPlanName = row.some(cell => cell && String(cell).includes('요금제'));
+        const hasUnitPrice = row.some(cell => cell && (String(cell).includes('정산단가') || String(cell).includes('단가')));
+        
+        if (hasCarrier && hasPlanName && hasUnitPrice) {
+          headerIndex = i;
+          break;
+        }
+      }
+    }
+
+    if (headerIndex === -1) {
+      return res.status(400).json({ error: '통신사, 요금제명, 정산단가 헤더를 찾을 수 없습니다.' });
+    }
+
+    const headers = rawData[headerIndex] as any[];
+    const dataRows = rawData.slice(headerIndex + 1);
+
+    // 컬럼 인덱스 찾기
+    let carrierIndex = -1, planNameIndex = -1, unitPriceIndex = -1;
+    
+    for (let i = 0; i < headers.length; i++) {
+      const header = String(headers[i]).trim();
+      if (header.includes('통신사')) {
+        carrierIndex = i;
+      } else if (header.includes('요금제')) {
+        planNameIndex = i;
+      } else if (header.includes('정산단가') || header.includes('단가')) {
+        unitPriceIndex = i;
+      }
+    }
+
+    if (carrierIndex === -1 || planNameIndex === -1 || unitPriceIndex === -1) {
+      return res.status(400).json({ error: '필수 컬럼을 찾을 수 없습니다. (통신사, 요금제명, 정산단가)' });
+    }
+
+    console.log(`Processing ${dataRows.length} settlement pricing rows`);
+    
+    // 각 행에 대해 정산단가 처리
+    for (let i = 0; i < dataRows.length; i++) {
+      const row = dataRows[i] as any[];
+      
+      try {
+        const carrier = row[carrierIndex];
+        const planName = row[planNameIndex];
+        const unitPrice = row[unitPriceIndex];
+        
+        console.log(`Row ${i + 2}: carrier=${carrier}, planName=${planName}, unitPrice=${unitPrice}`);
+        
+        if (!carrier || !planName || !unitPrice) {
+          const errorMsg = `${i + 2}행: 필수 정보가 누락되었습니다 (통신사: ${carrier || 'X'}, 요금제명: ${planName || 'X'}, 정산단가: ${unitPrice || 'X'})`;
+          console.log(errorMsg);
+          errors.push(errorMsg);
+          continue;
+        }
+
+        // 숫자 변환
+        const parsedUnitPrice = parseFloat(String(unitPrice).replace(/[,\s]/g, ''));
+        if (isNaN(parsedUnitPrice) || parsedUnitPrice < 0) {
+          const errorMsg = `${i + 2}행: 정산단가가 올바르지 않습니다 (${unitPrice})`;
+          console.log(errorMsg);
+          errors.push(errorMsg);
+          continue;
+        }
+
+        // 해당 통신사와 요금제명으로 서비스 플랜 찾기
+        const servicePlans = await storage.getServicePlans();
+        const matchingPlan = servicePlans.find(plan => 
+          plan.carrier.trim() === String(carrier).trim() && 
+          plan.planName.trim() === String(planName).trim()
+        );
+
+        if (!matchingPlan) {
+          const errorMsg = `${i + 2}행: 해당 통신사(${carrier})와 요금제명(${planName})에 맞는 서비스 플랜을 찾을 수 없습니다`;
+          console.log(errorMsg);
+          errors.push(errorMsg);
+          continue;
+        }
+
+        // 정산단가 생성 또는 업데이트
+        const existingPrice = await storage.getSettlementUnitPriceByServicePlan(matchingPlan.id);
+        
+        if (existingPrice) {
+          // 기존 단가 업데이트
+          await storage.updateSettlementUnitPrice(matchingPlan.id, {
+            unitPrice: parsedUnitPrice,
+          }, req.user.id);
+        } else {
+          // 새 단가 생성
+          await storage.createSettlementUnitPrice({
+            servicePlanId: matchingPlan.id,
+            unitPrice: parsedUnitPrice,
+          }, req.user.id);
+        }
+        
+        processedCount++;
+        console.log(`Successfully processed row ${i + 2}: ${carrier} - ${planName} - ${parsedUnitPrice}`);
+        
+      } catch (rowError: any) {
+        const errorMsg = `${i + 2}행 처리 중 오류: ${rowError.message}`;
+        console.error(errorMsg);
+        errors.push(errorMsg);
+      }
+    }
+
+    // 파일 삭제
+    if (filePath && fs.existsSync(filePath)) {
+      fs.unlinkSync(filePath);
+    }
+
+    console.log(`Settlement pricing upload completed. Processed: ${processedCount}, Errors: ${errors.length}`);
+
+    res.json({
+      success: true,
+      processed: processedCount,
+      errors: errors.length > 0 ? errors.slice(0, 10) : [], // 최대 10개 오류만 표시
+      message: `${processedCount}개 정산단가가 처리되었습니다.${errors.length > 0 ? ` (${errors.length}개 오류 발생)` : ''}`
+    });
+
+  } catch (error: any) {
+    console.error('Settlement pricing excel upload error:', error);
+    
+    // 파일 삭제
+    if (filePath && fs.existsSync(filePath)) {
+      try {
+        fs.unlinkSync(filePath);
+      } catch (deleteError) {
+        console.error('Failed to delete file:', deleteError);
+      }
+    }
+    
+    res.status(500).json({ 
+      error: '정산단가 업로드 중 오류가 발생했습니다: ' + error.message 
+    });
+  }
+});
+
 export default router;

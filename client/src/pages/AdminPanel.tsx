@@ -35,7 +35,8 @@ import {
   Edit2,
   DollarSign,
   FileSpreadsheet,
-  Image as ImageIcon
+  Image as ImageIcon,
+  Info
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
@@ -872,6 +873,10 @@ export function AdminPanel() {
   const [settlementPriceDialogOpen, setSettlementPriceDialogOpen] = useState(false);
   const [selectedServicePlan, setSelectedServicePlan] = useState<ServicePlan | null>(null);
   const [pricingDialogOpen, setPricingDialogOpen] = useState(false);
+  
+  // Settlement unit pricing excel upload
+  const settlementPricingExcelInputRef = useRef<HTMLInputElement>(null);
+  const [settlementPricingFile, setSettlementPricingFile] = useState<File | null>(null);
 
   // Queries
   const { data: dealers, isLoading: dealersLoading } = useQuery({
@@ -1205,6 +1210,46 @@ export function AdminPanel() {
       toast({
         title: '성공',
         description: '서식지가 성공적으로 업로드되었습니다.',
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: '오류',
+        description: error.message,
+        variant: 'destructive',
+      });
+    },
+  });
+
+  // Settlement unit pricing excel upload mutation
+  const settlementPricingExcelUploadMutation = useMutation({
+    mutationFn: async (file: File) => {
+      const formData = new FormData();
+      formData.append('file', file);
+      
+      const sessionId = useAuth.getState().sessionId;
+      const response = await fetch('/api/admin/settlement-pricing/excel-upload', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${sessionId}`,
+        },
+        body: formData,
+      });
+      
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({ error: '업로드에 실패했습니다.' }));
+        throw new Error(error.error || '업로드에 실패했습니다.');
+      }
+      
+      return response.json();
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['/api/service-plans'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/settlement-prices'] });
+      setSettlementPricingFile(null);
+      toast({
+        title: '성공',
+        description: `정산단가 ${data.processed || 0}건이 성공적으로 처리되었습니다.`,
       });
     },
     onError: (error: Error) => {
@@ -1873,6 +1918,32 @@ export function AdminPanel() {
     if (file) {
       contactCodeExcelUploadMutation.mutate(file);
     }
+  };
+
+  const handleSettlementPricingExcelUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      settlementPricingExcelUploadMutation.mutate(file);
+    }
+  };
+
+  const handleDownloadSettlementPricingTemplate = () => {
+    // 정산단가 엑셀 템플릿 생성
+    const csvContent = '\uFEFF' + // BOM for Excel UTF-8 recognition
+      '통신사,요금제명,정산단가\n' +
+      'SK텔링크,5G100K-스페셜,50000\n' +
+      'KT엠모바일,5G110K-셀프,45000\n' +
+      'LG미디어로그,LTE베이직,30000\n';
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', '정산단가_업로드_양식.csv');
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   // Settlement unit pricing handlers
@@ -4260,10 +4331,71 @@ export function AdminPanel() {
 
           {/* Settlement Unit Pricing Tab */}
           <TabsContent value="pricing" className="space-y-6">
+            {/* 접수 방법 가이드 */}
+            <Card className="border-blue-200 bg-blue-50">
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center space-x-2 text-blue-700">
+                  <Info className="h-5 w-5" />
+                  <span>정산단가 관리 가이드</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3 text-sm text-blue-600">
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div>
+                    <h4 className="font-medium mb-2">📋 개별 입력 방법</h4>
+                    <ol className="list-decimal list-inside space-y-1 text-xs">
+                      <li>요금제 목록에서 '설정' 또는 '수정' 버튼 클릭</li>
+                      <li>정산단가 입력 후 '저장' 클릭</li>
+                      <li>기존 단가 수정 시 신규 정산건부터 적용</li>
+                    </ol>
+                  </div>
+                  <div>
+                    <h4 className="font-medium mb-2">📊 엑셀 일괄 업로드</h4>
+                    <ol className="list-decimal list-inside space-y-1 text-xs">
+                      <li>'양식 다운로드'로 템플릿 파일 받기</li>
+                      <li>통신사, 요금제명, 정산단가 입력</li>
+                      <li>'엑셀 업로드'로 파일 업로드</li>
+                    </ol>
+                  </div>
+                </div>
+                <div className="bg-yellow-100 border border-yellow-300 rounded p-2 mt-3">
+                  <p className="text-yellow-700 text-xs">
+                    ⚠️ <strong>주의사항:</strong> 정산단가 변경 시 기존 정산건은 기존 금액 유지, 신규 정산건부터 새 단가 적용
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+
             <Card>
-              <CardHeader>
-                <CardTitle>정산단가 관리</CardTitle>
-                <CardDescription>요금제별 정산 단가를 설정하고 관리할 수 있습니다. 단가 변경 시 기존 정산금액은 유지됩니다.</CardDescription>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <div>
+                  <CardTitle>정산단가 관리</CardTitle>
+                  <CardDescription>요금제별 정산 단가를 설정하고 관리할 수 있습니다. 단가 변경 시 기존 정산금액은 유지됩니다.</CardDescription>
+                </div>
+                <div className="space-x-2">
+                  <input
+                    ref={settlementPricingExcelInputRef}
+                    type="file"
+                    accept=".xlsx,.xls,.csv"
+                    onChange={handleSettlementPricingExcelUpload}
+                    className="hidden"
+                  />
+                  <Button
+                    variant="outline"
+                    onClick={handleDownloadSettlementPricingTemplate}
+                  >
+                    <Download className="mr-2 h-4 w-4" />
+                    양식 다운로드
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => settlementPricingExcelInputRef.current?.click()}
+                    disabled={settlementPricingExcelUploadMutation.isPending}
+                  >
+                    <Upload className="mr-2 h-4 w-4" />
+                    {settlementPricingExcelUploadMutation.isPending ? '업로드 중...' : '엑셀 업로드'}
+                  </Button>
+                </div>
               </CardHeader>
               <CardContent>
                 {settlementPricesLoading ? (
@@ -4354,6 +4486,21 @@ export function AdminPanel() {
                 </DialogHeader>
                 <Form {...settlementPriceForm}>
                   <form onSubmit={settlementPriceForm.handleSubmit(onSubmitSettlementPrice)} className="space-y-4">
+                    <FormField
+                      control={settlementPriceForm.control}
+                      name="servicePlanId"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormControl>
+                            <Input
+                              type="hidden"
+                              {...field}
+                              value={selectedServicePlan?.id || 0}
+                            />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
                     <FormField
                       control={settlementPriceForm.control}
                       name="unitPrice"
