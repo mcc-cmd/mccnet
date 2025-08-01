@@ -1051,7 +1051,8 @@ export function AdminPanel() {
     resolver: zodResolver(createSettlementUnitPriceSchema),
     defaultValues: {
       servicePlanId: 0,
-      unitPrice: 0,
+      newCustomerPrice: 0,
+      portInPrice: 0,
     },
   });
 
@@ -4694,7 +4695,7 @@ function AdditionalServiceDeductionManagement() {
     defaultValues: {
       additionalServiceId: 0,
       deductionAmount: 0,
-      effectiveFrom: new Date().toISOString().split('T')[0]
+      effectiveFrom: new Date()
     }
   });
 
@@ -4789,7 +4790,7 @@ function AdditionalServiceDeductionManagement() {
     deductionForm.reset({
       additionalServiceId: deduction.additionalServiceId,
       deductionAmount: deduction.deductionAmount,
-      effectiveFrom: deduction.effectiveFrom.toISOString().split('T')[0]
+      effectiveFrom: new Date(deduction.effectiveFrom)
     });
     setDeductionDialogOpen(true);
   };
@@ -4799,7 +4800,7 @@ function AdditionalServiceDeductionManagement() {
     deductionForm.reset({
       additionalServiceId: 0,
       deductionAmount: 0,
-      effectiveFrom: new Date().toISOString().split('T')[0]
+      effectiveFrom: new Date()
     });
     setDeductionDialogOpen(true);
   };
@@ -4888,7 +4889,11 @@ function AdditionalServiceDeductionManagement() {
                     <FormItem>
                       <FormLabel>적용 시작일</FormLabel>
                       <FormControl>
-                        <Input type="date" {...field} />
+                        <Input 
+                          type="date" 
+                          value={field.value instanceof Date ? field.value.toISOString().split('T')[0] : field.value}
+                          onChange={(e) => field.onChange(new Date(e.target.value))}
+                        />
                       </FormControl>
                       <FormDescription>
                         해당 날짜부터 차감 정책이 적용됩니다.
