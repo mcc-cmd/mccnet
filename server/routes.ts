@@ -3,6 +3,8 @@ import multer from "multer";
 import path from "path";
 import fs from "fs";
 import * as XLSX from 'xlsx';
+import { format } from 'date-fns';
+import { ko } from 'date-fns/locale';
 import { storage } from "./storage";
 import {
   loginSchema,
@@ -910,6 +912,89 @@ router.get('/api/documents', requireAuth, async (req: any, res) => {
   } catch (error: any) {
     console.error('Documents API error:', error);
     res.status(500).json({ error: error.message });
+  }
+});
+
+// 개통완료 목록 엑셀 다운로드
+router.get('/api/documents/export/excel', requireAuth, async (req: any, res) => {
+  try {
+    const { activationStatus, search, startDate, endDate } = req.query;
+    
+    // 관리자와 근무자는 모든 문서를, 판매점은 해당 대리점 문서만 조회
+    const isWorker = req.session.userRole === 'dealer_worker';
+    const isAdmin = req.session.userType === 'admin';
+    
+    let dealerId = req.session.dealerId;
+    if (isAdmin || isWorker) {
+      dealerId = undefined;
+    }
+    
+    // 한국어 디코딩 처리
+    let decodedActivationStatus = activationStatus as string;
+    if (decodedActivationStatus) {
+      try {
+        decodedActivationStatus = decodeURIComponent(decodedActivationStatus);
+      } catch (e) {
+        console.log('Failed to decode activationStatus, using original:', decodedActivationStatus);
+      }
+    }
+    
+    const documents = await storage.getDocuments(dealerId, {
+      activationStatus: decodedActivationStatus,
+      search: search as string,
+      startDate: startDate as string,
+      endDate: endDate as string
+    }, req.session.userId);
+    
+    // 엑셀 데이터 준비
+    const XLSX = await import('xlsx');
+    const excelData = documents.map(doc => ({
+      '개통완료일시': doc.activatedAt ? format(new Date(doc.activatedAt), 'yyyy-MM-dd HH:mm:ss') : '',
+      '고객명': doc.customerName || '',
+      '연락처': doc.customerPhone || '',
+      '판매점': (doc as any).storeName || (doc as any).dealerName || '',
+      '개통처리자': (doc as any).activatedByName || '관리자',
+      '가입번호': (doc as any).subscriptionNumber || '',
+      '통신사': doc.carrier || '',
+      '요금제': (doc as any).servicePlanName || '',
+      '부가서비스': (doc as any).additionalServices || '',
+      '가입비': ((doc as any).registrationFeePrepaid ? '선납 ' : '') + ((doc as any).registrationFeePostpaid ? '후납' : ''),
+      '유심비': ((doc as any).simFeePrepaid ? '선납 ' : '') + ((doc as any).simFeePostpaid ? '후납' : ''),
+      '결합': ((doc as any).bundleApplied ? '적용' : '') + ((doc as any).bundleNotApplied ? '미적용' : ''),
+      '판매점메모': (doc as any).dealerNotes || '',
+      '상태': doc.activationStatus || ''
+    }));
+    
+    const workbook = XLSX.utils.book_new();
+    const worksheet = XLSX.utils.json_to_sheet(excelData);
+    
+    // 컬럼 너비 설정
+    const columnWidths = [
+      { wch: 20 }, { wch: 15 }, { wch: 15 }, { wch: 20 }, { wch: 15 },
+      { wch: 15 }, { wch: 15 }, { wch: 25 }, { wch: 20 }, { wch: 10 },
+      { wch: 10 }, { wch: 10 }, { wch: 30 }, { wch: 10 }
+    ];
+    worksheet['!cols'] = columnWidths;
+    
+    XLSX.utils.book_append_sheet(workbook, worksheet, '개통완료목록');
+    
+    // 파일명 생성
+    const fileName = `개통완료목록_${format(new Date(), 'yyyy-MM-dd_HH-mm-ss')}.xlsx`;
+    
+    // 엑셀 파일을 버퍼로 변환
+    const buffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
+    
+    // 응답 헤더 설정
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(fileName)}"`);
+    res.setHeader('Content-Length', buffer.length.toString());
+    
+    // 파일 전송
+    res.end(buffer, 'binary');
+    
+  } catch (error: any) {
+    console.error('Excel export error:', error);
+    res.status(500).json({ error: 'Failed to export to Excel' });
   }
 });
 

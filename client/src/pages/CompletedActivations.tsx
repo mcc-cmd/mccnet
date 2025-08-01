@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useApiRequest, useAuth } from '@/lib/auth';
 import { useToast } from '@/hooks/use-toast';
 import type { Document } from '../../../shared/schema';
-import { FileText, Search, Calendar, CheckCircle, X } from 'lucide-react';
+import { FileText, Search, Calendar, CheckCircle, X, Download } from 'lucide-react';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
 
@@ -77,6 +77,45 @@ export function CompletedActivations() {
     }
   };
 
+  const handleExportToExcel = async () => {
+    try {
+      const params = new URLSearchParams();
+      params.append('activationStatus', '개통');
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value) params.append(key, value);
+      });
+      
+      const response = await apiRequest(`/api/documents/export/excel?${params}`, {
+        method: 'GET',
+      });
+      
+      if (response.ok) {
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `개통완료목록_${format(new Date(), 'yyyy-MM-dd_HH-mm-ss')}.xlsx`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+        
+        toast({
+          title: "엑셀 다운로드 완료",
+          description: "개통완료 목록이 엑셀 파일로 다운로드되었습니다.",
+        });
+      } else {
+        throw new Error('다운로드 실패');
+      }
+    } catch (error) {
+      toast({
+        title: "다운로드 실패",
+        description: "엑셀 파일 다운로드 중 오류가 발생했습니다.",
+        variant: "destructive",
+      });
+    }
+  };
+
   const getStatusBadge = (status: string) => {
     switch (status) {
       case '접수':
@@ -112,9 +151,19 @@ export function CompletedActivations() {
       <div className="space-y-6">
         <div className="flex justify-between items-center">
           <h1 className="text-3xl font-bold">개통완료 관리</h1>
-          <div className="flex items-center space-x-2">
-            <CheckCircle className="h-6 w-6 text-green-600" />
-            <span className="text-sm text-gray-500">내가 처리한 개통완료 건: {documents?.length || 0}건</span>
+          <div className="flex items-center space-x-4">
+            <Button
+              onClick={handleExportToExcel}
+              disabled={!documents || documents.length === 0 || isLoading}
+              className="flex items-center space-x-2"
+            >
+              <Download className="h-4 w-4" />
+              <span>엑셀 다운로드</span>
+            </Button>
+            <div className="flex items-center space-x-2">
+              <CheckCircle className="h-6 w-6 text-green-600" />
+              <span className="text-sm text-gray-500">개통완료 건: {documents?.length || 0}건</span>
+            </div>
           </div>
         </div>
 
@@ -178,9 +227,10 @@ export function CompletedActivations() {
                         <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">고객명</th>
                         <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">연락처</th>
                         <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">판매점</th>
+                        <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">개통처리자</th>
+                        <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">가입번호</th>
                         <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">통신사</th>
                         <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">요금제 정보</th>
-                        <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">개통 처리자</th>
                         <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">상태</th>
                         <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">액션</th>
                       </tr>
@@ -206,6 +256,11 @@ export function CompletedActivations() {
                           <td className="px-3 py-2 text-sm text-gray-900">
                             <div className="leading-tight break-words max-w-full">
                               {(doc as any).storeName || (doc as any).dealerName || '-'}
+                            </div>
+                          </td>
+                          <td className="px-3 py-2 text-sm text-gray-900">
+                            <div className="leading-tight break-words max-w-full font-medium text-blue-600">
+                              {(doc as any).subscriptionNumber || '-'}
                             </div>
                           </td>
                           <td className="px-3 py-2 text-sm text-gray-900">
@@ -325,6 +380,8 @@ export function CompletedActivations() {
                         <div className="space-y-1 text-sm">
                           <p><span className="font-medium">연락처:</span> {doc.customerPhone}</p>
                           <p><span className="font-medium">판매점:</span> {(doc as any).storeName || (doc as any).dealerName || '-'}</p>
+                          <p><span className="font-medium">개통처리자:</span> {(doc as any).activatedByName || '관리자'}</p>
+                          <p><span className="font-medium">가입번호:</span> <span className="text-blue-600 font-medium">{(doc as any).subscriptionNumber || '-'}</span></p>
                           <p><span className="font-medium">통신사:</span> {doc.carrier}</p>
                           
                           {/* 요금제 정보 */}
@@ -378,7 +435,7 @@ export function CompletedActivations() {
                             )}
                           </div>
                           
-                          <p><span className="font-medium">개통일:</span> {doc.activatedAt ? format(new Date(doc.activatedAt), 'yyyy-MM-dd', { locale: ko }) : '-'}</p>
+
                         </div>
 
                         {/* 판매점 전달 메모 표시 */}
