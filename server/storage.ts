@@ -1019,6 +1019,12 @@ class SqliteStorage implements IStorage {
     }
 
     // Insert new deduction policy
+    const effectiveFromValue = data.effectiveFrom 
+      ? (data.effectiveFrom instanceof Date 
+          ? data.effectiveFrom.toISOString() 
+          : data.effectiveFrom) 
+      : new Date().toISOString();
+    
     const result = db.prepare(`
       INSERT INTO additional_service_deductions 
       (additional_service_id, additional_service_name, deduction_amount, effective_from, created_by) 
@@ -1027,7 +1033,7 @@ class SqliteStorage implements IStorage {
       data.additionalServiceId,
       additionalService.service_name,
       data.deductionAmount,
-      data.effectiveFrom || new Date().toISOString(),
+      effectiveFromValue,
       data.createdBy
     );
 
@@ -1108,6 +1114,12 @@ class SqliteStorage implements IStorage {
     }
 
     // Insert new deduction policy
+    const effectiveFromValue = data.effectiveFrom 
+      ? (data.effectiveFrom instanceof Date 
+          ? data.effectiveFrom.toISOString() 
+          : data.effectiveFrom) 
+      : new Date().toISOString();
+    
     const result = db.prepare(`
       INSERT INTO additional_service_deductions 
       (additional_service_id, additional_service_name, deduction_amount, effective_from, created_by) 
@@ -1116,7 +1128,7 @@ class SqliteStorage implements IStorage {
       additionalServiceId,
       additionalService.service_name,
       data.deductionAmount,
-      data.effectiveFrom || new Date().toISOString(),
+      effectiveFromValue,
       data.updatedBy
     );
 
@@ -1159,6 +1171,12 @@ class SqliteStorage implements IStorage {
     }
 
     // Insert new settlement unit price
+    const effectiveFromValue = data.effectiveFrom 
+      ? (data.effectiveFrom instanceof Date 
+          ? data.effectiveFrom.toISOString() 
+          : data.effectiveFrom) 
+      : new Date().toISOString();
+    
     const result = db.prepare(`
       INSERT INTO settlement_unit_prices 
       (service_plan_id, service_plan_name, carrier, new_customer_price, port_in_price, effective_from, created_by) 
@@ -1169,7 +1187,7 @@ class SqliteStorage implements IStorage {
       servicePlan.carrier,
       data.newCustomerPrice,
       data.portInPrice,
-      data.effectiveFrom || new Date().toISOString(),
+      effectiveFromValue,
       data.createdBy
     );
 
