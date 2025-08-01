@@ -123,8 +123,23 @@ export function Settlements() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const apiRequestHook = useApiRequest();
-  const [startDate, setStartDate] = useState('');
-  const [endDate, setEndDate] = useState('');
+  
+  // 당월 시작일과 종료일 계산
+  const getCurrentMonthDates = () => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = now.getMonth();
+    const startOfMonth = new Date(year, month, 1);
+    const endOfMonth = new Date(year, month + 1, 0);
+    return {
+      start: startOfMonth.toISOString().split('T')[0],
+      end: endOfMonth.toISOString().split('T')[0]
+    };
+  };
+
+  const currentMonthDates = getCurrentMonthDates();
+  const [startDate, setStartDate] = useState(currentMonthDates.start);
+  const [endDate, setEndDate] = useState(currentMonthDates.end);
   const [searchQuery, setSearchQuery] = useState('');
   const [manualDialogOpen, setManualDialogOpen] = useState(false);
 
@@ -402,10 +417,11 @@ export function Settlements() {
     refetch();
   };
 
-  // 필터 초기화
+  // 필터 초기화 (당월로 재설정)
   const handleClearFilters = () => {
-    setStartDate('');
-    setEndDate('');
+    const currentMonthDates = getCurrentMonthDates();
+    setStartDate(currentMonthDates.start);
+    setEndDate(currentMonthDates.end);
     setSearchQuery('');
   };
 
@@ -912,7 +928,17 @@ export function Settlements() {
 
               {/* 정산 금액 요약 */}
               <div className="space-y-4">
-                <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100">정산 금액 요약</h3>
+                <div className="flex items-center justify-between">
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100">정산 금액 요약</h3>
+                  <div className="text-sm text-gray-500 dark:text-gray-400">
+                    {startDate === currentMonthDates.start && endDate === currentMonthDates.end 
+                      ? `${new Date().getFullYear()}년 ${new Date().getMonth() + 1}월 (당월)`
+                      : startDate && endDate 
+                        ? `${startDate} ~ ${endDate}`
+                        : '전체 기간'
+                    }
+                  </div>
+                </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="bg-blue-50 dark:bg-blue-900 p-4 rounded-lg">
                     <div className="text-sm text-blue-600 dark:text-blue-400">검색 결과 건수</div>
