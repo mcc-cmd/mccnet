@@ -62,6 +62,7 @@ export interface Document {
   updatedAt: Date;
   activatedAt?: Date;
   activatedBy?: number; // 개통완료 처리한 근무자 ID
+  cancelledBy?: number; // 개통취소 처리한 근무자 ID
   notes?: string;
   // 작업 잠금 시스템
   assignedWorkerId?: number; // 진행중 상태로 변경한 근무자 ID

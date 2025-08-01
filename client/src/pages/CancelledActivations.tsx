@@ -25,6 +25,8 @@ export function CancelledActivations() {
     queryFn: () => {
       const params = new URLSearchParams();
       params.append('activationStatus', '취소');
+      // Include cancelled by information
+      params.append('includeCancelledBy', 'true');
       Object.entries(filters).forEach(([key, value]) => {
         if (value) params.append(key, value);
       });
@@ -141,14 +143,14 @@ export function CancelledActivations() {
                   <table className="min-w-full divide-y divide-gray-300">
                     <thead className="bg-gray-50">
                       <tr>
-                        <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">개통완료일시</th>
+                        <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">취소일시</th>
                         <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">고객명</th>
                         <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">연락처</th>
+                        <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">판매점</th>
                         <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">통신사</th>
                         <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">요금제 정보</th>
-                        <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">개통일</th>
+                        <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">취소 처리자</th>
                         <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">상태</th>
-                        <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">액션</th>
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
@@ -156,7 +158,7 @@ export function CancelledActivations() {
                         <tr key={doc.id} className="hover:bg-gray-50">
                           <td className="px-3 py-2 text-sm font-medium text-gray-900">
                             <div className="leading-tight break-words max-w-full">
-                              {doc.activatedAt ? format(new Date(doc.activatedAt), 'yyyy-MM-dd HH:mm', { locale: ko }) : '-'}
+                              {doc.updatedAt ? format(new Date(doc.updatedAt), 'yyyy-MM-dd HH:mm', { locale: ko }) : '-'}
                             </div>
                           </td>
                           <td className="px-3 py-2 text-sm text-gray-900">
@@ -171,6 +173,11 @@ export function CancelledActivations() {
                           </td>
                           <td className="px-3 py-2 text-sm text-gray-900">
                             <div className="leading-tight break-words max-w-full">
+                              {(doc as any).storeName || (doc as any).dealerName || '-'}
+                            </div>
+                          </td>
+                          <td className="px-3 py-2 text-sm text-gray-900">
+                            <div className="leading-tight break-words max-w-full">
                               {doc.carrier}
                             </div>
                           </td>
@@ -181,14 +188,18 @@ export function CancelledActivations() {
                           </td>
                           <td className="px-3 py-2 text-sm text-gray-900">
                             <div className="leading-tight break-words max-w-full">
-                              {doc.activatedAt ? format(new Date(doc.activatedAt), 'yyyy-MM-dd', { locale: ko }) : '-'}
+                              <div className="font-medium text-red-600">
+                                {(doc as any).cancelledByName || '알 수 없음'}
+                              </div>
+                              {(doc as any).cancelledBy && (
+                                <div className="text-xs text-gray-500">
+                                  ID: {(doc as any).cancelledBy}
+                                </div>
+                              )}
                             </div>
                           </td>
-                          <td className="px-3 py-2 text-sm text-gray-900">
+                          <td className="px-3 py-2">
                             {getActivationStatusBadge(doc.activationStatus)}
-                          </td>
-                          <td className="px-3 py-2 text-sm text-gray-900">
-                            <span className="text-red-600 font-medium">취소</span>
                           </td>
                         </tr>
                       ))}
@@ -212,12 +223,12 @@ export function CancelledActivations() {
                           
                           <div className="grid grid-cols-2 gap-2 text-sm">
                             <div>
-                              <span className="text-gray-500">통신사:</span>
-                              <div className="break-words leading-tight">{doc.carrier}</div>
+                              <span className="text-gray-500">판매점:</span>
+                              <div className="break-words leading-tight">{(doc as any).storeName || (doc as any).dealerName || '-'}</div>
                             </div>
                             <div>
-                              <span className="text-gray-500">개통번호:</span>
-                              <div className="break-words leading-tight">{(doc as any).subscriptionNumber || '-'}</div>
+                              <span className="text-gray-500">통신사:</span>
+                              <div className="break-words leading-tight">{doc.carrier}</div>
                             </div>
                           </div>
 
@@ -227,14 +238,23 @@ export function CancelledActivations() {
                           </div>
 
                           <div className="text-sm">
-                            <span className="text-gray-500">가입번호:</span>
-                            <div className="break-words leading-tight">{(doc as any).subscriptionNumber || '-'}</div>
+                            <span className="text-gray-500">취소 처리자:</span>
+                            <div className="break-words leading-tight">
+                              <div className="font-medium text-red-600">
+                                {(doc as any).cancelledByName || '알 수 없음'}
+                              </div>
+                              {(doc as any).cancelledBy && (
+                                <div className="text-xs text-gray-500">
+                                  ID: {(doc as any).cancelledBy}
+                                </div>
+                              )}
+                            </div>
                           </div>
 
                           <div className="text-sm">
                             <span className="text-gray-500">취소일:</span>
                             <div className="break-words leading-tight">
-                              {doc.activatedAt ? format(new Date(doc.activatedAt), 'yyyy-MM-dd', { locale: ko }) : '-'}
+                              {doc.updatedAt ? format(new Date(doc.updatedAt), 'yyyy-MM-dd HH:mm', { locale: ko }) : '-'}
                             </div>
                           </div>
                         </div>

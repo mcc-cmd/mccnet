@@ -177,6 +177,7 @@ export function CompletedActivations() {
                         <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">개통완료일시</th>
                         <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">고객명</th>
                         <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">연락처</th>
+                        <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">판매점</th>
                         <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">통신사</th>
                         <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">요금제 정보</th>
                         <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">개통 처리자</th>
@@ -200,6 +201,11 @@ export function CompletedActivations() {
                           <td className="px-3 py-2 text-sm text-gray-900">
                             <div className="leading-tight break-words max-w-full">
                               {doc.customerPhone}
+                            </div>
+                          </td>
+                          <td className="px-3 py-2 text-sm text-gray-900">
+                            <div className="leading-tight break-words max-w-full">
+                              {(doc as any).storeName || (doc as any).dealerName || '-'}
                             </div>
                           </td>
                           <td className="px-3 py-2 text-sm text-gray-900">
@@ -268,7 +274,14 @@ export function CompletedActivations() {
                           </td>
                           <td className="px-3 py-2 text-sm text-gray-900">
                             <div className="leading-tight break-words max-w-full">
-                              {(doc as any).activatedByName || '알 수 없음'}
+                              <div className="font-medium text-blue-600">
+                                {(doc as any).activatedByName || '알 수 없음'}
+                              </div>
+                              {doc.activatedBy && (
+                                <div className="text-xs text-gray-500">
+                                  ID: {doc.activatedBy}
+                                </div>
+                              )}
                             </div>
                           </td>
                           <td className="px-3 py-2">
@@ -304,13 +317,14 @@ export function CompletedActivations() {
                               {doc.activatedAt ? format(new Date(doc.activatedAt), 'yyyy-MM-dd HH:mm', { locale: ko }) : '-'}
                             </p>
                             <p className="text-xs text-blue-600">
-                              처리자: {(doc as any).activatedByName || '알 수 없음'}
+                              처리자: {(doc as any).activatedByName || '알 수 없음'} {doc.activatedBy ? `(ID: ${doc.activatedBy})` : ''}
                             </p>
                           </div>
                           {getActivationStatusBadge(doc.activationStatus)}
                         </div>
                         <div className="space-y-1 text-sm">
                           <p><span className="font-medium">연락처:</span> {doc.customerPhone}</p>
+                          <p><span className="font-medium">판매점:</span> {(doc as any).storeName || (doc as any).dealerName || '-'}</p>
                           <p><span className="font-medium">통신사:</span> {doc.carrier}</p>
                           
                           {/* 요금제 정보 */}

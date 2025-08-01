@@ -635,7 +635,8 @@ router.put('/api/documents/:id/activation-status', requireAuth, async (req: any,
       }
     }
     
-    const workerId = isWorker ? req.session.userId : undefined;
+    // For cancellation, use session user ID regardless of whether they're admin or worker
+    const workerId = (data.activationStatus === '취소' || isWorker) ? req.session.userId : undefined;
     const updatedDocument = await storage.updateDocumentActivationStatus(id, data, workerId);
     res.json(updatedDocument);
   } catch (error: any) {
@@ -695,7 +696,8 @@ router.patch('/api/documents/:id/activation', requireAuth, async (req: any, res)
       data.activatedBy = req.session.userId;
     }
     
-    const workerId = isWorker ? req.session.userId : undefined;
+    // For cancellation, use session user ID regardless of whether they're admin or worker
+    const workerId = (data.activationStatus === '취소' || isWorker) ? req.session.userId : undefined;
     
     // 개통완료 시 요금제 정보도 함께 저장
     if (data.activationStatus === '개통') {

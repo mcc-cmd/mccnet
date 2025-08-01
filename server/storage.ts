@@ -35,6 +35,13 @@ import type {
 const dbPath = path.join(process.cwd(), 'database.sqlite');
 const db = new Database(dbPath);
 
+// Add cancelled_by column if it doesn't exist
+try {
+  db.exec('ALTER TABLE documents ADD COLUMN cancelled_by INTEGER REFERENCES users(id)');
+} catch (error) {
+  // Column already exists, ignore error
+}
+
 // Initialize database tables
 db.exec(`
   CREATE TABLE IF NOT EXISTS admin_users (
@@ -143,7 +150,6 @@ db.exec(`
   CREATE INDEX IF NOT EXISTS idx_documents_activated_at ON documents(activated_at);
   CREATE INDEX IF NOT EXISTS idx_documents_customer_name ON documents(customer_name);
   CREATE INDEX IF NOT EXISTS idx_auth_sessions_expires_at ON auth_sessions(expires_at);
-
   CREATE TABLE IF NOT EXISTS service_plans (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     plan_name TEXT NOT NULL,
@@ -1739,16 +1745,19 @@ class SqliteStorage implements IStorage {
     return matchingCode ? matchingCode.contactCode : null;
   }
 
-  async getDocuments(dealerId?: number, filters?: { status?: string; activationStatus?: string; search?: string; startDate?: string; endDate?: string; workerFilter?: string }, userId?: number): Promise<Array<Document & { dealerName: string; userName: string; activatedByName?: string }>> {
+  async getDocuments(dealerId?: number, filters?: { status?: string; activationStatus?: string; search?: string; startDate?: string; endDate?: string; workerFilter?: string }, userId?: number): Promise<Array<Document & { dealerName: string; userName: string; activatedByName?: string; cancelledByName?: string }>> {
     let query = `
       SELECT d.*, dealers.name as dealer_name, u.name as user_name,
              COALESCE(activated_user.name, activated_admin.name) as activated_by_name,
+             COALESCE(cancelled_user.name, cancelled_admin.name) as cancelled_by_name,
              sp.plan_name as service_plan_name
       FROM documents d
       LEFT JOIN dealers ON d.dealer_id = dealers.id
       JOIN users u ON d.user_id = u.id
       LEFT JOIN users activated_user ON d.activated_by = activated_user.id
       LEFT JOIN admin_users activated_admin ON d.activated_by = activated_admin.id
+      LEFT JOIN users cancelled_user ON d.cancelled_by = cancelled_user.id
+      LEFT JOIN admin_users cancelled_admin ON d.cancelled_by = cancelled_admin.id
       LEFT JOIN service_plans sp ON d.service_plan_id = sp.id
       WHERE 1=1
     `;
@@ -1825,6 +1834,7 @@ class SqliteStorage implements IStorage {
       updatedAt: new Date(d.updated_at),
       activatedAt: d.activated_at ? new Date(d.activated_at) : undefined,
       activatedBy: d.activated_by,
+      cancelledBy: d.cancelled_by,
       notes: d.notes,
       supplementNotes: d.supplement_notes,
       deviceModel: d.device_model,
@@ -1844,8 +1854,9 @@ class SqliteStorage implements IStorage {
       discardReason: d.discard_reason,
       dealerName: d.dealer_name,
       userName: d.user_name,
-      activatedByName: d.activated_by_name
-    } as Document & { dealerName: string; userName: string; activatedByName?: string; servicePlanName?: string }));
+      activatedByName: d.activated_by_name,
+      cancelledByName: d.cancelled_by_name
+    } as Document & { dealerName: string; userName: string; activatedByName?: string; cancelledByName?: string; servicePlanName?: string }));
   }
 
   async checkDuplicateDocument(data: { customerName: string; customerPhone: string; storeName?: string; contactCode?: string }): Promise<Array<Document & { dealerName: string }>> {
@@ -2039,6 +2050,12 @@ class SqliteStorage implements IStorage {
       params.push(data.activatedBy);
     } else if (data.activationStatus === '개통' || data.activationStatus === '기타완료' || data.activationStatus === '취소' || data.activationStatus === '폐기') {
       updateQuery += `, activated_at = CURRENT_TIMESTAMP`;
+    }
+
+    // 취소 시 취소 처리자 ID 기록
+    if (data.activationStatus === '취소' && workerId) {
+      updateQuery += `, cancelled_by = ?`;
+      params.push(workerId);
     }
     
     // 개통완료 또는 기타완료 시 기기/유심/가입번호 정보 및 판매점 메모 업데이트
