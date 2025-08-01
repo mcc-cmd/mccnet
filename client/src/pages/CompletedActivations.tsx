@@ -259,6 +259,11 @@ export function CompletedActivations() {
                             </div>
                           </td>
                           <td className="px-3 py-2 text-sm text-gray-900">
+                            <div className="leading-tight break-words max-w-full">
+                              {(doc as any).activatedByName || '관리자'}
+                            </div>
+                          </td>
+                          <td className="px-3 py-2 text-sm text-gray-900">
                             <div className="leading-tight break-words max-w-full font-medium text-blue-600">
                               {(doc as any).subscriptionNumber || '-'}
                             </div>
