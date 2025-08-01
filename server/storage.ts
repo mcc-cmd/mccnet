@@ -1793,12 +1793,22 @@ class SqliteStorage implements IStorage {
     }
 
     if (filters?.startDate) {
-      query += ' AND date(d.uploaded_at) >= ?';
+      // 개통 상태 필터링이 있으면 activated_at 기준, 없으면 uploaded_at 기준
+      if (filters.activationStatus && ['개통', '취소', '기타완료', '폐기'].includes(filters.activationStatus)) {
+        query += ' AND date(d.activated_at) >= ?';
+      } else {
+        query += ' AND date(d.uploaded_at) >= ?';
+      }
       params.push(filters.startDate);
     }
 
     if (filters?.endDate) {
-      query += ' AND date(d.uploaded_at) <= ?';
+      // 개통 상태 필터링이 있으면 activated_at 기준, 없으면 uploaded_at 기준
+      if (filters.activationStatus && ['개통', '취소', '기타완료', '폐기'].includes(filters.activationStatus)) {
+        query += ' AND date(d.activated_at) <= ?';
+      } else {
+        query += ' AND date(d.uploaded_at) <= ?';
+      }
       params.push(filters.endDate);
     }
 
