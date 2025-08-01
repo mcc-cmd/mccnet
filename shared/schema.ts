@@ -457,7 +457,9 @@ export const createSettlementSchema = z.object({
   settlementAmount: z.number().optional(),
   commissionRate: z.number().optional(),
   settlementStatus: z.enum(['대기', '계산완료', '지급완료', '보류']).default('대기'),
-  settlementDate: z.date().optional(),
+  settlementDate: z.union([z.string(), z.date()]).transform((val) => 
+    typeof val === 'string' ? new Date(val) : val
+  ).optional(),
 });
 
 export const updateSettlementSchema = createSettlementSchema.partial();
@@ -467,25 +469,33 @@ export const createSettlementUnitPriceSchema = z.object({
   servicePlanId: z.number().min(1, "요금제를 선택해주세요"),
   newCustomerPrice: z.number().min(0, "신규 정산단가를 입력해주세요"),
   portInPrice: z.number().min(0, "번호이동 정산단가를 입력해주세요"),
-  effectiveFrom: z.date().optional(), // 기본값은 현재 날짜
+  effectiveFrom: z.union([z.string(), z.date()]).transform((val) => 
+    typeof val === 'string' ? new Date(val) : val
+  ).optional(), // 기본값은 현재 날짜
 });
 
 export const updateSettlementUnitPriceSchema = z.object({
   newCustomerPrice: z.number().min(0, "신규 정산단가를 입력해주세요"),
   portInPrice: z.number().min(0, "번호이동 정산단가를 입력해주세요"),
-  effectiveFrom: z.date().optional(),
+  effectiveFrom: z.union([z.string(), z.date()]).transform((val) => 
+    typeof val === 'string' ? new Date(val) : val
+  ).optional(),
 });
 
 // 부가서비스 차감 정책 스키마
 export const createAdditionalServiceDeductionSchema = z.object({
   additionalServiceId: z.number().min(1, "부가서비스를 선택해주세요"),
   deductionAmount: z.number().min(0, "차감 금액을 입력해주세요"),
-  effectiveFrom: z.date().optional(),
+  effectiveFrom: z.union([z.string(), z.date()]).transform((val) => 
+    typeof val === 'string' ? new Date(val) : val
+  ).optional(),
 });
 
 export const updateAdditionalServiceDeductionSchema = z.object({
   deductionAmount: z.number().min(0, "차감 금액을 입력해주세요"),
-  effectiveFrom: z.date().optional(),
+  effectiveFrom: z.union([z.string(), z.date()]).transform((val) => 
+    typeof val === 'string' ? new Date(val) : val
+  ).optional(),
 });
 
 export type CreateSettlementForm = z.infer<typeof createSettlementSchema>;
