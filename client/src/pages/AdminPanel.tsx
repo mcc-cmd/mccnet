@@ -856,7 +856,8 @@ export function AdminPanel() {
   const [editUserDialogOpen, setEditUserDialogOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<(User & { dealerName: string; userType: string }) | null>(null);
   
-  // 요금제 이미지 업로드 관련
+  // 서비스플랜 업로드 관련
+  const [selectedExcelFile, setSelectedExcelFile] = useState<File | null>(null);
   const [servicePlanImageForm, setServicePlanImageForm] = useState({
     carrier: '',
     file: null as File | null
@@ -1648,6 +1649,45 @@ export function AdminPanel() {
     onError: (error: Error) => {
       toast({
         title: '오류',
+        description: error.message,
+        variant: 'destructive',
+      });
+    },
+  });
+
+  // Service Plan Excel Upload Mutation
+  const servicePlanExcelMutation = useMutation({
+    mutationFn: async (file: File) => {
+      const formData = new FormData();
+      formData.append('file', file);
+      
+      const response = await fetch('/api/service-plans/upload-excel', {
+        method: 'POST',
+        body: formData,
+      });
+      
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({ error: '엑셀 업로드에 실패했습니다.' }));
+        throw new Error(error.error || '엑셀 업로드에 실패했습니다.');
+      }
+      
+      return response.json();
+    },
+    onSuccess: (result) => {
+      queryClient.invalidateQueries({ queryKey: ['/api/service-plans'] });
+      // 파일 입력 초기화
+      const fileInput = document.querySelector('#service-plan-excel') as HTMLInputElement;
+      if (fileInput) {
+        fileInput.value = '';
+      }
+      toast({
+        title: '업로드 완료',
+        description: `${result.addedPlans || 0}개의 요금제가 성공적으로 추가되었습니다.`,
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: '업로드 실패',
         description: error.message,
         variant: 'destructive',
       });
@@ -3506,18 +3546,44 @@ export function AdminPanel() {
                       <div>
                         <Label>Excel 파일 선택</Label>
                         <Input
+                          id="service-plan-excel"
                           type="file"
                           accept=".xlsx,.xls"
                           className="mt-1"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) {
+                              setSelectedExcelFile(file);
+                            }
+                          }}
                         />
                         <p className="text-xs text-gray-500 mt-1">
                           Excel 파일 (XLSX, XLS)만 업로드 가능합니다.
                         </p>
+                        {selectedExcelFile && (
+                          <p className="text-sm text-green-600 mt-2">
+                            ✓ 선택된 파일: {selectedExcelFile.name}
+                          </p>
+                        )}
                       </div>
-                      <Button className="w-full">
+                      <Button 
+                        className="w-full" 
+                        onClick={() => {
+                          if (selectedExcelFile) {
+                            servicePlanExcelMutation.mutate(selectedExcelFile);
+                          }
+                        }}
+                        disabled={!selectedExcelFile || servicePlanExcelMutation.isPending}
+                      >
                         <Upload className="mr-2 h-4 w-4" />
-                        엑셀 파일 업로드
+                        {servicePlanExcelMutation.isPending ? '업로드 중...' : '엑셀 파일 업로드'}
                       </Button>
+                      {servicePlanExcelMutation.isPending && (
+                        <div className="flex items-center space-x-2 text-sm text-blue-600">
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                          <span>파일을 처리하고 있습니다...</span>
+                        </div>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
@@ -3549,7 +3615,10 @@ export function AdminPanel() {
                     <div className="space-y-4">
                       <div>
                         <Label>통신사 선택</Label>
-                        <Select>
+                        <Select
+                          value={servicePlanImageForm.carrier}
+                          onValueChange={(value) => setServicePlanImageForm(prev => ({ ...prev, carrier: value }))}
+                        >
                           <SelectTrigger className="mt-1">
                             <SelectValue placeholder="통신사를 선택하세요" />
                           </SelectTrigger>
@@ -3574,17 +3643,40 @@ export function AdminPanel() {
                         <Label>이미지 파일 선택</Label>
                         <Input
                           type="file"
-                          accept=".jpg,.jpeg,.png,.gif,.bmp,.tiff,.webp"
+                          accept="image/*"
                           className="mt-1"
+                          onChange={(e) => setServicePlanImageForm(prev => ({ ...prev, file: e.target.files?.[0] || null }))}
                         />
                         <p className="text-xs text-gray-500 mt-1">
-                          이미지 파일 (JPG, PNG, GIF 등)만 업로드 가능합니다.
+                          JPG, PNG, GIF, BMP, TIFF, WEBP 파일을 업로드하세요.
                         </p>
+                        {servicePlanImageForm.file && (
+                          <p className="text-sm text-green-600 mt-2">
+                            ✓ 선택된 파일: {servicePlanImageForm.file.name}
+                          </p>
+                        )}
                       </div>
-                      <Button className="w-full">
+                      <Button 
+                        className="w-full" 
+                        onClick={() => {
+                          if (servicePlanImageForm.carrier && servicePlanImageForm.file) {
+                            servicePlanImageMutation.mutate({
+                              carrier: servicePlanImageForm.carrier,
+                              file: servicePlanImageForm.file
+                            });
+                          }
+                        }}
+                        disabled={!servicePlanImageForm.carrier || !servicePlanImageForm.file || servicePlanImageMutation.isPending}
+                      >
                         <ImageIcon className="mr-2 h-4 w-4" />
-                        이미지 업로드 및 분석
+                        {servicePlanImageMutation.isPending ? '분석 중...' : '이미지 업로드'}
                       </Button>
+                      {servicePlanImageMutation.isPending && (
+                        <div className="flex items-center space-x-2 text-sm text-green-600">
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-green-600"></div>
+                          <span>이미지를 분석하고 있습니다...</span>
+                        </div>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
@@ -3952,56 +4044,7 @@ export function AdminPanel() {
                 </CardContent>
               </Card>
 
-              {/* 요금제 이미지 업로드 카드 */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>요금제 이미지 업로드</CardTitle>
-                  <CardDescription>
-                    이미지에서 요금제 정보를 읽어서 자동으로 추가합니다.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <form onSubmit={handleServicePlanImageSubmit} className="space-y-4">
-                    <div>
-                      <Label>통신사</Label>
-                      <Select value={servicePlanImageForm.carrier} onValueChange={(value) => setServicePlanImageForm(prev => ({ ...prev, carrier: value }))}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="통신사를 선택하세요" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="SK텔링크">SK텔링크</SelectItem>
-                          <SelectItem value="SK프리티">SK프리티</SelectItem>
-                          <SelectItem value="SK스테이지파이브">SK스테이지파이브</SelectItem>
-                          <SelectItem value="KT엠모바일">KT엠모바일</SelectItem>
-                          <SelectItem value="KT스카이라이프">KT스카이라이프</SelectItem>
-                          <SelectItem value="KT스테이지파이브">KT스테이지파이브</SelectItem>
-                          <SelectItem value="KT코드모바일">KT코드모바일</SelectItem>
-                          <SelectItem value="LG미디어로그">LG미디어로그</SelectItem>
-                          <SelectItem value="LG헬로모바일">LG헬로모바일</SelectItem>
-                          <SelectItem value="LG프리티">LG프리티</SelectItem>
-                          <SelectItem value="LG밸류컴">LG밸류컴</SelectItem>
-                          <SelectItem value="스마텔LG">스마텔LG</SelectItem>
-                          <SelectItem value="KT">KT</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div>
-                      <Label>이미지 파일</Label>
-                      <Input
-                        type="file"
-                        onChange={(e) => setServicePlanImageForm(prev => ({ ...prev, file: e.target.files?.[0] || null }))}
-                        accept=".jpg,.jpeg,.png,.gif,.bmp,.tiff,.webp"
-                      />
-                      <p className="text-sm text-gray-500 mt-1">
-                        이미지에서 요금제 정보를 읽어 자동으로 추가됩니다
-                      </p>
-                    </div>
-                    <Button type="submit" disabled={servicePlanImageMutation.isPending}>
-                      {servicePlanImageMutation.isPending ? '분석 중...' : '요금제 추가'}
-                    </Button>
-                  </form>
-                </CardContent>
-              </Card>
+
 
               {/* Additional Services Card */}
               <Card>

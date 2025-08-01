@@ -1609,6 +1609,63 @@ router.delete('/api/service-plans/:id', requireAdmin, async (req: any, res) => {
   }
 });
 
+// Service Plan Excel Upload
+router.post('/api/service-plans/upload-excel', requireAdmin, pricingUpload.single('file'), async (req: any, res) => {
+  try {
+    const file = req.file;
+
+    if (!file) {
+      return res.status(400).json({ error: 'Excel 파일이 필요합니다.' });
+    }
+
+    // Read Excel file
+    const workbook = XLSX.readFile(file.path);
+    const sheetName = workbook.SheetNames[0];
+    const worksheet = workbook.Sheets[sheetName];
+    const data = XLSX.utils.sheet_to_json(worksheet);
+
+    let addedPlans = 0;
+
+    for (const row of data) {
+      try {
+        // Map Excel columns to service plan fields
+        const planData: any = {
+          planName: row['요금제명'] || row['planName'] || '',
+          carrier: row['통신사'] || row['carrier'] || '',
+          planType: row['요금제유형'] || row['planType'] || row['유형'] || '4G',
+          dataAllowance: row['데이터제공량'] || row['dataAllowance'] || row['데이터'] || '',
+          monthlyFee: parseInt(String(row['월요금'] || row['monthlyFee'] || row['월요금(원)'] || 0)),
+          isActive: row['활성여부'] !== false && row['isActive'] !== false
+        };
+
+        // Validate required fields
+        if (!planData.planName || !planData.carrier) {
+          console.warn('Skipping invalid row:', row);
+          continue;
+        }
+
+        // Create service plan
+        await storage.createServicePlan(planData);
+        addedPlans++;
+      } catch (error) {
+        console.error('Error creating service plan from row:', row, error);
+      }
+    }
+
+    // Clean up uploaded file
+    fs.unlinkSync(file.path);
+
+    res.json({ 
+      success: true, 
+      addedPlans,
+      message: `${addedPlans}개의 요금제가 추가되었습니다.`
+    });
+  } catch (error) {
+    console.error('Service plan Excel upload error:', error);
+    res.status(500).json({ error: 'Excel 파일 처리 중 오류가 발생했습니다.' });
+  }
+});
+
 // 요금제 이미지 업로드 API
 router.post('/api/service-plans/upload-image', requireAdmin, upload.single('image'), async (req: any, res) => {
   try {
