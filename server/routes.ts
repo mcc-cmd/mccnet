@@ -72,14 +72,17 @@ const pricingUpload = multer({
     fileSize: 50 * 1024 * 1024, // 50MB
   },
   fileFilter: (req, file, cb) => {
-    const allowedTypes = /xlsx|xls|pdf|jpg|jpeg/;
+    const allowedTypes = /xlsx|xls|csv|pdf|jpg|jpeg/;
     const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
-    const mimetype = /application\/vnd\.ms-excel|application\/vnd\.openxmlformats-officedocument\.spreadsheetml\.sheet|application\/pdf|image\/jpeg|image\/jpg/.test(file.mimetype);
+    
+    // 스프레드시트 파일들의 MIME 타입 체크를 더 유연하게
+    const isSpreadsheet = /\.(xlsx|xls|csv)$/i.test(file.originalname);
+    const mimetype = /application\/vnd\.ms-excel|application\/vnd\.openxmlformats-officedocument\.spreadsheetml\.sheet|text\/csv|application\/csv|application\/pdf|image\/jpeg|image\/jpg/.test(file.mimetype) || isSpreadsheet;
 
     if (extname && mimetype) {
       return cb(null, true);
     } else {
-      cb(new Error('허용되지 않는 파일 형식입니다. (xlsx, xls, pdf, jpg, jpeg만 가능)'));
+      cb(new Error('허용되지 않는 파일 형식입니다. (xlsx, xls, csv, pdf, jpg, jpeg만 가능)'));
     }
   }
 });
@@ -1618,11 +1621,23 @@ router.post('/api/service-plans/upload-excel', requireAdmin, pricingUpload.singl
       return res.status(400).json({ error: 'Excel 파일이 필요합니다.' });
     }
 
-    // Read Excel file
-    const workbook = XLSX.readFile(file.path);
-    const sheetName = workbook.SheetNames[0];
-    const worksheet = workbook.Sheets[sheetName];
-    const data = XLSX.utils.sheet_to_json(worksheet);
+    let data: any[] = [];
+    const fileExtension = path.extname(file.originalname).toLowerCase();
+    
+    if (fileExtension === '.csv') {
+      // Handle CSV files
+      const csvContent = fs.readFileSync(file.path, 'utf8');
+      const workbook = XLSX.read(csvContent, { type: 'string' });
+      const sheetName = workbook.SheetNames[0];
+      const worksheet = workbook.Sheets[sheetName];
+      data = XLSX.utils.sheet_to_json(worksheet);
+    } else {
+      // Handle Excel files
+      const workbook = XLSX.readFile(file.path);
+      const sheetName = workbook.SheetNames[0];
+      const worksheet = workbook.Sheets[sheetName];
+      data = XLSX.utils.sheet_to_json(worksheet);
+    }
 
     let addedPlans = 0;
 
