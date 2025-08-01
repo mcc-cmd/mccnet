@@ -45,7 +45,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { useApiRequest, useAuth } from '@/lib/auth';
 import { apiRequest } from '@/lib/queryClient';
-import { Users, Clock, CheckCircle, Download, FileText, Calendar, Plus, Search } from 'lucide-react';
+import { Users, Clock, CheckCircle, Download, FileText, Calendar, Plus, Search, Calculator } from 'lucide-react';
 
 interface CompletedDocument {
   id: number;
@@ -300,8 +300,32 @@ export function Settlements() {
     },
   });
 
+  // 정산단가 조회
+  const { data: settlementPrices } = useQuery({
+    queryKey: ['/api/settlement-unit-prices'],
+    queryFn: async () => {
+      const response = await apiRequest('GET', '/api/settlement-unit-prices');
+      return response.json();
+    },
+  });
+
+  // 정산 금액 계산 함수
+  const calculateSettlementAmount = (doc: CompletedDocument, settlementPrices: any[]) => {
+    if (!doc.servicePlanId || !settlementPrices) return 0;
+    
+    const price = settlementPrices.find(p => p.servicePlanId === doc.servicePlanId && p.isActive);
+    if (!price) return 0;
+    
+    // 기본적으로 신규고객 가격을 사용하고, 번호이동이 있는 경우 해당 가격 사용
+    // previousCarrier가 있으면 번호이동, 없으면 신규 가입으로 판단
+    if (doc.previousCarrier && doc.previousCarrier !== doc.carrier) {
+      return price.portInPrice || 0;
+    }
+    return price.newCustomerPrice || 0;
+  };
+
   const stats: SettlementStats = React.useMemo(() => {
-    if (!allCompletedDocuments) return { total: 0, thisMonth: 0, lastMonth: 0, totalAmount: 0 };
+    if (!allCompletedDocuments || !settlementPrices) return { total: 0, thisMonth: 0, lastMonth: 0, totalAmount: 0 };
     
     const now = new Date();
     const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -310,8 +334,12 @@ export function Settlements() {
     
     let thisMonth = 0;
     let lastMonth = 0;
+    let totalAmount = 0;
     
     allCompletedDocuments.forEach(doc => {
+      const amount = calculateSettlementAmount(doc, settlementPrices);
+      totalAmount += amount;
+      
       if (doc.activatedAt) {
         try {
           const activatedDate = new Date(doc.activatedAt);
@@ -332,9 +360,9 @@ export function Settlements() {
       total: allCompletedDocuments.length,
       thisMonth,
       lastMonth,
-      totalAmount: 0 // 예상 정산액 제거
+      totalAmount
     };
-  }, [allCompletedDocuments]);
+  }, [allCompletedDocuments, settlementPrices]);
 
   // 검색 실행
   const handleSearch = () => {
@@ -785,61 +813,118 @@ export function Settlements() {
           </Card>
         </div>
 
-
-
-        {/* 필터링 및 다운로드 */}
+        {/* 정산 금액 검증 및 다운로드 */}
         <Card className="mb-6">
           <CardHeader>
-            <CardTitle>데이터 필터링 및 다운로드</CardTitle>
+            <CardTitle className="flex items-center space-x-2">
+              <Calculator className="h-5 w-5 text-teal-600" />
+              <span>정산 데이터 검증 및 다운로드</span>
+            </CardTitle>
             <CardDescription>
-              개통날짜를 기준으로 정산 데이터를 필터링하고 엑셀로 다운로드할 수 있습니다.
+              개통날짜를 기준으로 정산 데이터를 필터링하고 정산 금액을 확인할 수 있습니다.
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="flex flex-wrap gap-4 items-end">
-              <div className="flex-1 min-w-[200px]">
-                <Label htmlFor="start-date">시작 날짜</Label>
-                <Input
-                  id="start-date"
-                  type="date"
-                  value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
-                />
+            <div className="grid lg:grid-cols-2 gap-6">
+              {/* 필터링 옵션 */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100">필터링 옵션</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="start-date">시작 날짜</Label>
+                    <Input
+                      id="start-date"
+                      type="date"
+                      value={startDate}
+                      onChange={(e) => setStartDate(e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="end-date">종료 날짜</Label>
+                    <Input
+                      id="end-date"
+                      type="date"
+                      value={endDate}
+                      onChange={(e) => setEndDate(e.target.value)}
+                    />
+                  </div>
+                </div>
+                <div>
+                  <Label htmlFor="search-query">검색 (고객명/연락처)</Label>
+                  <Input
+                    id="search-query"
+                    type="text"
+                    placeholder="검색어를 입력하세요"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    onClick={handleSearch}
+                    className="bg-blue-600 hover:bg-blue-700 flex-1"
+                  >
+                    <Search className="w-4 h-4 mr-2" />
+                    검색
+                  </Button>
+                  <Button
+                    onClick={handleClearFilters}
+                    variant="outline"
+                    className="flex-1"
+                  >
+                    필터 초기화
+                  </Button>
+                </div>
               </div>
-              <div className="flex-1 min-w-[200px]">
-                <Label htmlFor="end-date">종료 날짜</Label>
-                <Input
-                  id="end-date"
-                  type="date"
-                  value={endDate}
-                  onChange={(e) => setEndDate(e.target.value)}
-                />
-              </div>
-              <div className="flex-1 min-w-[200px]">
-                <Label htmlFor="search-query">검색 (고객명/연락처)</Label>
-                <Input
-                  id="search-query"
-                  type="text"
-                  placeholder="검색어를 입력하세요"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
-              </div>
-              <div className="flex gap-2">
-                <Button
-                  onClick={handleSearch}
-                  className="bg-blue-600 hover:bg-blue-700"
-                >
-                  <Search className="w-4 h-4 mr-2" />
-                  검색
-                </Button>
-                <Button
-                  onClick={handleClearFilters}
-                  variant="outline"
-                >
-                  필터 초기화
-                </Button>
-                <Button onClick={handleExcelDownload} className="bg-teal-600 hover:bg-teal-700">
+
+              {/* 정산 금액 요약 */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100">정산 금액 요약</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="bg-blue-50 dark:bg-blue-900 p-4 rounded-lg">
+                    <div className="text-sm text-blue-600 dark:text-blue-400">검색 결과 건수</div>
+                    <div className="text-2xl font-bold text-blue-900 dark:text-blue-100">
+                      {completedDocuments?.length || 0}건
+                    </div>
+                  </div>
+                  <div className="bg-teal-50 dark:bg-teal-900 p-4 rounded-lg">
+                    <div className="text-sm text-teal-600 dark:text-teal-400">예상 정산액</div>
+                    <div className="text-2xl font-bold text-teal-900 dark:text-teal-100">
+                      {completedDocuments && settlementPrices ? 
+                        completedDocuments
+                          .reduce((sum, doc) => sum + calculateSettlementAmount(doc, settlementPrices), 0)
+                          .toLocaleString()
+                        : '0'
+                      }원
+                    </div>
+                  </div>
+                </div>
+                <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
+                  <div className="text-sm text-gray-600 dark:text-gray-400 mb-2">정산단가 적용 현황</div>
+                  <div className="text-xs space-y-1">
+                    <div className="flex justify-between">
+                      <span>신규 가입:</span>
+                      <span className="font-mono">
+                        {completedDocuments?.filter(doc => !doc.previousCarrier || doc.previousCarrier === doc.carrier).length || 0}건
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>번호이동:</span>
+                      <span className="font-mono">
+                        {completedDocuments?.filter(doc => doc.previousCarrier && doc.previousCarrier !== doc.carrier).length || 0}건
+                      </span>
+                    </div>
+                    <div className="flex justify-between text-orange-600 dark:text-orange-400">
+                      <span>단가 미설정:</span>
+                      <span className="font-mono">
+                        {completedDocuments?.filter(doc => 
+                          !settlementPrices?.find(p => p.servicePlanId === doc.servicePlanId && p.isActive)
+                        ).length || 0}건
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                <Button onClick={handleExcelDownload} className="bg-teal-600 hover:bg-teal-700 w-full">
                   <Download className="w-4 h-4 mr-2" />
                   엑셀 다운로드
                 </Button>
@@ -847,6 +932,8 @@ export function Settlements() {
             </div>
           </CardContent>
         </Card>
+
+        {/* 기존 필터링 및 다운로드 섹션은 위에 통합됨 */}
 
         {/* 정산 데이터 목록 */}
         <Card>
@@ -872,6 +959,7 @@ export function Settlements() {
                       <TableHead className="whitespace-nowrap text-xs font-medium">요금제</TableHead>
                       <TableHead className="whitespace-nowrap text-xs font-medium">부가서비스</TableHead>
                       <TableHead className="whitespace-nowrap text-xs font-medium">결합여부</TableHead>
+                      <TableHead className="whitespace-nowrap text-xs font-medium">정산금액</TableHead>
                       <TableHead className="whitespace-nowrap text-xs font-medium">가입번호</TableHead>
                       <TableHead className="whitespace-nowrap text-xs font-medium">기기/유심</TableHead>
                     </TableRow>
@@ -924,6 +1012,15 @@ export function Settlements() {
                         </TableCell>
                         <TableCell className="whitespace-nowrap">
                           {getStatusBadge(doc.bundleApplied, doc.bundleNotApplied)}
+                        </TableCell>
+                        <TableCell className="whitespace-nowrap">
+                          {settlementPrices ? (
+                            <div className="text-sm font-medium">
+                              {calculateSettlementAmount(doc, settlementPrices).toLocaleString()}원
+                            </div>
+                          ) : (
+                            <span className="text-xs text-orange-600">단가 미설정</span>
+                          )}
                         </TableCell>
                         <TableCell className="whitespace-nowrap">
                           <span className="text-xs font-mono">
