@@ -1,366 +1,45 @@
-# MCC네트월드 접수 포털 (MCC Network World Reception Portal) - Replit.md
+# MCC네트월드 접수 포털 (MCC Network World Reception Portal)
 
 ## Overview
-
-This is a document management system built for MCC네트월드 telecommunications dealers to handle customer reception documents. The application features a React frontend with TypeScript, an Express.js backend, and uses better-sqlite3 for data persistence. It includes role-based authentication, file upload capabilities, and administrative functions.
-
-## System Architecture
-
-### Frontend Architecture
-- **Framework**: React 18 with TypeScript
-- **Routing**: Wouter for client-side routing
-- **State Management**: Zustand for authentication state, TanStack Query for server state
-- **UI Framework**: shadcn/ui components built on Radix UI primitives
-- **Styling**: Tailwind CSS with CSS custom properties for theming
-- **Build Tool**: Vite with development mode support
-
-### Backend Architecture
-- **Framework**: Express.js with TypeScript
-- **Database**: PostgreSQL with Drizzle ORM
-- **File Storage**: Local filesystem with multer for uploads
-- **Authentication**: Session-based with bcrypt password hashing
-- **Development**: Better SQLite3 fallback for development environments
-
-### Data Storage
-- **Primary Database**: PostgreSQL configured via Drizzle
-- **File Storage**: Local filesystem organized by dealer ID
-- **Session Storage**: In-memory sessions (production should use Redis or database)
-
-## Key Components
-
-### Authentication System
-- Role-based access control (admin, dealer_admin, dealer_staff)
-- Session-based authentication with secure password hashing
-- Protected routes with AuthGuard component
-- Automatic session validation and renewal
-
-### Document Management
-- File upload with validation (PDF, DOC, DOCX, images)
-- Document status tracking (접수/보완필요/완료)
-- Organized storage by dealer ID
-- Search and filtering capabilities
-
-### User Interface
-- Responsive design with mobile-first approach
-- Dark/light theme support via CSS custom properties
-- Accessible components using Radix UI primitives
-- Form validation with react-hook-form and Zod
-
-### Administrative Features
-- Dealer management (create, view dealers)
-- User management within dealers
-- Document status management
-- Pricing table distribution
-
-## Data Flow
-
-1. **Authentication Flow**:
-   - User submits credentials → Backend validates → Session created → Frontend stores session state
-   - Protected routes check authentication status before rendering
-
-2. **Document Upload Flow**:
-   - User selects file → Frontend validates → Upload to server → File stored by dealer ID → Database record created
-
-3. **Data Fetching**:
-   - TanStack Query manages API calls → Automatic caching and background updates → Optimistic updates for mutations
-
-## External Dependencies
-
-### Core Dependencies
-- **@neondatabase/serverless**: PostgreSQL database connection
-- **@tanstack/react-query**: Server state management
-- **multer**: File upload handling
-- **bcrypt**: Password hashing
-- **zod**: Schema validation
-- **date-fns**: Date formatting with Korean locale
-
-### UI Dependencies
-- **@radix-ui/***: Accessible UI primitives
-- **lucide-react**: Icon library
-- **tailwindcss**: Utility-first CSS framework
-- **class-variance-authority**: Component variant handling
-
-### Development Dependencies
-- **vite**: Build tool and dev server
-- **drizzle-kit**: Database schema management
-- **tsx**: TypeScript execution for development
-
-## Deployment Strategy
-
-### Build Process
-1. Frontend built with Vite → Static assets in `dist/public`
-2. Backend bundled with esbuild → Single file in `dist/index.js`
-3. Database migrations applied via `drizzle-kit push`
-
-### Production Configuration
-- Environment variables required: `DATABASE_URL`, `PORT`
-- Static file serving from `dist/public`
-- File uploads stored in `uploads/` directory
-- Session security should be enhanced with proper session store
-
-### Development vs Production
-- Development uses Vite dev server with HMR
-- Production serves static files directly from Express
-- Database can fall back to SQLite in development
-
-## Changelog
-- July 04, 2025. Initial setup
-- July 04, 2025. Added activation quantity tracking feature with monthly statistics (접수/개통/취소 counts)
-- July 04, 2025. Fixed login authentication flow by updating auth/me endpoint and adding proper session validation
-- July 04, 2025. Updated branding from "개통포털" to "MCC네트월드 접수 포털" with new logo
-- July 04, 2025. Fixed SQLite RETURNING clause compatibility issues by replacing with separate INSERT/SELECT operations
-- July 04, 2025. Resolved nested anchor tag HTML validation warnings in Sidebar component
-- July 04, 2025. Updated branding with new MCC네트월드 logo and teal color scheme matching company identity
-- July 18, 2025. Added worker name tracking system with database schema updates
-- July 18, 2025. Implemented worker statistics in AdminPanel with performance rankings and monthly metrics
-- July 18, 2025. Added admin-only access restriction to AdminPanel for enhanced security
-- July 18, 2025. Created Downloads page for document templates (가입서류/변경서류) replacing pricing tables
-- July 18, 2025. Fixed navigation routing by removing redundant statistics page and consolidating in AdminPanel
-- July 18, 2025. Changed worker tracking system to store tracking: renamed workerName to storeName throughout system
-- July 18, 2025. Made file uploads optional for document submission instead of required
-- July 18, 2025. Updated database schema to support nullable file fields and store name tracking
-- July 18, 2025. Extended pricing table upload to support JPG/JPEG files alongside Excel and PDF
-- July 18, 2025. Added dedicated test page for debugging pricing table upload issues with detailed error logging
-- July 18, 2025. Fixed authentication in pricing upload by using proper useAuth.getState().sessionId instead of localStorage
-- July 18, 2025. Fixed pricing table API endpoints and added proper GET routes for pricing tables display
-- July 18, 2025. Updated Downloads page to show pricing tables separately with proper download functionality
-- July 18, 2025. Changed UI labels: "서류 다운로드" → "서식지 다운로드", "단가표 확인" → "단가표", "개통서류 다운로드" → "서식지 다운로드"
-- July 18, 2025. Added document template upload functionality in AdminPanel with category-based organization (가입서류/변경서류)
-- July 18, 2025. Implemented template upload API endpoint with proper file validation for PDF, DOC, DOCX, XLSX, XLS formats
-- July 18, 2025. Extended document template upload to support all image formats (JPG, JPEG, PNG, GIF, BMP, TIFF, WEBP) alongside existing document formats
-- July 18, 2025. Fixed "request entity too large" error by increasing Express body parser limit and multer file size limit to 50MB
-- July 18, 2025. Fixed dashboard "서식지 다운로드" button to navigate to Downloads page instead of attempting to download pricing table directly
-- July 18, 2025. Added missing document upload API endpoints (/api/documents POST, GET, DELETE) to fix "Unexpected token" error in document submission
-- July 18, 2025. Fixed dashboard "전체보기" button to navigate to Documents page for viewing all submissions
-- July 18, 2025. Added activation status management feature allowing users to change document status between "대기", "개통", and "취소" in Documents page
-- July 18, 2025. Implemented real-time dashboard updates for activation statistics with proper cache invalidation
-- July 18, 2025. Extended activation status to include "진행중" option (대기 → 진행중 → 개통완료/취소) for better workflow tracking
-- July 18, 2025. Updated database schema to support 4-state activation workflow: 대기, 진행중, 개통, 취소
-- July 18, 2025. Enhanced Documents page UI with clear "개통상태" action button and improved activation status badges
-- July 18, 2025. Added "진행중" status tracking in dashboard statistics for comprehensive workflow visibility
-- July 18, 2025. Fixed JSON parsing error in activation status change API by improving data serialization with proper fetch implementation
-- July 18, 2025. Implemented fully responsive design for Documents page with desktop table view and mobile card layout
-- July 18, 2025. Added responsive breakpoints for filter section to optimize small screen usability
-- July 18, 2025. Implemented comprehensive role-based authentication system with three user types: dealer_store (판매점), dealer_worker (근무자), and admin
-- July 18, 2025. Added permission-based UI controls: dealer_store has read-only access, dealer_worker can manage activation status, admin has full access
-- July 18, 2025. Created worker statistics tab in AdminPanel showing performance rankings and monthly activation counts
-- July 18, 2025. Updated API endpoints with proper middleware for role-based access control and security
-- July 18, 2025. Enhanced client-side permission checks to hide/show features based on user roles
-- July 18, 2025. Modified store name field to auto-populate from logged-in user's dealer information instead of manual entry
-- July 18, 2025. Made store name field read-only with automatic assignment based on user's dealer account
-- July 18, 2025. Fixed document upload API issues by correcting multipart/form-data handling and FormData processing
-- July 18, 2025. Updated useApiRequest hook to properly handle FormData uploads without Content-Type header interference
-- July 18, 2025. Implemented comprehensive carrier selection system with 12 predefined carriers (SK텔링크, SK프리티, SK스테이지파이브, etc.)
-- July 18, 2025. Added mandatory carrier selection field with validation for all document submissions
-- July 18, 2025. Implemented SK carrier-specific requirement: file uploads are mandatory for SK carriers (SK텔링크, SK프리티, SK스테이지파이브)
-- July 18, 2025. Updated database schema to include carrier field with proper migration and data handling
-- July 18, 2025. Enhanced Documents page UI to display carrier information in both desktop table and mobile card views
-- July 18, 2025. Modified admin and worker access permissions to view all documents across all dealers instead of dealer-specific restrictions
-- July 18, 2025. Fixed dealer permission system to ensure each dealer sees only their own data in dashboard statistics and document listings
-- July 18, 2025. Updated getDashboardStats function to properly filter by dealerId for dealer-specific statistics
-- July 18, 2025. Resolved login authentication issues by standardizing all test account passwords to "password"
-- July 18, 2025. Implemented proper role-based UI controls hiding activation status management from dealer_store users
-- July 18, 2025. Updated API routes to use correct authentication middleware allowing admin access to all dealer data
-- July 18, 2025. Fixed critical worker permission issue by removing duplicate /api/documents route that was preventing workers from accessing all dealer data
-- July 18, 2025. Resolved worker data access restriction: workers and admins now properly view all dealer documents while dealers see only their own data
-- July 18, 2025. Verified complete role-based access control: admins (3 docs), workers (3 docs), dealers (2 docs) with consistent statistics and document listings
-- July 18, 2025. Removed "접수 신청" menu from worker accounts and restricted document upload to dealers only
-- July 18, 2025. Enhanced logo functionality: MCC네트월드 logo now links to dashboard, removed "접수 포털" subtitle text
-- July 18, 2025. Improved service plan management UI with clean card-based layout and limited additional services to 5 options (필링, 캐치콜, 링투유, 통화중대기, 00700)
-- July 18, 2025. Enhanced Documents page with compressed 2-line table layout for better readability and service plan management for completed activations
-- July 19, 2025. Removed monthly fee display from additional services UI as requested by user
-- July 19, 2025. Applied comprehensive service plan data from Excel file containing 300+ real plans from multiple carriers (선불, 중외, 미래엔, 엠모바일, KT, 텔레콤, SK, 헬로모바일, 중K)
-- July 19, 2025. Optimized table layout for one-screen viewing: reduced column widths, decreased padding, minimized font sizes, and implemented horizontal button layout
-- July 19, 2025. Database reinitialized with real service plan data from Excel file, test accounts recreated with standardized passwords
-- July 19, 2025. Enhanced supplement memo system: workers can add detailed notes when marking documents as "보완필요", dealers can view these notes prominently in orange boxes
-- July 19, 2025. Cleaned up service plan display in UI by removing redundant " - carrier (fee)" suffix, showing only clean plan names (e.g., "카K)Z Mini + 밀리의 서재" instead of "카K)Z Mini + 밀리의 서재 - KT (0원)")
-- July 19, 2025. Enhanced supplement memo system: workers can add detailed notes when marking documents as "보완필요", dealers can view these notes prominently in orange boxes
-- July 19, 2025. Fixed duplicate service plan names by adding unique identifiers to "미)이동의즐거움 K" plans (K-1, K-2, K-3, K-4) for proper distinction in UI selection
-- July 19, 2025. Changed cost information UI from input fields to checkbox format: registration fee (선납/후납), SIM fee (선납/후납), bundle (결합/미결합)
-- July 19, 2025. Added support for service plan data import via images (JPG, PNG, GIF) and Excel files (XLS, XLSX) - can be provided per carrier
-- July 19, 2025. Enhanced database schema with sim_fee_prepaid, sim_fee_postpaid columns alongside existing registration fee and bundle options
-- July 19, 2025. Successfully imported 300 service plans from Excel file with automatic carrier classification (선불폰, 중국외국인, 미래엔, KT텔레콤, 엠모바일, 기타)
-- July 19, 2025. Implemented comprehensive service plan management with carrier-specific categorization and data allowance extraction from plan names
-- July 19, 2025. Enhanced cost information system with SIM fee prepaid/postpaid options alongside existing registration fee and bundle checkboxes
-- July 19, 2025. Fixed supplement memo visibility for dealers by enhancing UI with prominent orange boxes and icons in both desktop and mobile views
-- July 19, 2025. Corrected service plan information display by adding proper LEFT JOIN with service_plans table in getDocuments query
-- July 19, 2025. Created comprehensive test accounts: 2 test dealers (테스트판매점1/2) with 6 user accounts (2 store managers + 4 workers) for testing purposes
-- July 19, 2025. Fixed supplement memo validation schema errors by adding "보완필요" status and supplementNotes field to updateActivationStatusSchema
-- July 19, 2025. Updated database schema constraints to allow "보완필요" activation status in addition to existing states
-- July 19, 2025. Enhanced Documents page to show service plan and additional service information for all activation states, not just completed ones
-- July 19, 2025. Modified activation status dialog to allow supplement notes for both "보완필요" and "개통완료" states with different styling and placeholders
-- July 19, 2025. Removed activation status change functionality from AdminPanel document management tab as requested
-- July 19, 2025. Added Excel export functionality for activated documents with date range selection in AdminPanel
-- July 19, 2025. Implemented comprehensive Excel export API with proper Korean column headers (개통일, 요청점, 고객명, 개통번호, 접점코드, 판매점명, 유형, 요금제, 가입번호, 부가, 유심모델/번호)
-- July 19, 2025. Enhanced additional services display by implementing server-side service ID to name mapping for proper Excel export and UI display
-- July 19, 2025. Fixed authentication system by creating admin account and updating all test account passwords to "password"
-- July 19, 2025. Verified login functionality working correctly for all user types (admin, dealers, workers)
-- July 19, 2025. Fixed client-server authentication by adding Authorization header with Bearer token to all API requests
-- July 19, 2025. Updated XLSX import to use ES module syntax and successfully tested Excel export functionality (17KB test file generated)
-- July 19, 2025. Confirmed complete Excel export system working with proper Korean column headers and data mapping
-- July 19, 2025. Updated service plan database with 301 real plans from Excel file (선불폰, 중국외국인, 미래엔, 엠모바일, KT텔레콤, SK텔레콤, 텔레콤, 헬로모바일, 기타)
-- July 19, 2025. Implemented searchable ComboBox for service plan selection with numeric filtering (e.g., typing "7" shows 7GB plans)
-- July 19, 2025. Enhanced Documents page to display registration fee, SIM fee, and bundle information alongside service plan details
-- July 19, 2025. Fixed getDocuments query to properly include all cost-related fields (registration_fee_prepaid/postpaid, sim_fee_prepaid/postpaid, bundle_applied/not_applied)
-- July 19, 2025. Completely redesigned Settlement Management system to automatically pull data from completed activations in Document Management
-- July 19, 2025. Removed manual settlement registration form in favor of automatic data population from Document Management
-- July 19, 2025. Implemented comprehensive settlement data display with activation date, store info, carrier, service plans, and additional services
-- July 19, 2025. Added date-based filtering and Excel export functionality for settlement data with Korean column headers
-- July 19, 2025. Enhanced settlement statistics dashboard showing monthly activation counts and estimated settlement amounts
-- July 19, 2025. Integrated settlement system with Document Management's activation status to provide real-time settlement data
-- July 19, 2025. Fixed critical API authentication issues by correcting localStorage key from 'auth-store' to 'auth-storage' for sessionId retrieval
-- July 19, 2025. Resolved "Invalid time value" errors in settlement data display by adding proper date validation and error handling
-- July 19, 2025. Implemented working manual settlement registration with proper API integration and cache invalidation
-- July 19, 2025. Added mutually exclusive checkbox behavior for registration fees, SIM fees, and bundle options in manual settlement form
-- July 19, 2025. Enhanced data loading reliability with improved error handling and fallback to empty arrays on API failures
-- July 19, 2025. Verified complete settlement management functionality: data loading, statistics calculation, manual registration, and Excel export
-- July 19, 2025. Simplified worker account creation to only require name, email, and password (removed dealer assignment requirement)
-- July 19, 2025. Removed dealer management tab from AdminPanel as requested by user
-- July 19, 2025. Implemented role-based dashboard analytics: admin views carrier/worker activation statistics, workers see personal activation counts
-- July 19, 2025. Updated database schema and API endpoints to support dealerId-free worker creation
-- July 19, 2025. Enhanced dashboard UI with carrier statistics and worker performance rankings for administrators
-- July 19, 2025. Implemented comprehensive worker-specific document management system with document locking
-- July 19, 2025. Created separate "접수 관리" (pending/in-progress only) and "개통완료 관리" (worker's completed items) pages
-- July 19, 2025. Added document assignment system: workers can claim documents by changing to "진행중" status
-- July 19, 2025. Implemented work locking: only assigned worker can process their claimed documents
-- July 19, 2025. Restricted settlements management to admin-only access for enhanced security
-- July 19, 2025. Added admin override permissions: administrators can modify all documents regardless of worker assignment locks
-- July 19, 2025. Enhanced CompletedActivations page to display complete service plan information including rates, additional services, registration fees, SIM fees, and bundle options
-- July 19, 2025. Updated carrier list: removed "중고KT", changed "미디어로그" to "LG미디어로그", added "스카이라이프KT" and "LG프리티"
-- July 19, 2025. Moved subscription/contract number fields from application form to activation completion workflow for worker input
-- July 19, 2025. Added device model, SIM number, and subscription number fields to activation completion process
-- July 21, 2025. Fixed AdminPanel storeName null reference error for enhanced stability
-- July 21, 2025. Created test data for reception management with various activation statuses (대기, 진행중, 보완필요)
-- July 21, 2025. Enhanced activation dialog with comprehensive service plan selection, additional services, registration fees, SIM fees, and bundle options
-- July 21, 2025. Integrated activation status change with automatic service plan data preservation
-- July 21, 2025. Fixed activation dialog scrolling with max-height and overflow-y-auto for better usability
-- July 21, 2025. Updated login page design: reduced logo spacing, changed subtitle to "Empowering Mobile Innovation", removed test account credentials
-- July 21, 2025. Simplified login page title to "MCC" only with "Empowering Mobile Innovation" subtitle
-- July 21, 2025. Enhanced MCC title font size to text-5xl and updated card title to "MCC" only
-- July 21, 2025. Implemented comprehensive admin analytics drill-down system with clickable worker names and carrier names
-- July 21, 2025. Added worker-carrier details API showing which carriers each worker has activated
-- July 21, 2025. Added carrier-dealer details API showing which dealers have activations for each carrier
-- July 21, 2025. Enhanced dashboard and admin panel with modal dialogs displaying detailed breakdowns for better analytics
-- July 21, 2025. Fixed worker activation statistics duplicate ID issue by consolidating getWorkerStats functions and removing duplicate API routes
-- July 21, 2025. Enhanced dealer memo display visibility: added prominent memo boxes in CompletedActivations page and AdminPanel document management tab
-- July 21, 2025. Fixed dealer memo visibility issues for dealer login accounts by improving UI styling with green boxes and proper memo field display
-- July 22, 2025. Implemented carrier-specific service plan filtering: service plans are now filtered by document carrier in activation dialogs
-- July 22, 2025. Updated all carrier lists to match database records: SK텔레콤, KT텔레콤, 선불폰, 중국외국인, 미래엔, 엠모바일, 텔레콤, 헬로모바일, 기타
-- July 22, 2025. Enhanced service plan selection UI with carrier information display and automatic filtering based on selected document
-- July 22, 2025. Updated all carrier lists in AdminPanel and SubmitApplication to specific 13 operating carriers: SK텔링크, SK프리티, SK스테이지파이브, KT엠모바일, KT스카이라이프, KT스테이지파이브, KT코드모바일, LG미디어로그, LG헬로모바일, LG프리티, LG밸류컴, 스마텔LG, KT
-- July 22, 2025. Implemented comprehensive real-time WebSocket-based chat system for dealer-worker communication during activation process
-- July 22, 2025. Added ChatDialog component with real-time messaging, connection status indicators, and automatic chat room creation
-- July 22, 2025. Created WebSocket server with authentication, room management, and message broadcasting functionality
-- July 22, 2025. Integrated chat functionality into Documents page - chat buttons appear for documents with "진행중" activation status
-- July 22, 2025. Added chat database tables (chat_rooms, chat_messages) with proper foreign key relationships and indexing
-- July 22, 2025. Enhanced API endpoints for chat room creation, message retrieval, and real-time communication support
-- July 22, 2025. Fixed critical useApiRequest hook response handling issue causing chat functionality failures
-- July 22, 2025. Resolved duplicate response.json() calls preventing proper API communication
-- July 22, 2025. Enhanced Dashboard component with array validation to prevent runtime errors from API responses
-- July 22, 2025. Implemented comprehensive real-time WebSocket chat system fully operational for dealer-worker communication
-- July 30, 2025. Extended application submission permissions to administrators and workers in addition to dealers
-- July 30, 2025. Implemented comprehensive Excel bulk upload system for contact codes with template download
-- July 30, 2025. Added drag-and-drop file upload interface in AdminPanel for contact code management
-- July 30, 2025. Created server-side API endpoint for processing Excel files and bulk contact code insertion
-- July 30, 2025. Enhanced contact code management UI with usage instructions and template download functionality
-- July 30, 2025. Fixed CSV/Excel parsing issues with automatic header detection for contact code bulk upload
-- July 30, 2025. Successfully uploaded 2,203 contact codes with duplicate detection and error handling
-- July 30, 2025. Resolved document upload permission restrictions allowing all user types to submit applications
-- July 30, 2025. Fixed database schema issues with documents table to support NULL dealerId for admin/worker submissions
-- July 30, 2025. Enhanced document upload API with proper error handling and logging for troubleshooting
-- July 30, 2025. Fixed text truncation issues in Documents page by implementing automatic 2-line display for all table columns
-- July 30, 2025. Modified CompletedActivations page to show activation completion date/time instead of document number
-- July 30, 2025. Applied break-words and leading-tight styling to all table cells for optimal text display without truncation
-- July 30, 2025. Added previous carrier selection feature in application submission form with predefined options (SK, KT, LG, SK알뜰, KT알뜰, LG알뜰)
-- July 30, 2025. Implemented mandatory subscription number validation when selecting completion status in Documents management
-- July 30, 2025. Added previous_carrier column to documents table and updated API endpoints to handle this field
-- July 30, 2025. Fixed dashboard statistics calculation to properly distinguish between reception statistics (based on upload date) and activation statistics (based on current activation status)
-- July 30, 2025. Resolved dashboard display confusion by changing "당월 접수" to "총 서류" and clarifying "접수 대기" vs "개통 대기" labels
-- July 30, 2025. Added test data with various activation statuses (대기, 진행중, 개통) to demonstrate proper workflow functionality
-- July 30, 2025. Removed "당월 개통 현황" section from Dashboard as requested by user
-- July 30, 2025. Created new "개통취소" category and page for cancelled activations with dedicated navigation menu
-- July 30, 2025. Implemented activation cancellation feature in CompletedActivations page with confirmation dialog
-- July 30, 2025. Added "개통취소" button in both desktop table and mobile card views for easy cancellation
-- July 30, 2025. Updated dashboard statistics to properly track and display cancelled activations count
-- July 30, 2025. Removed "당월 개통 현황" section from Dashboard per user feedback
-- July 30, 2025. Fixed activation cancellation API endpoint by adding PUT /api/documents/:id/activation-status route
-- July 30, 2025. Resolved "개통취소 실패" error by implementing proper API endpoint for cancellation functionality
-- July 30, 2025. Restored "당월 개통 현황" section in Dashboard with 4 boxes layout per user request
-- July 30, 2025. Updated "당월 개통 현황" to 5 boxes layout: 총 서류, 접수 대기, 진행중, 개통완료, 취소
-- July 30, 2025. Enhanced CancelledActivations page to display proper fields: 고객명, 개통번호, 취소일 with correct data mapping
-- July 30, 2025. Removed redundant 4-box statistics section above "당월 개통 현황" per user request
-- July 30, 2025. Aligned CancelledActivations table layout to match CompletedActivations table styling and column structure
-- July 30, 2025. Fixed critical file download authentication errors across all pages by replacing localStorage access with useAuth.getState().sessionId for proper token transmission
-- July 30, 2025. Replaced window.open() file downloads with fetch API and proper authentication headers in AdminPanel document management and pricing table downloads
-- July 30, 2025. Enhanced server-side file download routes with improved null checking and error handling for documents and pricing tables
-- July 30, 2025. Resolved "인증이 필요합니다. :)" errors in Downloads, Documents, PricingTables, and AdminPanel file download functionality
-- July 30, 2025. Enhanced file download naming convention to use customer names: files now download with format "고객명_서류.확장자" instead of original filenames
-- July 30, 2025. Implemented getCustomerFileName utility function across Documents and AdminPanel pages for consistent customer-based file naming
-- July 30, 2025. Fixed critical Excel export error in Settlements management by correcting API route order and removing duplicate export endpoints
-- July 30, 2025. Resolved route conflict where /api/settlements/:id was intercepting /api/settlements/export requests by reordering route definitions
-- July 30, 2025. Enhanced Excel export data processing with safe date parsing and additional services handling to prevent file corruption
-- July 30, 2025. Successfully tested Excel export functionality generating valid 17KB Excel files with proper Korean headers and content
-- July 30, 2025. Implemented comprehensive carrier-specific field configuration system in AdminPanel with checkbox controls for 9 input fields
-- July 30, 2025. Enhanced SubmitApplication form to dynamically show/hide fields based on selected carrier's field requirements 
-- July 30, 2025. Added new form fields: email, bundle number, bundle carrier with conditional validation and display
-- July 30, 2025. Updated carrier database schema with boolean columns for each field requirement (require_customer_name, require_customer_phone, etc.)
-- July 30, 2025. Fixed AdminPanel carrier dialog to be scrollable (max-h-[90vh] overflow-y-auto) and removed duplicate bundle information fields
-- July 30, 2025. Set SK carriers (SK텔링크, SK프리티, SK스테이지파이브) to require document upload by default in database
-- July 30, 2025. Enhanced carrier management system with landline/wired carrier designation (isWired field added to database schema)
-- July 30, 2025. Updated activation workflow to include "업무요청중" (work in progress) status as intermediate step before "개통완료" (activation completed)
-- July 30, 2025. Created new WorkRequests page component for managing work-in-progress applications
-- July 30, 2025. Updated navigation sidebar and routing system to include work requests section with Clock icon
-- July 30, 2025. Modified database schema to support new "업무요청중" activation status alongside existing workflow states
-- July 30, 2025. Enhanced Documents page to include "업무요청중" option in activation status selection with purple badge styling
-- July 30, 2025. Fixed critical database constraint violations preventing "업무요청중" status changes with proper schema updates
-- July 30, 2025. Resolved server-side API errors (SqliteError: no such column) by simplifying database queries to match current schema
-- July 30, 2025. Complete database reinitialization with proper constraints for all activation statuses including "업무요청중"
-- July 30, 2025. Added comprehensive test data for workflow testing: 5 documents with various activation statuses (대기, 진행중, 업무요청중, 개통, 취소)
-- July 30, 2025. Updated user authentication system with proper password hashing for all test accounts
-- July 30, 2025. Fixed carriers API 500 errors by creating proper carriers table and implementing getCarriers, getCarrierById, updateCarrier methods
-- July 30, 2025. Resolved database schema inconsistencies in user authentication and admin table references
-- July 30, 2025. Successfully tested admin login (admin@test.com/password) and carriers API endpoint functionality
-- July 31, 2025. Enhanced contact code upload error handling with comprehensive client-server error response improvements
-- July 31, 2025. Fixed useApiRequest hook to properly pass detailed error information (details, totalErrors) from server responses
-- July 31, 2025. Improved contact code upload API with enhanced logging, file cleanup, and structured error responses
-- July 31, 2025. Added detailed error messaging showing duplicate contact code counts and specific problematic entries
-- July 31, 2025. Implemented user-friendly error display with helpful tips for duplicate file upload scenarios
-- July 31, 2025. Reorganized dashboard layout: expanded daily statistics to full width with 4-column grid (당일 접수건, 당일 개통건, 단가표 최신 공지, 빠른 기능)
-- July 31, 2025. Moved carrier/worker statistics to bottom of page in horizontal layout with unified card design and compact date filter controls
-- July 31, 2025. Enhanced today's statistics section with integrated pricing announcements and quick action buttons for improved user experience
-- July 31, 2025. Implemented admin-only access restriction for settlement management: only administrators can view and access settlement functionality
-- July 31, 2025. Updated sidebar navigation to hide settlement management menu from non-admin users (dealers and workers)
-- July 31, 2025. Removed pricing table upload/download features from settlement management due to implementation issues and user request
-- July 31, 2025. Completely removed pricing policy management functionality from AdminPanel including tabs, state variables, mutations, and related handlers
-- July 31, 2025. Cleaned up AdminPanel tab structure from 10 to 9 tabs by removing "정책표 관리" (pricing policies) tab
-- July 31, 2025. Simplified Templates and Pricing tabs to show placeholder content with preparation status messages
-- July 31, 2025. Fixed WorkerStatistics component undefined error by implementing proper tab content structure
-- July 31, 2025. Modified reception management (접수 관리) access to be visible to all workers instead of worker-specific filtering
-- July 31, 2025. Enhanced CompletedActivations page to display the name of the worker who completed each activation
-- July 31, 2025. Updated database queries to include activated_by_name field for tracking activation completion workers
-- July 31, 2025. Added LEFT JOIN with users table in getDocuments to properly retrieve activation processor names
-- July 31, 2025. Implemented duplicate application checking system in SubmitApplication form with warning popup
-- July 31, 2025. Added server-side API endpoint /api/documents/check-duplicate for checking existing submissions
-- July 31, 2025. Created checkDuplicateDocument method in storage to find matching customer name, phone, and store/contact code
-- July 31, 2025. Enhanced application submission workflow with duplicate confirmation dialog showing existing application details
-- July 31, 2025. Added comprehensive duplicate validation preventing overlapping submissions while allowing user override
-- July 31, 2025. Implemented "기타완료" status for "기타" carrier applications with conditional display in Documents page
-- July 31, 2025. Enhanced dashboard to show separate "기타완료" count without including it in daily activation statistics or carrier breakdown
-- July 31, 2025. Modified carrier and worker statistics to exclude "기타완료" from standard activation counts for cleaner reporting
-- July 31, 2025. Implemented comprehensive disposal (폐기) functionality with mandatory disposal reason tracking
-- July 31, 2025. Added dedicated DiscardedDocuments page for viewing all disposed documents with reasons and processor information
-- July 31, 2025. Enhanced dashboard statistics to include disposal count alongside other activation statuses
-- July 31, 2025. Fixed redundant input fields in disposal dialog by showing only disposal reason field when disposal status is selected
-- July 31, 2025. Updated database schema to properly support disposal status with discard_reason column and constraint validation
-- July 31, 2025. Enhanced disposal workflow to properly track processor names: added activated_by field recording for disposal status changes
-- July 31, 2025. Removed duplicate disposal reason input fields, now showing only one organized disposal information section
-- July 31, 2025. Fixed "기타완료" status processor attribution by updating API routes to properly record activated_by field for 기타완료 status changes
-- July 31, 2025. Updated existing "기타완료" documents in database to include processor information for proper tracking and display
-- July 31, 2025. Fixed "기타" carrier store name display issue: enhanced carrier selection handler to automatically set store name to contact code when "기타" carrier is selected
-- July 31, 2025. Updated Documents page UI layout: removed dealer column from both desktop and mobile views, changed document number to show reception date/time format (MM/DD/HH시MM분), removed service plan information column for cleaner reception management interface
-- July 31, 2025. Fixed critical routing bug: Dashboard "접수 신청" button was redirecting to incorrect '/submit' URL causing worker logout issues, corrected to '/submit-application' route
-- July 31, 2025. Improved Dashboard navigation by replacing window.location.href with proper React Router navigation using useLocation hook for better authentication state preservation
+This project is a document management system for MCC네트월드 telecommunications dealers. Its main purpose is to streamline the handling of customer reception documents, offering capabilities such as role-based authentication, secure file uploads, comprehensive document tracking, and administrative functionalities. The system aims to enhance efficiency in managing customer activations and related processes.
 
 ## User Preferences
-
 Preferred communication style: Simple, everyday language.
+
+## System Architecture
+### Frontend
+- **Framework:** React 18 with TypeScript.
+- **Routing:** Wouter for client-side routing.
+- **State Management:** Zustand for authentication, TanStack Query for server state.
+- **UI:** shadcn/ui components (built on Radix UI) with Tailwind CSS for styling.
+- **Theming:** Dark/light theme support via CSS custom properties.
+- **Build:** Vite for development and production builds.
+
+### Backend
+- **Framework:** Express.js with TypeScript.
+- **Database:** PostgreSQL with Drizzle ORM (better-sqlite3 for development).
+- **File Storage:** Local filesystem using Multer.
+- **Authentication:** Session-based with bcrypt for password hashing.
+
+### Key Features
+- **Authentication:** Role-based access control (admin, dealer_admin, dealer_staff) with secure session management.
+- **Document Management:** File upload with validation (PDF, DOC, DOCX, images), status tracking (대기, 진행중, 업무요청중, 개통완료, 취소, 보완필요, 기타완료, 폐기), and search/filtering. Includes duplicate application checking with override.
+- **User Interface:** Responsive design, accessible components, and form validation (react-hook-form, Zod).
+- **Administrative Functions:** Management of dealers, users, documents, and carrier-specific field configurations. Includes contact code bulk upload via Excel.
+- **Workflow:** Document assignment and locking for workers, "업무요청중" status for work-in-progress, and a disposal system with reason tracking.
+- **Service Plan Management:** Comprehensive system for managing and selecting service plans, additional services, and cost information (registration fees, SIM fees, bundle options).
+- **Analytics & Reporting:** Dashboard statistics (daily, monthly), carrier and worker performance analytics with drill-down capabilities, and Excel export for activated and settlement documents.
+- **Communication:** Real-time WebSocket-based chat system for dealer-worker communication on "진행중" documents.
+- **Carrier Configuration:** Dynamic form fields in application submission based on selected carrier's requirements.
+
+## External Dependencies
+- **Database:** @neondatabase/serverless (for PostgreSQL).
+- **State Management:** @tanstack/react-query.
+- **File Upload:** multer.
+- **Security:** bcrypt (for password hashing).
+- **Validation:** zod.
+- **Date Handling:** date-fns.
+- **UI Primitives:** @radix-ui/*.
+- **Icons:** lucide-react.
+- **Styling:** tailwindcss, class-variance-authority.
+- **Development Tools:** vite, drizzle-kit, tsx.

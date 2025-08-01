@@ -373,6 +373,21 @@ export type CreateDocumentServicePlanForm = z.infer<typeof createDocumentService
 
 
 // 정산 카테고리 인터페이스
+// 정산단가 인터페이스 (새로운 기능)
+export interface SettlementUnitPrice {
+  id: number;
+  servicePlanId: number;
+  servicePlanName: string;
+  carrier: string;
+  unitPrice: number; // 정산 단가 (원)
+  isActive: boolean;
+  effectiveFrom: Date; // 적용 시작일
+  effectiveUntil?: Date; // 적용 종료일 (null이면 현재 적용 중)
+  createdAt: Date;
+  updatedAt: Date;
+  createdBy: number; // 등록한 관리자 ID
+}
+
 export interface Settlement {
   id: number;
   documentId: number;
@@ -403,6 +418,7 @@ export interface Settlement {
   commissionRate?: number; // 수수료율 (%)
   settlementStatus: '대기' | '계산완료' | '지급완료' | '보류';
   autoCalculated?: boolean; // 자동 계산 여부
+  appliedUnitPrice?: number; // 적용된 정산 단가 (기존 정산은 기존 단가 유지)
   
   // 정산 일자
   settlementDate?: Date;
@@ -431,8 +447,22 @@ export const createSettlementSchema = z.object({
 
 export const updateSettlementSchema = createSettlementSchema.partial();
 
+// 정산단가 스키마
+export const createSettlementUnitPriceSchema = z.object({
+  servicePlanId: z.number().min(1, "요금제를 선택해주세요"),
+  unitPrice: z.number().min(0, "정산 단가를 입력해주세요"),
+  effectiveFrom: z.date().optional(), // 기본값은 현재 날짜
+});
+
+export const updateSettlementUnitPriceSchema = z.object({
+  unitPrice: z.number().min(0, "정산 단가를 입력해주세요"),
+  effectiveFrom: z.date().optional(),
+});
+
 export type CreateSettlementForm = z.infer<typeof createSettlementSchema>;
 export type UpdateSettlementForm = z.infer<typeof updateSettlementSchema>;
+export type CreateSettlementUnitPriceForm = z.infer<typeof createSettlementUnitPriceSchema>;
+export type UpdateSettlementUnitPriceForm = z.infer<typeof updateSettlementUnitPriceSchema>;
 
 // Chat schemas
 export const createChatMessageSchema = z.object({

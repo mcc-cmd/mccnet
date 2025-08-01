@@ -15,8 +15,8 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
 import { Switch } from '@/components/ui/switch';
-import { createDealerSchema, createUserSchema, createAdminSchema, createWorkerSchema, updateDocumentStatusSchema, createServicePlanSchema, createAdditionalServiceSchema, createCarrierSchema, updateCarrierSchema } from '../../../shared/schema';
-import type { Dealer, User, Document, ServicePlan, AdditionalService, Carrier } from '../../../shared/schema';
+import { createDealerSchema, createUserSchema, createAdminSchema, createWorkerSchema, updateDocumentStatusSchema, createServicePlanSchema, createAdditionalServiceSchema, createCarrierSchema, updateCarrierSchema, createSettlementUnitPriceSchema, updateSettlementUnitPriceSchema } from '../../../shared/schema';
+import type { Dealer, User, Document, ServicePlan, AdditionalService, Carrier, SettlementUnitPrice, CreateSettlementUnitPriceForm, UpdateSettlementUnitPriceForm } from '../../../shared/schema';
 import { 
   Building2, 
   Users, 
@@ -868,6 +868,10 @@ export function AdminPanel() {
   // 엑셀 업로드 관련 상태
   const excelFileInputRef = useRef<HTMLInputElement>(null);
 
+  // Settlement unit pricing states
+  const [settlementPriceDialogOpen, setSettlementPriceDialogOpen] = useState(false);
+  const [selectedServicePlan, setSelectedServicePlan] = useState<ServicePlan | null>(null);
+
   // Queries
   const { data: dealers, isLoading: dealersLoading } = useQuery({
     queryKey: ['/api/admin/dealers'],
@@ -922,6 +926,12 @@ export function AdminPanel() {
   const { data: contactCodes, isLoading: contactCodesLoading } = useQuery({
     queryKey: ['/api/contact-codes'],
     queryFn: () => apiRequest('/api/contact-codes') as Promise<ContactCode[]>,
+  });
+
+  // Settlement unit pricing queries
+  const { data: settlementPrices, isLoading: settlementPricesLoading } = useQuery({
+    queryKey: ['/api/settlement-unit-prices'],
+    queryFn: () => apiRequest('/api/settlement-unit-prices') as Promise<SettlementUnitPrice[]>,
   });
 
 
@@ -1027,6 +1037,14 @@ export function AdminPanel() {
       monthlyFee: 0,
       description: '',
       isActive: true,
+    },
+  });
+
+  const settlementPriceForm = useForm<CreateSettlementUnitPriceForm>({
+    resolver: zodResolver(createSettlementUnitPriceSchema),
+    defaultValues: {
+      servicePlanId: 0,
+      unitPrice: 0,
     },
   });
 
@@ -1672,6 +1690,54 @@ export function AdminPanel() {
     },
   });
 
+  // Settlement Unit Pricing Mutations
+  const createSettlementPriceMutation = useMutation({
+    mutationFn: (data: CreateSettlementUnitPriceForm) => apiRequest('/api/settlement-unit-prices', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/settlement-unit-prices'] });
+      setSettlementPriceDialogOpen(false);
+      settlementPriceForm.reset();
+      toast({
+        title: '성공',
+        description: '정산단가가 성공적으로 설정되었습니다.',
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: '오류',
+        description: error.message,
+        variant: 'destructive',
+      });
+    },
+  });
+
+  const updateSettlementPriceMutation = useMutation({
+    mutationFn: ({ servicePlanId, data }: { servicePlanId: number; data: UpdateSettlementUnitPriceForm }) => 
+      apiRequest(`/api/settlement-unit-prices/${servicePlanId}`, {
+        method: 'PUT',
+        body: JSON.stringify(data),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/settlement-unit-prices'] });
+      setSettlementPriceDialogOpen(false);
+      settlementPriceForm.reset();
+      toast({
+        title: '성공',
+        description: '정산단가가 성공적으로 수정되었습니다.',
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: '오류',
+        description: error.message,
+        variant: 'destructive',
+      });
+    },
+  });
+
   const handleCreateServicePlan = (data: any) => {
     createServicePlanMutation.mutate(data);
   };
@@ -1805,6 +1871,29 @@ export function AdminPanel() {
     const file = e.target.files?.[0];
     if (file) {
       contactCodeExcelUploadMutation.mutate(file);
+    }
+  };
+
+  // Settlement unit pricing handlers
+  const onSubmitSettlementPrice = (data: CreateSettlementUnitPriceForm) => {
+    if (!selectedServicePlan) return;
+    
+    const currentPrice = settlementPrices?.find(p => p.servicePlanId === selectedServicePlan.id);
+    
+    if (currentPrice) {
+      // Update existing price
+      updateSettlementPriceMutation.mutate({
+        servicePlanId: selectedServicePlan.id,
+        data: {
+          unitPrice: data.unitPrice,
+        }
+      });
+    } else {
+      // Create new price
+      createSettlementPriceMutation.mutate({
+        servicePlanId: selectedServicePlan.id,
+        unitPrice: data.unitPrice,
+      });
     }
   };
 
@@ -4155,21 +4244,135 @@ export function AdminPanel() {
             </Card>
           </TabsContent>
 
-          {/* Pricing Tab */}
+          {/* Settlement Unit Pricing Tab */}
           <TabsContent value="pricing" className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle>단가표 관리</CardTitle>
-                <CardDescription>통신사별 단가표를 업로드하고 관리할 수 있습니다.</CardDescription>
+                <CardTitle>정산단가 관리</CardTitle>
+                <CardDescription>요금제별 정산 단가를 설정하고 관리할 수 있습니다. 단가 변경 시 기존 정산금액은 유지됩니다.</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="text-center py-8">
-                  <Calculator className="mx-auto h-12 w-12 text-gray-400" />
-                  <h3 className="mt-2 text-sm font-medium text-gray-900">단가표 관리</h3>
-                  <p className="mt-1 text-sm text-gray-500">단가표 업로드 기능이 준비 중입니다.</p>
-                </div>
+                {settlementPricesLoading ? (
+                  <div className="text-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
+                    <p className="mt-2 text-sm text-gray-500">정산단가를 불러오는 중...</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {/* Service Plans with Unit Pricing */}
+                    <div className="grid gap-4">
+                      {servicePlans?.map((plan) => {
+                        const currentPrice = settlementPrices?.find(p => p.servicePlanId === plan.id);
+                        return (
+                          <div key={plan.id} className="flex items-center justify-between p-4 border rounded-lg bg-gray-50">
+                            <div className="flex-1">
+                              <div className="flex items-center space-x-3">
+                                <div>
+                                  <h4 className="font-medium text-gray-900">{plan.planName}</h4>
+                                  <p className="text-sm text-gray-500">{plan.carrier} • {plan.planType} • {plan.dataAllowance}</p>
+                                </div>
+                                {plan.isActive ? (
+                                  <Badge variant="secondary">활성</Badge>
+                                ) : (
+                                  <Badge variant="outline">비활성</Badge>
+                                )}
+                              </div>
+                            </div>
+                            <div className="flex items-center space-x-3">
+                              {currentPrice ? (
+                                <div className="text-right">
+                                  <p className="font-medium text-gray-900">
+                                    {currentPrice.unitPrice.toLocaleString()}원
+                                  </p>
+                                  <p className="text-xs text-gray-500">
+                                    {format(currentPrice.effectiveFrom, 'yyyy-MM-dd')}부터 적용
+                                  </p>
+                                </div>
+                              ) : (
+                                <p className="text-sm text-gray-500">단가 미설정</p>
+                              )}
+                              <Button
+                                size="sm"
+                                variant={currentPrice ? "outline" : "default"}
+                                onClick={() => {
+                                  setSelectedServicePlan(plan);
+                                  settlementPriceForm.reset({
+                                    unitPrice: currentPrice?.unitPrice || 0
+                                  });
+                                  setSettlementPriceDialogOpen(true);
+                                }}
+                              >
+                                {currentPrice ? '수정' : '설정'}
+                              </Button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    {servicePlans?.length === 0 && (
+                      <div className="text-center py-8">
+                        <Calculator className="mx-auto h-12 w-12 text-gray-400" />
+                        <h3 className="mt-2 text-sm font-medium text-gray-900">등록된 요금제가 없습니다</h3>
+                        <p className="mt-1 text-sm text-gray-500">먼저 요금제 관리에서 요금제를 등록해주세요.</p>
+                      </div>
+                    )}
+                  </div>
+                )}
               </CardContent>
             </Card>
+
+            {/* Settlement Unit Price Dialog */}
+            <Dialog open={settlementPriceDialogOpen} onOpenChange={setSettlementPriceDialogOpen}>
+              <DialogContent className="max-w-md">
+                <DialogHeader>
+                  <DialogTitle>
+                    {selectedServicePlan ? `${selectedServicePlan.planName} 정산단가 ${settlementPrices?.find(p => p.servicePlanId === selectedServicePlan.id) ? '수정' : '설정'}` : '정산단가 설정'}
+                  </DialogTitle>
+                  <DialogDescription>
+                    정산단가를 설정하면 해당 요금제의 정산금액이 자동으로 계산됩니다.
+                    {settlementPrices?.find(p => p.servicePlanId === selectedServicePlan?.id) && (
+                      <span className="block mt-2 text-orange-600 font-medium">
+                        ※ 단가 변경 시 기존 정산건은 기존 금액이 유지되고, 신규 정산건부터 새 단가가 적용됩니다.
+                      </span>
+                    )}
+                  </DialogDescription>
+                </DialogHeader>
+                <Form {...settlementPriceForm}>
+                  <form onSubmit={settlementPriceForm.handleSubmit(onSubmitSettlementPrice)} className="space-y-4">
+                    <FormField
+                      control={settlementPriceForm.control}
+                      name="unitPrice"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>정산 단가 (원)</FormLabel>
+                          <FormControl>
+                            <Input
+                              type="number"
+                              placeholder="정산단가를 입력하세요"
+                              {...field}
+                              onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                            />
+                          </FormControl>
+                          <FormDescription>
+                            정산 시 적용될 단위 금액을 입력하세요.
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <div className="flex justify-end space-x-2">
+                      <Button type="button" variant="outline" onClick={() => setSettlementPriceDialogOpen(false)}>
+                        취소
+                      </Button>
+                      <Button type="submit" disabled={createSettlementPriceMutation.isPending || updateSettlementPriceMutation.isPending}>
+                        {createSettlementPriceMutation.isPending || updateSettlementPriceMutation.isPending ? '처리 중...' : '저장'}
+                      </Button>
+                    </div>
+                  </form>
+                </Form>
+              </DialogContent>
+            </Dialog>
           </TabsContent>
         </Tabs>
 

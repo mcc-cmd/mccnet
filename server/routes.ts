@@ -22,6 +22,8 @@ import {
   updateSettlementSchema,
   createCarrierSchema,
   updateCarrierSchema,
+  createSettlementUnitPriceSchema,
+  updateSettlementUnitPriceSchema,
   type AuthResponse
 } from "../shared/schema";
 
@@ -1639,6 +1641,72 @@ router.post('/api/service-plans/upload-image', requireAdmin, upload.single('imag
   } catch (error: any) {
     console.error('Error uploading service plan image:', error);
     res.status(500).json({ error: error.message || '이미지 업로드에 실패했습니다.' });
+  }
+});
+
+// Settlement Unit Pricing API Routes
+router.get('/api/settlement-unit-prices', requireAdmin, async (req: any, res) => {
+  try {
+    const prices = await storage.getActiveSettlementUnitPrices();
+    res.json(prices);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.get('/api/settlement-unit-prices/all', requireAdmin, async (req: any, res) => {
+  try {
+    const prices = await storage.getSettlementUnitPrices();
+    res.json(prices);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.post('/api/settlement-unit-prices', requireAdmin, async (req: any, res) => {
+  try {
+    const data = createSettlementUnitPriceSchema.parse(req.body);
+    const price = await storage.createSettlementUnitPrice({
+      ...data,
+      createdBy: req.session.userId
+    });
+    res.json(price);
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+router.put('/api/settlement-unit-prices/:servicePlanId', requireAdmin, async (req: any, res) => {
+  try {
+    const servicePlanId = parseInt(req.params.servicePlanId);
+    const data = updateSettlementUnitPriceSchema.parse(req.body);
+    const price = await storage.updateSettlementUnitPrice(servicePlanId, {
+      ...data,
+      updatedBy: req.session.userId
+    });
+    res.json(price);
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+router.delete('/api/settlement-unit-prices/:servicePlanId', requireAdmin, async (req: any, res) => {
+  try {
+    const servicePlanId = parseInt(req.params.servicePlanId);
+    await storage.deleteSettlementUnitPrice(servicePlanId);
+    res.json({ success: true });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.get('/api/settlement-unit-prices/service-plan/:servicePlanId', requireAdmin, async (req: any, res) => {
+  try {
+    const servicePlanId = parseInt(req.params.servicePlanId);
+    const price = await storage.getSettlementUnitPriceByServicePlan(servicePlanId);
+    res.json(price);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
   }
 });
 

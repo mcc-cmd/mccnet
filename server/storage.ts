@@ -26,7 +26,10 @@ import type {
   ChatMessage,
   ContactCode,
   CreateContactCodeForm,
-  UpdateContactCodeForm
+  UpdateContactCodeForm,
+  SettlementUnitPrice,
+  CreateSettlementUnitPriceForm,
+  UpdateSettlementUnitPriceForm
 } from '../shared/schema';
 
 const dbPath = path.join(process.cwd(), 'database.sqlite');
@@ -333,6 +336,26 @@ db.exec(`
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
   );
+
+  CREATE TABLE IF NOT EXISTS settlement_unit_prices (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    service_plan_id INTEGER NOT NULL,
+    service_plan_name TEXT NOT NULL,
+    carrier TEXT NOT NULL,
+    unit_price INTEGER NOT NULL DEFAULT 0,
+    is_active INTEGER NOT NULL DEFAULT 1,
+    effective_from DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    effective_until DATETIME,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    created_by INTEGER NOT NULL,
+    FOREIGN KEY (service_plan_id) REFERENCES service_plans (id),
+    FOREIGN KEY (created_by) REFERENCES admin_users (id)
+  );
+
+  CREATE INDEX IF NOT EXISTS idx_settlement_unit_prices_service_plan_id ON settlement_unit_prices(service_plan_id);
+  CREATE INDEX IF NOT EXISTS idx_settlement_unit_prices_carrier ON settlement_unit_prices(carrier);
+  CREATE INDEX IF NOT EXISTS idx_settlement_unit_prices_effective ON settlement_unit_prices(effective_from, effective_until);
 `);
 
 // 기본 단가표 정책 샘플 데이터 추가
@@ -389,6 +412,14 @@ export interface IStorage {
   getAdditionalServicesByType(serviceType: string): Promise<AdditionalService[]>;
   updateAdditionalService(id: number, data: Partial<Omit<AdditionalService, 'id' | 'createdAt' | 'updatedAt'>>): Promise<AdditionalService>;
   deleteAdditionalService(id: number): Promise<void>;
+
+  // Settlement unit pricing management
+  createSettlementUnitPrice(data: CreateSettlementUnitPriceForm & { createdBy: number }): Promise<SettlementUnitPrice>;
+  getSettlementUnitPrices(): Promise<SettlementUnitPrice[]>;
+  getActiveSettlementUnitPrices(): Promise<SettlementUnitPrice[]>;
+  getSettlementUnitPriceByServicePlan(servicePlanId: number): Promise<SettlementUnitPrice | null>;
+  updateSettlementUnitPrice(servicePlanId: number, data: UpdateSettlementUnitPriceForm & { updatedBy: number }): Promise<SettlementUnitPrice>;
+  deleteSettlementUnitPrice(servicePlanId: number): Promise<void>;
   
   // Document service plans management
   createDocumentServicePlan(data: Omit<DocumentServicePlan, 'id' | 'createdAt' | 'updatedAt'>): Promise<DocumentServicePlan>;
@@ -970,6 +1001,176 @@ class SqliteStorage implements IStorage {
 
   async deleteAdditionalService(id: number): Promise<void> {
     db.prepare('UPDATE additional_services SET is_active = 0 WHERE id = ?').run(id);
+  }
+
+  // Settlement unit pricing management
+  async createSettlementUnitPrice(data: CreateSettlementUnitPriceForm & { createdBy: number }): Promise<SettlementUnitPrice> {
+    // First, deactivate any existing active pricing for this service plan
+    db.prepare(`
+      UPDATE settlement_unit_prices 
+      SET is_active = 0, effective_until = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
+      WHERE service_plan_id = ? AND is_active = 1
+    `).run(data.servicePlanId);
+
+    // Get service plan details
+    const servicePlan = db.prepare('SELECT plan_name, carrier FROM service_plans WHERE id = ?').get(data.servicePlanId) as any;
+    if (!servicePlan) {
+      throw new Error('Service plan not found');
+    }
+
+    // Insert new settlement unit price
+    const result = db.prepare(`
+      INSERT INTO settlement_unit_prices 
+      (service_plan_id, service_plan_name, carrier, unit_price, effective_from, created_by) 
+      VALUES (?, ?, ?, ?, ?, ?)
+    `).run(
+      data.servicePlanId,
+      servicePlan.plan_name,
+      servicePlan.carrier,
+      data.unitPrice,
+      data.effectiveFrom || new Date().toISOString(),
+      data.createdBy
+    );
+
+    const settlementPrice = db.prepare('SELECT * FROM settlement_unit_prices WHERE id = ?').get(result.lastInsertRowid) as any;
+    return {
+      id: settlementPrice.id,
+      servicePlanId: settlementPrice.service_plan_id,
+      servicePlanName: settlementPrice.service_plan_name,
+      carrier: settlementPrice.carrier,
+      unitPrice: settlementPrice.unit_price,
+      isActive: Boolean(settlementPrice.is_active),
+      effectiveFrom: new Date(settlementPrice.effective_from),
+      effectiveUntil: settlementPrice.effective_until ? new Date(settlementPrice.effective_until) : undefined,
+      createdAt: new Date(settlementPrice.created_at),
+      updatedAt: new Date(settlementPrice.updated_at),
+      createdBy: settlementPrice.created_by
+    };
+  }
+
+  async getSettlementUnitPrices(): Promise<SettlementUnitPrice[]> {
+    const prices = db.prepare(`
+      SELECT sup.*, sp.plan_name as service_plan_name, sp.carrier
+      FROM settlement_unit_prices sup
+      JOIN service_plans sp ON sup.service_plan_id = sp.id
+      ORDER BY sup.created_at DESC
+    `).all() as any[];
+
+    return prices.map(p => ({
+      id: p.id,
+      servicePlanId: p.service_plan_id,
+      servicePlanName: p.service_plan_name,
+      carrier: p.carrier,
+      unitPrice: p.unit_price,
+      isActive: Boolean(p.is_active),
+      effectiveFrom: new Date(p.effective_from),
+      effectiveUntil: p.effective_until ? new Date(p.effective_until) : undefined,
+      createdAt: new Date(p.created_at),
+      updatedAt: new Date(p.updated_at),
+      createdBy: p.created_by
+    }));
+  }
+
+  async getActiveSettlementUnitPrices(): Promise<SettlementUnitPrice[]> {
+    const prices = db.prepare(`
+      SELECT sup.*, sp.plan_name as service_plan_name, sp.carrier
+      FROM settlement_unit_prices sup
+      JOIN service_plans sp ON sup.service_plan_id = sp.id
+      WHERE sup.is_active = 1
+      ORDER BY sp.carrier, sp.plan_name
+    `).all() as any[];
+
+    return prices.map(p => ({
+      id: p.id,
+      servicePlanId: p.service_plan_id,
+      servicePlanName: p.service_plan_name,
+      carrier: p.carrier,
+      unitPrice: p.unit_price,
+      isActive: Boolean(p.is_active),
+      effectiveFrom: new Date(p.effective_from),
+      effectiveUntil: p.effective_until ? new Date(p.effective_until) : undefined,
+      createdAt: new Date(p.created_at),
+      updatedAt: new Date(p.updated_at),
+      createdBy: p.created_by
+    }));
+  }
+
+  async getSettlementUnitPriceByServicePlan(servicePlanId: number): Promise<SettlementUnitPrice | null> {
+    const price = db.prepare(`
+      SELECT sup.*, sp.plan_name as service_plan_name, sp.carrier
+      FROM settlement_unit_prices sup
+      JOIN service_plans sp ON sup.service_plan_id = sp.id
+      WHERE sup.service_plan_id = ? AND sup.is_active = 1
+      LIMIT 1
+    `).get(servicePlanId) as any;
+
+    if (!price) return null;
+
+    return {
+      id: price.id,
+      servicePlanId: price.service_plan_id,
+      servicePlanName: price.service_plan_name,
+      carrier: price.carrier,
+      unitPrice: price.unit_price,
+      isActive: Boolean(price.is_active),
+      effectiveFrom: new Date(price.effective_from),
+      effectiveUntil: price.effective_until ? new Date(price.effective_until) : undefined,
+      createdAt: new Date(price.created_at),
+      updatedAt: new Date(price.updated_at),
+      createdBy: price.created_by
+    };
+  }
+
+  async updateSettlementUnitPrice(servicePlanId: number, data: UpdateSettlementUnitPriceForm & { updatedBy: number }): Promise<SettlementUnitPrice> {
+    // Deactivate current active pricing
+    db.prepare(`
+      UPDATE settlement_unit_prices 
+      SET is_active = 0, effective_until = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
+      WHERE service_plan_id = ? AND is_active = 1
+    `).run(servicePlanId);
+
+    // Get service plan details
+    const servicePlan = db.prepare('SELECT plan_name, carrier FROM service_plans WHERE id = ?').get(servicePlanId) as any;
+    if (!servicePlan) {
+      throw new Error('Service plan not found');
+    }
+
+    // Create new pricing record
+    const result = db.prepare(`
+      INSERT INTO settlement_unit_prices 
+      (service_plan_id, service_plan_name, carrier, unit_price, effective_from, created_by) 
+      VALUES (?, ?, ?, ?, ?, ?)
+    `).run(
+      servicePlanId,
+      servicePlan.plan_name,
+      servicePlan.carrier,
+      data.unitPrice,
+      data.effectiveFrom || new Date().toISOString(),
+      data.updatedBy
+    );
+
+    const settlementPrice = db.prepare('SELECT * FROM settlement_unit_prices WHERE id = ?').get(result.lastInsertRowid) as any;
+    return {
+      id: settlementPrice.id,
+      servicePlanId: settlementPrice.service_plan_id,
+      servicePlanName: settlementPrice.service_plan_name,
+      carrier: settlementPrice.carrier,
+      unitPrice: settlementPrice.unit_price,
+      isActive: Boolean(settlementPrice.is_active),
+      effectiveFrom: new Date(settlementPrice.effective_from),
+      effectiveUntil: settlementPrice.effective_until ? new Date(settlementPrice.effective_until) : undefined,
+      createdAt: new Date(settlementPrice.created_at),
+      updatedAt: new Date(settlementPrice.updated_at),
+      createdBy: settlementPrice.created_by
+    };
+  }
+
+  async deleteSettlementUnitPrice(servicePlanId: number): Promise<void> {
+    db.prepare(`
+      UPDATE settlement_unit_prices 
+      SET is_active = 0, effective_until = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
+      WHERE service_plan_id = ? AND is_active = 1
+    `).run(servicePlanId);
   }
 
   // Document Service Plans Management
