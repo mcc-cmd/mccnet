@@ -1635,8 +1635,9 @@ router.post('/api/service-plans/upload-excel', requireAdmin, pricingUpload.singl
       const worksheet = workbook.Sheets[sheetName];
       data = XLSX.utils.sheet_to_json(worksheet);
     } else {
-      // Handle Excel files
-      const workbook = XLSX.readFile(file.path);
+      // Handle Excel files - read as buffer first
+      const buffer = fs.readFileSync(file.path);
+      const workbook = XLSX.read(buffer, { type: 'buffer' });
       const sheetName = workbook.SheetNames[0];
       const worksheet = workbook.Sheets[sheetName];
       data = XLSX.utils.sheet_to_json(worksheet);
@@ -1652,10 +1653,6 @@ router.post('/api/service-plans/upload-excel', requireAdmin, pricingUpload.singl
         if (!rowData || Object.keys(rowData).length === 0) {
           continue;
         }
-        // Debug: Show raw row data
-        console.log('Processing row keys:', Object.keys(rowData));
-        console.log('Raw 요금제명 value:', JSON.stringify(rowData['요금제명']));
-        
         // Map Excel columns to service plan fields with trimming
         const planName = String(rowData['요금제명'] || rowData['planName'] || '').trim();
         const carrier = String(rowData['통신사'] || rowData['carrier'] || '').trim();
@@ -1668,8 +1665,6 @@ router.post('/api/service-plans/upload-excel', requireAdmin, pricingUpload.singl
           monthlyFee: parseInt(String(rowData['월요금'] || rowData['monthlyFee'] || rowData['월요금(원)'] || 0)),
           isActive: rowData['활성여부'] !== false && rowData['isActive'] !== false
         };
-        
-        console.log('Processed planData:', { planName, carrier });
 
         // Validate required fields (after trimming)
         if (!planData.planName || !planData.carrier) {

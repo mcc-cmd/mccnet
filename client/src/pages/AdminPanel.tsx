@@ -3510,7 +3510,7 @@ export function AdminPanel() {
                         <li>• 1단계: 아래 Excel 양식을 다운로드하세요</li>
                         <li>• 2단계: 양식에 맞춰 요금제 정보를 입력하세요</li>
                         <li>• 3단계: 완성된 파일을 업로드하세요</li>
-                        <li>• 지원 형식: .xlsx, .xls</li>
+                        <li>• 지원 형식: .xlsx, .xls, .csv</li>
                         <li>• 필수 컬럼: 요금제명, 통신사, 유형, 데이터, 월요금</li>
                       </ul>
                     </div>
@@ -3534,7 +3534,7 @@ export function AdminPanel() {
                         <Input
                           id="service-plan-excel"
                           type="file"
-                          accept=".xlsx,.xls"
+                          accept=".xlsx,.xls,.csv"
                           className="mt-1"
                           onChange={(e) => {
                             const file = e.target.files?.[0];
@@ -3544,7 +3544,7 @@ export function AdminPanel() {
                           }}
                         />
                         <p className="text-xs text-gray-500 mt-1">
-                          Excel 파일 (XLSX, XLS)만 업로드 가능합니다.
+                          Excel 파일 (XLSX, XLS) 및 CSV 파일 업로드 가능합니다.
                         </p>
                         {selectedExcelFile && (
                           <p className="text-sm text-green-600 mt-2">
