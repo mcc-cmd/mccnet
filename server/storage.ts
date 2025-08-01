@@ -1621,8 +1621,8 @@ class SqliteStorage implements IStorage {
     }
 
     if (filters?.search) {
-      query += ' AND (d.customer_name LIKE ? OR d.document_number LIKE ?)';
-      params.push(`%${filters.search}%`, `%${filters.search}%`);
+      query += ' AND (d.customer_name LIKE ? OR d.customer_phone LIKE ? OR d.store_name LIKE ? OR dealers.name LIKE ? OR d.document_number LIKE ?)';
+      params.push(`%${filters.search}%`, `%${filters.search}%`, `%${filters.search}%`, `%${filters.search}%`, `%${filters.search}%`);
     }
 
     if (filters?.startDate) {

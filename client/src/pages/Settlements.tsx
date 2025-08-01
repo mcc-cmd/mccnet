@@ -850,11 +850,11 @@ export function Settlements() {
                   </div>
                 </div>
                 <div>
-                  <Label htmlFor="search-query">검색 (고객명/연락처)</Label>
+                  <Label htmlFor="search-query">검색 (고객명/연락처/판매점명)</Label>
                   <Input
                     id="search-query"
                     type="text"
-                    placeholder="검색어를 입력하세요"
+                    placeholder="고객명, 연락처 또는 판매점명을 입력하세요"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                   />
