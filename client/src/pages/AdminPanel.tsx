@@ -871,6 +871,7 @@ export function AdminPanel() {
   // Settlement unit pricing states
   const [settlementPriceDialogOpen, setSettlementPriceDialogOpen] = useState(false);
   const [selectedServicePlan, setSelectedServicePlan] = useState<ServicePlan | null>(null);
+  const [pricingDialogOpen, setPricingDialogOpen] = useState(false);
 
   // Queries
   const { data: dealers, isLoading: dealersLoading } = useQuery({
@@ -1876,12 +1877,24 @@ export function AdminPanel() {
 
   // Settlement unit pricing handlers
   const onSubmitSettlementPrice = (data: CreateSettlementUnitPriceForm) => {
-    if (!selectedServicePlan) return;
+    console.log('Settlement price form submitted:', data);
+    console.log('Selected service plan:', selectedServicePlan);
+    
+    if (!selectedServicePlan) {
+      toast({
+        title: '오류',
+        description: '요금제를 선택해주세요.',
+        variant: 'destructive',
+      });
+      return;
+    }
     
     const currentPrice = settlementPrices?.find(p => p.servicePlanId === selectedServicePlan.id);
+    console.log('Current price:', currentPrice);
     
     if (currentPrice) {
       // Update existing price
+      console.log('Updating existing price');
       updateSettlementPriceMutation.mutate({
         servicePlanId: selectedServicePlan.id,
         data: {
@@ -1890,6 +1903,7 @@ export function AdminPanel() {
       });
     } else {
       // Create new price
+      console.log('Creating new price');
       createSettlementPriceMutation.mutate({
         servicePlanId: selectedServicePlan.id,
         unitPrice: data.unitPrice,
@@ -2238,7 +2252,7 @@ export function AdminPanel() {
             </TabsTrigger>
             <TabsTrigger value="pricing" className="flex items-center space-x-2">
               <Calculator className="h-4 w-4" />
-              <span>단가표</span>
+              <span>정산단가</span>
             </TabsTrigger>
           </TabsList>
 
