@@ -339,6 +339,15 @@ export function Settlements() {
     
     // 개통일시 기준으로 해당 시점에 유효한 정산단가 찾기
     const activatedDate = new Date(doc.activatedAt);
+    
+    // 디버깅을 위한 로그
+    if (doc.id === 50) {
+      console.log('Settlement calculation debug for doc:', doc.id);
+      console.log('Activated date:', activatedDate);
+      console.log('Available settlement prices for servicePlanId', doc.servicePlanId, ':', 
+        settlementPrices.filter(p => p.servicePlanId === doc.servicePlanId));
+    }
+    
     const applicablePrices = settlementPrices.filter(p => 
       p.servicePlanId === doc.servicePlanId && 
       new Date(p.effectiveFrom) <= activatedDate &&
@@ -350,7 +359,53 @@ export function Settlements() {
       new Date(b.effectiveFrom).getTime() - new Date(a.effectiveFrom).getTime()
     )[0];
     
-    if (!price) return 0;
+    if (doc.id === 50) {
+      console.log('Applicable prices:', applicablePrices);
+      console.log('Selected price:', price);
+    }
+    
+    if (!price) {
+      // 적용 가능한 단가가 없는 경우 가장 최근 단가 사용 (fallback)
+      const fallbackPrice = settlementPrices
+        .filter(p => p.servicePlanId === doc.servicePlanId)
+        .sort((a, b) => new Date(b.effectiveFrom).getTime() - new Date(a.effectiveFrom).getTime())[0];
+      
+      if (doc.id === 50) {
+        console.log('Using fallback price:', fallbackPrice);
+      }
+      
+      if (!fallbackPrice) return 0;
+      
+      // fallback 가격 사용
+      let baseAmount = 0;
+      if (doc.previousCarrier && doc.previousCarrier !== doc.carrier) {
+        baseAmount = fallbackPrice.portInPrice || 0;
+      } else {
+        baseAmount = fallbackPrice.newCustomerPrice || 0;
+      }
+      
+      // 부가서비스 차감 적용
+      let totalDeduction = 0;
+      if (doc.additionalServiceIds && doc.additionalServiceIds !== '[]' && deductionPolicies) {
+        try {
+          const additionalServiceIds = JSON.parse(doc.additionalServiceIds || '[]');
+          if (Array.isArray(additionalServiceIds) && additionalServiceIds.length > 0) {
+            additionalServiceIds.forEach(serviceId => {
+              const deduction = deductionPolicies.find(d => 
+                d.additionalServiceId === parseInt(serviceId) && d.isActive
+              );
+              if (deduction) {
+                totalDeduction += deduction.deductionAmount;
+              }
+            });
+          }
+        } catch (error) {
+          console.warn('Error parsing additional service IDs for document:', doc.id, error);
+        }
+      }
+      
+      return Math.max(0, baseAmount - totalDeduction);
+    }
     
     // 기본적으로 신규고객 가격을 사용하고, 번호이동이 있는 경우 해당 가격 사용
     // previousCarrier가 있으면 번호이동, 없으면 신규 가입으로 판단
