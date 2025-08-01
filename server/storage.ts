@@ -2132,7 +2132,7 @@ class SqliteStorage implements IStorage {
         data.subscriptionNumber || null,
         data.dealerNotes || null,
         data.servicePlanId || null,
-        data.additionalServiceIds ? JSON.stringify(data.additionalServiceIds) : null,
+        (data.additionalServiceIds && data.additionalServiceIds.length > 0) ? JSON.stringify(data.additionalServiceIds) : null,
         data.registrationFeePrepaid ? 1 : 0,
         data.registrationFeePostpaid ? 1 : 0,
         data.simFeePrepaid ? 1 : 0,
