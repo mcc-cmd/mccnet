@@ -1644,19 +1644,28 @@ router.post('/api/service-plans/upload-excel', requireAdmin, pricingUpload.singl
     for (const row of data) {
       try {
         const rowData = row as any;
-        // Map Excel columns to service plan fields
+        
+        // Skip empty rows
+        if (!rowData || Object.keys(rowData).length === 0) {
+          continue;
+        }
+        // Map Excel columns to service plan fields with trimming
         const planData: any = {
-          planName: rowData['요금제명'] || rowData['planName'] || '',
-          carrier: rowData['통신사'] || rowData['carrier'] || '',
-          planType: rowData['요금제유형'] || rowData['planType'] || rowData['유형'] || '4G',
-          dataAllowance: rowData['데이터제공량'] || rowData['dataAllowance'] || rowData['데이터'] || '',
+          planName: (rowData['요금제명'] || rowData['planName'] || '').toString().trim(),
+          carrier: (rowData['통신사'] || rowData['carrier'] || '').toString().trim(),
+          planType: (rowData['요금제유형'] || rowData['planType'] || rowData['유형'] || '4G').toString().trim(),
+          dataAllowance: (rowData['데이터제공량'] || rowData['dataAllowance'] || rowData['데이터'] || '').toString().trim(),
           monthlyFee: parseInt(String(rowData['월요금'] || rowData['monthlyFee'] || rowData['월요금(원)'] || 0)),
           isActive: rowData['활성여부'] !== false && rowData['isActive'] !== false
         };
 
-        // Validate required fields
+        // Validate required fields (after trimming)
         if (!planData.planName || !planData.carrier) {
-          console.warn('Skipping invalid row:', rowData);
+          console.warn('Skipping invalid row (missing planName or carrier):', {
+            planName: planData.planName,
+            carrier: planData.carrier,
+            originalRow: rowData
+          });
           continue;
         }
 
