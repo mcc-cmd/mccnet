@@ -335,9 +335,21 @@ export function Settlements() {
 
   // 정산 금액 계산 함수
   const calculateSettlementAmount = (doc: CompletedDocument, settlementPrices: any[], deductionPolicies?: any[]) => {
-    if (!doc.servicePlanId || !settlementPrices) return 0;
+    if (!doc.servicePlanId || !settlementPrices || !doc.activatedAt) return 0;
     
-    const price = settlementPrices.find(p => p.servicePlanId === doc.servicePlanId && p.isActive);
+    // 개통일시 기준으로 해당 시점에 유효한 정산단가 찾기
+    const activatedDate = new Date(doc.activatedAt);
+    const applicablePrices = settlementPrices.filter(p => 
+      p.servicePlanId === doc.servicePlanId && 
+      new Date(p.effectiveFrom) <= activatedDate &&
+      (!p.effectiveUntil || new Date(p.effectiveUntil) > activatedDate)
+    );
+    
+    // 가장 최근 유효한 단가 선택 (effective_from 기준 내림차순)
+    const price = applicablePrices.sort((a, b) => 
+      new Date(b.effectiveFrom).getTime() - new Date(a.effectiveFrom).getTime()
+    )[0];
+    
     if (!price) return 0;
     
     // 기본적으로 신규고객 가격을 사용하고, 번호이동이 있는 경우 해당 가격 사용
