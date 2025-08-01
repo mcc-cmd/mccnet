@@ -2161,9 +2161,11 @@ class SqliteStorage implements IStorage {
     const canceled = db.prepare(`SELECT COUNT(*) as count FROM documents${activationWhereClause}${activationWhereClause ? ' AND' : ' WHERE'} activation_status = ?`).get(...activationParams, '취소') as { count: number };
     const discarded = db.prepare(`SELECT COUNT(*) as count FROM documents${activationWhereClause}${activationWhereClause ? ' AND' : ' WHERE'} activation_status = ?`).get(...activationParams, '폐기') as { count: number };
     
-    // 대기와 진행중은 업로드 날짜 기준으로 유지 (현재 진행중인 업무이므로)
-    const pendingActivations = db.prepare(`SELECT COUNT(*) as count FROM documents${uploadWhereClause}${uploadWhereClause ? ' AND' : ' WHERE'} activation_status = ?`).get(...uploadDateParams, '대기') as { count: number };
-    const inProgress = db.prepare(`SELECT COUNT(*) as count FROM documents${uploadWhereClause}${uploadWhereClause ? ' AND' : ' WHERE'} activation_status = ?`).get(...uploadDateParams, '진행중') as { count: number };
+    // 접수 대기: status = '접수'인 문서들 (업로드 날짜 기준으로 유지)
+    const pendingActivations = db.prepare(`SELECT COUNT(*) as count FROM documents${uploadWhereClause}${uploadWhereClause ? ' AND' : ' WHERE'} status = ?`).get(...uploadDateParams, '접수') as { count: number };
+    
+    // 진행중: activation_status = '업무요청중'인 문서들 (업로드 날짜 기준으로 유지)
+    const inProgress = db.prepare(`SELECT COUNT(*) as count FROM documents${uploadWhereClause}${uploadWhereClause ? ' AND' : ' WHERE'} activation_status = ?`).get(...uploadDateParams, '업무요청중') as { count: number };
 
     const stats: DashboardStats & { carrierStats?: any[]; workerStats?: any[]; otherCompletedCount?: number; discardedCount?: number } = {
       totalDocuments: total.count,
