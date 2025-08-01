@@ -2174,8 +2174,8 @@ class SqliteStorage implements IStorage {
       basicParams = [userId];
     }
     
-    // 접수 대기: status = '접수'인 문서들 (전체 기간)
-    const pendingActivations = db.prepare(`SELECT COUNT(*) as count FROM documents${basicWhereClause}${basicWhereClause ? ' AND' : ' WHERE'} status = ?`).get(...basicParams, '접수') as { count: number };
+    // 접수 대기: activation_status = '대기'인 문서들 (전체 기간)
+    const pendingActivations = db.prepare(`SELECT COUNT(*) as count FROM documents${basicWhereClause}${basicWhereClause ? ' AND' : ' WHERE'} activation_status = ?`).get(...basicParams, '대기') as { count: number };
     
     // 진행중: activation_status = '업무요청중'인 문서들 (전체 기간)
     const inProgress = db.prepare(`SELECT COUNT(*) as count FROM documents${basicWhereClause}${basicWhereClause ? ' AND' : ' WHERE'} activation_status = ?`).get(...basicParams, '업무요청중') as { count: number };
