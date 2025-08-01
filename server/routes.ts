@@ -1628,19 +1628,20 @@ router.post('/api/service-plans/upload-excel', requireAdmin, pricingUpload.singl
 
     for (const row of data) {
       try {
+        const rowData = row as any;
         // Map Excel columns to service plan fields
         const planData: any = {
-          planName: row['요금제명'] || row['planName'] || '',
-          carrier: row['통신사'] || row['carrier'] || '',
-          planType: row['요금제유형'] || row['planType'] || row['유형'] || '4G',
-          dataAllowance: row['데이터제공량'] || row['dataAllowance'] || row['데이터'] || '',
-          monthlyFee: parseInt(String(row['월요금'] || row['monthlyFee'] || row['월요금(원)'] || 0)),
-          isActive: row['활성여부'] !== false && row['isActive'] !== false
+          planName: rowData['요금제명'] || rowData['planName'] || '',
+          carrier: rowData['통신사'] || rowData['carrier'] || '',
+          planType: rowData['요금제유형'] || rowData['planType'] || rowData['유형'] || '4G',
+          dataAllowance: rowData['데이터제공량'] || rowData['dataAllowance'] || rowData['데이터'] || '',
+          monthlyFee: parseInt(String(rowData['월요금'] || rowData['monthlyFee'] || rowData['월요금(원)'] || 0)),
+          isActive: rowData['활성여부'] !== false && rowData['isActive'] !== false
         };
 
         // Validate required fields
         if (!planData.planName || !planData.carrier) {
-          console.warn('Skipping invalid row:', row);
+          console.warn('Skipping invalid row:', rowData);
           continue;
         }
 
@@ -1648,7 +1649,7 @@ router.post('/api/service-plans/upload-excel', requireAdmin, pricingUpload.singl
         await storage.createServicePlan(planData);
         addedPlans++;
       } catch (error) {
-        console.error('Error creating service plan from row:', row, error);
+        console.error('Error creating service plan from row:', rowData, error);
       }
     }
 
