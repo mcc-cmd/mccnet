@@ -1191,7 +1191,8 @@ router.get('/api/admin/export/activated-documents', requireAdmin, async (req: an
     const buffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
 
     // 파일명 설정
-    const fileName = `개통서류_${startDate}_${endDate}.xlsx`;
+    const today = format(new Date(), 'yyyy-MM-dd');
+    const fileName = `개통서류_${startDate || today}_${endDate || today}.xlsx`;
 
     // 응답 헤더 설정
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');

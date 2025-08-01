@@ -85,8 +85,23 @@ export function CompletedActivations() {
         if (value) params.append(key, value);
       });
       
-      const response = await apiRequest(`/api/documents/export/excel?${params}`, {
+      // fetch API를 직접 사용하여 blob 다운로드
+      const token = localStorage.getItem('auth-storage');
+      let sessionId = '';
+      if (token) {
+        try {
+          const parsed = JSON.parse(token);
+          sessionId = parsed.state?.sessionId || '';
+        } catch (e) {
+          console.error('Failed to parse auth token:', e);
+        }
+      }
+      
+      const response = await fetch(`/api/documents/export/excel?${params}`, {
         method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${sessionId}`,
+        },
       });
       
       if (response.ok) {
@@ -105,11 +120,14 @@ export function CompletedActivations() {
           description: "개통완료 목록이 엑셀 파일로 다운로드되었습니다.",
         });
       } else {
+        const errorText = await response.text();
+        console.error('Excel download error:', errorText);
         throw new Error('다운로드 실패');
       }
     } catch (error) {
+      console.error('Excel download error:', error);
       toast({
-        title: "다운로드 실패",
+        title: "다운로드 실패",  
         description: "엑셀 파일 다운로드 중 오류가 발생했습니다.",
         variant: "destructive",
       });
