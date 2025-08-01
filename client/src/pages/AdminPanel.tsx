@@ -1661,17 +1661,10 @@ export function AdminPanel() {
       const formData = new FormData();
       formData.append('file', file);
       
-      const response = await fetch('/api/service-plans/upload-excel', {
+      return apiRequest('/api/service-plans/upload-excel', {
         method: 'POST',
         body: formData,
       });
-      
-      if (!response.ok) {
-        const error = await response.json().catch(() => ({ error: '엑셀 업로드에 실패했습니다.' }));
-        throw new Error(error.error || '엑셀 업로드에 실패했습니다.');
-      }
-      
-      return response.json();
     },
     onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ['/api/service-plans'] });
@@ -1700,17 +1693,10 @@ export function AdminPanel() {
       formData.append('carrier', data.carrier);
       formData.append('image', data.file);
       
-      const response = await fetch('/api/service-plans/upload-image', {
+      return apiRequest('/api/service-plans/upload-image', {
         method: 'POST',
         body: formData,
       });
-      
-      if (!response.ok) {
-        const error = await response.json().catch(() => ({ error: '이미지 분석에 실패했습니다.' }));
-        throw new Error(error.error || '이미지 분석에 실패했습니다.');
-      }
-      
-      return response.json();
     },
     onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ['/api/service-plans'] });
