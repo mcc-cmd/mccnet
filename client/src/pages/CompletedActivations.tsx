@@ -150,7 +150,7 @@ export function CompletedActivations() {
     <Layout>
       <div className="space-y-6">
         <div className="flex justify-between items-center">
-          <h1 className="text-3xl font-bold">개통취소</h1>
+          <h1 className="text-3xl font-bold">개통완료 관리</h1>
           <div className="flex items-center space-x-4">
             <Button
               onClick={handleExportToExcel}
@@ -209,7 +209,7 @@ export function CompletedActivations() {
         {/* Documents List */}
         <Card>
           <CardHeader>
-            <CardTitle>개통취소 목록</CardTitle>
+            <CardTitle>개통완료 목록</CardTitle>
           </CardHeader>
           <CardContent>
             {isLoading ? (

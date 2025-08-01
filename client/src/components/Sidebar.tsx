@@ -22,7 +22,7 @@ const navigation = [
   { name: '접수 신청', href: '/submit-application', icon: FileText },
   { name: '접수 관리', href: '/documents', icon: FileText },
   { name: '업무 요청중', href: '/work-requests', icon: Clock },
-  { name: '개통취소', href: '/completed', icon: CheckCircle },
+  { name: '개통완료 관리', href: '/completed', icon: CheckCircle },
   { name: '기타완료', href: '/other-completions', icon: Star },
   { name: '개통취소 내역', href: '/cancelled', icon: X },
   { name: '폐기', href: '/discarded', icon: Trash2 },
