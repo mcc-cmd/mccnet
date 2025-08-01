@@ -1748,7 +1748,7 @@ class SqliteStorage implements IStorage {
     return matchingCode ? matchingCode.contactCode : null;
   }
 
-  async getDocuments(dealerId?: number, filters?: { status?: string; activationStatus?: string; search?: string; startDate?: string; endDate?: string; workerFilter?: string }, userId?: number): Promise<Array<Document & { dealerName: string; userName: string; activatedByName?: string; cancelledByName?: string }>> {
+  async getDocuments(dealerId?: number, filters?: { status?: string; activationStatus?: string; search?: string; startDate?: string; endDate?: string; workerFilter?: string; carrier?: string }, userId?: number): Promise<Array<Document & { dealerName: string; userName: string; activatedByName?: string; cancelledByName?: string }>> {
     let query = `
       SELECT d.*, dealers.name as dealer_name, u.name as user_name,
              COALESCE(activated_user.name, activated_admin.name) as activated_by_name,
@@ -1793,6 +1793,11 @@ class SqliteStorage implements IStorage {
     if (filters?.search) {
       query += ' AND (d.customer_name LIKE ? OR d.customer_phone LIKE ? OR d.store_name LIKE ? OR dealers.name LIKE ? OR d.document_number LIKE ?)';
       params.push(`%${filters.search}%`, `%${filters.search}%`, `%${filters.search}%`, `%${filters.search}%`, `%${filters.search}%`);
+    }
+
+    if (filters?.carrier) {
+      query += ' AND d.carrier = ?';
+      params.push(filters.carrier);
     }
 
     if (filters?.startDate) {

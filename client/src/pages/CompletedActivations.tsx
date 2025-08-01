@@ -22,7 +22,8 @@ export function CompletedActivations() {
   const [filters, setFilters] = useState({
     search: '',
     startDate: '',
-    endDate: ''
+    endDate: '',
+    carrier: ''
   });
 
   const { data: documents, isLoading } = useQuery({
@@ -203,6 +204,25 @@ export function CompletedActivations() {
                     className="pl-10"
                   />
                 </div>
+              </div>
+              <div>
+                <label className="text-sm font-medium">통신사</label>
+                <Select value={filters.carrier} onValueChange={(value) => setFilters({ ...filters, carrier: value })}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="전체" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">전체</SelectItem>
+                    <SelectItem value="KT">KT</SelectItem>
+                    <SelectItem value="SK브로드밴드">SK브로드밴드</SelectItem>
+                    <SelectItem value="SKT">SKT</SelectItem>
+                    <SelectItem value="SK프리티">SK프리티</SelectItem>
+                    <SelectItem value="LG미디어로그">LG미디어로그</SelectItem>
+                    <SelectItem value="LG유플러스">LG유플러스</SelectItem>
+                    <SelectItem value="KTM">KTM</SelectItem>
+                    <SelectItem value="KT프리미어">KT프리미어</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               <div>
                 <label className="text-sm font-medium">시작일</label>
