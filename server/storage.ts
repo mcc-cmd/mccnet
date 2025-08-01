@@ -2096,10 +2096,15 @@ class SqliteStorage implements IStorage {
 
     // 개통완료 시 현재 정산단가 저장
     if (data.activationStatus === '개통') {
-      const document = db.prepare('SELECT service_plan_id, previous_carrier, carrier FROM documents WHERE id = ?').get(id) as any;
-      if (document && document.service_plan_id) {
-        const settlementPrices = db.prepare('SELECT * FROM settlement_unit_prices WHERE service_plan_id = ? AND is_active = 1').all(document.service_plan_id) as any[];
-        const currentPrice = settlementPrices.find(p => p.service_plan_id === document.service_plan_id && p.is_active);
+      // 먼저 현재 서비스 플랜 ID 확인
+      let servicePlanId = data.servicePlanId;
+      if (!servicePlanId) {
+        const document = db.prepare('SELECT service_plan_id FROM documents WHERE id = ?').get(id) as any;
+        servicePlanId = document?.service_plan_id;
+      }
+      
+      if (servicePlanId) {
+        const currentPrice = db.prepare('SELECT * FROM settlement_unit_prices WHERE service_plan_id = ? AND is_active = 1 LIMIT 1').get(servicePlanId) as any;
         
         if (currentPrice) {
           updateQuery += `, settlement_new_customer_price = ?, settlement_port_in_price = ?, settlement_calculated_at = CURRENT_TIMESTAMP`;
