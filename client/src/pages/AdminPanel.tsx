@@ -1969,7 +1969,8 @@ export function AdminPanel() {
       updateSettlementPriceMutation.mutate({
         servicePlanId: selectedServicePlan.id,
         data: {
-          unitPrice: data.unitPrice,
+          newCustomerPrice: data.newCustomerPrice,
+          portInPrice: data.portInPrice,
         }
       });
     } else {
@@ -1977,7 +1978,8 @@ export function AdminPanel() {
       console.log('Creating new price');
       createSettlementPriceMutation.mutate({
         servicePlanId: selectedServicePlan.id,
-        unitPrice: data.unitPrice,
+        newCustomerPrice: data.newCustomerPrice,
+        portInPrice: data.portInPrice,
       });
     }
   };
@@ -4428,7 +4430,10 @@ export function AdminPanel() {
                               {currentPrice ? (
                                 <div className="text-right">
                                   <p className="font-medium text-gray-900">
-                                    {currentPrice.unitPrice.toLocaleString()}원
+                                    신규: {currentPrice.newCustomerPrice.toLocaleString()}원
+                                  </p>
+                                  <p className="font-medium text-gray-900">
+                                    번호이동: {currentPrice.portInPrice.toLocaleString()}원
                                   </p>
                                   <p className="text-xs text-gray-500">
                                     {format(currentPrice.effectiveFrom, 'yyyy-MM-dd')}부터 적용
@@ -4444,7 +4449,8 @@ export function AdminPanel() {
                                   setSelectedServicePlan(plan);
                                   settlementPriceForm.reset({
                                     servicePlanId: plan.id,
-                                    unitPrice: currentPrice?.unitPrice || 0
+                                    newCustomerPrice: currentPrice?.newCustomerPrice || 0,
+                                    portInPrice: currentPrice?.portInPrice || 0
                                   });
                                   setSettlementPriceDialogOpen(true);
                                 }}
@@ -4512,20 +4518,41 @@ export function AdminPanel() {
                     />
                     <FormField
                       control={settlementPriceForm.control}
-                      name="unitPrice"
+                      name="newCustomerPrice"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>정산 단가 (원)</FormLabel>
+                          <FormLabel>신규 정산단가 (원)</FormLabel>
                           <FormControl>
                             <Input
                               type="number"
-                              placeholder="정산단가를 입력하세요"
+                              placeholder="신규 정산단가를 입력하세요"
                               {...field}
                               onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
                             />
                           </FormControl>
                           <FormDescription>
-                            정산 시 적용될 단위 금액을 입력하세요.
+                            신규 고객 정산 시 적용될 단위 금액을 입력하세요.
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={settlementPriceForm.control}
+                      name="portInPrice"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>번호이동 정산단가 (원)</FormLabel>
+                          <FormControl>
+                            <Input
+                              type="number"
+                              placeholder="번호이동 정산단가를 입력하세요"
+                              {...field}
+                              onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                            />
+                          </FormControl>
+                          <FormDescription>
+                            번호이동 고객 정산 시 적용될 단위 금액을 입력하세요.
                           </FormDescription>
                           <FormMessage />
                         </FormItem>

@@ -1021,13 +1021,14 @@ class SqliteStorage implements IStorage {
     // Insert new settlement unit price
     const result = db.prepare(`
       INSERT INTO settlement_unit_prices 
-      (service_plan_id, service_plan_name, carrier, unit_price, effective_from, created_by) 
-      VALUES (?, ?, ?, ?, ?, ?)
+      (service_plan_id, service_plan_name, carrier, new_customer_price, port_in_price, effective_from, created_by) 
+      VALUES (?, ?, ?, ?, ?, ?, ?)
     `).run(
       data.servicePlanId,
       servicePlan.plan_name,
       servicePlan.carrier,
-      data.unitPrice,
+      data.newCustomerPrice,
+      data.portInPrice,
       data.effectiveFrom || new Date().toISOString(),
       data.createdBy
     );
@@ -1061,7 +1062,8 @@ class SqliteStorage implements IStorage {
       servicePlanId: p.service_plan_id,
       servicePlanName: p.service_plan_name,
       carrier: p.carrier,
-      unitPrice: p.unit_price,
+      newCustomerPrice: p.new_customer_price || 0,
+      portInPrice: p.port_in_price || 0,
       isActive: Boolean(p.is_active),
       effectiveFrom: new Date(p.effective_from),
       effectiveUntil: p.effective_until ? new Date(p.effective_until) : undefined,
@@ -1085,7 +1087,8 @@ class SqliteStorage implements IStorage {
       servicePlanId: p.service_plan_id,
       servicePlanName: p.service_plan_name,
       carrier: p.carrier,
-      unitPrice: p.unit_price,
+      newCustomerPrice: p.new_customer_price || 0,
+      portInPrice: p.port_in_price || 0,
       isActive: Boolean(p.is_active),
       effectiveFrom: new Date(p.effective_from),
       effectiveUntil: p.effective_until ? new Date(p.effective_until) : undefined,

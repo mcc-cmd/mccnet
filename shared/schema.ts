@@ -379,7 +379,8 @@ export interface SettlementUnitPrice {
   servicePlanId: number;
   servicePlanName: string;
   carrier: string;
-  unitPrice: number; // 정산 단가 (원)
+  newCustomerPrice: number; // 신규 정산단가 (원)
+  portInPrice: number; // 번호이동 정산단가 (원)
   isActive: boolean;
   effectiveFrom: Date; // 적용 시작일
   effectiveUntil?: Date; // 적용 종료일 (null이면 현재 적용 중)
@@ -450,12 +451,14 @@ export const updateSettlementSchema = createSettlementSchema.partial();
 // 정산단가 스키마
 export const createSettlementUnitPriceSchema = z.object({
   servicePlanId: z.number().min(1, "요금제를 선택해주세요"),
-  unitPrice: z.number().min(0, "정산 단가를 입력해주세요"),
+  newCustomerPrice: z.number().min(0, "신규 정산단가를 입력해주세요"),
+  portInPrice: z.number().min(0, "번호이동 정산단가를 입력해주세요"),
   effectiveFrom: z.date().optional(), // 기본값은 현재 날짜
 });
 
 export const updateSettlementUnitPriceSchema = z.object({
-  unitPrice: z.number().min(0, "정산 단가를 입력해주세요"),
+  newCustomerPrice: z.number().min(0, "신규 정산단가를 입력해주세요"),
+  portInPrice: z.number().min(0, "번호이동 정산단가를 입력해주세요"),
   effectiveFrom: z.date().optional(),
 });
 
