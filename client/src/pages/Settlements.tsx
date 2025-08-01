@@ -335,19 +335,45 @@ export function Settlements() {
 
   // 정산 금액 계산 함수
   const calculateSettlementAmount = (doc: CompletedDocument, settlementPrices: any[], deductionPolicies?: any[]) => {
-    if (!doc.servicePlanId || !settlementPrices || !doc.activatedAt) return 0;
+    if (!doc.servicePlanId) return 0;
+    
+    // 1. 우선적으로 저장된 정산단가 사용 (개통 완료 시점에 저장된 단가)
+    if ((doc as any).settlementNewCustomerPrice !== undefined && (doc as any).settlementPortInPrice !== undefined) {
+      let baseAmount = 0;
+      if (doc.previousCarrier && doc.previousCarrier !== doc.carrier) {
+        baseAmount = (doc as any).settlementPortInPrice || 0;
+      } else {
+        baseAmount = (doc as any).settlementNewCustomerPrice || 0;
+      }
+      
+      // 부가서비스 차감 적용
+      let totalDeduction = 0;
+      if (doc.additionalServiceIds && doc.additionalServiceIds !== '[]' && deductionPolicies) {
+        try {
+          const additionalServiceIds = JSON.parse(doc.additionalServiceIds || '[]');
+          if (Array.isArray(additionalServiceIds) && additionalServiceIds.length > 0) {
+            additionalServiceIds.forEach(serviceId => {
+              const deduction = deductionPolicies.find(d => 
+                d.additionalServiceId === parseInt(serviceId) && d.isActive
+              );
+              if (deduction) {
+                totalDeduction += deduction.deductionAmount;
+              }
+            });
+          }
+        } catch (error) {
+          console.warn('Error parsing additional service IDs for document:', doc.id, error);
+        }
+      }
+      
+      return Math.max(0, baseAmount - totalDeduction);
+    }
+    
+    // 2. 저장된 단가가 없는 경우 기존 로직 사용 (이전 버전 호환성)
+    if (!settlementPrices || !doc.activatedAt) return 0;
     
     // 개통일시 기준으로 해당 시점에 유효한 정산단가 찾기
     const activatedDate = new Date(doc.activatedAt);
-    
-    // 디버깅을 위한 로그
-    if (doc.id === 50) {
-      console.log('Settlement calculation debug for doc:', doc.id);
-      console.log('Activated date:', activatedDate);
-      console.log('Available settlement prices for servicePlanId', doc.servicePlanId, ':', 
-        settlementPrices.filter(p => p.servicePlanId === doc.servicePlanId));
-    }
-    
     const applicablePrices = settlementPrices.filter(p => 
       p.servicePlanId === doc.servicePlanId && 
       new Date(p.effectiveFrom) <= activatedDate &&
@@ -359,24 +385,14 @@ export function Settlements() {
       new Date(b.effectiveFrom).getTime() - new Date(a.effectiveFrom).getTime()
     )[0];
     
-    if (doc.id === 50) {
-      console.log('Applicable prices:', applicablePrices);
-      console.log('Selected price:', price);
-    }
-    
     if (!price) {
-      // 적용 가능한 단가가 없는 경우 가장 최근 단가 사용 (fallback)
+      // Fallback: 가장 최근 단가 사용
       const fallbackPrice = settlementPrices
         .filter(p => p.servicePlanId === doc.servicePlanId)
         .sort((a, b) => new Date(b.effectiveFrom).getTime() - new Date(a.effectiveFrom).getTime())[0];
       
-      if (doc.id === 50) {
-        console.log('Using fallback price:', fallbackPrice);
-      }
-      
       if (!fallbackPrice) return 0;
       
-      // fallback 가격 사용
       let baseAmount = 0;
       if (doc.previousCarrier && doc.previousCarrier !== doc.carrier) {
         baseAmount = fallbackPrice.portInPrice || 0;

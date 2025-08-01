@@ -92,6 +92,10 @@ export interface Document {
   subscriptionNumber?: string; // 가입번호/계약번호
   dealerNotes?: string; // 판매점 전달 메모
   discardReason?: string; // 폐기 사유
+  // 정산단가 저장 (개통 완료 시점의 단가)
+  settlementNewCustomerPrice?: number; // 신규고객 정산단가
+  settlementPortInPrice?: number; // 번호이동 정산단가
+  settlementCalculatedAt?: Date; // 정산단가 계산 일시
 }
 
 export interface ChatRoom {

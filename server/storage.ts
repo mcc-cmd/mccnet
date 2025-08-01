@@ -1890,6 +1890,9 @@ class SqliteStorage implements IStorage {
         bundleNotApplied: Boolean(d.bundle_not_applied),
         dealerNotes: d.dealer_notes,
         discardReason: d.discard_reason,
+        settlementNewCustomerPrice: d.settlement_new_customer_price,
+        settlementPortInPrice: d.settlement_port_in_price,
+        settlementCalculatedAt: d.settlement_calculated_at ? new Date(d.settlement_calculated_at) : undefined,
         dealerName: d.dealer_name,
         userName: d.user_name,
         activatedByName: d.activated_by_name,
@@ -2089,6 +2092,21 @@ class SqliteStorage implements IStorage {
       params.push(data.activatedBy);
     } else if (data.activationStatus === '개통' || data.activationStatus === '기타완료' || data.activationStatus === '취소' || data.activationStatus === '폐기') {
       updateQuery += `, activated_at = CURRENT_TIMESTAMP`;
+    }
+
+    // 개통완료 시 현재 정산단가 저장
+    if (data.activationStatus === '개통') {
+      const document = db.prepare('SELECT service_plan_id, previous_carrier, carrier FROM documents WHERE id = ?').get(id) as any;
+      if (document && document.service_plan_id) {
+        const settlementPrices = db.prepare('SELECT * FROM settlement_unit_prices WHERE service_plan_id = ? AND is_active = 1').all(document.service_plan_id) as any[];
+        const currentPrice = settlementPrices.find(p => p.service_plan_id === document.service_plan_id && p.is_active);
+        
+        if (currentPrice) {
+          updateQuery += `, settlement_new_customer_price = ?, settlement_port_in_price = ?, settlement_calculated_at = CURRENT_TIMESTAMP`;
+          params.push(currentPrice.new_customer_price || 0);
+          params.push(currentPrice.port_in_price || 0);
+        }
+      }
     }
 
     // 취소 시 취소 처리자 ID 기록
