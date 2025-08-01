@@ -72,8 +72,21 @@ export function Dashboard() {
     },
   });
 
-  // Separate queries for carrier and worker stats with their own date filters
+  // 당월 개통 현황 통계 (자동으로 현재 월 데이터 조회)
   const { data: carrierStats, isLoading: carrierStatsLoading } = useQuery({
+    queryKey: ['/api/dashboard/carrier-stats'],
+    queryFn: () => apiRequest('/api/dashboard/carrier-stats') as Promise<any[]>,
+    enabled: user?.userType === 'admin',
+  });
+
+  const { data: workerStats, isLoading: workerStatsLoading } = useQuery({
+    queryKey: ['/api/dashboard/worker-stats'],
+    queryFn: () => apiRequest('/api/dashboard/worker-stats') as Promise<any[]>,
+    enabled: user?.userType === 'admin',
+  });
+
+  // 기간별 분석용 별도 통계 (날짜 필터 적용)
+  const { data: carrierAnalytics, isLoading: carrierAnalyticsLoading } = useQuery({
     queryKey: ['/api/dashboard/carrier-stats', carrierStartDate, carrierEndDate],
     queryFn: () => {
       const params = new URLSearchParams();
@@ -82,10 +95,10 @@ export function Dashboard() {
       const url = `/api/dashboard/carrier-stats${params.toString() ? '?' + params.toString() : ''}`;
       return apiRequest(url) as Promise<any[]>;
     },
-    enabled: user?.userType === 'admin',
+    enabled: user?.userType === 'admin' && !!(carrierStartDate || carrierEndDate),
   });
 
-  const { data: workerStats, isLoading: workerStatsLoading } = useQuery({
+  const { data: workerAnalytics, isLoading: workerAnalyticsLoading } = useQuery({
     queryKey: ['/api/dashboard/worker-stats', workerStartDate, workerEndDate],
     queryFn: () => {
       const params = new URLSearchParams();
@@ -94,7 +107,7 @@ export function Dashboard() {
       const url = `/api/dashboard/worker-stats${params.toString() ? '?' + params.toString() : ''}`;
       return apiRequest(url) as Promise<any[]>;
     },
-    enabled: user?.userType === 'admin',
+    enabled: user?.userType === 'admin' && !!(workerStartDate || workerEndDate),
   });
 
   // 당일 통계 조회
@@ -371,7 +384,7 @@ export function Dashboard() {
         </Card>
 
         {/* Worker personal stats */}
-        {user?.userRole === 'dealer_worker' && (
+        {user?.role === 'dealer_worker' && (
           <Card>
             <CardHeader>
               <CardTitle className="text-lg font-semibold">내 개통 실적</CardTitle>
