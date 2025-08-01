@@ -1625,8 +1625,11 @@ router.post('/api/service-plans/upload-excel', requireAdmin, pricingUpload.singl
     const fileExtension = path.extname(file.originalname).toLowerCase();
     
     if (fileExtension === '.csv') {
-      // Handle CSV files
-      const csvContent = fs.readFileSync(file.path, 'utf8');
+      // Handle CSV files - remove BOM if present
+      let csvContent = fs.readFileSync(file.path, 'utf8');
+      if (csvContent.charCodeAt(0) === 0xFEFF) {
+        csvContent = csvContent.slice(1);
+      }
       const workbook = XLSX.read(csvContent, { type: 'string' });
       const sheetName = workbook.SheetNames[0];
       const worksheet = workbook.Sheets[sheetName];
@@ -1649,15 +1652,24 @@ router.post('/api/service-plans/upload-excel', requireAdmin, pricingUpload.singl
         if (!rowData || Object.keys(rowData).length === 0) {
           continue;
         }
+        // Debug: Show raw row data
+        console.log('Processing row keys:', Object.keys(rowData));
+        console.log('Raw 요금제명 value:', JSON.stringify(rowData['요금제명']));
+        
         // Map Excel columns to service plan fields with trimming
+        const planName = String(rowData['요금제명'] || rowData['planName'] || '').trim();
+        const carrier = String(rowData['통신사'] || rowData['carrier'] || '').trim();
+        
         const planData: any = {
-          planName: (rowData['요금제명'] || rowData['planName'] || '').toString().trim(),
-          carrier: (rowData['통신사'] || rowData['carrier'] || '').toString().trim(),
-          planType: (rowData['요금제유형'] || rowData['planType'] || rowData['유형'] || '4G').toString().trim(),
-          dataAllowance: (rowData['데이터제공량'] || rowData['dataAllowance'] || rowData['데이터'] || '').toString().trim(),
+          planName: planName,
+          carrier: carrier,
+          planType: String(rowData['요금제유형'] || rowData['planType'] || rowData['유형'] || '4G').trim(),
+          dataAllowance: String(rowData['데이터제공량'] || rowData['dataAllowance'] || rowData['데이터'] || '').trim(),
           monthlyFee: parseInt(String(rowData['월요금'] || rowData['monthlyFee'] || rowData['월요금(원)'] || 0)),
           isActive: rowData['활성여부'] !== false && rowData['isActive'] !== false
         };
+        
+        console.log('Processed planData:', { planName, carrier });
 
         // Validate required fields (after trimming)
         if (!planData.planName || !planData.carrier) {
