@@ -173,7 +173,7 @@ export interface Carrier {
 // 서비스 플랜 타입
 export interface ServicePlan {
   id: number;
-  name: string;
+  planName: string; // name을 planName으로 변경
   carrier: string;
   planType: string;
   dataAllowance?: string;

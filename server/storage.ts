@@ -651,7 +651,13 @@ export class DatabaseStorage implements IStorage {
       const result = await db.select().from(servicePlans)
         .where(eq(servicePlans.isActive, true))
         .orderBy(servicePlans.carrier, servicePlans.name);
-      return result;
+      
+      // DB의 name 필드를 planName으로 매핑
+      return result.map(plan => ({
+        ...plan,
+        planName: plan.name,
+        name: undefined // name 필드 제거
+      })) as ServicePlan[];
     } catch (error) {
       console.error('Get service plans error:', error);
       return [];
@@ -671,7 +677,13 @@ export class DatabaseStorage implements IStorage {
         createdAt: new Date(),
         updatedAt: new Date(),
       }).returning();
-      return result;
+      
+      // DB의 name 필드를 planName으로 매핑하여 반환
+      return {
+        ...result,
+        planName: result.name,
+        name: undefined // name 필드 제거
+      } as ServicePlan;
     } catch (error) {
       console.error('Create service plan error:', error);
       throw new Error('서비스 플랜 생성에 실패했습니다.');
@@ -680,11 +692,16 @@ export class DatabaseStorage implements IStorage {
 
   async updateServicePlan(id: number, data: any): Promise<ServicePlan> {
     try {
+      // planName을 name으로 변환하여 DB에 저장
+      const updateData = {
+        ...data,
+        name: data.planName || data.name,
+        planName: undefined, // planName 필드 제거
+        updatedAt: new Date(),
+      };
+      
       const [result] = await db.update(servicePlans)
-        .set({
-          ...data,
-          updatedAt: new Date(),
-        })
+        .set(updateData)
         .where(eq(servicePlans.id, id))
         .returning();
       
@@ -692,7 +709,12 @@ export class DatabaseStorage implements IStorage {
         throw new Error('서비스 플랜을 찾을 수 없습니다.');
       }
       
-      return result;
+      // DB의 name 필드를 planName으로 매핑하여 반환
+      return {
+        ...result,
+        planName: result.name,
+        name: undefined // name 필드 제거
+      } as ServicePlan;
     } catch (error) {
       console.error('Update service plan error:', error);
       throw new Error('서비스 플랜 수정에 실패했습니다.');
@@ -721,7 +743,13 @@ export class DatabaseStorage implements IStorage {
           eq(servicePlans.isActive, true)
         ))
         .orderBy(servicePlans.name);
-      return result;
+      
+      // DB의 name 필드를 planName으로 매핑
+      return result.map(plan => ({
+        ...plan,
+        planName: plan.name,
+        name: undefined // name 필드 제거
+      })) as ServicePlan[];
     } catch (error) {
       console.error('Get service plans by carrier error:', error);
       return [];
@@ -736,7 +764,16 @@ export class DatabaseStorage implements IStorage {
           eq(servicePlans.carrier, carrier),
           eq(servicePlans.isActive, true)
         ));
-      return result;
+      
+      if (result) {
+        // DB의 name 필드를 planName으로 매핑
+        return {
+          ...result,
+          planName: result.name,
+          name: undefined // name 필드 제거
+        } as ServicePlan;
+      }
+      return undefined;
     } catch (error) {
       console.error('Find service plan by name and carrier error:', error);
       return undefined;
