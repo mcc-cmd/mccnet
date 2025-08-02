@@ -625,6 +625,51 @@ export class DatabaseStorage implements IStorage {
     return [];
   }
 
+  // 통신사 관련 메서드들
+  async getCarriers(): Promise<any[]> {
+    // 임시로 기본 통신사 목록 반환
+    return [
+      { id: 1, name: 'SK', isActive: true },
+      { id: 2, name: 'KT', isActive: true },
+      { id: 3, name: 'LG', isActive: true },
+      { id: 4, name: 'SK알뜰', isActive: true },
+      { id: 5, name: 'KT알뜰', isActive: true },
+      { id: 6, name: 'LG알뜰', isActive: true }
+    ];
+  }
+
+  async createCarrier(carrierData: any): Promise<any> {
+    // 실제 데이터베이스가 있다면 여기서 생성
+    console.log('Creating carrier:', carrierData);
+    
+    // 임시로 생성된 통신사 정보 반환
+    const newCarrier = {
+      id: Date.now(),
+      name: carrierData.name,
+      isActive: true,
+      createdAt: new Date(),
+      ...carrierData
+    };
+    
+    return newCarrier;
+  }
+
+  async updateCarrier(id: number, carrierData: any): Promise<any> {
+    // 실제 데이터베이스가 있다면 여기서 업데이트
+    console.log('Updating carrier:', id, carrierData);
+    
+    return {
+      id,
+      ...carrierData,
+      updatedAt: new Date()
+    };
+  }
+
+  async deleteCarrier(id: number): Promise<void> {
+    // 실제 데이터베이스가 있다면 여기서 삭제
+    console.log('Deleting carrier:', id);
+  }
+
   // 중복 접수 확인 메서드
   async checkDuplicateDocument(params: {
     customerName: string;
