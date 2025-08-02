@@ -900,12 +900,7 @@ export function AdminPanel() {
     queryFn: () => apiRequest('/api/admin/users') as Promise<Array<User & { dealerName: string; userType: string; displayName: string; affiliation: string; accountType: string }>>,
   });
 
-  // 디버깅용 로그
-  console.log('Users data:', users);
-  console.log('Users loading:', usersLoading);
-  console.log('Users error:', usersError);
-  console.log('Users is array:', Array.isArray(users));
-  console.log('Users length:', users?.length);
+  // 디버깅용 로그 제거 (정상 작동 확인됨)
 
   // Sales managers data query
   const { data: salesManagers = [] } = useQuery({
@@ -2849,14 +2844,7 @@ export function AdminPanel() {
                     <Users className="mx-auto h-12 w-12 text-gray-400" />
                     <h3 className="mt-2 text-sm font-medium text-gray-900">사용자가 없습니다</h3>
                     <p className="mt-1 text-sm text-gray-500">첫 번째 사용자를 추가해보세요.</p>
-                    {usersError && (
-                      <p className="mt-2 text-sm text-red-500">오류: {String(usersError)}</p>
-                    )}
-                    <p className="mt-2 text-sm text-gray-400">
-                      데이터 개수: {users?.length || 0} | 
-                      배열여부: {Array.isArray(users) ? 'Yes' : 'No'} | 
-                      로딩중: {usersLoading ? 'Yes' : 'No'}
-                    </p>
+
                   </div>
                 )}
               </CardContent>

@@ -340,8 +340,27 @@ export class DatabaseStorage implements IStorage {
 
   // 근무자 관리
   async createWorker(data: CreateWorkerForm): Promise<any> {
-    // 기존 시스템과의 연동을 위해 안내 메시지 반환
-    throw new Error('근무자 계정은 기존 시스템에서 관리됩니다. 시스템 관리자에게 문의하세요.');
+    const hashedPassword = await bcrypt.hash(data.password, 10);
+    
+    const stmt = this.db.prepare(`
+      INSERT INTO users (username, password, name, user_type)
+      VALUES (?, ?, ?, 'worker')
+    `);
+    
+    try {
+      const result = stmt.run(data.username, hashedPassword, data.name);
+      return {
+        id: result.lastInsertRowid,
+        username: data.username,
+        name: data.name,
+        userType: 'worker'
+      };
+    } catch (error: any) {
+      if (error.code === 'SQLITE_CONSTRAINT_UNIQUE') {
+        throw new Error('이미 존재하는 아이디입니다.');
+      }
+      throw error;
+    }
   }
   
   // 호환성을 위한 기존 사용자 인증 메서드 (임시)
