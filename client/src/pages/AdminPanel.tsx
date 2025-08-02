@@ -4644,78 +4644,104 @@ export function AdminPanel() {
                       <p className="mt-2 text-sm text-gray-500">요금제를 불러오는 중...</p>
                     </div>
                   ) : servicePlans && servicePlans.length > 0 ? (
-                    <div className="overflow-x-auto">
-                      <table className="min-w-full divide-y divide-gray-200">
-                        <thead className="bg-gray-50">
-                          <tr>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                              요금제명
-                            </th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                              통신사
-                            </th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                              유형
-                            </th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                              데이터
-                            </th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                              월 요금
-                            </th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                              상태
-                            </th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                              관리
-                            </th>
-                          </tr>
-                        </thead>
-                        <tbody className="bg-white divide-y divide-gray-200">
-                          {servicePlans.map((plan) => (
-                            <tr key={plan.id}>
-                              <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                {plan.planName}
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                {plan.carrier}
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                {plan.planType}
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                {plan.dataAllowance}
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                {Math.floor(parseFloat(plan.monthlyFee)).toLocaleString()}원
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap">
-                                <Badge variant={plan.isActive ? "default" : "secondary"}>
-                                  {plan.isActive ? '활성' : '비활성'}
-                                </Badge>
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                <div className="flex space-x-2">
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => openEditServicePlanDialog(plan)}
-                                  >
-                                    편집
-                                  </Button>
-                                  <Button
-                                    variant="destructive"
-                                    size="sm"
-                                    onClick={() => handleDeleteServicePlan(plan.id)}
-                                  >
-                                    삭제
-                                  </Button>
-                                </div>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
+                    <div className="space-y-6">
+                      {(() => {
+                        // 통신사별로 그룹화
+                        const plansByCarrier = servicePlans
+                          .sort((a, b) => {
+                            // 먼저 통신사별로 정렬, 그 다음 요금제명으로 정렬
+                            if (a.carrier !== b.carrier) {
+                              return a.carrier.localeCompare(b.carrier);
+                            }
+                            return a.planName.localeCompare(b.planName);
+                          })
+                          .reduce((acc, plan) => {
+                            if (!acc[plan.carrier]) {
+                              acc[plan.carrier] = [];
+                            }
+                            acc[plan.carrier].push(plan);
+                            return acc;
+                          }, {} as Record<string, typeof servicePlans>);
+
+                        return Object.entries(plansByCarrier).map(([carrier, plans]) => (
+                          <div key={carrier} className="border rounded-lg overflow-hidden">
+                            {/* 통신사 헤더 */}
+                            <div className="bg-gray-100 px-6 py-3 border-b">
+                              <h3 className="text-lg font-semibold text-gray-900">{carrier}</h3>
+                              <p className="text-sm text-gray-600">{plans.length}개 요금제</p>
+                            </div>
+                            
+                            {/* 요금제 테이블 */}
+                            <div className="overflow-x-auto">
+                              <table className="min-w-full divide-y divide-gray-200">
+                                <thead className="bg-gray-50">
+                                  <tr>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                      요금제명
+                                    </th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                      유형
+                                    </th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                      데이터
+                                    </th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                      월 요금
+                                    </th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                      상태
+                                    </th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                      관리
+                                    </th>
+                                  </tr>
+                                </thead>
+                                <tbody className="bg-white divide-y divide-gray-200">
+                                  {plans.map((plan) => (
+                                    <tr key={plan.id}>
+                                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                        {plan.planName}
+                                      </td>
+                                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                        {plan.planType}
+                                      </td>
+                                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                        {plan.dataAllowance}
+                                      </td>
+                                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                        {Math.floor(parseFloat(plan.monthlyFee)).toLocaleString()}원
+                                      </td>
+                                      <td className="px-6 py-4 whitespace-nowrap">
+                                        <Badge variant={plan.isActive ? "default" : "secondary"}>
+                                          {plan.isActive ? '활성' : '비활성'}
+                                        </Badge>
+                                      </td>
+                                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                        <div className="flex space-x-2">
+                                          <Button
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => openEditServicePlanDialog(plan)}
+                                          >
+                                            편집
+                                          </Button>
+                                          <Button
+                                            variant="destructive"
+                                            size="sm"
+                                            onClick={() => handleDeleteServicePlan(plan.id)}
+                                          >
+                                            삭제
+                                          </Button>
+                                        </div>
+                                      </td>
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            </div>
+                          </div>
+                        ));
+                      })()}
                     </div>
                   ) : (
                     <div className="text-center py-8">
