@@ -46,6 +46,7 @@ interface SalesManagerStats {
   id: number;
   name: string;
   team: string;
+  position: '팀장' | '과장' | '대리';
   totalActivations: number;
   monthlyActivations: number;
   dealers: DealerStats[];
@@ -64,7 +65,8 @@ const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8'];
 export default function SalesManagerDashboard() {
   const { user } = useAuth();
   const [selectedSalesManager, setSelectedSalesManager] = useState<SalesManagerStats | null>(null);
-  const [viewMode, setViewMode] = useState<'overview' | 'manager' | 'dealer'>('overview');
+  const [selectedTeam, setSelectedTeam] = useState<TeamStats | null>(null);
+  const [viewMode, setViewMode] = useState<'overview' | 'manager' | 'dealer' | 'team'>('overview');
 
   const { data: salesStats, isLoading } = useQuery({
     queryKey: ['/api/sales-stats'],
@@ -83,7 +85,10 @@ export default function SalesManagerDashboard() {
   }
 
   const currentUserTeam = user?.team || '';
-  const isTeamLeader = user?.name === '황병준' || user?.name === '김영수'; // 팀장 확인
+  const currentUserPosition = user?.position || '';
+  const isTeamLeader = currentUserPosition === '팀장';
+  const isManager = currentUserPosition === '과장';
+  const isAssociate = currentUserPosition === '대리';
 
   const renderOverview = () => (
     <div className="space-y-6">
@@ -143,15 +148,23 @@ export default function SalesManagerDashboard() {
           <CardContent>
             <div className="space-y-4">
               {salesStats.teamStats.map((team) => (
-                <div key={team.team} className="border rounded-lg p-4">
+                <div key={team.team} className="border rounded-lg p-4 cursor-pointer hover:bg-gray-50" 
+                     onClick={() => {
+                       // 팀을 클릭했을 때 해당 팀원들 표시
+                       setViewMode('team');
+                       setSelectedTeam(team);
+                     }}>
                   <div className="flex justify-between items-center mb-2">
                     <h3 className="font-medium">{team.team}</h3>
-                    <Badge variant="outline">
-                      총 {team.totalActivations}건
-                    </Badge>
+                    <div className="flex items-center space-x-2">
+                      <Badge variant="outline">
+                        총 {team.totalActivations}건
+                      </Badge>
+                      <ChevronRight className="h-4 w-4 text-gray-400" />
+                    </div>
                   </div>
                   <div className="text-sm text-gray-600">
-                    이번 달: {team.monthlyActivations}건
+                    이번 달: {team.monthlyActivations}건 | 팀원: {team.salesManagers?.length || 0}명
                   </div>
                 </div>
               ))}
@@ -168,12 +181,16 @@ export default function SalesManagerDashboard() {
         <CardContent>
           <div className="space-y-4">
             {salesStats?.salesManagerStats
-              .filter(manager => isTeamLeader || manager.name === user?.name)
+              .filter(manager => {
+                if (isTeamLeader) return manager.team === currentUserTeam;
+                if (isManager || isAssociate) return manager.name === user?.name;
+                return false;
+              })
               .map((manager) => (
               <div key={manager.id} className="border rounded-lg p-4">
                 <div className="flex justify-between items-center">
                   <div>
-                    <h3 className="font-medium">{manager.name}</h3>
+                    <h3 className="font-medium">{manager.name} ({manager.position})</h3>
                     <p className="text-sm text-gray-600">{manager.team}</p>
                     <div className="mt-2 space-y-1">
                       <div className="text-sm">
@@ -203,8 +220,8 @@ export default function SalesManagerDashboard() {
     </div>
   );
 
-  const renderManagerDetail = () => {
-    if (!selectedSalesManager) return null;
+  const renderTeamDetail = () => {
+    if (!selectedTeam) return null;
 
     return (
       <div className="space-y-6">
@@ -218,7 +235,67 @@ export default function SalesManagerDashboard() {
             뒤로 가기
           </Button>
           <div>
-            <h2 className="text-xl font-bold">{selectedSalesManager.name} 실적</h2>
+            <h2 className="text-xl font-bold">{selectedTeam.team} 팀원 목록</h2>
+            <p className="text-gray-600">총 실적: {selectedTeam.totalActivations}건 | 이번 달: {selectedTeam.monthlyActivations}건</p>
+          </div>
+        </div>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>팀원별 실적</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {selectedTeam.salesManagers?.map((manager) => (
+                <div key={manager.id} className="border rounded-lg p-4">
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <h3 className="font-medium">{manager.name} ({manager.position})</h3>
+                      <div className="mt-2 space-y-1">
+                        <div className="text-sm">
+                          <span className="text-gray-500">총 개통:</span> {manager.totalActivations}건
+                        </div>
+                        <div className="text-sm">
+                          <span className="text-gray-500">이번 달:</span> {manager.monthlyActivations}건
+                        </div>
+                      </div>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setSelectedSalesManager(manager);
+                        setViewMode('manager');
+                      }}
+                    >
+                      판매점 보기 <ChevronRight className="ml-1 h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  };
+
+  const renderManagerDetail = () => {
+    if (!selectedSalesManager) return null;
+
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center space-x-4">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setViewMode(selectedTeam ? 'team' : 'overview')}
+          >
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            뒤로 가기
+          </Button>
+          <div>
+            <h2 className="text-xl font-bold">{selectedSalesManager.name} ({selectedSalesManager.position}) 실적</h2>
             <p className="text-gray-600">{selectedSalesManager.team}</p>
           </div>
         </div>
@@ -289,6 +366,7 @@ export default function SalesManagerDashboard() {
         </div>
 
         {viewMode === 'overview' && renderOverview()}
+        {viewMode === 'team' && renderTeamDetail()}
         {viewMode === 'manager' && renderManagerDetail()}
       </div>
     </div>

@@ -49,6 +49,7 @@ export const salesManagers = pgTable("sales_managers", {
   managerCode: varchar("manager_code", { length: 20 }).unique().notNull(), // 과장 코드
   username: varchar("username", { length: 50 }).unique().notNull(), // 로그인 ID
   password: varchar("password", { length: 255 }).notNull(), // 해시된 비밀번호
+  position: varchar("position", { length: 20 }).notNull().default('대리'), // 직급
   contactPhone: varchar("contact_phone", { length: 20 }),
   email: varchar("email", { length: 100 }),
   isActive: boolean("is_active").default(true),
@@ -117,6 +118,7 @@ export interface SalesManager {
   managerCode: string;
   username: string;
   password: string;
+  position: '팀장' | '과장' | '대리'; // 직급 필드 추가
   contactPhone?: string;
   email?: string;
   isActive: boolean;
@@ -726,10 +728,11 @@ export const updateSalesTeamSchema = createSalesTeamSchema.partial();
 // 영업과장 관리 스키마
 export const createSalesManagerSchema = z.object({
   teamId: z.number().min(1, "영업팀을 선택해주세요"),
-  managerName: z.string().min(1, "과장명을 입력해주세요"),
-  managerCode: z.string().min(1, "과장 코드를 입력해주세요"),
+  managerName: z.string().min(1, "이름을 입력해주세요"),
+  managerCode: z.string().min(1, "코드를 입력해주세요"),
   username: z.string().min(3, "로그인 ID는 최소 3자 이상이어야 합니다"),
   password: z.string().min(6, "비밀번호는 최소 6자 이상이어야 합니다"),
+  position: z.enum(['팀장', '과장', '대리'], { required_error: "직급을 선택해주세요" }),
   contactPhone: z.string().optional(),
   email: z.string().email("올바른 이메일을 입력해주세요").optional().or(z.literal("")),
 });

@@ -33,6 +33,7 @@ interface SalesManager {
   managerName: string;
   managerCode: string;
   username: string;
+  position: '팀장' | '과장' | '대리';
   contactPhone?: string;
   email?: string;
   isActive: boolean;
@@ -359,10 +360,32 @@ export default function SalesTeamManagement() {
                         name="managerName"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>과장명</FormLabel>
+                            <FormLabel>이름</FormLabel>
                             <FormControl>
                               <Input placeholder="예: 홍길동" {...field} />
                             </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={managerForm.control}
+                        name="position"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>직급</FormLabel>
+                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="직급을 선택하세요" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                <SelectItem value="팀장">팀장</SelectItem>
+                                <SelectItem value="과장">과장</SelectItem>
+                                <SelectItem value="대리">대리</SelectItem>
+                              </SelectContent>
+                            </Select>
                             <FormMessage />
                           </FormItem>
                         )}
@@ -424,7 +447,7 @@ export default function SalesTeamManagement() {
                       <CardContent className="pt-4">
                         <div className="flex justify-between items-start">
                           <div>
-                            <h3 className="font-semibold">{manager.managerName}</h3>
+                            <h3 className="font-semibold">{manager.managerName} ({manager.position})</h3>
                             <p className="text-sm text-muted-foreground">
                               코드: {manager.managerCode} | ID: {manager.username}
                             </p>
