@@ -3206,7 +3206,7 @@ router.get('/api/carriers/excel-template', requireAuth, requireAdmin, (req: any,
 });
 
 // 통신사 엑셀 업로드
-router.post('/api/carriers/upload-excel', requireAuth, requireAdmin, upload.single('file'), async (req: any, res) => {
+router.post('/api/carriers/upload-excel', requireAuth, requireAdmin, contactCodeUpload.single('file'), async (req: any, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ error: '파일이 선택되지 않았습니다.' });
