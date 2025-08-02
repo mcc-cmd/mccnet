@@ -908,6 +908,14 @@ export function AdminPanel() {
     queryFn: () => apiRequest('/api/admin/users') as Promise<Array<User & { dealerName: string; userType: string; displayName: string; affiliation: string; accountType: string }>>,
   });
 
+  // 통신사 데이터 조회 (서비스 플랜 관리용)
+  const { data: carriersData = [], isLoading: carriersLoading } = useQuery({
+    queryKey: ['/api/carriers'],
+    queryFn: () => apiRequest('/api/carriers') as Promise<Carrier[]>,
+    staleTime: 0,
+    refetchOnWindowFocus: true
+  });
+
   // 디버깅용 로그 제거 (정상 작동 확인됨)
 
   // Sales managers data query
