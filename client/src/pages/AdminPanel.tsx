@@ -2823,16 +2823,29 @@ export function AdminPanel() {
                               {format(new Date(user.createdAt), 'yyyy-MM-dd', { locale: ko })}
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                              {user.id !== 1 && (
+                              <div className="flex space-x-2">
                                 <Button
                                   variant="outline"
                                   size="sm"
-                                  onClick={() => handleDeleteUser(user.id)}
-                                  className="text-red-600 hover:text-red-700"
+                                  onClick={() => {
+                                    setSelectedUser(user);
+                                    setChangePasswordDialogOpen(true);
+                                  }}
+                                  className="text-blue-600 hover:text-blue-700"
                                 >
-                                  <Trash2 className="h-4 w-4" />
+                                  <Edit className="h-4 w-4" />
                                 </Button>
-                              )}
+                                {user.id !== 1 && (
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => handleDeleteUser(user.id)}
+                                    className="text-red-600 hover:text-red-700"
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                )}
+                              </div>
                             </td>
                           </tr>
                         ))}
@@ -3315,9 +3328,11 @@ export function AdminPanel() {
                         });
                         return;
                       }
+                      // 계정 타입 결정: userType이 worker면 worker, 아니면 accountType 사용
+                      const accountType = selectedUser.userType === 'worker' ? 'worker' : selectedUser.accountType;
                       changePasswordMutation.mutate({
                         userId: selectedUser.id,
-                        accountType: selectedUser.accountType,
+                        accountType: accountType,
                         newPassword: data.newPassword
                       });
                     })} className="space-y-4">

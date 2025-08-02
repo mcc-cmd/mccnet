@@ -461,8 +461,10 @@ router.get('/api/admin/sales-managers', requireAdmin, async (req, res) => {
 router.post('/api/admin/change-password', requireAdmin, async (req: any, res) => {
   try {
     const { userId, accountType, newPassword } = req.body;
+    console.log('Password change request:', { userId, accountType, newPassword: '***' });
     
     if (!userId || !accountType || !newPassword) {
+      console.log('Missing required fields:', { userId: !!userId, accountType: !!accountType, newPassword: !!newPassword });
       return res.status(400).json({ error: '필수 정보가 누락되었습니다.' });
     }
 
@@ -472,9 +474,13 @@ router.post('/api/admin/change-password', requireAdmin, async (req: any, res) =>
 
     // 시스템 관리자 권한 확인 - admin 계정만 허용
     const currentUser = await storage.getAdminById(req.session.userId);
+    console.log('Current user check:', { currentUserId: req.session.userId, username: currentUser?.username });
+    
     if (!currentUser || currentUser.username !== 'admin') {
       return res.status(403).json({ error: '비밀번호 변경은 시스템 관리자(admin)만 가능합니다.' });
     }
+
+    console.log('Processing password change for:', { userId, accountType });
 
     if (accountType === 'admin') {
       await storage.updateAdminPassword(userId, newPassword);
@@ -483,11 +489,14 @@ router.post('/api/admin/change-password', requireAdmin, async (req: any, res) =>
     } else if (accountType === 'worker') {
       await storage.updateUserPassword(userId, newPassword);
     } else {
+      console.log('Unsupported account type:', accountType);
       return res.status(400).json({ error: '지원되지 않는 계정 유형입니다.' });
     }
 
+    console.log('Password change successful for user:', userId);
     res.json({ success: true, message: '비밀번호가 성공적으로 변경되었습니다.' });
   } catch (error: any) {
+    console.error('Password change error:', error);
     res.status(400).json({ error: error.message });
   }
 });
