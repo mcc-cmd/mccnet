@@ -2821,7 +2821,7 @@ export function AdminPanel() {
                               {format(new Date(user.createdAt), 'yyyy-MM-dd', { locale: ko })}
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                              {user.id !== currentUser?.id && (
+                              {user.id !== 1 && (
                                 <Button
                                   variant="outline"
                                   size="sm"
