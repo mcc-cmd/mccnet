@@ -4041,7 +4041,7 @@ export function AdminPanel() {
                             고객명
                           </th>
                           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            대리점
+                            판매점명
                           </th>
                           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                             상태

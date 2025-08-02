@@ -320,6 +320,7 @@ export function Documents() {
       additionalServiceIds: parsedServiceIds,
       registrationFeePrepaid: (doc as any).registrationFeePrepaid || false,
       registrationFeePostpaid: (doc as any).registrationFeePostpaid || false,
+      registrationFeeInstallment: (doc as any).registrationFeeInstallment || false,
       simFeePrepaid: (doc as any).simFeePrepaid || false,
       simFeePostpaid: (doc as any).simFeePostpaid || false,
       bundleApplied: (doc as any).bundleApplied || false,
@@ -468,12 +469,14 @@ export function Documents() {
       additionalServiceIds: (doc as any).additionalServiceIds ? JSON.parse((doc as any).additionalServiceIds) : [],
       registrationFeePrepaid: (doc as any).registrationFeePrepaid || false,
       registrationFeePostpaid: (doc as any).registrationFeePostpaid || false,
+      registrationFeeInstallment: (doc as any).registrationFeeInstallment || false,
       simFeePrepaid: (doc as any).simFeePrepaid || false,
       simFeePostpaid: (doc as any).simFeePostpaid || false,
       bundleApplied: (doc as any).bundleApplied || false,
       bundleNotApplied: (doc as any).bundleNotApplied || false,
       deviceModel: (doc as any).deviceModel || '',
-      simNumber: (doc as any).simNumber || ''
+      simNumber: (doc as any).simNumber || '',
+      subscriptionNumber: (doc as any).subscriptionNumber || ''
     });
     setServicePlanDialogOpen(true);
   };
@@ -768,7 +771,7 @@ export function Documents() {
                                   </div>
                                   {(doc as any).supplementRequiredAt && (
                                     <div className="text-orange-600 mt-1 text-xs">
-                                      요청일: {format(new Date((doc as any).supplementRequiredAt), 'MM-dd HH:mm', { locale: ko })}
+                                      요청일: {format(new Date((doc as any).supplementRequiredAt || new Date()), 'MM-dd HH:mm', { locale: ko })}
                                     </div>
                                   )}
                                 </div>
@@ -898,7 +901,7 @@ export function Documents() {
                           {(doc as any).supplementRequiredAt && (
                             <div className="text-xs text-orange-600 mt-2 flex items-center">
                               <span className="mr-1">⏰</span>
-                              요청일: {format(new Date((doc as any).supplementRequiredAt), 'yyyy-MM-dd HH:mm', { locale: ko })}
+                              요청일: {format(new Date((doc as any).supplementRequiredAt || new Date()), 'yyyy-MM-dd HH:mm', { locale: ko })}
                             </div>
                           )}
                         </div>
@@ -1214,7 +1217,7 @@ export function Documents() {
                               ...prev,
                               registrationFeePrepaid: e.target.checked,
                               registrationFeePostpaid: e.target.checked ? false : prev.registrationFeePostpaid,
-                              registrationFeeInstallment: e.target.checked ? false : prev.registrationFeeInstallment
+                              registrationFeeInstallment: e.target.checked ? false : (prev.registrationFeeInstallment || false)
                             }));
                           }}
                           className="rounded"
@@ -1230,7 +1233,7 @@ export function Documents() {
                               ...prev,
                               registrationFeePostpaid: e.target.checked,
                               registrationFeePrepaid: e.target.checked ? false : prev.registrationFeePrepaid,
-                              registrationFeeInstallment: e.target.checked ? false : prev.registrationFeeInstallment
+                              registrationFeeInstallment: e.target.checked ? false : (prev.registrationFeeInstallment || false)
                             }));
                           }}
                           className="rounded"
@@ -1240,7 +1243,7 @@ export function Documents() {
                       <label className="flex items-center space-x-2">
                         <input
                           type="checkbox"
-                          checked={activationForm.registrationFeeInstallment}
+                          checked={activationForm.registrationFeeInstallment || false}
                           onChange={(e) => {
                             setActivationForm(prev => ({
                               ...prev,
@@ -1484,7 +1487,12 @@ export function Documents() {
                             
                             // 일반 텍스트 검색
                             return planNameLower.includes(searchLower);
-                          }).map((plan) => (
+                          })
+                          // 중복 제거 - ID를 기준으로 고유한 플랜만 표시
+                          .filter((plan, index, array) => 
+                            array.findIndex(p => p.id === plan.id) === index
+                          )
+                          .map((plan) => (
                             <CommandItem
                               key={plan.id}
                               value={plan.planName}

@@ -996,6 +996,7 @@ export class DatabaseStorage implements IStorage {
     dealerId?: number;
   }): Promise<any[]> {
     try {
+      // First, get all documents with dealer information
       let query = db.select({
         id: documents.id,
         documentNumber: documents.documentNumber,
@@ -1015,7 +1016,8 @@ export class DatabaseStorage implements IStorage {
         assignedWorkerId: documents.assignedWorkerId,
         filePath: documents.filePath,
         fileName: documents.fileName,
-        fileSize: documents.fileSize
+        fileSize: documents.fileSize,
+        dealerNotes: documents.dealerNotes
       }).from(documents);
 
       const conditions = [];
@@ -1065,7 +1067,23 @@ export class DatabaseStorage implements IStorage {
       const result = await query.orderBy(desc(documents.uploadedAt));
       console.log('Documents found:', result.length);
       
-      return result;
+      // Add dealer name from contact codes
+      const documentsWithDealerName = await Promise.all(result.map(async (doc) => {
+        // Get dealer name from contact codes table
+        const contactCodeResult = await db.select({
+          dealerName: contactCodes.dealerName
+        })
+        .from(contactCodes)
+        .where(eq(contactCodes.code, doc.contactCode))
+        .limit(1);
+        
+        return {
+          ...doc,
+          dealerName: contactCodeResult.length > 0 ? contactCodeResult[0].dealerName : '미확인'
+        };
+      }));
+      
+      return documentsWithDealerName;
     } catch (error) {
       console.error('Error fetching documents:', error);
       throw new Error('문서 조회에 실패했습니다.');
@@ -1170,6 +1188,39 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error('Error updating document activation status:', error);
       throw new Error('문서 개통 상태 업데이트에 실패했습니다.');
+    }
+  }
+
+  async updateDocumentServicePlanDirect(id: number, data: any): Promise<any> {
+    try {
+      const updateData: any = {
+        updatedAt: new Date()
+      };
+
+      // 서비스 플랜 관련 데이터 업데이트
+      if (data.servicePlanId !== undefined) updateData.servicePlanId = data.servicePlanId;
+      if (data.additionalServiceIds !== undefined) updateData.additionalServiceIds = data.additionalServiceIds;
+      if (data.registrationFeePrepaid !== undefined) updateData.registrationFeePrepaid = data.registrationFeePrepaid;
+      if (data.registrationFeePostpaid !== undefined) updateData.registrationFeePostpaid = data.registrationFeePostpaid;
+      if (data.registrationFeeInstallment !== undefined) updateData.registrationFeeInstallment = data.registrationFeeInstallment;
+      if (data.simFeePrepaid !== undefined) updateData.simFeePrepaid = data.simFeePrepaid;
+      if (data.simFeePostpaid !== undefined) updateData.simFeePostpaid = data.simFeePostpaid;
+      if (data.bundleApplied !== undefined) updateData.bundleApplied = data.bundleApplied;
+      if (data.bundleNotApplied !== undefined) updateData.bundleNotApplied = data.bundleNotApplied;
+      if (data.deviceModel !== undefined) updateData.deviceModel = data.deviceModel;
+      if (data.simNumber !== undefined) updateData.simNumber = data.simNumber;
+      if (data.subscriptionNumber !== undefined) updateData.subscriptionNumber = data.subscriptionNumber;
+      if (data.dealerNotes !== undefined) updateData.dealerNotes = data.dealerNotes;
+
+      const [updatedDocument] = await db.update(documents)
+        .set(updateData)
+        .where(eq(documents.id, id))
+        .returning();
+
+      return updatedDocument;
+    } catch (error) {
+      console.error('Error updating document service plan:', error);
+      throw new Error('문서 서비스 플랜 업데이트에 실패했습니다.');
     }
   }
   
@@ -1474,67 +1525,87 @@ export class DatabaseStorage implements IStorage {
     storeName?: string;
     contactCode?: string;
   }): Promise<any[]> {
-    // 실제 데이터베이스에 documents 테이블이 있다면 이 로직을 사용
-    // 현재는 빈 배열 반환 (기존 시스템과의 호환성을 위해)
-    
-    // 중복 확인 로직:
-    // 1. 같은 달 (현재 년월)
-    // 2. 같은 판매점 (storeName 또는 contactCode 기준)
-    // 3. 같은 통신사 (carrier)
-    // 4. 같은 명의 (customerName + customerPhone)
-    // 5. 상태가 '접수관리' 또는 '개통완료'인 건만 체크
-    
-    const currentYear = new Date().getFullYear();
-    const currentMonth = new Date().getMonth() + 1;
-    
-    // 여기서는 임시로 빈 배열을 반환
-    // 실제 구현에서는 데이터베이스 쿼리를 수행해야 함
-    /*
-    예시 쿼리:
-    const duplicates = await db.select()
-      .from(documents)
-      .where(
-        and(
-          eq(documents.customerName, params.customerName),
-          eq(documents.customerPhone, params.customerPhone),
-          eq(documents.carrier, params.carrier),
-          or(
-            eq(documents.storeName, params.storeName),
-            eq(documents.contactCode, params.contactCode)
-          ),
-          // 같은 달 조건
-          sql`EXTRACT(YEAR FROM uploaded_at) = ${currentYear}`,
-          sql`EXTRACT(MONTH FROM uploaded_at) = ${currentMonth}`,
-          // 상태 조건 ('접수관리' 또는 '개통완료')
-          or(
-            eq(documents.activationStatus, '진행중'),
-            eq(documents.activationStatus, '개통완료'),
-            eq(documents.activationStatus, '개통')
-          )
+    try {
+      // 중복 확인 로직:
+      // 1. 같은 달 (현재 년월)
+      // 2. 같은 판매점 (storeName 또는 contactCode 기준)
+      // 3. 같은 통신사 (carrier)
+      // 4. 같은 명의 (customerName + customerPhone)
+      // 5. 활성 상태인 건만 체크
+      
+      const currentDate = new Date();
+      const currentYear = currentDate.getFullYear();
+      const currentMonth = currentDate.getMonth() + 1;
+      
+      // 조건 배열
+      const conditions = [
+        eq(documents.customerName, params.customerName),
+        eq(documents.customerPhone, params.customerPhone),
+        eq(documents.carrier, params.carrier),
+        // 같은 달 조건
+        sql`EXTRACT(YEAR FROM ${documents.uploadedAt}) = ${currentYear}`,
+        sql`EXTRACT(MONTH FROM ${documents.uploadedAt}) = ${currentMonth}`,
+        // 접수상태는 '접수'이고 활성화상태는 진행중이거나 개통완료인 건들
+        eq(documents.status, '접수'),
+        or(
+          eq(documents.activationStatus, '진행중'),
+          eq(documents.activationStatus, '개통완료'),
+          eq(documents.activationStatus, '개통'),
+          eq(documents.activationStatus, '업무요청중')
         )
-      );
-    */
-    
-    // 테스트를 위한 임시 중복 데이터 반환
-    // 실제 환경에서는 위의 주석 처리된 쿼리를 사용해야 함
-    
-    // 특정 조건에서 중복 데이터를 시뮬레이션
-    if (params.customerName === "홍길동" && params.carrier === "SK") {
-      return [
-        {
-          id: 12345,
-          customerName: params.customerName,
-          customerPhone: params.customerPhone,
-          carrier: params.carrier,
-          storeName: params.storeName || "테스트 판매점",
-          dealerName: "테스트 판매점",
-          uploadedAt: new Date().toISOString(),
-          activationStatus: "진행중"
-        }
       ];
+      
+      // 판매점 조건 추가
+      if (params.storeName) {
+        conditions.push(eq(documents.storeName, params.storeName));
+      }
+      if (params.contactCode) {
+        conditions.push(eq(documents.contactCode, params.contactCode));
+      }
+      
+      const duplicates = await db.select({
+        id: documents.id,
+        customerName: documents.customerName,
+        customerPhone: documents.customerPhone,
+        carrier: documents.carrier,
+        storeName: documents.storeName,
+        contactCode: documents.contactCode,
+        uploadedAt: documents.uploadedAt,
+        activationStatus: documents.activationStatus,
+        status: documents.status
+      })
+      .from(documents)
+      .where(and(...conditions))
+      .limit(10); // 최대 10건까지만 반환
+      
+      // 각 중복 건에 대해 판매점명 추가
+      const duplicatesWithDealerName = await Promise.all(duplicates.map(async (doc) => {
+        let dealerName = doc.storeName || '미확인';
+        
+        if (doc.contactCode) {
+          const contactCodeResult = await db.select({
+            dealerName: contactCodes.dealerName
+          })
+          .from(contactCodes)
+          .where(eq(contactCodes.code, doc.contactCode))
+          .limit(1);
+          
+          if (contactCodeResult.length > 0) {
+            dealerName = contactCodeResult[0].dealerName;
+          }
+        }
+        
+        return {
+          ...doc,
+          dealerName
+        };
+      }));
+      
+      return duplicatesWithDealerName;
+    } catch (error) {
+      console.error('중복 접수 확인 오류:', error);
+      return [];
     }
-    
-    return [];
   }
   
   // 문서 업로드 메서드 추가
