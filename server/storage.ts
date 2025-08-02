@@ -4,7 +4,7 @@ import { eq, and, desc, sql, or, like, gte, lte, inArray, count } from 'drizzle-
 import { db } from './db';
 import { 
   admins, salesTeams, salesManagers, contactCodeMappings, contactCodes,
-  carriers, servicePlans, additionalServices
+  carriers, servicePlans, additionalServices, documents
 } from '@shared/schema';
 import type {
   Admin,
@@ -986,8 +986,90 @@ export class DatabaseStorage implements IStorage {
     throw new Error('사용자를 찾을 수 없습니다.');
   }
   
-  async getDocuments(): Promise<any[]> {
-    return [];
+  async getDocuments(filters?: {
+    status?: string;
+    activationStatus?: string;
+    search?: string;
+    startDate?: string;
+    endDate?: string;
+    carrier?: string;
+    dealerId?: number;
+  }): Promise<any[]> {
+    try {
+      let query = db.select({
+        id: documents.id,
+        documentNumber: documents.documentNumber,
+        customerName: documents.customerName,
+        customerPhone: documents.customerPhone,
+        contactCode: documents.contactCode,
+        carrier: documents.carrier,
+        previousCarrier: documents.previousCarrier,
+        status: documents.status,
+        activationStatus: documents.activationStatus,
+        uploadedAt: documents.uploadedAt,
+        updatedAt: documents.updatedAt,
+        activatedAt: documents.activatedAt,
+        notes: documents.notes,
+        dealerId: documents.dealerId,
+        userId: documents.userId,
+        assignedWorkerId: documents.assignedWorkerId,
+        filePath: documents.filePath,
+        fileName: documents.fileName,
+        fileSize: documents.fileSize
+      }).from(documents);
+
+      const conditions = [];
+
+      if (filters) {
+        if (filters.status) {
+          conditions.push(eq(documents.status, filters.status));
+        }
+
+        if (filters.activationStatus) {
+          const statuses = filters.activationStatus.split(',').map(s => s.trim());
+          conditions.push(inArray(documents.activationStatus, statuses));
+        }
+
+        if (filters.search) {
+          conditions.push(
+            or(
+              like(documents.customerName, `%${filters.search}%`),
+              like(documents.customerPhone, `%${filters.search}%`),
+              like(documents.documentNumber, `%${filters.search}%`),
+              like(documents.contactCode, `%${filters.search}%`)
+            )
+          );
+        }
+
+        if (filters.startDate) {
+          conditions.push(gte(documents.uploadedAt, new Date(filters.startDate)));
+        }
+
+        if (filters.endDate) {
+          conditions.push(lte(documents.uploadedAt, new Date(filters.endDate)));
+        }
+
+        if (filters.carrier) {
+          conditions.push(eq(documents.carrier, filters.carrier));
+        }
+
+        if (filters.dealerId) {
+          conditions.push(eq(documents.dealerId, filters.dealerId));
+        }
+      }
+
+      if (conditions.length > 0) {
+        query = query.where(and(...conditions));
+      }
+
+      const result = await query.orderBy(desc(documents.uploadedAt));
+      console.log('Documents found:', result.length);
+      
+      return result;
+    } catch (error) {
+      console.error('Error fetching documents:', error);
+      throw new Error('문서 조회에 실패했습니다.');
+    }
   }
   
   async getDocumentTemplates(): Promise<any[]> {
@@ -1362,14 +1444,51 @@ export class DatabaseStorage implements IStorage {
   async uploadDocument(data: any): Promise<any> {
     try {
       console.log('Uploading document:', data);
-      // 실제 documents 테이블이 있다면 여기서 삽입
-      // 현재는 임시로 성공 응답 반환
-      return {
-        id: Date.now(),
-        ...data,
-        uploadedAt: new Date(),
+      
+      // 문서 번호 생성 (년월일 + 순번)
+      const today = new Date();
+      const datePrefix = today.getFullYear().toString() + 
+                        (today.getMonth() + 1).toString().padStart(2, '0') + 
+                        today.getDate().toString().padStart(2, '0');
+      
+      // 오늘 날짜로 시작하는 문서 수 확인
+      const countResult = await db.select({ count: count() })
+        .from(documents)
+        .where(like(documents.documentNumber, `${datePrefix}%`));
+      const todayCount = parseInt(String(countResult[0]?.count || 0));
+      const documentNumber = `${datePrefix}${(todayCount + 1).toString().padStart(4, '0')}`;
+
+      // 데이터베이스에 문서 삽입
+      const [document] = await db.insert(documents).values({
+        dealerId: data.dealerId || null,
+        userId: data.userId,
+        documentNumber: documentNumber,
+        customerName: data.customerName,
+        customerPhone: data.customerPhone,
+        contactCode: data.contactCode || null,
+        carrier: data.carrier,
+        previousCarrier: data.previousCarrier || null,
+        notes: data.notes || null,
+        filePath: data.filePath || null,
+        fileName: data.fileName || null,
+        fileSize: data.fileSize || null,
         status: '접수',
         activationStatus: '대기'
+      }).returning();
+      console.log('Document saved to database:', document);
+      
+      return {
+        id: document.id,
+        documentNumber: document.documentNumber,
+        customerName: document.customerName,
+        customerPhone: document.customerPhone,
+        contactCode: document.contactCode,
+        carrier: document.carrier,
+        previousCarrier: document.previousCarrier,
+        status: document.status,
+        activationStatus: document.activationStatus,
+        uploadedAt: document.uploadedAt,
+        updatedAt: document.updatedAt
       };
     } catch (error) {
       console.error('Document upload error:', error);

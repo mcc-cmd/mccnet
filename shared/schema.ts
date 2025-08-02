@@ -153,6 +153,63 @@ export const settlementUnitPrices = pgTable("settlement_unit_prices", {
   createdBy: integer("created_by").notNull(), // 등록한 관리자 ID
 });
 
+// 문서 접수 테이블
+export const documents = pgTable("documents", {
+  id: serial("id").primaryKey(),
+  dealerId: integer("dealer_id"), // nullable - admin이 직접 등록할 수도 있음
+  userId: integer("user_id").notNull(), // 등록한 사용자 ID
+  documentNumber: varchar("document_number", { length: 50 }).notNull().unique(),
+  customerName: varchar("customer_name", { length: 100 }).notNull(),
+  customerPhone: varchar("customer_phone", { length: 20 }).notNull(),
+  storeName: varchar("store_name", { length: 255 }),
+  contactCode: varchar("contact_code", { length: 50 }),
+  carrier: varchar("carrier", { length: 100 }).notNull(),
+  previousCarrier: varchar("previous_carrier", { length: 100 }),
+  status: varchar("status", { length: 20 }).notNull().default('접수'),
+  activationStatus: varchar("activation_status", { length: 20 }).notNull().default('대기'),
+  filePath: varchar("file_path", { length: 500 }),
+  fileName: varchar("file_name", { length: 255 }),
+  fileSize: integer("file_size"),
+  uploadedAt: timestamp("uploaded_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+  activatedAt: timestamp("activated_at"),
+  activatedBy: integer("activated_by"),
+  cancelledBy: integer("cancelled_by"),
+  notes: text("notes"),
+  // 작업 잠금 시스템
+  assignedWorkerId: integer("assigned_worker_id"),
+  assignedAt: timestamp("assigned_at"),
+  // 보완 관련 필드
+  supplementRequired: text("supplement_required"),
+  supplementNotes: text("supplement_notes"),
+  supplementRequiredBy: integer("supplement_required_by"),
+  supplementRequiredAt: timestamp("supplement_required_at"),
+  // 개통 완료 후 플랜 정보
+  servicePlanId: integer("service_plan_id").references(() => servicePlans.id),
+  servicePlanName: varchar("service_plan_name", { length: 200 }),
+  additionalServiceIds: text("additional_service_ids"), // JSON 배열
+  registrationFee: decimal("registration_fee", { precision: 10, scale: 2 }),
+  registrationFeePrepaid: boolean("registration_fee_prepaid").default(false),
+  registrationFeePostpaid: boolean("registration_fee_postpaid").default(false),
+  registrationFeeInstallment: boolean("registration_fee_installment").default(false),
+  simFeePrepaid: boolean("sim_fee_prepaid").default(false),
+  simFeePostpaid: boolean("sim_fee_postpaid").default(false),
+  bundleApplied: boolean("bundle_applied").default(false),
+  bundleNotApplied: boolean("bundle_not_applied").default(false),
+  bundleDiscount: decimal("bundle_discount", { precision: 10, scale: 2 }),
+  totalMonthlyFee: decimal("total_monthly_fee", { precision: 10, scale: 2 }),
+  // 단말기 정보
+  deviceModel: varchar("device_model", { length: 100 }),
+  simNumber: varchar("sim_number", { length: 50 }),
+  subscriptionNumber: varchar("subscription_number", { length: 50 }),
+  dealerNotes: text("dealer_notes"),
+  discardReason: text("discard_reason"),
+  // 정산단가 저장 (개통 완료 시점의 단가)
+  settlementNewCustomerPrice: decimal("settlement_new_customer_price", { precision: 10, scale: 2 }),
+  settlementPortInPrice: decimal("settlement_port_in_price", { precision: 10, scale: 2 }),
+  settlementCalculatedAt: timestamp("settlement_calculated_at"),
+});
+
 // Database schema types
 export interface Admin {
   id: number;

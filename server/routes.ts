@@ -767,12 +767,13 @@ router.post('/api/admin/document-templates', requireAdmin, templateUpload.single
 
 router.get('/api/admin/documents', requireAdmin, async (req, res) => {
   try {
-    const { status, search, startDate, endDate } = req.query;
-    const documents = await storage.getDocuments(undefined, {
+    const { status, search, startDate, endDate, activationStatus } = req.query;
+    const documents = await storage.getDocuments({
       status: status as string,
       search: search as string,
       startDate: startDate as string,
-      endDate: endDate as string
+      endDate: endDate as string,
+      activationStatus: activationStatus as string
     });
     res.json(documents);
   } catch (error: any) {
@@ -1096,15 +1097,15 @@ router.get('/api/documents', requireAuth, async (req: any, res) => {
       }
     }
     
-    const documents = await storage.getDocuments(dealerId, {
+    const documents = await storage.getDocuments({
       status: status as string,
       activationStatus: decodedActivationStatus,
       search: search as string,
       startDate: startDate as string,
       endDate: endDate as string,
       carrier: carrier as string,
-      workerFilter: req.query.workerFilter as string
-    }, req.session.userId);
+      dealerId: dealerId
+    });
     
     console.log('Documents found:', documents.length);
     res.json(documents);
@@ -1138,13 +1139,14 @@ router.get('/api/documents/export/excel', requireAuth, async (req: any, res) => 
       }
     }
     
-    const documents = await storage.getDocuments(dealerId, {
+    const documents = await storage.getDocuments({
       activationStatus: decodedActivationStatus,
       search: search as string,
       startDate: startDate as string,
       carrier: carrier as string,
-      endDate: endDate as string
-    }, req.session.userId);
+      endDate: endDate as string,
+      dealerId: dealerId
+    });
     
     // 엑셀 데이터 준비
     const XLSX = await import('xlsx');
@@ -1414,7 +1416,7 @@ router.get('/api/files/documents/:id', requireAuth, async (req: any, res) => {
   try {
     const id = parseInt(req.params.id);
     const dealerId = req.session.userType === 'admin' ? undefined : req.session.dealerId;
-    const documents = await storage.getDocuments(dealerId);
+    const documents = await storage.getDocuments({ dealerId: dealerId });
     const document = documents.find(d => d.id === id);
     
     if (!document) {
@@ -2515,7 +2517,7 @@ router.post('/api/settlements/bulk-from-activated', requireAuth, async (req: any
     }
 
     const activatedDocuments = await storage.getDocuments({
-      dealerId,
+      dealerId: dealerId,
       activationStatus: '개통'
     });
 
