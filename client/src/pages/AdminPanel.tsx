@@ -2191,20 +2191,22 @@ export function AdminPanel() {
       {
         '접점코드': 'LDI672346',
         '판매점명': '샘플판매점',
-        '통신사': 'LG미디어로그'
+        '통신사': 'LG미디어로그',
+        '담당영업과장': '황병준'
       },
       {
         '접점코드': 'SKT123456',
         '판매점명': '테스트판매점',
-        '통신사': 'SK텔링크'
+        '통신사': 'SK텔링크',
+        '담당영업과장': '김영수'
       }
     ];
 
     // CSV 형태로 다운로드
     const csvContent = '\uFEFF' + // BOM for Excel UTF-8 recognition
-      '접점코드,판매점명,통신사\n' +
-      'LDI672346,샘플판매점,LG미디어로그\n' +
-      'SKT123456,테스트판매점,SK텔링크\n';
+      '접점코드,판매점명,통신사,담당영업과장\n' +
+      'LDI672346,샘플판매점,LG미디어로그,황병준\n' +
+      'SKT123456,테스트판매점,SK텔링크,김영수\n';
 
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
@@ -2653,6 +2655,7 @@ export function AdminPanel() {
                       <li><strong>접점코드</strong>: 개통방명 시 사용할 코드</li>
                       <li><strong>판매점명</strong>: 자동으로 설정될 판매점 이름</li>
                       <li><strong>통신사</strong>: 해당 통신사명</li>
+                      <li><strong>담당영업과장</strong>: 영업과장 이름 (선택사항)</li>
                     </ul>
                     <p>3. 작성이 완료되면 "엑셀 업로드" 버튼을 클릭하여 파일을 업로드하세요.</p>
                   </div>
