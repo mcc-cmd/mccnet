@@ -16,7 +16,8 @@ import type {
   CreateContactCodeMappingForm,
   UpdateSalesTeamForm,
   UpdateSalesManagerForm,
-  UpdateContactCodeMappingForm
+  UpdateContactCodeMappingForm,
+  CreateWorkerForm
 } from '../shared/schema';
 
 // 인메모리 세션 저장소 (임시)
@@ -88,6 +89,9 @@ export interface IStorage {
   updateSalesManagerPassword(managerId: number, newPassword: string): Promise<void>;
   updateUserPassword(userId: number, newPassword: string): Promise<void>;
   deleteSalesManager(managerId: number): Promise<void>;
+  
+  // 근무자 관리
+  createWorker(data: CreateWorkerForm): Promise<any>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -328,6 +332,12 @@ export class DatabaseStorage implements IStorage {
     await db.update(salesManagers)
       .set({ isActive: false, updatedAt: new Date() })
       .where(eq(salesManagers.id, managerId));
+  }
+
+  // 근무자 관리
+  async createWorker(data: CreateWorkerForm): Promise<any> {
+    // 기존 시스템과의 연동을 위해 안내 메시지 반환
+    throw new Error('근무자 계정은 기존 시스템에서 관리됩니다. 시스템 관리자에게 문의하세요.');
   }
   
   // 호환성을 위한 기존 사용자 인증 메서드 (임시)

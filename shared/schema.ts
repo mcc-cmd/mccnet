@@ -307,6 +307,10 @@ export const createWorkerSchema = z.object({
   name: z.string().min(1, "이름을 입력하세요"),
 });
 
+export type CreateWorkerForm = z.infer<typeof createWorkerSchema>;
+
+export type CreateWorkerForm = z.infer<typeof createWorkerSchema>;
+
 export const createDealerAccountSchema = z.object({
   kpNumber: z.string().min(1, "KP번호를 입력하세요"),
   username: z.string().min(3, "아이디는 최소 3자 이상이어야 합니다"),

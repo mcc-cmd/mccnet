@@ -398,15 +398,7 @@ router.post('/api/admin/create-admin', requireAdmin, async (req, res) => {
 });
 
 // Worker account creation endpoint
-router.post('/api/admin/create-worker', requireAdmin, async (req, res) => {
-  try {
-    const data = createWorkerSchema.parse(req.body);
-    const worker = await storage.createWorker(data);
-    res.json(worker);
-  } catch (error: any) {
-    res.status(400).json({ error: error.message });
-  }
-});
+
 
 // 영업과장 계정 생성 (관리자 패널용)
 router.post('/api/admin/create-sales-manager', requireAdmin, async (req, res) => {
