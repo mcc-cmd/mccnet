@@ -311,11 +311,27 @@ function CarrierManagement() {
   // 엑셀 양식 다운로드
   const handleDownloadTemplate = async () => {
     try {
+      // Get session ID from auth store
+      let sessionId = null;
+      try {
+        const authStore = localStorage.getItem('auth-storage');
+        if (authStore) {
+          const parsed = JSON.parse(authStore);
+          sessionId = parsed?.state?.sessionId || null;
+        }
+      } catch (e) {
+        console.warn('Failed to parse auth store:', e);
+      }
+
+      const headers: Record<string, string> = {};
+      if (sessionId) {
+        headers["Authorization"] = `Bearer ${sessionId}`;
+      }
+
       const response = await fetch('/api/carriers/excel-template', {
         method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-        },
+        headers,
+        credentials: 'include',
       });
 
       if (!response.ok) {
@@ -366,15 +382,31 @@ function CarrierManagement() {
     setUploadProgress(0);
 
     try {
+      // Get session ID from auth store
+      let sessionId = null;
+      try {
+        const authStore = localStorage.getItem('auth-storage');
+        if (authStore) {
+          const parsed = JSON.parse(authStore);
+          sessionId = parsed?.state?.sessionId || null;
+        }
+      } catch (e) {
+        console.warn('Failed to parse auth store:', e);
+      }
+
       const formData = new FormData();
       formData.append('file', file);
 
+      const headers: Record<string, string> = {};
+      if (sessionId) {
+        headers["Authorization"] = `Bearer ${sessionId}`;
+      }
+
       const response = await fetch('/api/carriers/upload-excel', {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-        },
+        headers,
         body: formData,
+        credentials: 'include',
       });
 
       const result = await response.json();
