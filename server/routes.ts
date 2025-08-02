@@ -3086,7 +3086,9 @@ router.post('/api/contact-codes/upload-excel', contactCodeUpload.single('file'),
 router.get('/api/carriers', async (req: any, res) => {
   try {
     const carriers = await storage.getCarriers();
-    res.json(carriers);
+    // 활성화된 통신사만 반환
+    const activeCarriers = carriers.filter(carrier => carrier.isActive);
+    res.json(activeCarriers);
   } catch (error: any) {
     console.error('Get carriers error:', error);
     res.status(500).json({ error: error.message });

@@ -4024,19 +4024,17 @@ export function AdminPanel() {
                             <SelectValue placeholder="통신사를 선택하세요" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="SK텔링크">SK텔링크</SelectItem>
-                            <SelectItem value="SK프리티">SK프리티</SelectItem>
-                            <SelectItem value="SK스테이지파이브">SK스테이지파이브</SelectItem>
-                            <SelectItem value="KT엠모바일">KT엠모바일</SelectItem>
-                            <SelectItem value="KT스카이라이프">KT스카이라이프</SelectItem>
-                            <SelectItem value="KT스테이지파이브">KT스테이지파이브</SelectItem>
-                            <SelectItem value="KT코드모바일">KT코드모바일</SelectItem>
-                            <SelectItem value="LG미디어로그">LG미디어로그</SelectItem>
-                            <SelectItem value="LG헬로모바일">LG헬로모바일</SelectItem>
-                            <SelectItem value="LG프리티">LG프리티</SelectItem>
-                            <SelectItem value="LG밸류컴">LG밸류컴</SelectItem>
-                            <SelectItem value="스마텔LG">스마텔LG</SelectItem>
-                            <SelectItem value="KT">KT</SelectItem>
+                            {carriersLoading ? (
+                              <SelectItem value="loading" disabled>통신사 로딩 중...</SelectItem>
+                            ) : carriersData && carriersData.filter(c => c.isActive).length > 0 ? (
+                              carriersData.filter(c => c.isActive).map((carrier) => (
+                                <SelectItem key={carrier.id} value={carrier.name}>
+                                  {carrier.name}
+                                </SelectItem>
+                              ))
+                            ) : (
+                              <SelectItem value="none" disabled>활성화된 통신사가 없습니다</SelectItem>
+                            )}
                           </SelectContent>
                         </Select>
                       </div>
@@ -4131,19 +4129,17 @@ export function AdminPanel() {
                                     </SelectTrigger>
                                   </FormControl>
                                   <SelectContent>
-                                    <SelectItem value="SK텔링크">SK텔링크</SelectItem>
-                                    <SelectItem value="SK프리티">SK프리티</SelectItem>
-                                    <SelectItem value="SK스테이지파이브">SK스테이지파이브</SelectItem>
-                                    <SelectItem value="KT엠모바일">KT엠모바일</SelectItem>
-                                    <SelectItem value="KT스카이라이프">KT스카이라이프</SelectItem>
-                                    <SelectItem value="KT스테이지파이브">KT스테이지파이브</SelectItem>
-                                    <SelectItem value="KT코드모바일">KT코드모바일</SelectItem>
-                                    <SelectItem value="LG미디어로그">LG미디어로그</SelectItem>
-                                    <SelectItem value="LG헬로모바일">LG헬로모바일</SelectItem>
-                                    <SelectItem value="LG프리티">LG프리티</SelectItem>
-                                    <SelectItem value="LG밸류컴">LG밸류컴</SelectItem>
-                                    <SelectItem value="스마텔LG">스마텔LG</SelectItem>
-                                    <SelectItem value="KT">KT</SelectItem>
+                                    {carriersLoading ? (
+                                      <SelectItem value="loading" disabled>통신사 로딩 중...</SelectItem>
+                                    ) : carriersData && carriersData.filter(c => c.isActive).length > 0 ? (
+                                      carriersData.filter(c => c.isActive).map((carrier) => (
+                                        <SelectItem key={carrier.id} value={carrier.name}>
+                                          {carrier.name}
+                                        </SelectItem>
+                                      ))
+                                    ) : (
+                                      <SelectItem value="none" disabled>활성화된 통신사가 없습니다</SelectItem>
+                                    )}
                                   </SelectContent>
                                 </Select>
                                 <FormMessage />
