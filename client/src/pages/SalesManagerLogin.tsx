@@ -25,18 +25,23 @@ export default function SalesManagerLogin() {
   const onSubmit = async (data: any) => {
     setIsLoading(true);
     try {
-      const response = await apiRequest('/api/auth/sales-manager-login', {
-        method: 'POST',
-        data
-      });
+      const response = await apiRequest('POST', '/api/auth/manager-login', data);
+      const result = await response.json();
 
-      if (response.success) {
-        localStorage.setItem('auth_token', response.sessionId);
-        localStorage.setItem('user_data', JSON.stringify(response.user));
+      if (result.success) {
+        // auth 스토어에 저장
+        const authStore = {
+          state: {
+            sessionId: result.sessionId,
+            user: result.user,
+            isAuthenticated: true
+          }
+        };
+        localStorage.setItem('auth-storage', JSON.stringify(authStore));
         
         toast({
           title: "로그인 성공",
-          description: `${response.user.name}님, 환영합니다!`,
+          description: `${result.user.name}님, 환영합니다!`,
         });
 
         // 영업과장 대시보드로 리다이렉트
@@ -44,7 +49,7 @@ export default function SalesManagerLogin() {
       } else {
         toast({
           title: "로그인 실패",
-          description: response.error || "로그인에 실패했습니다.",
+          description: result.error || "로그인에 실패했습니다.",
           variant: "destructive",
         });
       }

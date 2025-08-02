@@ -265,6 +265,47 @@ router.post('/api/auth/login', async (req, res) => {
   }
 });
 
+// 영업과장 로그인 API 
+router.post('/api/auth/manager-login', async (req, res) => {
+  try {
+    console.log('Manager login attempt - body:', req.body);
+    const { username, password } = loginSchema.parse(req.body);
+    console.log('Manager login attempt - parsed:', { username, password: password ? '***' : 'empty' });
+    
+    // Try sales manager login
+    const manager = await storage.authenticateSalesManager(username, password);
+    console.log('Manager auth result:', manager ? 'success' : 'failed');
+    
+    if (manager) {
+      const sessionId = await storage.createSession(manager.id, 'sales_manager');
+      console.log('Manager session created:', sessionId);
+      
+      const response: AuthResponse = {
+        success: true,
+        user: {
+          id: manager.id,
+          name: manager.managerName,
+          type: 'sales_manager'
+        },
+        sessionId
+      };
+      
+      res.json(response);
+    } else {
+      res.status(401).json({ 
+        success: false, 
+        error: '아이디 또는 비밀번호가 올바르지 않습니다.' 
+      });
+    }
+  } catch (error: any) {
+    console.error('Manager login error:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: '로그인 처리 중 오류가 발생했습니다.' 
+    });
+  }
+});
+
 router.post('/api/auth/logout', requireAuth, async (req: any, res) => {
   try {
     await storage.deleteSession(req.session.id);
