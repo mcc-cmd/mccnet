@@ -1205,21 +1205,39 @@ router.post('/api/documents/check-duplicate', requireAuth, async (req: any, res)
   try {
     const { customerName, customerPhone, carrier, storeName, contactCode } = req.body;
     
-    if (!customerName || !customerPhone || !carrier || (!storeName && !contactCode)) {
-      return res.status(400).json({ error: '필수 정보가 누락되었습니다.' });
+    console.log('Checking duplicate for:', { customerName, customerPhone, carrier, storeName, contactCode });
+    
+    // 필수 정보 확인
+    if (!customerName || !customerPhone || !carrier) {
+      console.log('Missing required fields, returning empty duplicates');
+      return res.json({ duplicates: [], hasInternal: false });
     }
     
-    const duplicates = await storage.checkDuplicateDocument({
+    const currentMonth = new Date().getMonth();
+    const currentYear = new Date().getFullYear();
+    const monthStart = new Date(currentYear, currentMonth, 1);
+    const monthEnd = new Date(currentYear, currentMonth + 1, 0, 23, 59, 59);
+    
+    console.log('Date range:', { monthStart, monthEnd });
+    
+    const duplicates = await storage.findDuplicateDocuments({
       customerName,
-      customerPhone,
+      customerPhone, 
       carrier,
-      storeName,
-      contactCode
+      storeName: storeName || contactCode, // storeName이 없으면 contactCode 사용
+      contactCode,
+      monthStart: monthStart.toISOString(),
+      monthEnd: monthEnd.toISOString()
     });
     
-    res.json({ duplicates });
+    console.log('Found duplicates:', duplicates.length);
+    
+    res.json({ 
+      duplicates,
+      hasInternal: duplicates.length > 0
+    });
   } catch (error: any) {
-    console.error('Duplicate check error:', error);
+    console.error('Check duplicate error:', error);
     res.status(500).json({ error: error.message });
   }
 });

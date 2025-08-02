@@ -85,7 +85,7 @@ export function SubmitApplication() {
 
   // 중복 체크 함수
   const checkDuplicate = async () => {
-    if (!formData.customerName || !formData.customerPhone || !formData.carrier || (!formData.storeName && !formData.contactCode)) {
+    if (!formData.customerName || !formData.customerPhone || !formData.carrier || !formData.storeName) {
       return false; // 필수 정보가 없으면 중복 체크하지 않음
     }
 
@@ -93,16 +93,13 @@ export function SubmitApplication() {
     try {
       const response = await apiRequest('/api/documents/check-duplicate', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
+        body: {
           customerName: formData.customerName,
           customerPhone: formData.customerPhone,
           carrier: formData.carrier,
           storeName: formData.storeName,
           contactCode: formData.contactCode
-        })
+        }
       });
 
       if (response.duplicates && response.duplicates.length > 0) {

@@ -1517,7 +1517,50 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  // 중복 접수 확인 메서드
+  // 중복 접수 확인 메서드 (새로운 인터페이스)
+  async findDuplicateDocuments(params: {
+    customerName: string;
+    customerPhone: string;
+    carrier: string;
+    storeName?: string;
+    contactCode?: string;
+    monthStart: string;
+    monthEnd: string;
+  }): Promise<any[]> {
+    try {
+      const { customerName, customerPhone, carrier, storeName, contactCode, monthStart, monthEnd } = params;
+      
+      console.log('Checking duplicates with params:', params);
+      
+      // 기본 조건: 고객명, 연락처, 통신사, 현재 월
+      const baseConditions = [
+        eq(documents.customerName, customerName),
+        eq(documents.customerPhone, customerPhone),
+        eq(documents.carrier, carrier),
+        gte(documents.createdAt, new Date(monthStart)),
+        lte(documents.createdAt, new Date(monthEnd))
+      ];
+      
+      // 판매점명 조건 추가 (storeName 또는 contactCode 중 하나라도 있으면)
+      if (storeName) {
+        baseConditions.push(eq(documents.storeName, storeName));
+      }
+      
+      const duplicates = await db
+        .select()
+        .from(documents)
+        .where(and(...baseConditions))
+        .orderBy(desc(documents.createdAt));
+      
+      console.log('Found duplicates:', duplicates.length);
+      return duplicates;
+    } catch (error) {
+      console.error('Error in findDuplicateDocuments:', error);
+      throw error;
+    }
+  }
+
+  // 중복 접수 확인 메서드 (기존 인터페이스)
   async checkDuplicateDocument(params: {
     customerName: string;
     customerPhone: string;

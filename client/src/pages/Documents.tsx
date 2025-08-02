@@ -696,13 +696,15 @@ export function Documents() {
                 <div className="hidden lg:block overflow-x-auto">
                   <table className="w-full table-fixed divide-y divide-gray-300 text-sm">
                     <colgroup>
-                      <col className="w-24" />
-                      <col className="w-16" />
                       <col className="w-20" />
                       <col className="w-14" />
+                      <col className="w-18" />
                       <col className="w-12" />
-                      <col className="w-16" />
-                      <col className="w-16" />
+                      <col className="w-10" />
+                      <col className="w-14" />
+                      <col className="w-20" />
+                      <col className="w-20" />
+                      <col className="w-14" />
                     </colgroup>
                     <thead className="bg-gray-50">
                       <tr>
@@ -723,6 +725,12 @@ export function Documents() {
                         </th>
                         <th className="px-1 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider truncate">
                           개통상태
+                        </th>
+                        <th className="px-1 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider truncate">
+                          가입번호
+                        </th>
+                        <th className="px-1 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider truncate">
+                          요금제
                         </th>
                         <th className="px-1 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider truncate">
                           작업
@@ -789,6 +797,16 @@ export function Documents() {
                                   </div>
                                 </div>
                               )}
+                            </div>
+                          </td>
+                          <td className="px-1 py-1 text-xs text-gray-900">
+                            <div className="leading-tight break-words max-w-full">
+                              {(doc as any).subscriptionNumber || '-'}
+                            </div>
+                          </td>
+                          <td className="px-1 py-1 text-xs text-gray-900">
+                            <div className="leading-tight break-words max-w-full">
+                              {servicePlans?.find(plan => plan.id.toString() === (doc as any).servicePlanId?.toString())?.planName || '-'}
                             </div>
                           </td>
                           <td className="px-1 py-1">
@@ -1148,7 +1166,12 @@ export function Documents() {
                                 }
                                 
                                 return planName.includes(searchTerm);
-                              }).map((plan) => (
+                              })
+                              // 중복 제거 - ID를 기준으로 고유한 플랜만 표시
+                              .filter((plan, index, array) => 
+                                array.findIndex(p => p.id === plan.id) === index
+                              )
+                              .map((plan) => (
                                 <CommandItem
                                   key={plan.id}
                                   value={plan.planName}
