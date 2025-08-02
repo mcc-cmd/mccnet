@@ -1127,7 +1127,7 @@ export function AdminPanel() {
   
   // 접점코드 검색 및 필터링
   const [contactCodeSearch, setContactCodeSearch] = useState('');
-  const [contactCodeCarrierFilter, setContactCodeCarrierFilter] = useState('');
+  const [contactCodeCarrierFilter, setContactCodeCarrierFilter] = useState('all');
   const [selectedContactCodes, setSelectedContactCodes] = useState<number[]>([]);
   const [selectAllContactCodes, setSelectAllContactCodes] = useState(false);
   
@@ -2468,7 +2468,7 @@ export function AdminPanel() {
       code.dealerName.toLowerCase().includes(contactCodeSearch.toLowerCase()) ||
       (code.salesManagerName && code.salesManagerName.toLowerCase().includes(contactCodeSearch.toLowerCase()));
     
-    const matchesCarrier = !contactCodeCarrierFilter || code.carrier === contactCodeCarrierFilter;
+    const matchesCarrier = !contactCodeCarrierFilter || contactCodeCarrierFilter === 'all' || code.carrier === contactCodeCarrierFilter;
     
     return matchesSearch && matchesCarrier;
   });
@@ -3040,13 +3040,14 @@ export function AdminPanel() {
                         <div>
                           <Label htmlFor="salesManager">담당 영업과장 *</Label>
                           <Select 
-                            value={newSalesManagerId?.toString() || ''} 
-                            onValueChange={(value) => setNewSalesManagerId(value ? parseInt(value) : null)}
+                            value={newSalesManagerId?.toString() || 'none'} 
+                            onValueChange={(value) => setNewSalesManagerId(value && value !== 'none' ? parseInt(value) : null)}
                           >
                             <SelectTrigger>
                               <SelectValue placeholder="담당 영업과장을 선택하세요" />
                             </SelectTrigger>
                             <SelectContent>
+                              <SelectItem value="none">선택하지 않음</SelectItem>
                               {salesManagersList && salesManagersList.map((manager: any) => (
                                 <SelectItem key={manager.id} value={manager.id.toString()}>
                                   {manager.managerName} ({manager.managerCode || manager.teamName})
@@ -3086,7 +3087,7 @@ export function AdminPanel() {
                           <SelectValue placeholder="통신사 필터" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="">전체 통신사</SelectItem>
+                          <SelectItem value="all">전체 통신사</SelectItem>
                           {carriersList && carriersList.map((carrier: any) => (
                             <SelectItem key={carrier.id} value={carrier.name}>
                               {carrier.name}
