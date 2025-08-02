@@ -24,8 +24,12 @@ import {
   ShoppingCart, 
   Award,
   ChevronRight,
-  ArrowLeft
+  ArrowLeft,
+  LogOut,
+  User,
+  BarChart3
 } from 'lucide-react';
+import logoImage from '@assets/KakaoTalk_20250626_162541112-removebg-preview_1751604392501.png';
 
 interface SalesStats {
   totalActivations: number;
@@ -63,7 +67,7 @@ interface DealerStats {
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8'];
 
 export default function SalesManagerDashboard() {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const [selectedSalesManager, setSelectedSalesManager] = useState<SalesManagerStats | null>(null);
   const [selectedTeam, setSelectedTeam] = useState<TeamStats | null>(null);
   const [viewMode, setViewMode] = useState<'overview' | 'manager' | 'dealer' | 'team'>('overview');
@@ -73,12 +77,19 @@ export default function SalesManagerDashboard() {
     queryFn: () => apiRequest('/api/sales-stats') as Promise<SalesStats>,
   });
 
+  const handleLogout = async () => {
+    await logout();
+    window.location.href = '/';
+  };
+
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 p-6">
-        <div className="text-center py-8">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-accent mx-auto"></div>
-          <p className="mt-2 text-sm text-gray-500">실적 데이터 로딩 중...</p>
+      <div className="min-h-screen bg-gray-50 flex">
+        <div className="flex-1 p-6">
+          <div className="text-center py-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-accent mx-auto"></div>
+            <p className="mt-2 text-sm text-gray-500">실적 데이터 로딩 중...</p>
+          </div>
         </div>
       </div>
     );
@@ -356,12 +367,77 @@ export default function SalesManagerDashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="container mx-auto p-6">
+    <div className="min-h-screen bg-gray-50 flex">
+      {/* 사이드바 */}
+      <div className="w-64 bg-white shadow-lg">
+        <div className="p-6">
+          <div className="flex items-center space-x-3">
+            <img src={logoImage} alt="MCC네트월드" className="h-8 w-8" />
+            <h1 className="text-lg font-bold text-gray-800">MCC네트월드</h1>
+          </div>
+        </div>
+        
+        <nav className="mt-8">
+          <div className="px-4 space-y-2">
+            <button
+              onClick={() => setViewMode('overview')}
+              className={`w-full flex items-center px-3 py-2 text-sm font-medium rounded-md ${
+                viewMode === 'overview' 
+                  ? 'bg-accent text-white' 
+                  : 'text-gray-600 hover:bg-gray-50'
+              }`}
+            >
+              <BarChart3 className="mr-3 h-4 w-4" />
+              실적 대시보드
+            </button>
+            
+            <button
+              onClick={() => setViewMode('team')}
+              className={`w-full flex items-center px-3 py-2 text-sm font-medium rounded-md ${
+                viewMode === 'team' 
+                  ? 'bg-accent text-white' 
+                  : 'text-gray-600 hover:bg-gray-50'
+              }`}
+            >
+              <Users className="mr-3 h-4 w-4" />
+              팀별 실적
+            </button>
+          </div>
+        </nav>
+
+        {/* 사용자 정보 및 로그아웃 */}
+        <div className="absolute bottom-0 w-64 p-4 border-t bg-white">
+          <div className="flex items-center space-x-3 mb-3">
+            <div className="w-8 h-8 bg-accent rounded-full flex items-center justify-center">
+              <User className="h-4 w-4 text-white" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-gray-900 truncate">
+                {user?.name}
+              </p>
+              <p className="text-xs text-gray-500 truncate">
+                {user?.team} {user?.position}
+              </p>
+            </div>
+          </div>
+          <Button
+            onClick={handleLogout}
+            variant="outline"
+            size="sm"
+            className="w-full"
+          >
+            <LogOut className="mr-2 h-4 w-4" />
+            로그아웃
+          </Button>
+        </div>
+      </div>
+
+      {/* 메인 컨텐츠 */}
+      <div className="flex-1 p-6">
         <div className="mb-6">
           <h1 className="text-2xl font-bold text-gray-900">영업 실적 대시보드</h1>
           <p className="text-gray-600">
-            {user?.name}님의 실적 현황을 확인하세요
+            {user?.team}의 실적 현황을 확인하세요
           </p>
         </div>
 
