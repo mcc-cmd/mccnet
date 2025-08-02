@@ -904,6 +904,8 @@ export function AdminPanel() {
   console.log('Users data:', users);
   console.log('Users loading:', usersLoading);
   console.log('Users error:', usersError);
+  console.log('Users is array:', Array.isArray(users));
+  console.log('Users length:', users?.length);
 
   // Sales managers data query
   const { data: salesManagers = [] } = useQuery({
@@ -2778,7 +2780,7 @@ export function AdminPanel() {
                   <div className="text-center py-8">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-accent mx-auto"></div>
                   </div>
-                ) : (users && users.length > 0) ? (
+                ) : (Array.isArray(users) && users.length > 0) ? (
                   <div className="overflow-x-auto">
                     <table className="min-w-full divide-y divide-gray-300">
                       <thead className="bg-gray-50">
@@ -2850,7 +2852,11 @@ export function AdminPanel() {
                     {usersError && (
                       <p className="mt-2 text-sm text-red-500">오류: {String(usersError)}</p>
                     )}
-                    <p className="mt-2 text-sm text-gray-400">데이터 개수: {users?.length || 0}</p>
+                    <p className="mt-2 text-sm text-gray-400">
+                      데이터 개수: {users?.length || 0} | 
+                      배열여부: {Array.isArray(users) ? 'Yes' : 'No'} | 
+                      로딩중: {usersLoading ? 'Yes' : 'No'}
+                    </p>
                   </div>
                 )}
               </CardContent>
