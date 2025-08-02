@@ -20,7 +20,8 @@ export const useAuth = create<AuthState>()(
 
       login: async (credentials) => {
         try {
-          const response = await fetch('/api/auth/login', {
+          // 먼저 관리자/근무자 로그인 시도
+          let response = await fetch('/api/auth/login', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -28,23 +29,51 @@ export const useAuth = create<AuthState>()(
             body: JSON.stringify(credentials),
           });
 
-          if (!response.ok) {
-            const errorData = await response.json().catch(() => ({ error: '로그인에 실패했습니다.' }));
-            throw new Error(errorData.error || '로그인에 실패했습니다.');
+          let data: AuthResponse | null = null;
+
+          if (response.ok) {
+            data = await response.json();
+            if (data.success && data.user && data.sessionId) {
+              set({
+                user: data.user,
+                sessionId: data.sessionId,
+                isAuthenticated: true,
+              });
+              return true;
+            }
           }
 
-          const data: AuthResponse = await response.json();
+          // 관리자/근무자 로그인이 실패하면 영업과장 로그인 시도
+          response = await fetch('/api/auth/manager-login', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(credentials),
+          });
 
-          if (data.success && data.user && data.sessionId) {
-            set({
-              user: data.user,
-              sessionId: data.sessionId,
-              isAuthenticated: true,
-            });
-            return true;
-          } else {
-            throw new Error(data.error || '로그인에 실패했습니다.');
+          if (response.ok) {
+            data = await response.json();
+            if (data.success && data.user && data.sessionId) {
+              // 영업과장 로그인 성공 시 별도 처리
+              const authStore = {
+                state: {
+                  sessionId: data.sessionId,
+                  user: data.user,
+                  isAuthenticated: true
+                }
+              };
+              localStorage.setItem('auth-storage', JSON.stringify(authStore));
+              // 영업과장 대시보드로 리다이렉트
+              window.location.href = '/sales-manager-dashboard';
+              return true;
+            }
           }
+
+          // 모든 로그인 시도 실패
+          const errorData = await response.json().catch(() => ({ error: '아이디 또는 비밀번호가 올바르지 않습니다.' }));
+          throw new Error(errorData.error || '아이디 또는 비밀번호가 올바르지 않습니다.');
+
         } catch (error) {
           console.error('Login error:', error);
           return false;

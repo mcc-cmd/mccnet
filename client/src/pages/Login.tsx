@@ -244,16 +244,7 @@ export function Login() {
                   </Button>
                 </form>
                 
-                <div className="mt-4 pt-4 border-t border-gray-200">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="w-full"
-                    onClick={() => setLocation('/sales-manager-login')}
-                  >
-                    영업과장 로그인
-                  </Button>
-                </div>
+
 
 
               </TabsContent>

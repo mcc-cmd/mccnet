@@ -20,7 +20,7 @@ import { TestPage } from '@/pages/TestPage';
 import WorkRequests from '@/pages/WorkRequests';
 import NotFound from '@/pages/not-found';
 import SalesTeamManagement from '@/pages/SalesTeamManagement';
-import SalesManagerLogin from '@/pages/SalesManagerLogin';
+
 import SalesManagerDashboard from '@/pages/SalesManagerDashboard';
 
 const queryClient = new QueryClient({
@@ -82,8 +82,7 @@ function SalesManagerRoutes() {
 function MainApp() {
   return (
     <Switch>
-      {/* 영업과장 전용 라우트 (인증 우회) */}
-      <Route path="/sales-manager-login" component={SalesManagerLogin} />
+      {/* 영업과장 대시보드 (인증 우회) */}
       <Route path="/sales-manager-dashboard" component={SalesManagerDashboard} />
       
       {/* 기존 인증이 필요한 라우트 */}
