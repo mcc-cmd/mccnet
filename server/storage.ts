@@ -23,6 +23,9 @@ import type {
 // 인메모리 세션 저장소 (임시)
 const sessionStore: Map<string, AuthSession> = new Map();
 
+// 인메모리 근무자 저장소 (임시)
+const workerStore: Map<number, any> = new Map();
+
 export interface IStorage {
   // 관리자 관련
   createAdmin(admin: { username: string; password: string; name: string }): Promise<Admin>;
@@ -344,14 +347,21 @@ export class DatabaseStorage implements IStorage {
     const hashedPassword = await bcrypt.hash(data.password, 10);
     
     // 임시 근무자 정보 저장 (실제 시스템에서는 별도 데이터베이스 사용)
+    const workerId = Date.now();
     const worker = {
-      id: Date.now(), // 임시 ID
+      id: workerId,
       username: data.username,
       name: data.name,
       userType: 'worker',
+      accountType: 'worker',
+      displayName: data.name,
+      affiliation: '근무자',
       password: hashedPassword,
       createdAt: new Date().toISOString()
     };
+    
+    // 메모리 저장소에 저장
+    workerStore.set(workerId, worker);
     
     return {
       id: worker.id,
@@ -408,6 +418,9 @@ export class DatabaseStorage implements IStorage {
       }).from(salesManagers)
         .where(eq(salesManagers.isActive, true));
 
+      // 메모리에서 근무자 목록 조회
+      const workers = Array.from(workerStore.values());
+
       // 통합 사용자 목록 생성
       const allUsers = [
         ...adminList.map(admin => ({
@@ -427,6 +440,15 @@ export class DatabaseStorage implements IStorage {
           accountType: 'sales_manager' as const,
           affiliation: manager.teamId === 1 ? 'DX 1팀' : manager.teamId === 2 ? 'DX 2팀' : '기타',
           createdAt: manager.createdAt
+        })),
+        ...workers.map(worker => ({
+          id: worker.id,
+          username: worker.username,
+          displayName: worker.displayName,
+          userType: 'worker' as const,
+          accountType: 'worker' as const,
+          affiliation: worker.affiliation,
+          createdAt: worker.createdAt
         }))
       ];
 
