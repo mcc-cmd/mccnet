@@ -1406,6 +1406,7 @@ export function AdminPanel() {
       servicePlanId: 0,
       newCustomerPrice: 0,
       portInPrice: 0,
+      memo: '',
     },
   });
 
@@ -2458,6 +2459,7 @@ export function AdminPanel() {
         data: {
           newCustomerPrice: data.newCustomerPrice,
           portInPrice: data.portInPrice,
+          memo: data.memo,
         }
       });
     } else {
@@ -2467,6 +2469,7 @@ export function AdminPanel() {
         servicePlanId: selectedServicePlan.id,
         newCustomerPrice: data.newCustomerPrice,
         portInPrice: data.portInPrice,
+        memo: data.memo,
       });
     }
   };
@@ -5123,7 +5126,7 @@ export function AdminPanel() {
             <Card>
               <CardHeader className="flex flex-row items-center justify-between">
                 <div>
-                  <CardTitle>정산단가 관리</CardTitle>
+                  <CardTitle>정산단가 설정</CardTitle>
                   <CardDescription>요금제별 정산 단가를 설정하고 관리할 수 있습니다. 단가 변경 시 기존 정산금액은 유지됩니다.</CardDescription>
                 </div>
                 <div className="space-x-2">
@@ -5321,6 +5324,26 @@ export function AdminPanel() {
                           </FormControl>
                           <FormDescription>
                             번호이동 고객 정산 시 적용될 단위 금액을 입력하세요.
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={settlementPriceForm.control}
+                      name="memo"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>메모</FormLabel>
+                          <FormControl>
+                            <Input
+                              type="text"
+                              placeholder="몇차 단가인지 등 메모를 입력하세요 (선택사항)"
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormDescription>
+                            정산단가 변경 이력을 관리하기 위한 메모입니다.
                           </FormDescription>
                           <FormMessage />
                         </FormItem>

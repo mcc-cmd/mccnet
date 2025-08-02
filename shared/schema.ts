@@ -138,6 +138,21 @@ export const additionalServices = pgTable("additional_services", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// 정산단가 테이블
+export const settlementUnitPrices = pgTable("settlement_unit_prices", {
+  id: serial("id").primaryKey(),
+  servicePlanId: integer("service_plan_id").references(() => servicePlans.id).notNull(),
+  newCustomerPrice: decimal("new_customer_price", { precision: 10, scale: 2 }).notNull(), // 신규 정산단가
+  portInPrice: decimal("port_in_price", { precision: 10, scale: 2 }).notNull(), // 번호이동 정산단가
+  isActive: boolean("is_active").default(true),
+  effectiveFrom: timestamp("effective_from").defaultNow(), // 적용 시작일
+  effectiveUntil: timestamp("effective_until"), // 적용 종료일 (null이면 현재 적용 중)
+  memo: text("memo"), // 메모 (몇차 단가인지 등)
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+  createdBy: integer("created_by").notNull(), // 등록한 관리자 ID
+});
+
 // Database schema types
 export interface Admin {
   id: number;
@@ -631,6 +646,7 @@ export interface SettlementUnitPrice {
   isActive: boolean;
   effectiveFrom: Date; // 적용 시작일
   effectiveUntil?: Date; // 적용 종료일 (null이면 현재 적용 중)
+  memo?: string; // 메모 (몇차 단가인지 등)
   createdAt: Date;
   updatedAt: Date;
   createdBy: number; // 등록한 관리자 ID
@@ -719,6 +735,7 @@ export const createSettlementUnitPriceSchema = z.object({
   effectiveFrom: z.union([z.string(), z.date()]).transform((val) => 
     typeof val === 'string' ? new Date(val) : val
   ).optional(), // 기본값은 현재 날짜
+  memo: z.string().optional(), // 메모 필드 추가
 });
 
 export const updateSettlementUnitPriceSchema = z.object({
@@ -727,6 +744,7 @@ export const updateSettlementUnitPriceSchema = z.object({
   effectiveFrom: z.union([z.string(), z.date()]).transform((val) => 
     typeof val === 'string' ? new Date(val) : val
   ).optional(),
+  memo: z.string().optional(), // 메모 필드 추가
 });
 
 // 부가서비스 차감 정책 스키마

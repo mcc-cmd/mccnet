@@ -994,8 +994,130 @@ export class DatabaseStorage implements IStorage {
     return [];
   }
   
-  async getSettlementUnitPrices(): Promise<any[]> {
-    return [];
+  // 정산단가 관리
+  async getSettlementUnitPrices(): Promise<SettlementUnitPrice[]> {
+    const query = `
+      SELECT 
+        s.id,
+        s.service_plan_id as "servicePlanId",
+        sp.name as "servicePlanName",
+        sp.carrier,
+        CAST(s.new_customer_price AS NUMERIC) as "newCustomerPrice",
+        CAST(s.port_in_price AS NUMERIC) as "portInPrice",
+        s.is_active as "isActive",
+        s.effective_from as "effectiveFrom",
+        s.effective_until as "effectiveUntil",
+        s.memo,
+        s.created_at as "createdAt",
+        s.updated_at as "updatedAt",
+        s.created_by as "createdBy"
+      FROM settlement_unit_prices s
+      JOIN service_plans sp ON s.service_plan_id = sp.id
+      WHERE s.is_active = true
+      ORDER BY sp.carrier, sp.name, s.effective_from DESC
+    `;
+    const result = await this.db.raw(query);
+    return result.rows || [];
+  }
+
+  async createSettlementUnitPrice(data: {
+    servicePlanId: number;
+    newCustomerPrice: number;
+    portInPrice: number;
+    effectiveFrom?: Date;
+    memo?: string;
+    createdBy: number;
+  }): Promise<SettlementUnitPrice> {
+    // 기존 활성 단가 비활성화
+    await this.db.raw(`
+      UPDATE settlement_unit_prices 
+      SET is_active = false, effective_until = NOW()
+      WHERE service_plan_id = ? AND is_active = true
+    `, [data.servicePlanId]);
+
+    // 새 단가 등록
+    const insertQuery = `
+      INSERT INTO settlement_unit_prices 
+      (service_plan_id, new_customer_price, port_in_price, effective_from, memo, created_by)
+      VALUES (?, ?, ?, ?, ?, ?)
+      RETURNING id, service_plan_id as "servicePlanId", 
+        CAST(new_customer_price AS NUMERIC) as "newCustomerPrice", 
+        CAST(port_in_price AS NUMERIC) as "portInPrice",
+        is_active as "isActive", effective_from as "effectiveFrom",
+        effective_until as "effectiveUntil", memo,
+        created_at as "createdAt", updated_at as "updatedAt",
+        created_by as "createdBy"
+    `;
+    
+    const result = await this.db.raw(insertQuery, [
+      data.servicePlanId,
+      data.newCustomerPrice,
+      data.portInPrice,
+      data.effectiveFrom || new Date(),
+      data.memo,
+      data.createdBy
+    ]);
+
+    const created = result.rows[0];
+    // Add carrier and servicePlanName by joining
+    const servicePlan = await this.getServicePlan(data.servicePlanId);
+    return {
+      ...created,
+      carrier: servicePlan?.carrier || '',
+      servicePlanName: servicePlan?.planName || ''
+    };
+  }
+
+  async getActiveSettlementUnitPrices(): Promise<SettlementUnitPrice[]> {
+    const query = `
+      SELECT 
+        s.id,
+        s.service_plan_id as "servicePlanId",
+        sp.name as "servicePlanName",
+        sp.carrier,
+        CAST(s.new_customer_price AS NUMERIC) as "newCustomerPrice",
+        CAST(s.port_in_price AS NUMERIC) as "portInPrice",
+        s.is_active as "isActive",
+        s.effective_from as "effectiveFrom",
+        s.effective_until as "effectiveUntil",
+        s.memo,
+        s.created_at as "createdAt",
+        s.updated_at as "updatedAt",
+        s.created_by as "createdBy"
+      FROM settlement_unit_prices s
+      JOIN service_plans sp ON s.service_plan_id = sp.id
+      WHERE s.is_active = true AND s.effective_from <= NOW()
+      AND (s.effective_until IS NULL OR s.effective_until > NOW())
+      ORDER BY sp.carrier, sp.name
+    `;
+    const result = await this.db.raw(query);
+    return result.rows || [];
+  }
+
+  async updateSettlementUnitPrice(servicePlanId: number, data: {
+    newCustomerPrice: number;
+    portInPrice: number;
+    effectiveFrom?: Date;
+    memo?: string;
+    updatedBy: number;
+  }): Promise<SettlementUnitPrice> {
+    // 새로운 단가 생성 (기존 방식과 동일)
+    return this.createSettlementUnitPrice({
+      servicePlanId,
+      newCustomerPrice: data.newCustomerPrice,
+      portInPrice: data.portInPrice,
+      effectiveFrom: data.effectiveFrom,
+      memo: data.memo,
+      createdBy: data.updatedBy
+    });
+  }
+
+  async deleteSettlementUnitPrice(servicePlanId: number): Promise<void> {
+    await this.db.raw(`
+      UPDATE settlement_unit_prices 
+      SET is_active = false, effective_until = NOW()
+      WHERE service_plan_id = ? AND is_active = true
+    `, [servicePlanId]);
   }
   
   // 대시보드 통계 메서드들 (임시 구현)
