@@ -1133,7 +1133,7 @@ export function AdminPanel() {
   
   // 서비스 플랜 검색 및 필터링
   const [servicePlanSearch, setServicePlanSearch] = useState('');
-  const [servicePlanCarrierFilter, setServicePlanCarrierFilter] = useState('');
+  const [servicePlanCarrierFilter, setServicePlanCarrierFilter] = useState('all');
   const [selectedServicePlans, setSelectedServicePlans] = useState<number[]>([]);
   const [selectAllServicePlans, setSelectAllServicePlans] = useState(false);
   
@@ -2528,7 +2528,7 @@ export function AdminPanel() {
       plan.planName.toLowerCase().includes(servicePlanSearch.toLowerCase()) ||
       plan.carrier.toLowerCase().includes(servicePlanSearch.toLowerCase());
     
-    const matchesCarrier = !servicePlanCarrierFilter || plan.carrier === servicePlanCarrierFilter;
+    const matchesCarrier = !servicePlanCarrierFilter || servicePlanCarrierFilter === 'all' || plan.carrier === servicePlanCarrierFilter;
     
     return matchesSearch && matchesCarrier;
   });
@@ -4870,7 +4870,7 @@ export function AdminPanel() {
                             <SelectValue placeholder="통신사 필터" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="">전체 통신사</SelectItem>
+                            <SelectItem value="all">전체 통신사</SelectItem>
                             {carriersData && carriersData.map((carrier: any) => (
                               <SelectItem key={carrier.id} value={carrier.name}>
                                 {carrier.name}
