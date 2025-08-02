@@ -192,6 +192,7 @@ export class DatabaseStorage implements IStorage {
       managerCode: data.managerCode,
       username: data.username,
       password: hashedPassword,
+      position: data.position,
       contactPhone: data.contactPhone,
       email: data.email,
     }).returning();

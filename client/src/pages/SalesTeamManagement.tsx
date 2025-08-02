@@ -12,7 +12,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { createSalesTeamSchema, createSalesManagerSchema, createContactCodeMappingSchema } from '@shared/schema';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
-import { Plus, Users, User, Settings } from 'lucide-react';
+import { Plus, Users, User, Settings, Edit } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Sidebar } from '@/components/Sidebar';
@@ -57,6 +57,8 @@ export default function SalesTeamManagement() {
   const [isTeamDialogOpen, setIsTeamDialogOpen] = useState(false);
   const [isManagerDialogOpen, setIsManagerDialogOpen] = useState(false);
   const [isMappingDialogOpen, setIsMappingDialogOpen] = useState(false);
+  const [editingManager, setEditingManager] = useState<SalesManager | null>(null);
+  const [isEditManagerDialogOpen, setIsEditManagerDialogOpen] = useState(false);
 
   // 영업팀 목록 조회
   const { data: teams = [], isLoading: teamsLoading } = useQuery({
@@ -104,6 +106,21 @@ export default function SalesTeamManagement() {
       managerCode: '',
       username: '',
       password: '',
+      position: '대리' as const,
+      contactPhone: '',
+      email: ''
+    }
+  });
+
+  // 영업과장 수정 폼
+  const editManagerForm = useForm({
+    resolver: zodResolver(createSalesManagerSchema.omit({ password: true })),
+    defaultValues: {
+      teamId: 0,
+      managerName: '',
+      managerCode: '',
+      username: '',
+      position: '대리' as const,
       contactPhone: '',
       email: ''
     }
@@ -161,6 +178,28 @@ export default function SalesTeamManagement() {
     }
   });
 
+  // 영업과장 수정 뮤테이션
+  const updateManagerMutation = useMutation({
+    mutationFn: async (data: any) => {
+      const response = await apiRequest('PUT', `/api/admin/sales-managers/${editingManager?.id}`, data);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/sales-managers'] });
+      toast({ title: "성공", description: "영업과장 정보가 수정되었습니다." });
+      setIsEditManagerDialogOpen(false);
+      setEditingManager(null);
+      editManagerForm.reset();
+    },
+    onError: (error: any) => {
+      toast({ 
+        title: "오류", 
+        description: error.message || "영업과장 수정 중 오류가 발생했습니다.",
+        variant: "destructive"
+      });
+    }
+  });
+
   // 접점 코드 매핑 생성 뮤테이션
   const createMappingMutation = useMutation({
     mutationFn: async (data: any) => {
@@ -192,6 +231,25 @@ export default function SalesTeamManagement() {
 
   const onMappingSubmit = (data: any) => {
     createMappingMutation.mutate(data);
+  };
+
+  const onEditManagerSubmit = (data: any) => {
+    updateManagerMutation.mutate(data);
+  };
+
+  const handleEditManager = (manager: SalesManager) => {
+    setEditingManager(manager);
+    const teamForManager = teams.find(team => team.id === manager.teamId);
+    editManagerForm.reset({
+      teamId: manager.teamId,
+      managerName: manager.managerName,
+      managerCode: manager.managerCode,
+      username: manager.username,
+      position: manager.position,
+      contactPhone: manager.contactPhone || '',
+      email: manager.email || ''
+    });
+    setIsEditManagerDialogOpen(true);
   };
 
   return (
@@ -458,8 +516,18 @@ export default function SalesTeamManagement() {
                               <p className="text-sm">이메일: {manager.email}</p>
                             )}
                           </div>
-                          <div className="text-sm text-muted-foreground">
-                            생성일: {new Date(manager.createdAt).toLocaleDateString()}
+                          <div className="flex items-center space-x-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleEditManager(manager)}
+                            >
+                              <Edit className="h-4 w-4 mr-1" />
+                              수정
+                            </Button>
+                            <div className="text-sm text-muted-foreground">
+                              생성일: {new Date(manager.createdAt).toLocaleDateString()}
+                            </div>
                           </div>
                         </div>
                       </CardContent>
@@ -578,6 +646,133 @@ export default function SalesTeamManagement() {
       </Tabs>
         </div>
       </div>
+
+      {/* 영업과장 수정 다이얼로그 */}
+      <Dialog open={isEditManagerDialogOpen} onOpenChange={setIsEditManagerDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>영업과장 수정</DialogTitle>
+          </DialogHeader>
+          <Form {...editManagerForm}>
+            <form onSubmit={editManagerForm.handleSubmit(onEditManagerSubmit)} className="space-y-4">
+              <FormField
+                control={editManagerForm.control}
+                name="teamId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>소속 팀</FormLabel>
+                    <Select onValueChange={(value) => field.onChange(parseInt(value))} value={field.value?.toString()}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="팀을 선택하세요" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {teams.map((team: SalesTeam) => (
+                          <SelectItem key={team.id} value={team.id.toString()}>
+                            {team.teamName}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={editManagerForm.control}
+                name="managerName"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>이름</FormLabel>
+                    <FormControl>
+                      <Input placeholder="영업과장 이름" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={editManagerForm.control}
+                name="position"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>직급</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="직급을 선택하세요" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="팀장">팀장</SelectItem>
+                        <SelectItem value="과장">과장</SelectItem>
+                        <SelectItem value="대리">대리</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={editManagerForm.control}
+                name="managerCode"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>과장 코드</FormLabel>
+                    <FormControl>
+                      <Input placeholder="DX1팀" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={editManagerForm.control}
+                name="username"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>로그인 ID</FormLabel>
+                    <FormControl>
+                      <Input placeholder="로그인에 사용할 ID" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={editManagerForm.control}
+                name="contactPhone"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>연락처</FormLabel>
+                    <FormControl>
+                      <Input placeholder="연락처 (선택사항)" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={editManagerForm.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>이메일</FormLabel>
+                    <FormControl>
+                      <Input type="email" placeholder="이메일 (선택사항)" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <Button type="submit" disabled={updateManagerMutation.isPending}>
+                {updateManagerMutation.isPending ? '수정 중...' : '수정'}
+              </Button>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
