@@ -1,65 +1,63 @@
-import { useState, useEffect } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import React, { useState, useEffect } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { apiRequest } from '@/lib/queryClient';
-import { useToast } from '@/hooks/use-toast';
+import { Badge } from '@/components/ui/badge';
 import { 
-  BarChart3, 
   Users, 
-  CheckCircle, 
-  XCircle, 
-  Clock, 
-  TrendingUp,
-  LogOut
+  TrendingUp, 
+  Calendar,
+  Phone,
+  Mail,
+  Building2,
+  BarChart3,
+  LogOut,
+  User
 } from 'lucide-react';
 
-interface PerformanceData {
-  totalDocuments: number;
-  activatedCount: number;
-  canceledCount: number;
-  pendingCount: number;
-  contactCodes: string[];
-  teamId: number;
-  managerId: number;
+interface SalesManagerUser {
+  id: number;
+  name: string;
+  type: string;
 }
 
 export default function SalesManagerDashboard() {
-  const { toast } = useToast();
-  const [userData, setUserData] = useState<any>(null);
-
-  useEffect(() => {
-    const storedUser = localStorage.getItem('user_data');
-    if (storedUser) {
-      setUserData(JSON.parse(storedUser));
-    }
-  }, []);
-
-  // 영업과장 실적 데이터 조회
-  const { data: performance, isLoading } = useQuery<PerformanceData>({
-    queryKey: ['/api/sales-manager/performance'],
-    queryFn: () => apiRequest('/api/sales-manager/performance'),
-    enabled: !!userData
+  const [user, setUser] = useState<SalesManagerUser | null>(null);
+  const [stats, setStats] = useState({
+    totalTeamMembers: 0,
+    monthlyActivations: 0,
+    teamRevenue: 0,
+    activeDeals: 0
   });
 
+  useEffect(() => {
+    // localStorage에서 사용자 정보 가져오기
+    try {
+      const authData = localStorage.getItem('auth-storage');
+      if (authData) {
+        const parsed = JSON.parse(authData);
+        setUser(parsed.state?.user);
+      }
+    } catch (error) {
+      console.error('Failed to parse user data:', error);
+    }
+
+    // 임시 통계 데이터
+    setStats({
+      totalTeamMembers: 8,
+      monthlyActivations: 45,
+      teamRevenue: 2850000,
+      activeDeals: 12
+    });
+  }, []);
+
   const handleLogout = () => {
-    localStorage.removeItem('auth_token');
-    localStorage.removeItem('user_data');
+    localStorage.removeItem('auth-storage');
     window.location.href = '/sales-manager-login';
   };
 
-  if (!userData) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <h2 className="text-2xl font-bold mb-4">로그인이 필요합니다</h2>
-          <Button onClick={() => window.location.href = '/sales-manager-login'}>
-            로그인 페이지로 이동
-          </Button>
-        </div>
-      </div>
-    );
-  }
+  const handleBackToLogin = () => {
+    window.location.href = '/sales-manager-login';
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
@@ -67,189 +65,167 @@ export default function SalesManagerDashboard() {
       <div className="bg-white dark:bg-gray-800 shadow">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-6">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-                영업 실적 대시보드
-              </h1>
-              <p className="text-gray-600 dark:text-gray-300">
-                안녕하세요, {userData.name}님
-              </p>
+            <div className="flex items-center">
+              <Building2 className="h-8 w-8 text-primary mr-3" />
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+                  영업과장 대시보드
+                </h1>
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  영업 실적 관리 시스템
+                </p>
+              </div>
             </div>
-            <Button 
-              variant="outline" 
-              onClick={handleLogout}
-              className="flex items-center gap-2"
-            >
-              <LogOut className="h-4 w-4" />
-              로그아웃
-            </Button>
+            <div className="flex items-center space-x-4">
+              {user && (
+                <div className="flex items-center space-x-2">
+                  <User className="h-5 w-5 text-gray-500" />
+                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    {user.name}님
+                  </span>
+                  <Badge variant="secondary">영업과장</Badge>
+                </div>
+              )}
+              <Button variant="outline" onClick={handleLogout}>
+                <LogOut className="h-4 w-4 mr-2" />
+                로그아웃
+              </Button>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* 메인 컨텐츠 */}
+      {/* 메인 콘텐츠 */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {isLoading ? (
-          <div className="flex justify-center items-center h-64">
-            <div className="text-lg">실적 데이터를 불러오는 중...</div>
-          </div>
-        ) : (
-          <>
-            {/* 실적 요약 카드 */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-              <Card>
-                <CardContent className="flex items-center p-6">
-                  <div className="flex-shrink-0">
-                    <BarChart3 className="h-8 w-8 text-blue-600" />
-                  </div>
-                  <div className="ml-4">
-                    <p className="text-sm font-medium text-gray-600 dark:text-gray-300">
-                      총 접수건수
-                    </p>
-                    <p className="text-2xl font-semibold text-gray-900 dark:text-white">
-                      {performance?.totalDocuments || 0}
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
+        {/* 환영 메시지 */}
+        <div className="mb-8">
+          <h2 className="text-3xl font-bold text-gray-900 dark:text-white">
+            안녕하세요, {user?.name || '사용자'}님!
+          </h2>
+          <p className="mt-2 text-gray-600 dark:text-gray-400">
+            오늘도 좋은 하루 되세요. 팀의 영업 현황을 확인해보세요.
+          </p>
+        </div>
 
-              <Card>
-                <CardContent className="flex items-center p-6">
-                  <div className="flex-shrink-0">
-                    <CheckCircle className="h-8 w-8 text-green-600" />
-                  </div>
-                  <div className="ml-4">
-                    <p className="text-sm font-medium text-gray-600 dark:text-gray-300">
-                      개통완료
-                    </p>
-                    <p className="text-2xl font-semibold text-gray-900 dark:text-white">
-                      {performance?.activatedCount || 0}
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
+        {/* 통계 카드 */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">팀 구성원</CardTitle>
+              <Users className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stats.totalTeamMembers}명</div>
+              <p className="text-xs text-muted-foreground">
+                활성 영업 담당자
+              </p>
+            </CardContent>
+          </Card>
 
-              <Card>
-                <CardContent className="flex items-center p-6">
-                  <div className="flex-shrink-0">
-                    <XCircle className="h-8 w-8 text-red-600" />
-                  </div>
-                  <div className="ml-4">
-                    <p className="text-sm font-medium text-gray-600 dark:text-gray-300">
-                      개통취소
-                    </p>
-                    <p className="text-2xl font-semibold text-gray-900 dark:text-white">
-                      {performance?.canceledCount || 0}
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">이번 달 개통</CardTitle>
+              <TrendingUp className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stats.monthlyActivations}건</div>
+              <p className="text-xs text-muted-foreground">
+                +12% 전월 대비
+              </p>
+            </CardContent>
+          </Card>
 
-              <Card>
-                <CardContent className="flex items-center p-6">
-                  <div className="flex-shrink-0">
-                    <Clock className="h-8 w-8 text-yellow-600" />
-                  </div>
-                  <div className="ml-4">
-                    <p className="text-sm font-medium text-gray-600 dark:text-gray-300">
-                      처리대기
-                    </p>
-                    <p className="text-2xl font-semibold text-gray-900 dark:text-white">
-                      {performance?.pendingCount || 0}
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">팀 매출</CardTitle>
+              <BarChart3 className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {stats.teamRevenue.toLocaleString()}원
+              </div>
+              <p className="text-xs text-muted-foreground">
+                이번 달 누적
+              </p>
+            </CardContent>
+          </Card>
 
-            {/* 담당 접점 코드 */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Users className="h-5 w-5" />
-                    담당 접점 코드
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {performance?.contactCodes && performance.contactCodes.length > 0 ? (
-                    <div className="space-y-2">
-                      {performance.contactCodes.map((code, index) => (
-                        <div 
-                          key={index}
-                          className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg"
-                        >
-                          <span className="font-mono font-medium">{code}</span>
-                          <span className="text-sm text-gray-600 dark:text-gray-300">
-                            접점 코드
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="text-center py-8 text-gray-500">
-                      <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                      <p>등록된 접점 코드가 없습니다.</p>
-                      <p className="text-sm">관리자에게 접점 코드 등록을 요청하세요.</p>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">진행 중 건수</CardTitle>
+              <Calendar className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stats.activeDeals}건</div>
+              <p className="text-xs text-muted-foreground">
+                처리 대기 중
+              </p>
+            </CardContent>
+          </Card>
+        </div>
 
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <TrendingUp className="h-5 w-5" />
-                    성과 분석
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div className="flex justify-between items-center">
-                      <span>개통 성공률</span>
-                      <span className="font-semibold">
-                        {performance?.totalDocuments 
-                          ? Math.round((performance.activatedCount / performance.totalDocuments) * 100)
-                          : 0}%
-                      </span>
-                    </div>
-                    <div className="w-full bg-gray-200 rounded-full h-2">
-                      <div 
-                        className="bg-green-600 h-2 rounded-full" 
-                        style={{ 
-                          width: `${performance?.totalDocuments 
-                            ? (performance.activatedCount / performance.totalDocuments) * 100
-                            : 0}%`
-                        }}
-                      ></div>
-                    </div>
-                    
-                    <div className="pt-4 text-sm text-gray-600 dark:text-gray-300">
-                      <p>• 총 {performance?.totalDocuments || 0}건 중 {performance?.activatedCount || 0}건 개통완료</p>
-                      <p>• {performance?.canceledCount || 0}건 취소, {performance?.pendingCount || 0}건 대기중</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
+        {/* 주요 기능 */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>팀 성과 관리</CardTitle>
+              <CardDescription>
+                팀원들의 영업 실적과 성과를 관리합니다
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <Button className="w-full" variant="outline">
+                <BarChart3 className="h-4 w-4 mr-2" />
+                팀 실적 현황
+              </Button>
+              <Button className="w-full" variant="outline">
+                <Users className="h-4 w-4 mr-2" />
+                팀원 관리
+              </Button>
+              <Button className="w-full" variant="outline">
+                <TrendingUp className="h-4 w-4 mr-2" />
+                성과 분석
+              </Button>
+            </CardContent>
+          </Card>
 
-            {/* 추가 정보 */}
-            <div className="mt-8">
-              <Card>
-                <CardHeader>
-                  <CardTitle>시스템 안내</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3 text-sm text-gray-600 dark:text-gray-300">
-                    <p>• 이 대시보드는 귀하에게 할당된 접점 코드를 기반으로 실적을 표시합니다.</p>
-                    <p>• 실적 데이터는 실시간으로 업데이트되며, 문의사항이 있으시면 관리자에게 문의하세요.</p>
-                    <p>• 접점 코드 추가나 변경이 필요한 경우 관리자에게 요청하세요.</p>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </>
-        )}
+          <Card>
+            <CardHeader>
+              <CardTitle>고객 관리</CardTitle>
+              <CardDescription>
+                담당 고객과 영업 기회를 관리합니다
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <Button className="w-full" variant="outline">
+                <Phone className="h-4 w-4 mr-2" />
+                고객 현황
+              </Button>
+              <Button className="w-full" variant="outline">
+                <Mail className="h-4 w-4 mr-2" />
+                상담 이력
+              </Button>
+              <Button className="w-full" variant="outline">
+                <Calendar className="h-4 w-4 mr-2" />
+                일정 관리
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* 임시 메시지 */}
+        <div className="mt-8 p-6 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+          <h3 className="text-lg font-semibold text-blue-900 dark:text-blue-100 mb-2">
+            시스템 개발 중
+          </h3>
+          <p className="text-blue-700 dark:text-blue-300 mb-4">
+            영업과장 전용 기능들이 단계적으로 추가될 예정입니다. 
+            현재는 로그인 시스템과 기본 대시보드가 구현되어 있습니다.
+          </p>
+          <Button onClick={handleBackToLogin} variant="outline">
+            로그인 페이지로 돌아가기
+          </Button>
+        </div>
       </div>
     </div>
   );
