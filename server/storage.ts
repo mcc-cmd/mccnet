@@ -981,52 +981,130 @@ export class DatabaseStorage implements IStorage {
   ];
 
   async getCarriers(): Promise<any[]> {
-    return this.carriers.filter(carrier => carrier.isActive);
+    try {
+      const result = await db.select().from(carriers).where(eq(carriers.isActive, true));
+      return result;
+    } catch (error) {
+      console.error('Error getting carriers from DB:', error);
+      // 데이터베이스 연결 실패 시 메모리 기본값 반환
+      return this.carriers.filter(carrier => carrier.isActive);
+    }
   }
 
   async createCarrier(carrierData: any): Promise<any> {
     console.log('Creating carrier:', carrierData);
     
-    const newCarrier = {
-      id: Date.now(),
-      name: carrierData.name,
-      isActive: true,
-      createdAt: new Date(),
-      ...carrierData
-    };
-    
-    this.carriers.push(newCarrier);
-    return newCarrier;
+    try {
+      // 데이터베이스에 저장
+      const [newCarrier] = await db.insert(carriers).values({
+        name: carrierData.name,
+        displayOrder: carrierData.displayOrder || 0,
+        isActive: carrierData.isActive ?? true,
+        isWired: carrierData.isWired ?? false,
+        bundleNumber: carrierData.bundleNumber || '',
+        bundleCarrier: carrierData.bundleCarrier || '',
+        documentRequired: carrierData.documentRequired ?? false,
+        requireCustomerName: carrierData.requireCustomerName ?? true,
+        requireCustomerPhone: carrierData.requireCustomerPhone ?? true,
+        requireCustomerEmail: carrierData.requireCustomerEmail ?? false,
+        requireContactCode: carrierData.requireContactCode ?? true,
+        requireCarrier: carrierData.requireCarrier ?? true,
+        requirePreviousCarrier: carrierData.requirePreviousCarrier ?? true,
+        requireDocumentUpload: carrierData.requireDocumentUpload ?? false,
+        requireBundleNumber: carrierData.requireBundleNumber ?? false,
+        requireBundleCarrier: carrierData.requireBundleCarrier ?? false,
+      }).returning();
+      
+      return newCarrier;
+    } catch (error) {
+      console.error('Error creating carrier in DB:', error);
+      // 데이터베이스 저장 실패 시 메모리에만 저장
+      const newCarrier = {
+        id: Date.now(),
+        name: carrierData.name,
+        isActive: true,
+        createdAt: new Date(),
+        ...carrierData
+      };
+      
+      this.carriers.push(newCarrier);
+      return newCarrier;
+    }
   }
 
   async updateCarrier(id: number, carrierData: any): Promise<any> {
     console.log('Updating carrier:', id, carrierData);
     
-    const carrierIndex = this.carriers.findIndex(c => c.id === id);
-    if (carrierIndex === -1) {
-      throw new Error('통신사를 찾을 수 없습니다.');
+    try {
+      const [updatedCarrier] = await db.update(carriers)
+        .set({
+          name: carrierData.name,
+          displayOrder: carrierData.displayOrder,
+          isActive: carrierData.isActive,
+          isWired: carrierData.isWired,
+          bundleNumber: carrierData.bundleNumber,
+          bundleCarrier: carrierData.bundleCarrier,
+          documentRequired: carrierData.documentRequired,
+          requireCustomerName: carrierData.requireCustomerName,
+          requireCustomerPhone: carrierData.requireCustomerPhone,
+          requireCustomerEmail: carrierData.requireCustomerEmail,
+          requireContactCode: carrierData.requireContactCode,
+          requireCarrier: carrierData.requireCarrier,
+          requirePreviousCarrier: carrierData.requirePreviousCarrier,
+          requireDocumentUpload: carrierData.requireDocumentUpload,
+          requireBundleNumber: carrierData.requireBundleNumber,
+          requireBundleCarrier: carrierData.requireBundleCarrier,
+          updatedAt: new Date()
+        })
+        .where(eq(carriers.id, id))
+        .returning();
+      
+      if (!updatedCarrier) {
+        throw new Error('통신사를 찾을 수 없습니다.');
+      }
+      
+      return updatedCarrier;
+    } catch (error) {
+      console.error('Error updating carrier in DB:', error);
+      // 메모리 방식으로 폴백
+      const carrierIndex = this.carriers.findIndex(c => c.id === id);
+      if (carrierIndex === -1) {
+        throw new Error('통신사를 찾을 수 없습니다.');
+      }
+      
+      this.carriers[carrierIndex] = {
+        ...this.carriers[carrierIndex],
+        ...carrierData,
+        updatedAt: new Date()
+      };
+      
+      return this.carriers[carrierIndex];
     }
-    
-    this.carriers[carrierIndex] = {
-      ...this.carriers[carrierIndex],
-      ...carrierData,
-      updatedAt: new Date()
-    };
-    
-    return this.carriers[carrierIndex];
   }
 
   async deleteCarrier(id: number): Promise<void> {
     console.log('Deleting carrier:', id);
     
-    const carrierIndex = this.carriers.findIndex(c => c.id === id);
-    if (carrierIndex === -1) {
-      throw new Error('통신사를 찾을 수 없습니다.');
+    try {
+      const [deletedCarrier] = await db.update(carriers)
+        .set({ isActive: false, deletedAt: new Date() })
+        .where(eq(carriers.id, id))
+        .returning();
+      
+      if (!deletedCarrier) {
+        throw new Error('통신사를 찾을 수 없습니다.');
+      }
+    } catch (error) {
+      console.error('Error deleting carrier in DB:', error);
+      // 메모리 방식으로 폴백
+      const carrierIndex = this.carriers.findIndex(c => c.id === id);
+      if (carrierIndex === -1) {
+        throw new Error('통신사를 찾을 수 없습니다.');
+      }
+      
+      this.carriers[carrierIndex].isActive = false;
+      this.carriers[carrierIndex].deletedAt = new Date();
     }
-    
-    // Soft delete - isActive를 false로 설정
-    this.carriers[carrierIndex].isActive = false;
-    this.carriers[carrierIndex].deletedAt = new Date();
   }
 
   // 중복 접수 확인 메서드

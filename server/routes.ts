@@ -3217,7 +3217,14 @@ router.post('/api/carriers/upload-excel', requireAuth, requireAdmin, contactCode
     // 엑셀 파일 읽기
     let workbook;
     try {
-      workbook = XLSX.readFile(req.file.path);
+      // XLSX 모듈이 제대로 로드되었는지 확인
+      if (typeof XLSX.readFile !== 'function') {
+        console.error('XLSX.readFile is not available, trying to read file with buffer');
+        const fileBuffer = fs.readFileSync(req.file.path);
+        workbook = XLSX.read(fileBuffer, { type: 'buffer' });
+      } else {
+        workbook = XLSX.readFile(req.file.path);
+      }
     } catch (readError) {
       console.error('Error reading Excel file:', readError);
       return res.status(400).json({ error: '엑셀 파일을 읽는데 실패했습니다. 파일이 손상되었거나 잘못된 형식일 수 있습니다.' });
