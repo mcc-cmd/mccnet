@@ -119,7 +119,9 @@ function CarrierManagement() {
   // 통신사 목록 조회
   const { data: carriers = [], isLoading: carriersLoading } = useQuery({
     queryKey: ['/api/carriers'],
-    queryFn: () => apiRequest('/api/carriers')
+    queryFn: () => apiRequest('/api/carriers'),
+    staleTime: 0, // 항상 최신 데이터를 가져오도록 설정
+    refetchOnWindowFocus: true // 창 포커스 시 새로고침
   });
 
   // 통신사 생성/수정 폼 - 동적 기본값 설정
@@ -177,7 +179,9 @@ function CarrierManagement() {
       body: JSON.stringify(data)
     }),
     onSuccess: async () => {
+      // 캐시 무효화 및 강제 새로고침
       await queryClient.invalidateQueries({ queryKey: ['/api/carriers'] });
+      await queryClient.removeQueries({ queryKey: ['/api/carriers'] }); // 캐시 완전 제거
       await queryClient.refetchQueries({ queryKey: ['/api/carriers'] });
       
       setCarrierDialogOpen(false);
@@ -206,6 +210,7 @@ function CarrierManagement() {
     onSuccess: async () => {
       // 모든 관련 쿼리 무효화 및 새로고침
       await queryClient.invalidateQueries({ queryKey: ['/api/carriers'] });
+      await queryClient.removeQueries({ queryKey: ['/api/carriers'] }); // 캐시 완전 제거
       await queryClient.refetchQueries({ queryKey: ['/api/carriers'] });
       
       // 토글 작업이 아닌 경우에만 대화상자 닫기
@@ -240,7 +245,9 @@ function CarrierManagement() {
       method: 'DELETE'
     }),
     onSuccess: async () => {
+      // 캐시 무효화 및 강제 새로고침
       await queryClient.invalidateQueries({ queryKey: ['/api/carriers'] });
+      await queryClient.removeQueries({ queryKey: ['/api/carriers'] }); // 캐시 완전 제거
       await queryClient.refetchQueries({ queryKey: ['/api/carriers'] });
       
       toast({
