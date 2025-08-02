@@ -12,7 +12,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { createSalesTeamSchema, createSalesManagerSchema, createContactCodeMappingSchema } from '@shared/schema';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
-import { Plus, Users, User, Settings, Edit } from 'lucide-react';
+import { Plus, Users, User, Settings, Edit, Trash2 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Sidebar } from '@/components/Sidebar';
@@ -61,6 +61,8 @@ export default function SalesTeamManagement() {
   const [isEditManagerDialogOpen, setIsEditManagerDialogOpen] = useState(false);
   const [selectedTeamId, setSelectedTeamId] = useState<number | null>(null);
   const [showTeamMembers, setShowTeamMembers] = useState(false);
+  const [editingTeam, setEditingTeam] = useState<SalesTeam | null>(null);
+  const [isEditTeamDialogOpen, setIsEditTeamDialogOpen] = useState(false);
 
   // 영업팀 목록 조회
   const { data: teams = [], isLoading: teamsLoading } = useQuery({
@@ -91,6 +93,16 @@ export default function SalesTeamManagement() {
 
   // 영업팀 생성 폼
   const teamForm = useForm({
+    resolver: zodResolver(createSalesTeamSchema),
+    defaultValues: {
+      teamName: '',
+      teamCode: '',
+      description: ''
+    }
+  });
+
+  // 영업팀 수정 폼
+  const editTeamForm = useForm({
     resolver: zodResolver(createSalesTeamSchema),
     defaultValues: {
       teamName: '',
@@ -154,6 +166,47 @@ export default function SalesTeamManagement() {
       toast({ 
         title: "오류", 
         description: error.message || "영업팀 생성 중 오류가 발생했습니다.",
+        variant: "destructive"
+      });
+    }
+  });
+
+  // 영업팀 수정 뮤테이션
+  const updateTeamMutation = useMutation({
+    mutationFn: async (data: any) => {
+      const response = await apiRequest('PUT', `/api/admin/sales-teams/${editingTeam?.id}`, data);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/sales-teams'] });
+      toast({ title: "성공", description: "영업팀이 수정되었습니다." });
+      setIsEditTeamDialogOpen(false);
+      setEditingTeam(null);
+      editTeamForm.reset();
+    },
+    onError: (error: any) => {
+      toast({ 
+        title: "오류", 
+        description: error.message || "영업팀 수정 중 오류가 발생했습니다.",
+        variant: "destructive"
+      });
+    }
+  });
+
+  // 영업팀 삭제 뮤테이션
+  const deleteTeamMutation = useMutation({
+    mutationFn: async (teamId: number) => {
+      const response = await apiRequest('DELETE', `/api/admin/sales-teams/${teamId}`);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/sales-teams'] });
+      toast({ title: "성공", description: "영업팀이 삭제되었습니다." });
+    },
+    onError: (error: any) => {
+      toast({ 
+        title: "오류", 
+        description: error.message || "영업팀 삭제 중 오류가 발생했습니다.",
         variant: "destructive"
       });
     }
@@ -239,6 +292,10 @@ export default function SalesTeamManagement() {
     updateManagerMutation.mutate(data);
   };
 
+  const onEditTeamSubmit = (data: any) => {
+    updateTeamMutation.mutate(data);
+  };
+
   const handleEditManager = (manager: SalesManager) => {
     setEditingManager(manager);
     const teamForManager = teams.find(team => team.id === manager.teamId);
@@ -252,6 +309,22 @@ export default function SalesTeamManagement() {
       email: manager.email || ''
     });
     setIsEditManagerDialogOpen(true);
+  };
+
+  const handleEditTeam = (team: SalesTeam) => {
+    setEditingTeam(team);
+    editTeamForm.reset({
+      teamName: team.teamName,
+      teamCode: team.teamCode,
+      description: team.description || ''
+    });
+    setIsEditTeamDialogOpen(true);
+  };
+
+  const handleDeleteTeam = (team: SalesTeam) => {
+    if (window.confirm(`"${team.teamName}" 팀을 삭제하시겠습니까?`)) {
+      deleteTeamMutation.mutate(team.id);
+    }
   };
 
   const handleTeamClick = (teamId: number) => {
@@ -372,15 +445,42 @@ export default function SalesTeamManagement() {
                       >
                         <CardContent className="pt-4">
                           <div className="flex justify-between items-start">
-                            <div>
+                            <div className="flex-1">
                               <h3 className="font-semibold">{team.teamName}</h3>
                               <p className="text-sm text-muted-foreground">코드: {team.teamCode}</p>
                               {team.description && (
                                 <p className="text-sm mt-2">{team.description}</p>
                               )}
                             </div>
-                            <div className="text-sm text-muted-foreground">
-                              생성일: {new Date(team.createdAt).toLocaleDateString()}
+                            <div className="flex flex-col items-end gap-2">
+                              <div className="text-sm text-muted-foreground">
+                                생성일: {new Date(team.createdAt).toLocaleDateString()}
+                              </div>
+                              <div className="flex gap-2">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleEditTeam(team);
+                                  }}
+                                >
+                                  <Edit className="h-3 w-3 mr-1" />
+                                  수정
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleDeleteTeam(team);
+                                  }}
+                                  className="text-red-600 hover:text-red-700 hover:border-red-300"
+                                >
+                                  <Trash2 className="h-3 w-3 mr-1" />
+                                  삭제
+                                </Button>
+                              </div>
                             </div>
                           </div>
                         </CardContent>
@@ -826,6 +926,61 @@ export default function SalesTeamManagement() {
               />
               <Button type="submit" disabled={updateManagerMutation.isPending}>
                 {updateManagerMutation.isPending ? '수정 중...' : '수정'}
+              </Button>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+
+      {/* 영업팀 수정 다이얼로그 */}
+      <Dialog open={isEditTeamDialogOpen} onOpenChange={setIsEditTeamDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>영업팀 정보 수정</DialogTitle>
+          </DialogHeader>
+          <Form {...editTeamForm}>
+            <form onSubmit={editTeamForm.handleSubmit(onEditTeamSubmit)} className="space-y-4">
+              <FormField
+                control={editTeamForm.control}
+                name="teamName"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>팀명</FormLabel>
+                    <FormControl>
+                      <Input placeholder="예: 1영업팀" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={editTeamForm.control}
+                name="teamCode"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>팀 코드</FormLabel>
+                    <FormControl>
+                      <Input placeholder="예: TEAM01" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={editTeamForm.control}
+                name="description"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>설명 (선택사항)</FormLabel>
+                    <FormControl>
+                      <Textarea placeholder="팀 설명을 입력하세요" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <Button type="submit" disabled={updateTeamMutation.isPending}>
+                {updateTeamMutation.isPending ? '수정 중...' : '수정'}
               </Button>
             </form>
           </Form>
