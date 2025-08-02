@@ -1254,6 +1254,26 @@ export function AdminPanel() {
     },
   });
 
+  const deleteSalesManagerMutation = useMutation({
+    mutationFn: (managerId: number) => apiRequest(`/api/admin/sales-managers/${managerId}`, {
+      method: 'DELETE',
+    }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/sales-managers'] });
+      toast({
+        title: '성공',
+        description: '영업과장 계정이 성공적으로 삭제되었습니다.',
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: '오류',
+        description: error.message,
+        variant: 'destructive',
+      });
+    },
+  });
+
   const uploadPricingMutation = useMutation({
     mutationFn: async (data: FormData) => {
       const sessionId = useAuth.getState().sessionId;
@@ -1470,9 +1490,13 @@ export function AdminPanel() {
     }
   });
 
-  const handleDeleteUser = async (userId: number) => {
-    if (confirm('정말로 이 사용자를 삭제하시겠습니까?')) {
-      deleteUserMutation.mutate(userId);
+  const handleDeleteUser = async (userToDelete: any) => {
+    if (confirm(`정말로 "${userToDelete.displayName}" 계정을 삭제하시겠습니까?`)) {
+      if (userToDelete.accountType === 'sales_manager') {
+        deleteSalesManagerMutation.mutate(userToDelete.id);
+      } else {
+        deleteUserMutation.mutate(userToDelete.id);
+      }
     }
   };
 
@@ -1602,6 +1626,8 @@ export function AdminPanel() {
     setSelectedUser(userToEdit);
     setChangePasswordDialogOpen(true);
   };
+
+
 
   // Analytics handlers
   const handleWorkerClick = async (worker: { id: number; name: string }) => {
@@ -3214,6 +3240,17 @@ export function AdminPanel() {
                                       >
                                         <Edit2 className="h-4 w-4" />
                                       </Button>
+                                      {userItem.userType !== 'admin' && (
+                                        <Button
+                                          variant="outline"
+                                          size="sm"
+                                          onClick={() => handleDeleteUser(userItem)}
+                                          className="text-red-600 hover:text-red-700"
+                                          title="계정 삭제"
+                                        >
+                                          <Trash2 className="h-4 w-4" />
+                                        </Button>
+                                      )}
                                     </>
                                   )}
                                   {user?.userType !== 'admin' && userItem.userType !== 'admin' && (

@@ -492,6 +492,22 @@ router.post('/api/admin/change-password', requireAdmin, async (req, res) => {
   }
 });
 
+// 영업과장 삭제 API (시스템 관리자 전용)
+router.delete('/api/admin/sales-managers/:id', requireAdmin, async (req, res) => {
+  try {
+    const managerId = parseInt(req.params.id);
+    
+    if (!managerId) {
+      return res.status(400).json({ error: '유효하지 않은 영업과장 ID입니다.' });
+    }
+
+    await storage.deleteSalesManager(managerId);
+    res.json({ success: true, message: '영업과장 계정이 성공적으로 삭제되었습니다.' });
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
 // New account creation routes
 router.post('/api/auth/register/dealer', async (req, res) => {
   try {

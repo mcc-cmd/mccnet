@@ -87,6 +87,7 @@ export interface IStorage {
   updateAdminPassword(adminId: number, newPassword: string): Promise<void>;
   updateSalesManagerPassword(managerId: number, newPassword: string): Promise<void>;
   updateUserPassword(userId: number, newPassword: string): Promise<void>;
+  deleteSalesManager(managerId: number): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -321,6 +322,12 @@ export class DatabaseStorage implements IStorage {
   async updateUserPassword(userId: number, newPassword: string): Promise<void> {
     // 기존 사용자 시스템의 비밀번호 변경 (구현 필요시 추가)
     throw new Error('일반 사용자 비밀번호 변경은 추후 구현 예정입니다.');
+  }
+
+  async deleteSalesManager(managerId: number): Promise<void> {
+    await db.update(salesManagers)
+      .set({ isActive: false, updatedAt: new Date() })
+      .where(eq(salesManagers.id, managerId));
   }
   
   // 호환성을 위한 기존 사용자 인증 메서드 (임시)
