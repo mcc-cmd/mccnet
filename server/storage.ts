@@ -44,6 +44,9 @@ export interface IStorage {
   getDealers(): Promise<any[]>;
   getUsers(): Promise<any[]>;
   getAllUsers(): Promise<any[]>;
+  createUser(userData: { username: string; password: string; name: string; userType: string }): Promise<any>;
+  updateUser(id: number, userData: any): Promise<any>;
+  deleteUser(id: number): Promise<void>;
   getDocuments(): Promise<any[]>;
   getDocumentTemplates(): Promise<any[]>;
   getSettlementUnitPrices(): Promise<any[]>;
@@ -428,6 +431,76 @@ export class DatabaseStorage implements IStorage {
 
   async getAllUsers(): Promise<any[]> {
     return this.getUsers();
+  }
+
+  async createUser(userData: { username: string; password: string; name: string; userType: string }): Promise<any> {
+    const hashedPassword = await bcrypt.hash(userData.password, 10);
+    
+    if (userData.userType === 'admin') {
+      const [newAdmin] = await db.insert(admins).values({
+        username: userData.username,
+        password: hashedPassword,
+        name: userData.name,
+        isActive: true
+      }).returning();
+      
+      return {
+        id: newAdmin.id,
+        username: newAdmin.username,
+        displayName: newAdmin.name,
+        userType: 'admin',
+        accountType: 'admin',
+        affiliation: '시스템',
+        createdAt: newAdmin.createdAt
+      };
+    } else {
+      throw new Error('해당 계정 유형은 시스템에서 관리됩니다. 시스템 관리자에게 문의하세요.');
+    }
+  }
+
+  async updateUser(id: number, userData: any): Promise<any> {
+    const updateData: any = {};
+    
+    if (userData.username) updateData.username = userData.username;
+    if (userData.name) updateData.name = userData.name;
+    if (userData.password) {
+      updateData.password = await bcrypt.hash(userData.password, 10);
+    }
+    
+    // 관리자 테이블에서 업데이트 시도
+    const adminResult = await db.update(admins)
+      .set(updateData)
+      .where(eq(admins.id, id))
+      .returning();
+      
+    if (adminResult.length > 0) {
+      return adminResult[0];
+    }
+    
+    throw new Error('사용자를 찾을 수 없습니다.');
+  }
+
+  async deleteUser(id: number): Promise<void> {
+    // 관리자 삭제 (hard delete)
+    const adminResult = await db.delete(admins)
+      .where(eq(admins.id, id))
+      .returning();
+      
+    if (adminResult.length > 0) {
+      return;
+    }
+    
+    // 영업과장 삭제 (soft delete)
+    const managerResult = await db.update(salesManagers)
+      .set({ isActive: false })
+      .where(eq(salesManagers.id, id))
+      .returning();
+      
+    if (managerResult.length > 0) {
+      return;
+    }
+    
+    throw new Error('사용자를 찾을 수 없습니다.');
   }
   
   async getDocuments(): Promise<any[]> {
