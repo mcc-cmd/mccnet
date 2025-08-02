@@ -408,6 +408,22 @@ router.post('/api/admin/create-worker', requireAdmin, async (req, res) => {
   }
 });
 
+// 영업과장 계정 생성 (관리자 패널용)
+router.post('/api/admin/create-sales-manager', requireAdmin, async (req, res) => {
+  try {
+    const data = createWorkerSchema.parse(req.body); // 동일한 스키마 사용
+    const manager = await storage.createSalesManager({
+      username: data.username,
+      password: data.password,
+      name: data.name,
+      type: 'sales_manager'
+    });
+    res.json(manager);
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
 // New account creation routes
 router.post('/api/auth/register/dealer', async (req, res) => {
   try {

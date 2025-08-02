@@ -67,6 +67,12 @@ type CreateWorkerForm = {
   name: string;
 };
 
+type CreateSalesManagerForm = {
+  username: string;
+  password: string;
+  name: string;
+};
+
 type UpdateDocumentStatusForm = {
   status: '접수' | '보완필요' | '완료';
   activationStatus?: '대기' | '개통' | '취소';
@@ -820,6 +826,7 @@ export function AdminPanel() {
   const [userDialogOpen, setUserDialogOpen] = useState(false);
   const [adminDialogOpen, setAdminDialogOpen] = useState(false);
   const [workerDialogOpen, setWorkerDialogOpen] = useState(false);
+  const [salesManagerDialogOpen, setSalesManagerDialogOpen] = useState(false);
 
   const [templateDialogOpen, setTemplateDialogOpen] = useState(false);
   const [statusDialogOpen, setStatusDialogOpen] = useState(false);
@@ -982,6 +989,15 @@ export function AdminPanel() {
     },
   });
 
+  const salesManagerForm = useForm<CreateSalesManagerForm>({
+    resolver: zodResolver(createWorkerSchema), // 동일한 스키마 사용
+    defaultValues: {
+      username: '',
+      password: '',
+      name: '',
+    },
+  });
+
   const editUserForm = useForm({
     defaultValues: {
       username: '',
@@ -1137,6 +1153,28 @@ export function AdminPanel() {
       toast({
         title: '성공',
         description: '근무자 계정이 성공적으로 생성되었습니다.',
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: '오류',
+        description: error.message,
+        variant: 'destructive',
+      });
+    },
+  });
+
+  const createSalesManagerMutation = useMutation({
+    mutationFn: (data: CreateSalesManagerForm) => apiRequest('/api/admin/create-sales-manager', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+    onSuccess: () => {
+      setSalesManagerDialogOpen(false);
+      salesManagerForm.reset();
+      toast({
+        title: '성공',
+        description: '영업과장 계정이 성공적으로 생성되었습니다.',
       });
     },
     onError: (error: Error) => {
@@ -1489,6 +1527,10 @@ export function AdminPanel() {
 
   const handleCreateWorker = (data: CreateWorkerForm) => {
     createWorkerMutation.mutate(data);
+  };
+
+  const handleCreateSalesManager = (data: CreateSalesManagerForm) => {
+    createSalesManagerMutation.mutate(data);
   };
 
   // Analytics handlers
@@ -2914,6 +2956,83 @@ export function AdminPanel() {
                               </Button>
                               <Button type="submit" disabled={createWorkerMutation.isPending}>
                                 {createWorkerMutation.isPending ? '생성 중...' : '생성'}
+                              </Button>
+                            </div>
+                          </form>
+                        </Form>
+                      </DialogContent>
+                    </Dialog>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>영업과장 계정 생성</CardTitle>
+                  <CardDescription>
+                    새로운 영업과장 계정을 생성합니다. 영업과장은 팀 실적을 관리할 수 있습니다.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex justify-end">
+                    <Dialog open={salesManagerDialogOpen} onOpenChange={setSalesManagerDialogOpen}>
+                      <DialogTrigger asChild>
+                        <Button>
+                          <Plus className="mr-2 h-4 w-4" />
+                          영업과장 계정 생성
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent>
+                        <DialogHeader>
+                          <DialogTitle>새 영업과장 계정 생성</DialogTitle>
+                        </DialogHeader>
+                        <Form {...salesManagerForm}>
+                          <form onSubmit={salesManagerForm.handleSubmit(handleCreateSalesManager)} className="space-y-4">
+                            <FormField
+                              control={salesManagerForm.control}
+                              name="name"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>이름</FormLabel>
+                                  <FormControl>
+                                    <Input placeholder="이름을 입력하세요" {...field} />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            <FormField
+                              control={salesManagerForm.control}
+                              name="username"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>아이디</FormLabel>
+                                  <FormControl>
+                                    <Input type="text" placeholder="아이디를 입력하세요" {...field} />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            <FormField
+                              control={salesManagerForm.control}
+                              name="password"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>비밀번호</FormLabel>
+                                  <FormControl>
+                                    <Input type="password" placeholder="비밀번호를 입력하세요" {...field} />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            <div className="flex justify-end space-x-2">
+                              <Button type="button" variant="outline" onClick={() => setSalesManagerDialogOpen(false)}>
+                                취소
+                              </Button>
+                              <Button type="submit" disabled={createSalesManagerMutation.isPending}>
+                                {createSalesManagerMutation.isPending ? '생성 중...' : '생성'}
                               </Button>
                             </div>
                           </form>
