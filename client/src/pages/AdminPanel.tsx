@@ -4627,7 +4627,7 @@ export function AdminPanel() {
                                 {plan.dataAllowance}
                               </td>
                               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                {plan.monthlyFee.toLocaleString()}원
+                                {Math.floor(parseFloat(plan.monthlyFee)).toLocaleString()}원
                               </td>
                               <td className="px-6 py-4 whitespace-nowrap">
                                 <Badge variant={plan.isActive ? "default" : "secondary"}>
