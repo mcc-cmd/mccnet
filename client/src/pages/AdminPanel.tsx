@@ -2676,6 +2676,11 @@ export function AdminPanel() {
                             <div>
                               <h4 className="font-medium text-gray-900">{code.code}</h4>
                               <p className="text-sm text-gray-500">{code.dealerName}</p>
+                              {code.salesManagerName && (
+                                <p className="text-xs text-blue-600 mt-1">
+                                  담당: {code.salesManagerName}
+                                </p>
+                              )}
                             </div>
                             <Badge variant="outline">{code.carrier}</Badge>
                           </div>
