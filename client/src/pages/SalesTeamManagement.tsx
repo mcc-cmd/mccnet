@@ -59,6 +59,8 @@ export default function SalesTeamManagement() {
   const [isMappingDialogOpen, setIsMappingDialogOpen] = useState(false);
   const [editingManager, setEditingManager] = useState<SalesManager | null>(null);
   const [isEditManagerDialogOpen, setIsEditManagerDialogOpen] = useState(false);
+  const [selectedTeamId, setSelectedTeamId] = useState<number | null>(null);
+  const [showTeamMembers, setShowTeamMembers] = useState(false);
 
   // 영업팀 목록 조회
   const { data: teams = [], isLoading: teamsLoading } = useQuery({
@@ -252,6 +254,21 @@ export default function SalesTeamManagement() {
     setIsEditManagerDialogOpen(true);
   };
 
+  const handleTeamClick = (teamId: number) => {
+    if (selectedTeamId === teamId && showTeamMembers) {
+      setShowTeamMembers(false);
+      setSelectedTeamId(null);
+    } else {
+      setSelectedTeamId(teamId);
+      setShowTeamMembers(true);
+    }
+  };
+
+  // 선택된 팀의 팀원들을 필터링
+  const teamMembers = selectedTeamId 
+    ? managers.filter(manager => manager.teamId === selectedTeamId)
+    : [];
+
   return (
     <div className="flex h-screen bg-background">
       <Sidebar />
@@ -348,22 +365,63 @@ export default function SalesTeamManagement() {
               ) : (
                 <div className="grid gap-4">
                   {teams.map((team: SalesTeam) => (
-                    <Card key={team.id}>
-                      <CardContent className="pt-4">
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <h3 className="font-semibold">{team.teamName}</h3>
-                            <p className="text-sm text-muted-foreground">코드: {team.teamCode}</p>
-                            {team.description && (
-                              <p className="text-sm mt-2">{team.description}</p>
-                            )}
+                    <div key={team.id}>
+                      <Card 
+                        className="cursor-pointer hover:bg-muted/50 transition-colors"
+                        onClick={() => handleTeamClick(team.id)}
+                      >
+                        <CardContent className="pt-4">
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <h3 className="font-semibold">{team.teamName}</h3>
+                              <p className="text-sm text-muted-foreground">코드: {team.teamCode}</p>
+                              {team.description && (
+                                <p className="text-sm mt-2">{team.description}</p>
+                              )}
+                            </div>
+                            <div className="text-sm text-muted-foreground">
+                              생성일: {new Date(team.createdAt).toLocaleDateString()}
+                            </div>
                           </div>
-                          <div className="text-sm text-muted-foreground">
-                            생성일: {new Date(team.createdAt).toLocaleDateString()}
-                          </div>
+                        </CardContent>
+                      </Card>
+                      
+                      {/* 팀원 목록 표시 */}
+                      {showTeamMembers && selectedTeamId === team.id && (
+                        <div className="ml-4 mt-2 space-y-2">
+                          <h4 className="font-medium text-sm text-muted-foreground">팀원 목록:</h4>
+                          {teamMembers.length > 0 ? (
+                            teamMembers.map((member: SalesManager) => (
+                              <Card key={member.id} className="bg-muted/30">
+                                <CardContent className="pt-3 pb-3">
+                                  <div className="flex justify-between items-center">
+                                    <div>
+                                      <h5 className="font-medium text-sm">{member.managerName} ({member.position})</h5>
+                                      <p className="text-xs text-muted-foreground">
+                                        코드: {member.managerCode} | ID: {member.username}
+                                      </p>
+                                    </div>
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleEditManager(member);
+                                      }}
+                                    >
+                                      <Edit className="h-3 w-3 mr-1" />
+                                      수정
+                                    </Button>
+                                  </div>
+                                </CardContent>
+                              </Card>
+                            ))
+                          ) : (
+                            <p className="text-sm text-muted-foreground ml-2">이 팀에는 등록된 팀원이 없습니다.</p>
+                          )}
                         </div>
-                      </CardContent>
-                    </Card>
+                      )}
+                    </div>
                   ))}
                 </div>
               )}
