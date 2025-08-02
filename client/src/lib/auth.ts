@@ -55,17 +55,12 @@ export const useAuth = create<AuthState>()(
           if (response.ok) {
             data = await response.json();
             if (data.success && data.user && data.sessionId) {
-              // 영업과장 로그인 성공 시 별도 처리
-              const authStore = {
-                state: {
-                  sessionId: data.sessionId,
-                  user: data.user,
-                  isAuthenticated: true
-                }
-              };
-              localStorage.setItem('auth-storage', JSON.stringify(authStore));
-              // 영업과장 대시보드로 리다이렉트
-              window.location.href = '/sales-manager-dashboard';
+              // 영업과장 로그인 성공 시 zustand 상태 설정
+              set({
+                user: data.user,
+                sessionId: data.sessionId,
+                isAuthenticated: true,
+              });
               return true;
             }
           }
