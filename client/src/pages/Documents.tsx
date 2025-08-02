@@ -761,9 +761,10 @@ export function Documents() {
                           </td>
                           <td className="px-1 py-1 text-xs text-gray-900">
                             <div className="leading-tight break-words max-w-full">
-                              {(doc as any).storeName || (doc as any).contactCode || '-'}
+                              {doc.storeName || doc.contactCode || '-'}
                             </div>
                           </td>
+
                           <td className="px-1 py-1 text-xs text-gray-700">
                             <div className="leading-tight break-words max-w-full">
                               {(doc as any).carrier || '-'}

@@ -1107,8 +1107,30 @@ router.get('/api/documents', requireAuth, async (req: any, res) => {
       dealerId: dealerId
     });
     
-    console.log('Documents found:', documents.length);
-    res.json(documents);
+    // 판매점명 정보 추가 (contactCode를 통해)
+    const documentsWithStoreNames = await Promise.all(documents.map(async (doc: any) => {
+      let storeName = doc.storeName;
+      
+      // storeName이 없고 contactCode가 있으면 contactCode를 통해 판매점명 조회
+      if (!storeName && doc.contactCode) {
+        try {
+          const contactCodeInfo = await storage.getContactCodeByCode(doc.contactCode);
+          if (contactCodeInfo) {
+            storeName = contactCodeInfo.dealerName;
+          }
+        } catch (e) {
+          console.warn('Contact code lookup failed:', e);
+        }
+      }
+      
+      return {
+        ...doc,
+        storeName: storeName || doc.contactCode || '-'
+      };
+    }));
+    
+    console.log('Documents found:', documentsWithStoreNames.length);
+    res.json(documentsWithStoreNames);
   } catch (error: any) {
     console.error('Documents API error:', error);
     res.status(500).json({ error: error.message });

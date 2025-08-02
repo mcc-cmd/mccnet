@@ -104,6 +104,7 @@ export interface IStorage {
   getContactCodeMappings(): Promise<ContactCodeMapping[]>;
   getContactCodeMappingsByManagerId(managerId: number): Promise<ContactCodeMapping[]>;
   getContactCodeMappingsByContactCode(contactCode: string): Promise<ContactCodeMapping[]>;
+  getContactCodeByCode(contactCode: string): Promise<any>;
   updateContactCodeMapping(id: number, data: UpdateContactCodeMappingForm): Promise<ContactCodeMapping>;
   deleteContactCodeMapping(id: number): Promise<void>;
   
@@ -340,6 +341,19 @@ export class DatabaseStorage implements IStorage {
   async getContactCodeMappingsByContactCode(contactCode: string): Promise<ContactCodeMapping[]> {
     return await db.select().from(contactCodeMappings)
       .where(and(eq(contactCodeMappings.contactCode, contactCode), eq(contactCodeMappings.isActive, true)));
+  }
+
+  async getContactCodeByCode(contactCode: string): Promise<any> {
+    const [result] = await db.select({
+      dealerName: contactCodes.dealerName,
+      contactCode: contactCodes.code,
+      carrier: contactCodes.carrier
+    })
+    .from(contactCodes)
+    .where(eq(contactCodes.code, contactCode))
+    .limit(1);
+    
+    return result;
   }
 
   async updateContactCodeMapping(id: number, data: UpdateContactCodeMappingForm): Promise<ContactCodeMapping> {

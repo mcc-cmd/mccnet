@@ -93,13 +93,16 @@ export function SubmitApplication() {
     try {
       const response = await apiRequest('/api/documents/check-duplicate', {
         method: 'POST',
-        body: {
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
           customerName: formData.customerName,
           customerPhone: formData.customerPhone,
           carrier: formData.carrier,
           storeName: formData.storeName,
           contactCode: formData.contactCode
-        }
+        })
       });
 
       if (response.duplicates && response.duplicates.length > 0) {
