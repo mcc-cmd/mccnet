@@ -3212,11 +3212,30 @@ router.post('/api/carriers/upload-excel', requireAuth, requireAdmin, contactCode
       return res.status(400).json({ error: '파일이 선택되지 않았습니다.' });
     }
 
+    console.log('Reading Excel file:', req.file.path);
+
     // 엑셀 파일 읽기
-    const workbook = XLSX.readFile(req.file.path);
+    let workbook;
+    try {
+      workbook = XLSX.readFile(req.file.path);
+    } catch (readError) {
+      console.error('Error reading Excel file:', readError);
+      return res.status(400).json({ error: '엑셀 파일을 읽는데 실패했습니다. 파일이 손상되었거나 잘못된 형식일 수 있습니다.' });
+    }
+
+    if (!workbook.SheetNames || workbook.SheetNames.length === 0) {
+      return res.status(400).json({ error: '엑셀 파일에 워크시트가 없습니다.' });
+    }
+
     const sheetName = workbook.SheetNames[0];
     const worksheet = workbook.Sheets[sheetName];
+    
+    if (!worksheet) {
+      return res.status(400).json({ error: '워크시트를 읽을 수 없습니다.' });
+    }
+
     const data = XLSX.utils.sheet_to_json(worksheet);
+    console.log('Excel data parsed:', data.length, 'rows');
 
     let successCount = 0;
     let errorCount = 0;
