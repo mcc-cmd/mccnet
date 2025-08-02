@@ -2082,10 +2082,10 @@ export function AdminPanel() {
   const handleCreateContactCode = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!newContactCode || !newDealerName || !newCarrier) {
+    if (!newContactCode || !newDealerName || !newCarrier || !newSalesManagerId) {
       toast({
         title: '오류',
-        description: '접점코드, 판매점명, 통신사를 모두 입력해주세요.',
+        description: '접점코드, 판매점명, 통신사, 담당 영업과장을 모두 입력해주세요.',
         variant: 'destructive',
       });
       return;
@@ -2613,16 +2613,15 @@ export function AdminPanel() {
                           </Select>
                         </div>
                         <div>
-                          <Label htmlFor="salesManager">담당 영업과장 (선택사항)</Label>
+                          <Label htmlFor="salesManager">담당 영업과장 *</Label>
                           <Select 
-                            value={newSalesManagerId?.toString() || 'none'} 
-                            onValueChange={(value) => setNewSalesManagerId(value === 'none' ? null : parseInt(value))}
+                            value={newSalesManagerId?.toString() || ''} 
+                            onValueChange={(value) => setNewSalesManagerId(value ? parseInt(value) : null)}
                           >
                             <SelectTrigger>
                               <SelectValue placeholder="담당 영업과장을 선택하세요" />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="none">선택 안함</SelectItem>
                               {salesManagersList && salesManagersList.map((manager: any) => (
                                 <SelectItem key={manager.id} value={manager.id.toString()}>
                                   {manager.managerName} ({manager.managerCode || manager.teamName})

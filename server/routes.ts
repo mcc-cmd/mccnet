@@ -2761,7 +2761,7 @@ router.post('/api/contact-codes/upload-excel', contactCodeUpload.single('file'),
     let addedCodes = 0;
     const errors: string[] = [];
 
-    // 헤더 행 찾기 (접점코드, 판매점명, 통신사가 포함된 행)
+    // 헤더 행 찾기 (접점코드, 판매점명, 통신사, 담당영업과장이 포함된 행)
     let headerIndex = -1;
     for (let i = 0; i < Math.min(5, rawData.length); i++) {
       const row = rawData[i] as any[];
@@ -2785,7 +2785,7 @@ router.post('/api/contact-codes/upload-excel', contactCodeUpload.single('file'),
     const dataRows = rawData.slice(headerIndex + 1);
 
     // 컬럼 인덱스 찾기
-    let codeIndex = -1, dealerNameIndex = -1, carrierIndex = -1;
+    let codeIndex = -1, dealerNameIndex = -1, carrierIndex = -1, salesManagerIndex = -1;
     
     for (let i = 0; i < headers.length; i++) {
       const header = String(headers[i]).trim();
@@ -2795,6 +2795,8 @@ router.post('/api/contact-codes/upload-excel', contactCodeUpload.single('file'),
         dealerNameIndex = i;
       } else if (header.includes('통신사') || header.toLowerCase().includes('carrier')) {
         carrierIndex = i;
+      } else if (header.includes('담당영업과장') || header.includes('영업과장') || header.toLowerCase().includes('manager')) {
+        salesManagerIndex = i;
       }
     }
 
@@ -2812,14 +2814,30 @@ router.post('/api/contact-codes/upload-excel', contactCodeUpload.single('file'),
         const code = row[codeIndex];
         const dealerName = row[dealerNameIndex];
         const carrier = row[carrierIndex];
+        const salesManagerName = salesManagerIndex >= 0 ? row[salesManagerIndex] : null;
         
-        console.log(`Row ${i + 2}: code=${code}, dealer=${dealerName}, carrier=${carrier}`);
+        console.log(`Row ${i + 2}: code=${code}, dealer=${dealerName}, carrier=${carrier}, salesManager=${salesManagerName}`);
         
         if (!code || !dealerName || !carrier) {
           const errorMsg = `${i + 2}행: 필수 정보가 누락되었습니다 (접점코드: ${code || 'X'}, 판매점명: ${dealerName || 'X'}, 통신사: ${carrier || 'X'})`;
           console.log(errorMsg);
           errors.push(errorMsg);
           continue;
+        }
+
+        // 영업과장 정보 매핑
+        let salesManagerId = null;
+        if (salesManagerName && String(salesManagerName).trim()) {
+          const managerName = String(salesManagerName).trim();
+          const salesManager = await storage.getSalesManagerByName(managerName);
+          if (salesManager) {
+            salesManagerId = salesManager.id;
+            console.log(`Found sales manager: ${managerName} (ID: ${salesManagerId})`);
+          } else {
+            const errorMsg = `${i + 2}행: 영업과장 '${managerName}'을 찾을 수 없습니다.`;
+            console.log(errorMsg);
+            errors.push(errorMsg);
+          }
         }
 
         // 기존 접점코드 확인
@@ -2848,7 +2866,9 @@ router.post('/api/contact-codes/upload-excel', contactCodeUpload.single('file'),
           code: String(code).trim(),
           dealerName: String(dealerName).trim(),
           carrier: String(carrier).trim(),
-          isActive: true
+          isActive: true,
+          salesManagerId: salesManagerId,
+          salesManagerName: salesManagerName ? String(salesManagerName).trim() : null
         };
         
         console.log(`Creating contact code:`, newContactCode);

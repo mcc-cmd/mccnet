@@ -206,6 +206,11 @@ export class DatabaseStorage implements IStorage {
     return manager;
   }
 
+  async getSalesManagerByName(name: string): Promise<SalesManager | undefined> {
+    const [manager] = await db.select().from(salesManagers).where(eq(salesManagers.managerName, name));
+    return manager;
+  }
+
   async getSalesManagerByUsername(username: string): Promise<SalesManager | undefined> {
     const [manager] = await db.select().from(salesManagers).where(
       and(eq(salesManagers.username, username), eq(salesManagers.isActive, true))
