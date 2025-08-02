@@ -22,10 +22,12 @@ Preferred communication style: Simple, everyday language.
 - **Authentication:** Session-based with bcrypt for password hashing.
 
 ### Key Features
-- **Authentication:** Role-based access control (admin, dealer_admin, dealer_staff) with secure session management.
+- **Authentication:** Role-based access control (system admin, admin, sales manager, dealer staff) with secure session management and hierarchical permissions.
 - **Document Management:** File upload with validation (PDF, DOC, DOCX, images), status tracking (대기, 진행중, 업무요청중, 개통완료, 취소, 보완필요, 기타완료, 폐기), and search/filtering. Includes duplicate application checking with override.
 - **User Interface:** Responsive design, accessible components, and form validation (react-hook-form, Zod).
-- **Administrative Functions:** Management of dealers, users, documents, and carrier-specific field configurations. Includes contact code bulk upload via Excel.
+- **Administrative Functions:** Comprehensive account management with role-based permissions, dealer management, document oversight, and carrier-specific field configurations. Includes contact code bulk upload via Excel.
+- **Account Management:** Multi-tier user system with system admin (full access), admin (limited access), sales managers (team-based), and worker accounts. Password change permissions and account deletion restricted to system admin only.
+- **Sales Team Management:** Team-based organizational structure with DX 1팀, DX 2팀 and contact code mapping for sales managers.
 - **Workflow:** Document assignment and locking for workers, "업무요청중" status for work-in-progress, and a disposal system with reason tracking.
 - **Service Plan Management:** Comprehensive system for managing and selecting service plans, additional services, and cost information (registration fees, SIM fees, bundle options).
 - **Analytics & Reporting:** Dashboard statistics (daily, monthly), carrier and worker performance analytics with drill-down capabilities, and Excel export for activated and settlement documents.
