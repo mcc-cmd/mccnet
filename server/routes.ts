@@ -238,21 +238,19 @@ router.post('/api/auth/login', async (req, res) => {
       return res.json(response);
     }
 
-    // Try user login
+    // Try user login (includes workers, sales managers, and other users)
     const userResult = await storage.authenticateUser(username, password);
     if (userResult) {
-      const { user, dealer } = userResult;
-      const sessionId = await storage.createSession(user.id, 'user', user.dealerId, user.role);
+      const sessionId = await storage.createSession(userResult.id, userResult.userType);
+      console.log('User session created:', sessionId, 'Type:', userResult.userType);
+      
       const response: AuthResponse = {
         success: true,
         user: {
-          id: user.id,
-          name: user.name,
-          username: user.username,
-          userType: 'user',
-          dealerId: user.dealerId,
-          dealerName: dealer?.name || null,
-          role: user.role
+          id: userResult.id,
+          name: userResult.name || username, // fallback to username if name not available
+          username: username,
+          userType: userResult.userType
         },
         sessionId
       };

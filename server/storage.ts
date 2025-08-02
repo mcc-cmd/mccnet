@@ -354,6 +354,17 @@ export class DatabaseStorage implements IStorage {
 
   // 근무자 관리
   async createWorker(data: CreateWorkerForm): Promise<any> {
+    // 중복 아이디 확인
+    const existingAdmins = await db.select().from(admins).where(eq(admins.username, data.username));
+    const existingSalesManagers = await db.select().from(salesManagers).where(eq(salesManagers.username, data.username));
+    
+    // 메모리에서 중복 근무자 확인
+    const existingWorkers = Array.from(workerStore.values()).filter(worker => worker.username === data.username);
+    
+    if (existingAdmins.length > 0 || existingSalesManagers.length > 0 || existingWorkers.length > 0) {
+      throw new Error('이미 존재하는 아이디입니다.');
+    }
+    
     // 기존 시스템 호환성을 위해 임시로 메모리 저장
     const hashedPassword = await bcrypt.hash(data.password, 10);
     
@@ -384,7 +395,26 @@ export class DatabaseStorage implements IStorage {
   
   // 호환성을 위한 기존 사용자 인증 메서드 (임시)
   async authenticateUser(username: string, password: string): Promise<any> {
-    return null; // 아직 구현되지 않음
+    // 관리자 인증 (관리자 계정 우선)
+    const admin = await this.getAdminByUsername(username);
+    if (admin && await bcrypt.compare(password, admin.password)) {
+      return { id: admin.id, userType: 'admin' };
+    }
+
+    // 영업 과장 인증
+    const salesManager = await this.getSalesManagerByUsername(username);
+    if (salesManager && await bcrypt.compare(password, salesManager.password)) {
+      return { id: salesManager.id, userType: 'sales_manager' };
+    }
+
+    // 근무자 인증 (메모리 저장소에서)
+    const workers = Array.from(workerStore.values());
+    const worker = workers.find(w => w.username === username);
+    if (worker && await bcrypt.compare(password, worker.password)) {
+      return { id: worker.id, userType: 'worker' };
+    }
+
+    return null;
   }
   
   async getAdminById(id: number): Promise<Admin | undefined> {
