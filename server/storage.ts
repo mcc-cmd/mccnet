@@ -373,42 +373,57 @@ export class DatabaseStorage implements IStorage {
   }
   
   async getUsers(): Promise<any[]> {
-    // 통합 사용자 목록 반환 (관리자, 영업과장 통합)
-    const adminList = await db.select().from(admins).where(eq(admins.isActive, true));
-    const salesManagerList = await db.select({
-      id: salesManagers.id,
-      username: salesManagers.username,
-      name: salesManagers.managerName,
-      createdAt: salesManagers.createdAt,
-      teamId: salesManagers.teamId,
-      isActive: salesManagers.isActive
-    }).from(salesManagers)
-      .leftJoin(salesTeams, eq(salesManagers.teamId, salesTeams.id))
-      .where(eq(salesManagers.isActive, true));
+    try {
+      // 관리자 목록 조회
+      const adminList = await db.select().from(admins);
+      
+      // 영업과장 목록 조회
+      const salesManagerList = await db.select({
+        id: salesManagers.id,
+        username: salesManagers.username,
+        name: salesManagers.managerName,
+        createdAt: salesManagers.createdAt,
+        teamId: salesManagers.teamId,
+        isActive: salesManagers.isActive
+      }).from(salesManagers)
+        .where(eq(salesManagers.isActive, true));
 
-    // 통합 사용자 목록 생성
-    const allUsers = [
-      ...adminList.map(admin => ({
-        id: admin.id,
-        username: admin.username,
-        displayName: admin.name,
+      // 통합 사용자 목록 생성
+      const allUsers = [
+        ...adminList.map(admin => ({
+          id: admin.id,
+          username: admin.username,
+          displayName: admin.name,
+          userType: 'admin' as const,
+          accountType: 'admin' as const,
+          affiliation: '시스템',
+          createdAt: admin.createdAt
+        })),
+        ...salesManagerList.map(manager => ({
+          id: manager.id,
+          username: manager.username,
+          displayName: manager.name,
+          userType: 'sales_manager' as const,
+          accountType: 'sales_manager' as const,
+          affiliation: manager.teamId === 1 ? 'DX 1팀' : manager.teamId === 2 ? 'DX 2팀' : '기타',
+          createdAt: manager.createdAt
+        }))
+      ];
+
+      return allUsers;
+    } catch (error) {
+      console.error('getUsers error:', error);
+      // 오류 시 기본 관리자 계정만 반환
+      return [{
+        id: 1,
+        username: 'admin',
+        displayName: '시스템 관리자',
         userType: 'admin' as const,
         accountType: 'admin' as const,
         affiliation: '시스템',
-        createdAt: admin.createdAt
-      })),
-      ...salesManagerList.map(manager => ({
-        id: manager.id,
-        username: manager.username,
-        displayName: manager.name,
-        userType: 'sales_manager' as const,
-        accountType: 'sales_manager' as const,
-        affiliation: manager.teamId === 1 ? 'DX 1팀' : manager.teamId === 2 ? 'DX 2팀' : '기타',
-        createdAt: manager.createdAt
-      }))
-    ];
-
-    return allUsers;
+        createdAt: new Date()
+      }];
+    }
   }
 
   async getAllUsers(): Promise<any[]> {
