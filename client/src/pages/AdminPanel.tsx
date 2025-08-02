@@ -1124,6 +1124,19 @@ export function AdminPanel() {
   const [newDealerName, setNewDealerName] = useState('');
   const [newCarrier, setNewCarrier] = useState('');
   const [newSalesManagerId, setNewSalesManagerId] = useState<number | null>(null);
+  
+  // 접점코드 검색 및 필터링
+  const [contactCodeSearch, setContactCodeSearch] = useState('');
+  const [contactCodeCarrierFilter, setContactCodeCarrierFilter] = useState('');
+  const [selectedContactCodes, setSelectedContactCodes] = useState<number[]>([]);
+  const [selectAllContactCodes, setSelectAllContactCodes] = useState(false);
+  
+  // 서비스 플랜 검색 및 필터링
+  const [servicePlanSearch, setServicePlanSearch] = useState('');
+  const [servicePlanCarrierFilter, setServicePlanCarrierFilter] = useState('');
+  const [selectedServicePlans, setSelectedServicePlans] = useState<number[]>([]);
+  const [selectAllServicePlans, setSelectAllServicePlans] = useState(false);
+  
   const contactCodeExcelInputRef = useRef<HTMLInputElement>(null);
   
   // Analytics dialog states
@@ -2399,6 +2412,127 @@ export function AdminPanel() {
     }
   };
 
+  // 접점코드 체크박스 관련 함수들
+  const handleSelectContactCode = (id: number, checked: boolean) => {
+    if (checked) {
+      setSelectedContactCodes(prev => [...prev, id]);
+    } else {
+      setSelectedContactCodes(prev => prev.filter(codeId => codeId !== id));
+    }
+  };
+
+  const handleSelectAllContactCodes = (checked: boolean) => {
+    setSelectAllContactCodes(checked);
+    if (checked) {
+      const allIds = filteredContactCodes?.map(code => code.id).filter(Boolean) || [];
+      setSelectedContactCodes(allIds);
+    } else {
+      setSelectedContactCodes([]);
+    }
+  };
+
+  // 선택된 접점코드들 삭제
+  const handleDeleteSelectedContactCodes = async () => {
+    if (selectedContactCodes.length === 0) return;
+    
+    if (confirm(`선택된 ${selectedContactCodes.length}개의 접점코드를 삭제하시겠습니까?`)) {
+      try {
+        await Promise.all(
+          selectedContactCodes.map(id => 
+            apiRequest(`/api/contact-codes/${id}`, { method: 'DELETE' })
+          )
+        );
+        
+        queryClient.invalidateQueries({ queryKey: ['/api/contact-codes'] });
+        setSelectedContactCodes([]);
+        setSelectAllContactCodes(false);
+        
+        toast({
+          title: "삭제 완료",
+          description: `${selectedContactCodes.length}개의 접점코드가 삭제되었습니다.`,
+        });
+      } catch (error: any) {
+        toast({
+          title: "삭제 실패",
+          description: error.message || "접점코드 삭제에 실패했습니다.",
+          variant: "destructive"
+        });
+      }
+    }
+  };
+
+  // 접점코드 필터링
+  const filteredContactCodes = contactCodes?.filter(code => {
+    const matchesSearch = !contactCodeSearch || 
+      code.code.toLowerCase().includes(contactCodeSearch.toLowerCase()) ||
+      code.dealerName.toLowerCase().includes(contactCodeSearch.toLowerCase()) ||
+      (code.salesManagerName && code.salesManagerName.toLowerCase().includes(contactCodeSearch.toLowerCase()));
+    
+    const matchesCarrier = !contactCodeCarrierFilter || code.carrier === contactCodeCarrierFilter;
+    
+    return matchesSearch && matchesCarrier;
+  });
+
+  // 서비스 플랜 체크박스 관련 함수들
+  const handleSelectServicePlan = (id: number, checked: boolean) => {
+    if (checked) {
+      setSelectedServicePlans(prev => [...prev, id]);
+    } else {
+      setSelectedServicePlans(prev => prev.filter(planId => planId !== id));
+    }
+  };
+
+  const handleSelectAllServicePlans = (checked: boolean) => {
+    setSelectAllServicePlans(checked);
+    if (checked) {
+      const allIds = filteredServicePlans?.map(plan => plan.id).filter(Boolean) || [];
+      setSelectedServicePlans(allIds);
+    } else {
+      setSelectedServicePlans([]);
+    }
+  };
+
+  // 선택된 서비스 플랜들 삭제
+  const handleDeleteSelectedServicePlans = async () => {
+    if (selectedServicePlans.length === 0) return;
+    
+    if (confirm(`선택된 ${selectedServicePlans.length}개의 서비스 플랜을 삭제하시겠습니까?`)) {
+      try {
+        await Promise.all(
+          selectedServicePlans.map(id => 
+            apiRequest(`/api/service-plans/${id}`, { method: 'DELETE' })
+          )
+        );
+        
+        queryClient.invalidateQueries({ queryKey: ['/api/service-plans'] });
+        setSelectedServicePlans([]);
+        setSelectAllServicePlans(false);
+        
+        toast({
+          title: "삭제 완료",
+          description: `${selectedServicePlans.length}개의 서비스 플랜이 삭제되었습니다.`,
+        });
+      } catch (error: any) {
+        toast({
+          title: "삭제 실패",
+          description: error.message || "서비스 플랜 삭제에 실패했습니다.",
+          variant: "destructive"
+        });
+      }
+    }
+  };
+
+  // 서비스 플랜 필터링
+  const filteredServicePlans = servicePlans?.filter(plan => {
+    const matchesSearch = !servicePlanSearch || 
+      plan.planName.toLowerCase().includes(servicePlanSearch.toLowerCase()) ||
+      plan.carrier.toLowerCase().includes(servicePlanSearch.toLowerCase());
+    
+    const matchesCarrier = !servicePlanCarrierFilter || plan.carrier === servicePlanCarrierFilter;
+    
+    return matchesSearch && matchesCarrier;
+  });
+
 
 
   const handleContactCodeExcelUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -2935,6 +3069,52 @@ export function AdminPanel() {
                 </div>
               </CardHeader>
               <CardContent>
+                {/* 검색 및 필터 */}
+                <div className="mb-6 space-y-4">
+                  <div className="flex flex-col sm:flex-row gap-4">
+                    <div className="flex-1">
+                      <Input
+                        placeholder="접점코드, 판매점명, 담당자명으로 검색..."
+                        value={contactCodeSearch}
+                        onChange={(e) => setContactCodeSearch(e.target.value)}
+                        className="w-full"
+                      />
+                    </div>
+                    <div className="w-full sm:w-48">
+                      <Select value={contactCodeCarrierFilter} onValueChange={setContactCodeCarrierFilter}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="통신사 필터" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="">전체 통신사</SelectItem>
+                          {carriersList && carriersList.map((carrier: any) => (
+                            <SelectItem key={carrier.id} value={carrier.name}>
+                              {carrier.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  {/* 선택된 항목 삭제 버튼 */}
+                  {selectedContactCodes.length > 0 && (
+                    <div className="flex items-center gap-2 p-3 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800">
+                      <span className="text-sm text-red-700 dark:text-red-300">
+                        {selectedContactCodes.length}개 항목 선택됨
+                      </span>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={handleDeleteSelectedContactCodes}
+                      >
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        선택 항목 삭제
+                      </Button>
+                    </div>
+                  )}
+                </div>
+
                 <div className="mb-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
                   <h4 className="font-medium text-blue-900 dark:text-blue-100 mb-2">엑셀 업로드 사용법</h4>
                   <div className="text-sm text-blue-700 dark:text-blue-300">
@@ -2955,45 +3135,77 @@ export function AdminPanel() {
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-accent mx-auto"></div>
                     <p className="mt-2 text-sm text-gray-500">접점코드 로딩 중...</p>
                   </div>
-                ) : contactCodes && contactCodes.length > 0 ? (
+                ) : filteredContactCodes && filteredContactCodes.length > 0 ? (
                   <div className="space-y-4">
+                    {/* 전체 선택 체크박스 */}
+                    <div className="flex items-center gap-2 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                      <input
+                        type="checkbox"
+                        id="selectAllContactCodes"
+                        checked={selectAllContactCodes}
+                        onChange={(e) => handleSelectAllContactCodes(e.target.checked)}
+                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                      />
+                      <label htmlFor="selectAllContactCodes" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                        전체 선택 ({filteredContactCodes.length}개)
+                      </label>
+                    </div>
+
                     <div className="max-h-[600px] overflow-y-auto border border-gray-200 rounded-lg p-4">
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {contactCodes.map((code) => (
-                        <div key={code.id} className="border rounded-lg p-4 bg-white">
-                          <div className="flex items-center justify-between mb-3">
-                            <div>
-                              <h4 className="font-medium text-gray-900">{code.code}</h4>
-                              <p className="text-sm text-gray-500">{code.dealerName}</p>
-                              {code.salesManagerName && (
-                                <p className="text-xs text-blue-600 mt-1">
-                                  담당: {code.salesManagerName}
-                                </p>
-                              )}
-                            </div>
-                            <Badge variant="outline">{code.carrier}</Badge>
+                        {filteredContactCodes.map((code) => (
+                        <div key={code.id} className="border rounded-lg p-4 bg-white dark:bg-gray-900 relative">
+                          {/* 체크박스 */}
+                          <div className="absolute top-2 left-2">
+                            <input
+                              type="checkbox"
+                              checked={selectedContactCodes.includes(code.id)}
+                              onChange={(e) => handleSelectContactCode(code.id, e.target.checked)}
+                              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                            />
                           </div>
-                          <div className="flex justify-between items-center">
-                            <span className={`text-xs px-2 py-1 rounded-full ${
-                              code.isActive 
-                                ? 'bg-green-100 text-green-800' 
-                                : 'bg-gray-100 text-gray-800'
-                            }`}>
-                              {code.isActive ? '활성' : '비활성'}
-                            </span>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleDeleteContactCode(code.id || 0)}
-                              className="text-red-600 hover:text-red-700"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
+
+                          <div className="ml-6">
+                            <div className="flex items-center justify-between mb-3">
+                              <div>
+                                <h4 className="font-medium text-gray-900 dark:text-gray-100">{code.code}</h4>
+                                <p className="text-sm text-gray-500 dark:text-gray-400">{code.dealerName}</p>
+                                {code.salesManagerName && (
+                                  <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">
+                                    담당: {code.salesManagerName}
+                                  </p>
+                                )}
+                              </div>
+                              <Badge variant="outline">{code.carrier}</Badge>
+                            </div>
+                            <div className="flex justify-between items-center">
+                              <span className={`text-xs px-2 py-1 rounded-full ${
+                                code.isActive 
+                                  ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' 
+                                  : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200'
+                              }`}>
+                                {code.isActive ? '활성' : '비활성'}
+                              </span>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleDeleteContactCode(code.id || 0)}
+                                className="text-red-600 hover:text-red-700"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
                           </div>
                         </div>
                         ))}
                       </div>
                     </div>
+                  </div>
+                ) : contactCodes && contactCodes.length > 0 ? (
+                  <div className="text-center py-8">
+                    <Settings className="mx-auto h-12 w-12 text-gray-400" />
+                    <h3 className="mt-2 text-sm font-medium text-gray-900">검색 결과가 없습니다</h3>
+                    <p className="mt-1 text-sm text-gray-500">다른 검색어를 시도해보세요.</p>
                   </div>
                 ) : (
                   <div className="text-center py-8">
@@ -4641,16 +4853,76 @@ export function AdminPanel() {
                   </Dialog>
                 </CardHeader>
                 <CardContent>
+                  {/* 검색 및 필터 */}
+                  <div className="mb-6 space-y-4">
+                    <div className="flex flex-col sm:flex-row gap-4">
+                      <div className="flex-1">
+                        <Input
+                          placeholder="요금제명, 통신사로 검색..."
+                          value={servicePlanSearch}
+                          onChange={(e) => setServicePlanSearch(e.target.value)}
+                          className="w-full"
+                        />
+                      </div>
+                      <div className="w-full sm:w-48">
+                        <Select value={servicePlanCarrierFilter} onValueChange={setServicePlanCarrierFilter}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="통신사 필터" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="">전체 통신사</SelectItem>
+                            {carriersData && carriersData.map((carrier: any) => (
+                              <SelectItem key={carrier.id} value={carrier.name}>
+                                {carrier.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+
+                    {/* 선택된 항목 삭제 버튼 */}
+                    {selectedServicePlans.length > 0 && (
+                      <div className="flex items-center gap-2 p-3 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800">
+                        <span className="text-sm text-red-700 dark:text-red-300">
+                          {selectedServicePlans.length}개 항목 선택됨
+                        </span>
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={handleDeleteSelectedServicePlans}
+                        >
+                          <Trash2 className="mr-2 h-4 w-4" />
+                          선택 항목 삭제
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+
                   {servicePlansLoading ? (
                     <div className="text-center py-8">
                       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
                       <p className="mt-2 text-sm text-gray-500">요금제를 불러오는 중...</p>
                     </div>
-                  ) : servicePlans && servicePlans.length > 0 ? (
+                  ) : filteredServicePlans && filteredServicePlans.length > 0 ? (
                     <div className="space-y-6">
+                      {/* 전체 선택 체크박스 */}
+                      <div className="flex items-center gap-2 p-3 bg-gray-50 dark:bg-gray-800 border-b mb-4">
+                        <input
+                          type="checkbox"
+                          id="selectAllServicePlans"
+                          checked={selectAllServicePlans}
+                          onChange={(e) => handleSelectAllServicePlans(e.target.checked)}
+                          className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                        />
+                        <label htmlFor="selectAllServicePlans" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                          전체 선택 ({filteredServicePlans.length}개)
+                        </label>
+                      </div>
+
                       {(() => {
                         // 통신사별로 그룹화
-                        const plansByCarrier = servicePlans
+                        const plansByCarrier = filteredServicePlans
                           .sort((a, b) => {
                             // 먼저 통신사별로 정렬, 그 다음 요금제명으로 정렬
                             if (a.carrier !== b.carrier) {
@@ -4664,7 +4936,7 @@ export function AdminPanel() {
                             }
                             acc[plan.carrier].push(plan);
                             return acc;
-                          }, {} as Record<string, typeof servicePlans>);
+                          }, {} as Record<string, typeof filteredServicePlans>);
 
                         return Object.entries(plansByCarrier).map(([carrier, plans]) => (
                           <div key={carrier} className="border rounded-lg overflow-hidden">
@@ -4679,6 +4951,9 @@ export function AdminPanel() {
                               <table className="min-w-full divide-y divide-gray-200">
                                 <thead className="bg-gray-50">
                                   <tr>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-12">
+                                      선택
+                                    </th>
                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                       요금제명
                                     </th>
@@ -4702,6 +4977,14 @@ export function AdminPanel() {
                                 <tbody className="bg-white divide-y divide-gray-200">
                                   {plans.map((plan) => (
                                     <tr key={plan.id}>
+                                      <td className="px-6 py-4 whitespace-nowrap">
+                                        <input
+                                          type="checkbox"
+                                          checked={selectedServicePlans.includes(plan.id)}
+                                          onChange={(e) => handleSelectServicePlan(plan.id, e.target.checked)}
+                                          className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                                        />
+                                      </td>
                                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                                         {plan.planName}
                                       </td>
@@ -4745,6 +5028,12 @@ export function AdminPanel() {
                           </div>
                         ));
                       })()}
+                    </div>
+                  ) : servicePlans && servicePlans.length > 0 ? (
+                    <div className="text-center py-8">
+                      <Settings className="mx-auto h-12 w-12 text-gray-400" />
+                      <h3 className="mt-2 text-sm font-medium text-gray-900">검색 결과가 없습니다</h3>
+                      <p className="mt-1 text-sm text-gray-500">다른 검색어를 시도해보세요.</p>
                     </div>
                   ) : (
                     <div className="text-center py-8">

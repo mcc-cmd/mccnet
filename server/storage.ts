@@ -1075,6 +1075,103 @@ export class DatabaseStorage implements IStorage {
   async getDocumentTemplates(): Promise<any[]> {
     return [];
   }
+
+  // 문서 개별 조회
+  async getDocument(id: number): Promise<any | undefined> {
+    try {
+      const [document] = await db.select().from(documents).where(eq(documents.id, id));
+      return document;
+    } catch (error) {
+      console.error('Error fetching document:', error);
+      return undefined;
+    }
+  }
+
+  // 문서 삭제
+  async deleteDocument(id: number): Promise<void> {
+    try {
+      await db.delete(documents).where(eq(documents.id, id));
+    } catch (error) {
+      console.error('Error deleting document:', error);
+      throw new Error('문서 삭제에 실패했습니다.');
+    }
+  }
+
+  // 문서 상태 업데이트
+  async updateDocumentStatus(id: number, data: any): Promise<any> {
+    try {
+      const [updatedDocument] = await db.update(documents)
+        .set({
+          status: data.status,
+          notes: data.notes || null,
+          updatedAt: new Date()
+        })
+        .where(eq(documents.id, id))
+        .returning();
+      return updatedDocument;
+    } catch (error) {
+      console.error('Error updating document status:', error);
+      throw new Error('문서 상태 업데이트에 실패했습니다.');
+    }
+  }
+
+  // 문서 개통 상태 업데이트
+  async updateDocumentActivationStatus(id: number, data: any, workerId?: number): Promise<any> {
+    try {
+      const updateData: any = {
+        activationStatus: data.activationStatus,
+        updatedAt: new Date()
+      };
+
+      // 상태별 특별 처리
+      if (data.activationStatus === '개통') {
+        updateData.activatedAt = new Date();
+        updateData.activatedBy = workerId || data.activatedBy;
+        updateData.servicePlanId = data.servicePlanId;
+        updateData.servicePlanName = data.servicePlanName;
+        updateData.additionalServiceIds = data.additionalServiceIds ? JSON.stringify(data.additionalServiceIds) : null;
+        updateData.registrationFee = data.registrationFee;
+        updateData.registrationFeePrepaid = data.registrationFeePrepaid || false;
+        updateData.registrationFeePostpaid = data.registrationFeePostpaid || false;
+        updateData.registrationFeeInstallment = data.registrationFeeInstallment || false;
+        updateData.simFeePrepaid = data.simFeePrepaid || false;
+        updateData.simFeePostpaid = data.simFeePostpaid || false;
+        updateData.bundleApplied = data.bundleApplied || false;
+        updateData.bundleNotApplied = data.bundleNotApplied || false;
+        updateData.bundleDiscount = data.bundleDiscount;
+        updateData.totalMonthlyFee = data.totalMonthlyFee;
+        updateData.deviceModel = data.deviceModel;
+        updateData.simNumber = data.simNumber;
+        updateData.subscriptionNumber = data.subscriptionNumber;
+        updateData.dealerNotes = data.dealerNotes;
+      } else if (data.activationStatus === '취소') {
+        updateData.cancelledBy = workerId || data.cancelledBy;
+      } else if (data.activationStatus === '진행중') {
+        updateData.assignedWorkerId = workerId;
+        updateData.assignedAt = new Date();
+      } else if (data.activationStatus === '폐기') {
+        updateData.discardReason = data.discardReason;
+      } else if (data.activationStatus === '보완필요') {
+        updateData.supplementRequired = data.supplementRequired;
+        updateData.supplementNotes = data.supplementNotes;
+        updateData.supplementRequiredBy = workerId;
+        updateData.supplementRequiredAt = new Date();
+      }
+
+      // 추가 필드들
+      if (data.notes !== undefined) updateData.notes = data.notes;
+
+      const [updatedDocument] = await db.update(documents)
+        .set(updateData)
+        .where(eq(documents.id, id))
+        .returning();
+
+      return updatedDocument;
+    } catch (error) {
+      console.error('Error updating document activation status:', error);
+      throw new Error('문서 개통 상태 업데이트에 실패했습니다.');
+    }
+  }
   
   // 정산단가 관리
   async getSettlementUnitPrices(): Promise<SettlementUnitPrice[]> {
