@@ -1184,6 +1184,36 @@ export class DatabaseStorage implements IStorage {
     return [];
   }
   
+  // 문서 업로드 메서드 추가
+  async uploadDocument(data: any): Promise<any> {
+    try {
+      console.log('Uploading document:', data);
+      // 실제 documents 테이블이 있다면 여기서 삽입
+      // 현재는 임시로 성공 응답 반환
+      return {
+        id: Date.now(),
+        ...data,
+        uploadedAt: new Date(),
+        status: '접수',
+        activationStatus: '대기'
+      };
+    } catch (error) {
+      console.error('Document upload error:', error);
+      throw new Error('문서 업로드에 실패했습니다.');
+    }
+  }
+
+  // 부가서비스 공제 관련 메서드 추가
+  async getAdditionalServiceDeductions(): Promise<any[]> {
+    try {
+      // 실제 구현에서는 데이터베이스에서 조회
+      return [];
+    } catch (error) {
+      console.error('Get additional service deductions error:', error);
+      return [];
+    }
+  }
+
   // 영업과장 인증
   async authenticateSalesManager(username: string, password: string): Promise<SalesManager | null> {
     try {

@@ -189,6 +189,7 @@ function CarrierManagement() {
       await queryClient.refetchQueries({ queryKey: ['/api/carriers'] });
       
       setCarrierDialogOpen(false);
+      setEditingCarrier(null);
       carrierForm.reset();
       toast({
         title: "통신사 추가",
@@ -278,12 +279,56 @@ function CarrierManagement() {
 
   const handleEditCarrier = (carrier: Carrier) => {
     setEditingCarrier(carrier);
+    
+    // 폼을 기존 값으로 리셋
+    const editValues = {
+      name: carrier.name || '',
+      displayOrder: Number(carrier.displayOrder) || 0,
+      isActive: carrier.isActive !== false,
+      isWired: carrier.isWired || false,
+      bundleNumber: carrier.bundleNumber || '',
+      bundleCarrier: carrier.bundleCarrier || '',
+      documentRequired: carrier.documentRequired || false,
+      requireCustomerName: carrier.requireCustomerName !== false,
+      requireCustomerPhone: carrier.requireCustomerPhone !== false,
+      requireCustomerEmail: carrier.requireCustomerEmail || false,
+      requireContactCode: carrier.requireContactCode !== false,
+      requireCarrier: carrier.requireCarrier !== false,
+      requirePreviousCarrier: carrier.requirePreviousCarrier || false,
+      requireDocumentUpload: carrier.requireDocumentUpload || false,
+      requireBundleNumber: carrier.requireBundleNumber || false,
+      requireBundleCarrier: carrier.requireBundleCarrier || false
+    };
+    
+    carrierForm.reset(editValues);
     setFormKey(prev => prev + 1); // 폼 컴포넌트 재렌더링 강제
     setCarrierDialogOpen(true);
   };
 
   const handleAddCarrier = () => {
     setEditingCarrier(null);
+    
+    // 폼을 초기값으로 리셋
+    const defaultValues = {
+      name: '',
+      displayOrder: carriers.length,
+      isActive: true,
+      isWired: false,
+      bundleNumber: '',
+      bundleCarrier: '',
+      documentRequired: false,
+      requireCustomerName: true,
+      requireCustomerPhone: true,
+      requireCustomerEmail: false,
+      requireContactCode: true,
+      requireCarrier: true,
+      requirePreviousCarrier: false,
+      requireDocumentUpload: false,
+      requireBundleNumber: false,
+      requireBundleCarrier: false
+    };
+    
+    carrierForm.reset(defaultValues);
     setFormKey(prev => prev + 1); // 폼 컴포넌트 재렌더링 강제
     setCarrierDialogOpen(true);
   };
