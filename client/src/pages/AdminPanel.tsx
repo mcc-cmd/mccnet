@@ -895,10 +895,15 @@ export function AdminPanel() {
     queryFn: () => apiRequest('/api/admin/dealers') as Promise<Dealer[]>,
   });
 
-  const { data: users = [], isLoading: usersLoading } = useQuery({
+  const { data: users = [], isLoading: usersLoading, error: usersError } = useQuery({
     queryKey: ['/api/admin/users'],
-    queryFn: () => apiRequest('/api/admin/users') as Promise<Array<User & { dealerName: string; userType: string }>>,
+    queryFn: () => apiRequest('/api/admin/users') as Promise<Array<User & { dealerName: string; userType: string; displayName: string; affiliation: string; accountType: string }>>,
   });
+
+  // 디버깅용 로그
+  console.log('Users data:', users);
+  console.log('Users loading:', usersLoading);
+  console.log('Users error:', usersError);
 
   // Sales managers data query
   const { data: salesManagers = [] } = useQuery({
@@ -2773,7 +2778,7 @@ export function AdminPanel() {
                   <div className="text-center py-8">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-accent mx-auto"></div>
                   </div>
-                ) : users && users.length > 0 ? (
+                ) : (users && users.length > 0) ? (
                   <div className="overflow-x-auto">
                     <table className="min-w-full divide-y divide-gray-300">
                       <thead className="bg-gray-50">
@@ -2842,6 +2847,10 @@ export function AdminPanel() {
                     <Users className="mx-auto h-12 w-12 text-gray-400" />
                     <h3 className="mt-2 text-sm font-medium text-gray-900">사용자가 없습니다</h3>
                     <p className="mt-1 text-sm text-gray-500">첫 번째 사용자를 추가해보세요.</p>
+                    {usersError && (
+                      <p className="mt-2 text-sm text-red-500">오류: {String(usersError)}</p>
+                    )}
+                    <p className="mt-2 text-sm text-gray-400">데이터 개수: {users?.length || 0}</p>
                   </div>
                 )}
               </CardContent>
