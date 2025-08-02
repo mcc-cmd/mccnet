@@ -56,6 +56,19 @@ export const salesManagers = pgTable("sales_managers", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// 접점 코드 테이블 (신규 추가)
+export const contactCodes = pgTable("contact_codes", {
+  id: serial("id").primaryKey(),
+  code: varchar("code", { length: 50 }).notNull().unique(),
+  dealerName: varchar("dealer_name", { length: 255 }).notNull(),
+  carrier: varchar("carrier", { length: 100 }).notNull(),
+  salesManagerId: integer("sales_manager_id").references(() => salesManagers.id),
+  salesManagerName: varchar("sales_manager_name", { length: 100 }),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // 접점 코드와 영업과장 매핑 테이블 (신규 추가)
 export const contactCodeMappings = pgTable("contact_code_mappings", {
   id: serial("id").primaryKey(),
@@ -106,6 +119,19 @@ export interface SalesManager {
   password: string;
   contactPhone?: string;
   email?: string;
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+// 접점 코드 타입
+export interface ContactCode {
+  id: number;
+  code: string;
+  dealerName: string;
+  carrier: string;
+  salesManagerId?: number;
+  salesManagerName?: string;
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;

@@ -3,13 +3,14 @@ import { nanoid } from 'nanoid';
 import { eq, and, desc, sql, or, like, gte, lte, inArray } from 'drizzle-orm';
 import { db } from './db';
 import { 
-  admins, salesTeams, salesManagers, contactCodeMappings
+  admins, salesTeams, salesManagers, contactCodeMappings, contactCodes
 } from '@shared/schema';
 import type {
   Admin,
   SalesTeam,
   SalesManager,
   ContactCodeMapping,
+  ContactCode,
   AuthSession,
   CreateSalesTeamForm,
   CreateSalesManagerForm,
@@ -438,36 +439,92 @@ export class DatabaseStorage implements IStorage {
   }
   
   // 접점 코드 관련 메서드들
-  async findContactCodeByCode(contactCode: string): Promise<any> {
-    // 실제 데이터베이스가 있다면 여기서 검색
-    console.log('Finding contact code:', contactCode);
-    return null; // 임시로 null 반환
+  async findContactCodeByCode(code: string): Promise<ContactCode | undefined> {
+    try {
+      const [contactCode] = await db.select().from(contactCodes).where(eq(contactCodes.code, code));
+      return contactCode;
+    } catch (error) {
+      console.error('Find contact code error:', error);
+      return undefined;
+    }
   }
 
-  async getContactCodes(): Promise<any[]> {
-    // 실제 구현 시 데이터베이스에서 접점 코드 목록을 조회
-    return [];
+  async getContactCodes(): Promise<ContactCode[]> {
+    try {
+      const result = await db.select().from(contactCodes).where(eq(contactCodes.isActive, true)).orderBy(contactCodes.createdAt);
+      return result;
+    } catch (error) {
+      console.error('Get contact codes error:', error);
+      return [];
+    }
   }
 
-  async createContactCode(contactCodeData: any): Promise<any> {
-    // 실제 데이터베이스가 있다면 여기서 생성
-    console.log('Creating contact code:', contactCodeData);
-    
-    const newContactCode = {
-      id: Date.now(),
-      code: contactCodeData.code,
-      dealerName: contactCodeData.dealerName,
-      carrier: contactCodeData.carrier,
-      carrierId: contactCodeData.carrierId,
-      carrierName: contactCodeData.carrierName,
-      contactCode: contactCodeData.contactCode || contactCodeData.code,
-      salesManagerId: contactCodeData.salesManagerId || null,
-      salesManagerName: contactCodeData.salesManagerName || null,
-      isActive: contactCodeData.isActive !== false,
-      createdAt: new Date()
-    };
-    
-    return newContactCode;
+  async getContactCodesByCarrier(carrier: string): Promise<ContactCode[]> {
+    try {
+      const result = await db.select().from(contactCodes).where(
+        and(
+          eq(contactCodes.carrier, carrier),
+          eq(contactCodes.isActive, true)
+        )
+      ).orderBy(contactCodes.createdAt);
+      return result;
+    } catch (error) {
+      console.error('Get contact codes by carrier error:', error);
+      return [];
+    }
+  }
+
+  async createContactCode(contactCodeData: any): Promise<ContactCode> {
+    try {
+      console.log('Creating contact code in database:', contactCodeData);
+      
+      const [newContactCode] = await db.insert(contactCodes).values({
+        code: contactCodeData.code,
+        dealerName: contactCodeData.dealerName,
+        carrier: contactCodeData.carrier,
+        salesManagerId: contactCodeData.salesManagerId || null,
+        salesManagerName: contactCodeData.salesManagerName || null,
+        isActive: contactCodeData.isActive !== false,
+      }).returning();
+      
+      console.log('Contact code created successfully:', newContactCode);
+      return newContactCode;
+    } catch (error) {
+      console.error('Create contact code error:', error);
+      throw new Error('접점코드 생성에 실패했습니다.');
+    }
+  }
+
+  async updateContactCode(id: number, contactCodeData: any): Promise<ContactCode> {
+    try {
+      const [updatedContactCode] = await db.update(contactCodes)
+        .set({
+          ...contactCodeData,
+          updatedAt: new Date(),
+        })
+        .where(eq(contactCodes.id, id))
+        .returning();
+      
+      if (!updatedContactCode) {
+        throw new Error('접점코드를 찾을 수 없습니다.');
+      }
+      
+      return updatedContactCode;
+    } catch (error) {
+      console.error('Update contact code error:', error);
+      throw new Error('접점코드 수정에 실패했습니다.');
+    }
+  }
+
+  async deleteContactCode(id: number): Promise<void> {
+    try {
+      await db.update(contactCodes)
+        .set({ isActive: false, updatedAt: new Date() })
+        .where(eq(contactCodes.id, id));
+    } catch (error) {
+      console.error('Delete contact code error:', error);
+      throw new Error('접점코드 삭제에 실패했습니다.');
+    }
   }
   
   async getServicePlans(): Promise<any[]> {
