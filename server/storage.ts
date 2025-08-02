@@ -626,23 +626,22 @@ export class DatabaseStorage implements IStorage {
   }
 
   // 통신사 관련 메서드들
+  private carriers: any[] = [
+    { id: 1, name: 'SK', isActive: true, createdAt: new Date() },
+    { id: 2, name: 'KT', isActive: true, createdAt: new Date() },
+    { id: 3, name: 'LG', isActive: true, createdAt: new Date() },
+    { id: 4, name: 'SK알뜰', isActive: true, createdAt: new Date() },
+    { id: 5, name: 'KT알뜰', isActive: true, createdAt: new Date() },
+    { id: 6, name: 'LG알뜰', isActive: true, createdAt: new Date() }
+  ];
+
   async getCarriers(): Promise<any[]> {
-    // 임시로 기본 통신사 목록 반환
-    return [
-      { id: 1, name: 'SK', isActive: true },
-      { id: 2, name: 'KT', isActive: true },
-      { id: 3, name: 'LG', isActive: true },
-      { id: 4, name: 'SK알뜰', isActive: true },
-      { id: 5, name: 'KT알뜰', isActive: true },
-      { id: 6, name: 'LG알뜰', isActive: true }
-    ];
+    return this.carriers.filter(carrier => carrier.isActive);
   }
 
   async createCarrier(carrierData: any): Promise<any> {
-    // 실제 데이터베이스가 있다면 여기서 생성
     console.log('Creating carrier:', carrierData);
     
-    // 임시로 생성된 통신사 정보 반환
     const newCarrier = {
       id: Date.now(),
       name: carrierData.name,
@@ -651,23 +650,38 @@ export class DatabaseStorage implements IStorage {
       ...carrierData
     };
     
+    this.carriers.push(newCarrier);
     return newCarrier;
   }
 
   async updateCarrier(id: number, carrierData: any): Promise<any> {
-    // 실제 데이터베이스가 있다면 여기서 업데이트
     console.log('Updating carrier:', id, carrierData);
     
-    return {
-      id,
+    const carrierIndex = this.carriers.findIndex(c => c.id === id);
+    if (carrierIndex === -1) {
+      throw new Error('통신사를 찾을 수 없습니다.');
+    }
+    
+    this.carriers[carrierIndex] = {
+      ...this.carriers[carrierIndex],
       ...carrierData,
       updatedAt: new Date()
     };
+    
+    return this.carriers[carrierIndex];
   }
 
   async deleteCarrier(id: number): Promise<void> {
-    // 실제 데이터베이스가 있다면 여기서 삭제
     console.log('Deleting carrier:', id);
+    
+    const carrierIndex = this.carriers.findIndex(c => c.id === id);
+    if (carrierIndex === -1) {
+      throw new Error('통신사를 찾을 수 없습니다.');
+    }
+    
+    // Soft delete - isActive를 false로 설정
+    this.carriers[carrierIndex].isActive = false;
+    this.carriers[carrierIndex].deletedAt = new Date();
   }
 
   // 중복 접수 확인 메서드
