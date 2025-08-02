@@ -2780,7 +2780,7 @@ export function AdminPanel() {
                   <div className="text-center py-8">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-accent mx-auto"></div>
                   </div>
-                ) : (Array.isArray(users) && users.length > 0) ? (
+                ) : users.length > 0 ? (
                   <div className="overflow-x-auto">
                     <table className="min-w-full divide-y divide-gray-300">
                       <thead className="bg-gray-50">
