@@ -2099,6 +2099,10 @@ export function AdminPanel() {
       carrier: newCarrier,
       salesManagerId: newSalesManagerId,
       salesManagerName: selectedSalesManager?.managerName || null,
+    }, {
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: ['/api/contact-codes'] });
+      }
     });
   };
 
