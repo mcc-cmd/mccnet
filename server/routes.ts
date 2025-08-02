@@ -213,12 +213,18 @@ router.get('/api/service-plans', async (req: any, res) => {
 // Authentication routes
 router.post('/api/auth/login', async (req, res) => {
   try {
+    console.log('Login attempt - body:', req.body);
     const { username, password } = loginSchema.parse(req.body);
+    console.log('Login attempt - parsed:', { username, password: password ? '***' : 'empty' });
     
     // Try admin login first
     const admin = await storage.authenticateAdmin(username, password);
+    console.log('Admin auth result:', admin ? 'success' : 'failed');
+    
     if (admin) {
       const sessionId = await storage.createSession(admin.id, 'admin');
+      console.log('Session created:', sessionId);
+      
       const response: AuthResponse = {
         success: true,
         user: {

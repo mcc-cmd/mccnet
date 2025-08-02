@@ -3,7 +3,7 @@ import { nanoid } from 'nanoid';
 import { eq, and, desc, sql, or, like, gte, lte, inArray } from 'drizzle-orm';
 import { db } from './db';
 import { 
-  admins, salesTeams, salesManagers, contactCodeMappings, sessions
+  admins, salesTeams, salesManagers, contactCodeMappings
 } from '@shared/schema';
 import type {
   Admin,
@@ -20,12 +20,17 @@ import type {
 } from '../shared/schema';
 
 // 인메모리 세션 저장소 (임시)
-const sessions: Map<string, AuthSession> = new Map();
+const sessionStore: Map<string, AuthSession> = new Map();
 
 export interface IStorage {
   // 관리자 관련
   createAdmin(admin: { username: string; password: string; name: string }): Promise<Admin>;
   getAdminByUsername(username: string): Promise<Admin | undefined>;
+  getAdminById(id: number): Promise<Admin | undefined>;
+  authenticateAdmin(username: string, password: string): Promise<Admin | null>;
+  
+  // 기존 사용자 인증 (호환성)
+  authenticateUser(username: string, password: string): Promise<any>;
   
   // 영업팀 관리
   createSalesTeam(data: CreateSalesTeamForm): Promise<SalesTeam>;
@@ -73,6 +78,26 @@ export class DatabaseStorage implements IStorage {
   async getAdminByUsername(username: string): Promise<Admin | undefined> {
     const [admin] = await db.select().from(admins).where(eq(admins.username, username));
     return admin;
+  }
+
+  async authenticateAdmin(username: string, password: string): Promise<Admin | null> {
+    try {
+      console.log('Authenticating admin:', username);
+      const admin = await this.getAdminByUsername(username);
+      console.log('Admin found:', admin ? 'yes' : 'no');
+      
+      if (!admin) return null;
+      
+      const isValidPassword = await bcrypt.compare(password, admin.password);
+      console.log('Password valid:', isValidPassword);
+      
+      if (!isValidPassword) return null;
+      
+      return admin;
+    } catch (error) {
+      console.error('Admin auth error:', error);
+      return null;
+    }
   }
 
   // 영업팀 관리 메서드
@@ -223,17 +248,17 @@ export class DatabaseStorage implements IStorage {
       expiresAt
     };
     
-    sessions.set(sessionId, session);
+    sessionStore.set(sessionId, session);
     return sessionId;
   }
 
   async getSession(sessionId: string): Promise<AuthSession | undefined> {
-    const session = sessions.get(sessionId);
+    const session = sessionStore.get(sessionId);
     if (!session) return undefined;
     
     // 세션 만료 체크
     if (session.expiresAt < new Date()) {
-      sessions.delete(sessionId);
+      sessionStore.delete(sessionId);
       return undefined;
     }
     
@@ -241,7 +266,17 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteSession(sessionId: string): Promise<void> {
-    sessions.delete(sessionId);
+    sessionStore.delete(sessionId);
+  }
+  
+  // 호환성을 위한 기존 사용자 인증 메서드 (임시)
+  async authenticateUser(username: string, password: string): Promise<any> {
+    return null; // 아직 구현되지 않음
+  }
+  
+  async getAdminById(id: number): Promise<Admin | undefined> {
+    const [admin] = await db.select().from(admins).where(eq(admins.id, id));
+    return admin;
   }
 }
 
