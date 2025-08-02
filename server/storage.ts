@@ -1031,7 +1031,11 @@ export class DatabaseStorage implements IStorage {
         filePath: documents.filePath,
         fileName: documents.fileName,
         fileSize: documents.fileSize,
-        dealerNotes: documents.dealerNotes
+        dealerNotes: documents.dealerNotes,
+        subscriptionNumber: documents.subscriptionNumber,
+        servicePlanId: documents.servicePlanId,
+        deviceModel: documents.deviceModel,
+        simNumber: documents.simNumber
       }).from(documents);
 
       const conditions = [];
