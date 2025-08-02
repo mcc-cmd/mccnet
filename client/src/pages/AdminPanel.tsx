@@ -112,6 +112,10 @@ function CarrierManagement() {
   const [carrierDialogOpen, setCarrierDialogOpen] = useState(false);
   const [editingCarrier, setEditingCarrier] = useState<Carrier | null>(null);
   const [formKey, setFormKey] = useState(0);
+  const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const apiRequest = useApiRequest();
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -304,6 +308,118 @@ function CarrierManagement() {
     });
   };
 
+  // 엑셀 양식 다운로드
+  const handleDownloadTemplate = async () => {
+    try {
+      const response = await fetch('/api/carriers/excel-template', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('템플릿 다운로드에 실패했습니다.');
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.style.display = 'none';
+      a.href = url;
+      a.download = `통신사_업로드_양식_${new Date().toISOString().split('T')[0]}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+
+      toast({
+        title: "다운로드 완료",
+        description: "엑셀 양식이 다운로드되었습니다.",
+        variant: "default",
+      });
+    } catch (error: any) {
+      console.error('Template download error:', error);
+      toast({
+        title: "다운로드 실패",
+        description: error.message || "템플릿 다운로드에 실패했습니다.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // 엑셀 파일 업로드
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (!file.name.match(/\.(xlsx|xls)$/i)) {
+      toast({
+        title: "파일 형식 오류",
+        description: "엑셀 파일(.xlsx, .xls)만 업로드 가능합니다.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsUploading(true);
+    setUploadProgress(0);
+
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const response = await fetch('/api/carriers/upload-excel', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+        },
+        body: formData,
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || '업로드에 실패했습니다.');
+      }
+
+      // 성공 메시지 표시
+      toast({
+        title: "업로드 완료",
+        description: `${result.message}`,
+        variant: "default",
+      });
+
+      // 실패한 항목이 있으면 상세 정보 표시
+      if (result.errors && result.errors.length > 0) {
+        console.warn('Upload errors:', result.errors);
+        toast({
+          title: "일부 오류 발생",
+          description: `${result.errors.length}개 항목에서 오류가 발생했습니다. 콘솔을 확인하세요.`,
+          variant: "destructive",
+        });
+      }
+
+      // 통신사 목록 새로고침
+      await queryClient.invalidateQueries({ queryKey: ['/api/carriers'] });
+      
+      setUploadDialogOpen(false);
+    } catch (error: any) {
+      console.error('Upload error:', error);
+      toast({
+        title: "업로드 실패",
+        description: error.message || "파일 업로드에 실패했습니다.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUploading(false);
+      setUploadProgress(0);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
   // 대화상자가 닫힐 때 상태 정리
   React.useEffect(() => {
     if (!carrierDialogOpen) {
@@ -320,14 +436,83 @@ function CarrierManagement() {
             통신사를 관리하고 정렬 순서를 설정할 수 있습니다.
           </CardDescription>
         </div>
-        <Dialog open={carrierDialogOpen} onOpenChange={setCarrierDialogOpen}>
-          <DialogTrigger asChild>
-            <Button onClick={handleAddCarrier}>
-              <Plus className="mr-2 h-4 w-4" />
-              통신사 추가
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto">
+        <div className="flex space-x-2">
+          {/* 엑셀 양식 다운로드 버튼 */}
+          <Button
+            variant="outline"
+            onClick={handleDownloadTemplate}
+            className="flex items-center space-x-2"
+          >
+            <Download className="h-4 w-4" />
+            <span>엑셀 양식</span>
+          </Button>
+          
+          {/* 엑셀 업로드 버튼 */}
+          <Dialog open={uploadDialogOpen} onOpenChange={setUploadDialogOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline" className="flex items-center space-x-2">
+                <Upload className="h-4 w-4" />
+                <span>엑셀 업로드</span>
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>통신사 엑셀 업로드</DialogTitle>
+                <DialogDescription>
+                  엑셀 파일을 업로드하여 통신사 정보를 일괄 등록할 수 있습니다.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept=".xlsx,.xls"
+                    onChange={handleFileUpload}
+                    className="hidden"
+                    disabled={isUploading}
+                  />
+                  <Upload className="mx-auto h-12 w-12 text-gray-400" />
+                  <div className="mt-4">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={isUploading}
+                    >
+                      {isUploading ? '업로드 중...' : '파일 선택'}
+                    </Button>
+                  </div>
+                  <p className="mt-2 text-sm text-gray-500">
+                    .xlsx, .xls 파일만 지원됩니다
+                  </p>
+                </div>
+                {isUploading && (
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span>업로드 진행률</span>
+                      <span>{uploadProgress}%</span>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div
+                        className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                        style={{ width: `${uploadProgress}%` }}
+                      ></div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </DialogContent>
+          </Dialog>
+          {/* 통신사 추가 버튼 */}
+          <Dialog open={carrierDialogOpen} onOpenChange={setCarrierDialogOpen}>
+            <DialogTrigger asChild>
+              <Button onClick={handleAddCarrier}>
+                <Plus className="mr-2 h-4 w-4" />
+                통신사 추가
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>
                 {editingCarrier ? '통신사 수정' : '새 통신사 추가'}
@@ -584,7 +769,8 @@ function CarrierManagement() {
               </form>
             </Form>
           </DialogContent>
-        </Dialog>
+          </Dialog>
+        </div>
       </CardHeader>
       <CardContent>
         {carriersLoading ? (

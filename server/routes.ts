@@ -3143,6 +3143,142 @@ router.delete('/api/carriers/:id', requireAuth, requireAdmin, async (req: any, r
   }
 });
 
+// 통신사 엑셀 양식 다운로드
+router.get('/api/carriers/excel-template', requireAuth, requireAdmin, (req: any, res) => {
+  try {
+    // 엑셀 양식 데이터 구조
+    const templateData = [
+      {
+        '통신사명': 'KT',
+        '표시순서': 1,
+        '활성화': true,
+        '유선통신사여부': false,
+        '결합번호': '',
+        '결합통신사': '',
+        '서류필수': false,
+        '고객명필수': true,
+        '고객전화번호필수': true,
+        '고객이메일필수': false,
+        '접점코드필수': true,
+        '통신사필수': true,
+        '이전통신사필수': false,
+        '서류업로드필수': false,
+        '결합번호필수': false,
+        '결합통신사필수': false
+      },
+      {
+        '통신사명': 'SK',
+        '표시순서': 2,
+        '활성화': true,
+        '유선통신사여부': false,
+        '결합번호': '',
+        '결합통신사': '',
+        '서류필수': false,
+        '고객명필수': true,
+        '고객전화번호필수': true,
+        '고객이메일필수': false,
+        '접점코드필수': true,
+        '통신사필수': true,
+        '이전통신사필수': false,
+        '서류업로드필수': false,
+        '결합번호필수': false,
+        '결합통신사필수': false
+      }
+    ];
+
+    // 워크시트 생성
+    const ws = XLSX.utils.json_to_sheet(templateData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, '통신사 양식');
+
+    // 응답 헤더 설정
+    const filename = `통신사_업로드_양식_${format(new Date(), 'yyyyMMdd', { locale: ko })}.xlsx`;
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', `attachment; filename*=UTF-8''${encodeURIComponent(filename)}`);
+
+    // 엑셀 파일 생성 및 전송
+    const buffer = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
+    res.send(buffer);
+  } catch (error: any) {
+    console.error('Excel template download error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// 통신사 엑셀 업로드
+router.post('/api/carriers/upload-excel', requireAuth, requireAdmin, upload.single('file'), async (req: any, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: '파일이 선택되지 않았습니다.' });
+    }
+
+    // 엑셀 파일 읽기
+    const workbook = XLSX.readFile(req.file.path);
+    const sheetName = workbook.SheetNames[0];
+    const worksheet = workbook.Sheets[sheetName];
+    const data = XLSX.utils.sheet_to_json(worksheet);
+
+    let successCount = 0;
+    let errorCount = 0;
+    const errors: string[] = [];
+
+    for (let i = 0; i < data.length; i++) {
+      const row = data[i] as any;
+      try {
+        const carrierData = {
+          name: row['통신사명'] || row['name'],
+          displayOrder: parseInt(row['표시순서'] || row['displayOrder']) || 0,
+          isActive: row['활성화'] === true || row['활성화'] === 'true' || row['isActive'] === true,
+          isWired: row['유선통신사여부'] === true || row['유선통신사여부'] === 'true' || row['isWired'] === true,
+          bundleNumber: row['결합번호'] || row['bundleNumber'] || '',
+          bundleCarrier: row['결합통신사'] || row['bundleCarrier'] || '',
+          documentRequired: row['서류필수'] === true || row['서류필수'] === 'true' || row['documentRequired'] === true,
+          requireCustomerName: row['고객명필수'] !== false && row['고객명필수'] !== 'false' && row['requireCustomerName'] !== false,
+          requireCustomerPhone: row['고객전화번호필수'] !== false && row['고객전화번호필수'] !== 'false' && row['requireCustomerPhone'] !== false,
+          requireCustomerEmail: row['고객이메일필수'] === true || row['고객이메일필수'] === 'true' || row['requireCustomerEmail'] === true,
+          requireContactCode: row['접점코드필수'] !== false && row['접점코드필수'] !== 'false' && row['requireContactCode'] !== false,
+          requireCarrier: row['통신사필수'] !== false && row['통신사필수'] !== 'false' && row['requireCarrier'] !== false,
+          requirePreviousCarrier: row['이전통신사필수'] === true || row['이전통신사필수'] === 'true' || row['requirePreviousCarrier'] === true,
+          requireDocumentUpload: row['서류업로드필수'] === true || row['서류업로드필수'] === 'true' || row['requireDocumentUpload'] === true,
+          requireBundleNumber: row['결합번호필수'] === true || row['결합번호필수'] === 'true' || row['requireBundleNumber'] === true,
+          requireBundleCarrier: row['결합통신사필수'] === true || row['결합통신사필수'] === 'true' || row['requireBundleCarrier'] === true,
+        };
+
+        if (!carrierData.name) {
+          errors.push(`${i + 2}행: 통신사명이 비어있습니다.`);
+          errorCount++;
+          continue;
+        }
+
+        await storage.createCarrier(carrierData);
+        successCount++;
+      } catch (error: any) {
+        console.error(`Row ${i + 2} error:`, error);
+        errors.push(`${i + 2}행: ${error.message}`);
+        errorCount++;
+      }
+    }
+
+    // 업로드된 파일 삭제
+    fs.unlinkSync(req.file.path);
+
+    const message = `총 ${data.length}건 중 ${successCount}건 성공, ${errorCount}건 실패`;
+    res.json({
+      success: true,
+      message,
+      successCount,
+      errorCount,
+      errors: errors.slice(0, 10) // 최대 10개 오류만 반환
+    });
+  } catch (error: any) {
+    console.error('Carriers excel upload error:', error);
+    if (req.file && fs.existsSync(req.file.path)) {
+      fs.unlinkSync(req.file.path);
+    }
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Pricing Policies API
 router.get('/api/pricing-policies', requireAdmin, async (req, res) => {
   try {

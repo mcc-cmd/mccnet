@@ -3,7 +3,8 @@ import { nanoid } from 'nanoid';
 import { eq, and, desc, sql, or, like, gte, lte, inArray, count } from 'drizzle-orm';
 import { db } from './db';
 import { 
-  admins, salesTeams, salesManagers, contactCodeMappings, contactCodes
+  admins, salesTeams, salesManagers, contactCodeMappings, contactCodes,
+  carriers, servicePlans, additionalServices
 } from '@shared/schema';
 import type {
   Admin,
@@ -11,6 +12,9 @@ import type {
   SalesManager,
   ContactCodeMapping,
   ContactCode,
+  Carrier,
+  ServicePlan,
+  AdditionalService,
   AuthSession,
   CreateSalesTeamForm,
   CreateSalesManagerForm,
@@ -42,14 +46,24 @@ export interface IStorage {
   
   // 기존 시스템과의 호환성을 위한 메서드들
   getContactCodes(): Promise<any[]>;
-  getServicePlans(): Promise<any[]>;
-  createServicePlan(data: any): Promise<any>;
-  updateServicePlan(id: number, data: any): Promise<any>;
+  
+  // 통신사 관련 메서드
+  getCarriers(): Promise<Carrier[]>;
+  createCarrier(data: any): Promise<Carrier>;
+  updateCarrier(id: number, data: any): Promise<Carrier>;
+  deleteCarrier(id: number): Promise<void>;
+  
+  // 서비스 플랜 관련 메서드
+  getServicePlans(): Promise<ServicePlan[]>;
+  createServicePlan(data: any): Promise<ServicePlan>;
+  updateServicePlan(id: number, data: any): Promise<ServicePlan>;
   deleteServicePlan(id: number): Promise<void>;
-  getServicePlansByCarrier(carrier: string): Promise<any[]>;
-  getAdditionalServices(): Promise<any[]>;
-  createAdditionalService(data: any): Promise<any>;
-  updateAdditionalService(id: number, data: any): Promise<any>;
+  getServicePlansByCarrier(carrier: string): Promise<ServicePlan[]>;
+  
+  // 부가서비스 관련 메서드
+  getAdditionalServices(): Promise<AdditionalService[]>;
+  createAdditionalService(data: any): Promise<AdditionalService>;
+  updateAdditionalService(id: number, data: any): Promise<AdditionalService>;
   deleteAdditionalService(id: number): Promise<void>;
   getDealers(): Promise<any[]>;
   getUsers(): Promise<any[]>;
@@ -576,50 +590,198 @@ export class DatabaseStorage implements IStorage {
     }
   }
   
-  async getServicePlans(): Promise<any[]> {
-    return [];
+  // 통신사 관련 메서드
+  async getCarriers(): Promise<Carrier[]> {
+    try {
+      const result = await db.select().from(carriers).orderBy(carriers.displayOrder, carriers.name);
+      return result;
+    } catch (error) {
+      console.error('Get carriers error:', error);
+      return [];
+    }
   }
 
-  async createServicePlan(data: any): Promise<any> {
-    // 임시로 빈 객체 반환 (실제 구현 필요)
-    console.log('Creating service plan:', data);
-    return { id: Date.now(), ...data };
+  async createCarrier(data: any): Promise<Carrier> {
+    try {
+      const [result] = await db.insert(carriers).values({
+        ...data,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      }).returning();
+      return result;
+    } catch (error) {
+      console.error('Create carrier error:', error);
+      throw new Error('통신사 생성에 실패했습니다.');
+    }
   }
 
-  async updateServicePlan(id: number, data: any): Promise<any> {
-    // 임시로 빈 객체 반환 (실제 구현 필요)
-    console.log('Updating service plan:', id, data);
-    return { id, ...data };
+  async updateCarrier(id: number, data: any): Promise<Carrier> {
+    try {
+      const [result] = await db.update(carriers)
+        .set({
+          ...data,
+          updatedAt: new Date(),
+        })
+        .where(eq(carriers.id, id))
+        .returning();
+      
+      if (!result) {
+        throw new Error('통신사를 찾을 수 없습니다.');
+      }
+      
+      return result;
+    } catch (error) {
+      console.error('Update carrier error:', error);
+      throw new Error('통신사 수정에 실패했습니다.');
+    }
+  }
+
+  async deleteCarrier(id: number): Promise<void> {
+    try {
+      await db.delete(carriers).where(eq(carriers.id, id));
+    } catch (error) {
+      console.error('Delete carrier error:', error);
+      throw new Error('통신사 삭제에 실패했습니다.');
+    }
+  }
+
+  // 서비스 플랜 관련 메서드
+  async getServicePlans(): Promise<ServicePlan[]> {
+    try {
+      const result = await db.select().from(servicePlans)
+        .where(eq(servicePlans.isActive, true))
+        .orderBy(servicePlans.carrier, servicePlans.name);
+      return result;
+    } catch (error) {
+      console.error('Get service plans error:', error);
+      return [];
+    }
+  }
+
+  async createServicePlan(data: any): Promise<ServicePlan> {
+    try {
+      const [result] = await db.insert(servicePlans).values({
+        ...data,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      }).returning();
+      return result;
+    } catch (error) {
+      console.error('Create service plan error:', error);
+      throw new Error('서비스 플랜 생성에 실패했습니다.');
+    }
+  }
+
+  async updateServicePlan(id: number, data: any): Promise<ServicePlan> {
+    try {
+      const [result] = await db.update(servicePlans)
+        .set({
+          ...data,
+          updatedAt: new Date(),
+        })
+        .where(eq(servicePlans.id, id))
+        .returning();
+      
+      if (!result) {
+        throw new Error('서비스 플랜을 찾을 수 없습니다.');
+      }
+      
+      return result;
+    } catch (error) {
+      console.error('Update service plan error:', error);
+      throw new Error('서비스 플랜 수정에 실패했습니다.');
+    }
   }
 
   async deleteServicePlan(id: number): Promise<void> {
-    // 임시 구현 (실제 구현 필요)
-    console.log('Deleting service plan:', id);
+    try {
+      await db.update(servicePlans)
+        .set({
+          isActive: false,
+          updatedAt: new Date(),
+        })
+        .where(eq(servicePlans.id, id));
+    } catch (error) {
+      console.error('Delete service plan error:', error);
+      throw new Error('서비스 플랜 삭제에 실패했습니다.');
+    }
   }
   
-  async getServicePlansByCarrier(carrier: string): Promise<any[]> {
-    return [];
+  async getServicePlansByCarrier(carrier: string): Promise<ServicePlan[]> {
+    try {
+      const result = await db.select().from(servicePlans)
+        .where(and(
+          eq(servicePlans.carrier, carrier),
+          eq(servicePlans.isActive, true)
+        ))
+        .orderBy(servicePlans.name);
+      return result;
+    } catch (error) {
+      console.error('Get service plans by carrier error:', error);
+      return [];
+    }
   }
   
-  async getAdditionalServices(): Promise<any[]> {
-    return [];
+  // 부가서비스 관련 메서드
+  async getAdditionalServices(): Promise<AdditionalService[]> {
+    try {
+      const result = await db.select().from(additionalServices)
+        .where(eq(additionalServices.isActive, true))
+        .orderBy(additionalServices.carrier, additionalServices.name);
+      return result;
+    } catch (error) {
+      console.error('Get additional services error:', error);
+      return [];
+    }
   }
 
-  async createAdditionalService(data: any): Promise<any> {
-    // 임시로 빈 객체 반환 (실제 구현 필요)
-    console.log('Creating additional service:', data);
-    return { id: Date.now(), ...data };
+  async createAdditionalService(data: any): Promise<AdditionalService> {
+    try {
+      const [result] = await db.insert(additionalServices).values({
+        ...data,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      }).returning();
+      return result;
+    } catch (error) {
+      console.error('Create additional service error:', error);
+      throw new Error('부가서비스 생성에 실패했습니다.');
+    }
   }
 
-  async updateAdditionalService(id: number, data: any): Promise<any> {
-    // 임시로 빈 객체 반환 (실제 구현 필요)
-    console.log('Updating additional service:', id, data);
-    return { id, ...data };
+  async updateAdditionalService(id: number, data: any): Promise<AdditionalService> {
+    try {
+      const [result] = await db.update(additionalServices)
+        .set({
+          ...data,
+          updatedAt: new Date(),
+        })
+        .where(eq(additionalServices.id, id))
+        .returning();
+      
+      if (!result) {
+        throw new Error('부가서비스를 찾을 수 없습니다.');
+      }
+      
+      return result;
+    } catch (error) {
+      console.error('Update additional service error:', error);
+      throw new Error('부가서비스 수정에 실패했습니다.');
+    }
   }
 
   async deleteAdditionalService(id: number): Promise<void> {
-    // 임시 구현 (실제 구현 필요)
-    console.log('Deleting additional service:', id);
+    try {
+      await db.update(additionalServices)
+        .set({
+          isActive: false,
+          updatedAt: new Date(),
+        })
+        .where(eq(additionalServices.id, id));
+    } catch (error) {
+      console.error('Delete additional service error:', error);
+      throw new Error('부가서비스 삭제에 실패했습니다.');
+    }
   }
   
   async getDealers(): Promise<any[]> {

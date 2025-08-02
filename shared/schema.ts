@@ -90,6 +90,54 @@ export const admins = pgTable("admins", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// 통신사 테이블
+export const carriers = pgTable("carriers", {
+  id: serial("id").primaryKey(),
+  name: varchar("name", { length: 100 }).notNull(), // 통신사명
+  displayOrder: integer("display_order").default(0), // 표시 순서
+  isActive: boolean("is_active").default(true), // 활성화 상태
+  isWired: boolean("is_wired").default(false), // 유선 통신사 여부
+  bundleNumber: varchar("bundle_number", { length: 100 }), // 결합 번호
+  bundleCarrier: varchar("bundle_carrier", { length: 100 }), // 결합 통신사
+  documentRequired: boolean("document_required").default(false), // 서류 필수 여부
+  requireCustomerName: boolean("require_customer_name").default(true), // 고객명 필수
+  requireCustomerPhone: boolean("require_customer_phone").default(true), // 고객 전화번호 필수
+  requireCustomerEmail: boolean("require_customer_email").default(false), // 고객 이메일 필수
+  requireContactCode: boolean("require_contact_code").default(true), // 접점코드 필수
+  requireCarrier: boolean("require_carrier").default(true), // 통신사 필수
+  requirePreviousCarrier: boolean("require_previous_carrier").default(false), // 이전통신사 필수
+  requireDocumentUpload: boolean("require_document_upload").default(false), // 서류 업로드 필수
+  requireBundleNumber: boolean("require_bundle_number").default(false), // 결합 번호 필수
+  requireBundleCarrier: boolean("require_bundle_carrier").default(false), // 결합 통신사 필수
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// 서비스 플랜 테이블
+export const servicePlans = pgTable("service_plans", {
+  id: serial("id").primaryKey(),
+  name: varchar("name", { length: 200 }).notNull(), // 요금제명
+  carrier: varchar("carrier", { length: 100 }).notNull(), // 통신사
+  planType: varchar("plan_type", { length: 50 }).notNull(), // 요금제 유형 (LTE, 5G 등)
+  dataAllowance: varchar("data_allowance", { length: 100 }), // 데이터 제공량
+  monthlyFee: decimal("monthly_fee", { precision: 10, scale: 2 }).notNull(), // 월 요금
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// 부가서비스 테이블
+export const additionalServices = pgTable("additional_services", {
+  id: serial("id").primaryKey(),
+  name: varchar("name", { length: 200 }).notNull(), // 부가서비스명
+  carrier: varchar("carrier", { length: 100 }).notNull(), // 통신사
+  monthlyFee: decimal("monthly_fee", { precision: 10, scale: 2 }).notNull(), // 월 요금
+  description: text("description"), // 설명
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // Database schema types
 export interface Admin {
   id: number;
@@ -97,6 +145,54 @@ export interface Admin {
   password: string;
   name: string;
   createdAt: Date;
+}
+
+// 통신사 타입
+export interface Carrier {
+  id: number;
+  name: string;
+  displayOrder: number;
+  isActive: boolean;
+  isWired: boolean;
+  bundleNumber?: string;
+  bundleCarrier?: string;
+  documentRequired: boolean;
+  requireCustomerName: boolean;
+  requireCustomerPhone: boolean;
+  requireCustomerEmail: boolean;
+  requireContactCode: boolean;
+  requireCarrier: boolean;
+  requirePreviousCarrier: boolean;
+  requireDocumentUpload: boolean;
+  requireBundleNumber: boolean;
+  requireBundleCarrier: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+// 서비스 플랜 타입
+export interface ServicePlan {
+  id: number;
+  name: string;
+  carrier: string;
+  planType: string;
+  dataAllowance?: string;
+  monthlyFee: number;
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+// 부가서비스 타입
+export interface AdditionalService {
+  id: number;
+  name: string;
+  carrier: string;
+  monthlyFee: number;
+  description?: string;
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 // 영업팀 타입
