@@ -1,6 +1,6 @@
 import bcrypt from 'bcrypt';
 import { nanoid } from 'nanoid';
-import { eq, and, desc, sql, or, like, gte, lte, inArray } from 'drizzle-orm';
+import { eq, and, desc, sql, or, like, gte, lte, inArray, count } from 'drizzle-orm';
 import { db } from './db';
 import { 
   admins, salesTeams, salesManagers, contactCodeMappings, contactCodes
@@ -185,6 +185,20 @@ export class DatabaseStorage implements IStorage {
 
   // 영업과장 관리 메서드
   async createSalesManager(data: CreateSalesManagerForm): Promise<SalesManager> {
+    // 중복 체크: username
+    const existingByUsername = await this.getSalesManagerByUsername(data.username);
+    if (existingByUsername) {
+      throw new Error(`로그인 ID '${data.username}'는 이미 사용 중입니다.`);
+    }
+
+    // 중복 체크: managerCode
+    const [existingByCode] = await db.select().from(salesManagers).where(
+      and(eq(salesManagers.managerCode, data.managerCode), eq(salesManagers.isActive, true))
+    );
+    if (existingByCode) {
+      throw new Error(`과장 코드 '${data.managerCode}'는 이미 사용 중입니다.`);
+    }
+
     const hashedPassword = await bcrypt.hash(data.password, 10);
     const [result] = await db.insert(salesManagers).values({
       teamId: data.teamId,
@@ -237,6 +251,34 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateSalesManager(id: number, data: UpdateSalesManagerForm): Promise<SalesManager> {
+    // 중복 체크: username (자기 자신 제외)
+    if (data.username) {
+      const [existingByUsername] = await db.select().from(salesManagers).where(
+        and(
+          eq(salesManagers.username, data.username), 
+          eq(salesManagers.isActive, true),
+          sql`${salesManagers.id} != ${id}`
+        )
+      );
+      if (existingByUsername) {
+        throw new Error(`로그인 ID '${data.username}'는 이미 사용 중입니다.`);
+      }
+    }
+
+    // 중복 체크: managerCode (자기 자신 제외)
+    if (data.managerCode) {
+      const [existingByCode] = await db.select().from(salesManagers).where(
+        and(
+          eq(salesManagers.managerCode, data.managerCode), 
+          eq(salesManagers.isActive, true),
+          sql`${salesManagers.id} != ${id}`
+        )
+      );
+      if (existingByCode) {
+        throw new Error(`과장 코드 '${data.managerCode}'는 이미 사용 중입니다.`);
+      }
+    }
+
     const [result] = await db.update(salesManagers)
       .set({
         ...data,
