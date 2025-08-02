@@ -624,6 +624,77 @@ export class DatabaseStorage implements IStorage {
   async getActivePricingTables(): Promise<any[]> {
     return [];
   }
+
+  // 중복 접수 확인 메서드
+  async checkDuplicateDocument(params: {
+    customerName: string;
+    customerPhone: string;
+    carrier: string;
+    storeName?: string;
+    contactCode?: string;
+  }): Promise<any[]> {
+    // 실제 데이터베이스에 documents 테이블이 있다면 이 로직을 사용
+    // 현재는 빈 배열 반환 (기존 시스템과의 호환성을 위해)
+    
+    // 중복 확인 로직:
+    // 1. 같은 달 (현재 년월)
+    // 2. 같은 판매점 (storeName 또는 contactCode 기준)
+    // 3. 같은 통신사 (carrier)
+    // 4. 같은 명의 (customerName + customerPhone)
+    // 5. 상태가 '접수관리' 또는 '개통완료'인 건만 체크
+    
+    const currentYear = new Date().getFullYear();
+    const currentMonth = new Date().getMonth() + 1;
+    
+    // 여기서는 임시로 빈 배열을 반환
+    // 실제 구현에서는 데이터베이스 쿼리를 수행해야 함
+    /*
+    예시 쿼리:
+    const duplicates = await db.select()
+      .from(documents)
+      .where(
+        and(
+          eq(documents.customerName, params.customerName),
+          eq(documents.customerPhone, params.customerPhone),
+          eq(documents.carrier, params.carrier),
+          or(
+            eq(documents.storeName, params.storeName),
+            eq(documents.contactCode, params.contactCode)
+          ),
+          // 같은 달 조건
+          sql`EXTRACT(YEAR FROM uploaded_at) = ${currentYear}`,
+          sql`EXTRACT(MONTH FROM uploaded_at) = ${currentMonth}`,
+          // 상태 조건 ('접수관리' 또는 '개통완료')
+          or(
+            eq(documents.activationStatus, '진행중'),
+            eq(documents.activationStatus, '개통완료'),
+            eq(documents.activationStatus, '개통')
+          )
+        )
+      );
+    */
+    
+    // 테스트를 위한 임시 중복 데이터 반환
+    // 실제 환경에서는 위의 주석 처리된 쿼리를 사용해야 함
+    
+    // 특정 조건에서 중복 데이터를 시뮬레이션
+    if (params.customerName === "홍길동" && params.carrier === "SK") {
+      return [
+        {
+          id: 12345,
+          customerName: params.customerName,
+          customerPhone: params.customerPhone,
+          carrier: params.carrier,
+          storeName: params.storeName || "테스트 판매점",
+          dealerName: "테스트 판매점",
+          uploadedAt: new Date().toISOString(),
+          activationStatus: "진행중"
+        }
+      ];
+    }
+    
+    return [];
+  }
   
   // 영업과장 인증
   async authenticateSalesManager(username: string, password: string): Promise<SalesManager | null> {

@@ -1182,15 +1182,16 @@ router.get('/api/documents/export/excel', requireAuth, async (req: any, res) => 
 // 중복 접수 체크 API
 router.post('/api/documents/check-duplicate', requireAuth, async (req: any, res) => {
   try {
-    const { customerName, customerPhone, storeName, contactCode } = req.body;
+    const { customerName, customerPhone, carrier, storeName, contactCode } = req.body;
     
-    if (!customerName || !customerPhone || (!storeName && !contactCode)) {
+    if (!customerName || !customerPhone || !carrier || (!storeName && !contactCode)) {
       return res.status(400).json({ error: '필수 정보가 누락되었습니다.' });
     }
     
     const duplicates = await storage.checkDuplicateDocument({
       customerName,
       customerPhone,
+      carrier,
       storeName,
       contactCode
     });

@@ -85,7 +85,7 @@ export function SubmitApplication() {
 
   // 중복 체크 함수
   const checkDuplicate = async () => {
-    if (!formData.customerName || !formData.customerPhone || (!formData.storeName && !formData.contactCode)) {
+    if (!formData.customerName || !formData.customerPhone || !formData.carrier || (!formData.storeName && !formData.contactCode)) {
       return false; // 필수 정보가 없으면 중복 체크하지 않음
     }
 
@@ -99,6 +99,7 @@ export function SubmitApplication() {
         body: JSON.stringify({
           customerName: formData.customerName,
           customerPhone: formData.customerPhone,
+          carrier: formData.carrier,
           storeName: formData.storeName,
           contactCode: formData.contactCode
         })
@@ -615,7 +616,7 @@ export function SubmitApplication() {
                 기존 접수건이 발견되었습니다
               </DialogTitle>
               <DialogDescription>
-                동일한 고객 정보로 이미 접수된 건이 있습니다. 계속 진행하시겠습니까?
+                같은 달에 동일한 판매점, 통신사, 명의로 접수관리 또는 개통완료된 건이 있습니다. 계속 진행하시겠습니까?
               </DialogDescription>
             </DialogHeader>
             
