@@ -445,6 +445,53 @@ router.post('/api/admin/create-sales-manager', requireAdmin, async (req, res) =>
   }
 });
 
+// 영업과장 목록 조회 (관리자 패널용)
+router.get('/api/admin/sales-managers', requireAdmin, async (req, res) => {
+  try {
+    const managers = await storage.getSalesManagers();
+    // 팀 정보를 포함한 영업과장 목록 반환
+    const managersWithTeams = await Promise.all(
+      managers.map(async (manager) => {
+        const team = await storage.getSalesTeamById(manager.teamId);
+        return {
+          ...manager,
+          teamName: team?.teamName || '미지정'
+        };
+      })
+    );
+    res.json(managersWithTeams);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// 비밀번호 변경 API (관리자 패널용)
+router.post('/api/admin/change-password', requireAdmin, async (req, res) => {
+  try {
+    const { userId, accountType, newPassword } = req.body;
+    
+    if (!userId || !accountType || !newPassword) {
+      return res.status(400).json({ error: '필수 정보가 누락되었습니다.' });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({ error: '비밀번호는 최소 6자리 이상이어야 합니다.' });
+    }
+
+    if (accountType === 'admin') {
+      await storage.updateAdminPassword(userId, newPassword);
+    } else if (accountType === 'sales_manager') {
+      await storage.updateSalesManagerPassword(userId, newPassword);
+    } else {
+      await storage.updateUserPassword(userId, newPassword);
+    }
+
+    res.json({ success: true, message: '비밀번호가 성공적으로 변경되었습니다.' });
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
 // New account creation routes
 router.post('/api/auth/register/dealer', async (req, res) => {
   try {

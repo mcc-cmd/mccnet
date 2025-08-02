@@ -828,6 +828,9 @@ export function AdminPanel() {
   const [adminDialogOpen, setAdminDialogOpen] = useState(false);
   const [workerDialogOpen, setWorkerDialogOpen] = useState(false);
   const [salesManagerDialogOpen, setSalesManagerDialogOpen] = useState(false);
+  const [editUserDialogOpen, setEditUserDialogOpen] = useState(false);
+  const [changePasswordDialogOpen, setChangePasswordDialogOpen] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<any>(null);
 
   const [templateDialogOpen, setTemplateDialogOpen] = useState(false);
   const [statusDialogOpen, setStatusDialogOpen] = useState(false);
@@ -861,7 +864,6 @@ export function AdminPanel() {
   const [carrierDealerDetails, setCarrierDealerDetails] = useState<Array<{ dealerName: string; count: number }>>([]);
 
   // User management states
-  const [editUserDialogOpen, setEditUserDialogOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<(User & { dealerName: string; userType: string }) | null>(null);
   
   // 서비스플랜 업로드 관련
@@ -893,10 +895,44 @@ export function AdminPanel() {
     queryFn: () => apiRequest('/api/admin/dealers') as Promise<Dealer[]>,
   });
 
-  const { data: users, isLoading: usersLoading } = useQuery({
+  const { data: users = [], isLoading: usersLoading } = useQuery({
     queryKey: ['/api/admin/users'],
     queryFn: () => apiRequest('/api/admin/users') as Promise<Array<User & { dealerName: string; userType: string }>>,
   });
+
+  // Sales managers data query
+  const { data: salesManagers = [] } = useQuery({
+    queryKey: ['/api/admin/sales-managers'],
+    queryFn: () => apiRequest('/api/admin/sales-managers')
+  });
+
+  // Combined users list (기존 users + 영업과장 + 관리자)
+  const allUsers = [
+    ...users.map((user: any) => ({ 
+      ...user, 
+      accountType: 'user',
+      displayName: user.name,
+      teamName: user.dealerName || '-'
+    })),
+    ...salesManagers.map((manager: any) => ({ 
+      ...manager, 
+      accountType: 'sales_manager',
+      userType: 'sales_manager',
+      username: manager.username,
+      displayName: manager.managerName,
+      teamName: manager.teamName || '-',
+      createdAt: manager.createdAt
+    })),
+    {
+      id: user?.userId,
+      accountType: 'admin',
+      userType: 'admin',
+      username: 'admin',
+      displayName: '시스템 관리자',
+      teamName: '시스템',
+      createdAt: new Date()
+    }
+  ];
 
   const { data: documents, isLoading: documentsLoading } = useQuery({
     queryKey: ['/api/admin/documents'],
@@ -996,6 +1032,13 @@ export function AdminPanel() {
       password: '',
       name: '',
       team: 'DX 1팀',
+    },
+  });
+
+  const changePasswordForm = useForm({
+    defaultValues: {
+      newPassword: '',
+      confirmPassword: '',
     },
   });
 
@@ -1171,11 +1214,35 @@ export function AdminPanel() {
       body: JSON.stringify(data),
     }),
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/sales-managers'] });
       setSalesManagerDialogOpen(false);
       salesManagerForm.reset();
       toast({
         title: '성공',
         description: '영업과장 계정이 성공적으로 생성되었습니다.',
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: '오류',
+        description: error.message,
+        variant: 'destructive',
+      });
+    },
+  });
+
+  const changePasswordMutation = useMutation({
+    mutationFn: (data: { userId: number; accountType: string; newPassword: string }) => 
+      apiRequest('/api/admin/change-password', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
+    onSuccess: () => {
+      setChangePasswordDialogOpen(false);
+      changePasswordForm.reset();
+      toast({
+        title: '성공',
+        description: '비밀번호가 성공적으로 변경되었습니다.',
       });
     },
     onError: (error: Error) => {
@@ -1363,15 +1430,7 @@ export function AdminPanel() {
     },
   });
 
-  const handleEditUser = (user: User & { dealerName: string; userType: string }) => {
-    setEditingUser(user);
-    editUserForm.reset({
-      username: user.username,
-      password: '',
-      name: user.name,
-    });
-    setEditUserDialogOpen(true);
-  };
+
 
   const handleUpdateUser = (data: { username: string; password: string; name: string }) => {
     if (!editingUser) return;
@@ -1532,6 +1591,16 @@ export function AdminPanel() {
 
   const handleCreateSalesManager = (data: CreateSalesManagerForm) => {
     createSalesManagerMutation.mutate(data);
+  };
+
+  const handleEditUser = (userToEdit: any) => {
+    setSelectedUser(userToEdit);
+    setEditUserDialogOpen(true);
+  };
+
+  const handleChangePassword = (userToEdit: any) => {
+    setSelectedUser(userToEdit);
+    setChangePasswordDialogOpen(true);
   };
 
   // Analytics handlers
@@ -3074,7 +3143,7 @@ export function AdminPanel() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  {users && users.length > 0 ? (
+                  {allUsers && allUsers.length > 0 ? (
                     <div className="overflow-x-auto">
                       <table className="min-w-full divide-y divide-gray-200">
                         <thead className="bg-gray-50">
@@ -3089,7 +3158,7 @@ export function AdminPanel() {
                               계정 유형
                             </th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                              소속
+                              소속/팀
                             </th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                               생성일
@@ -3100,44 +3169,63 @@ export function AdminPanel() {
                           </tr>
                         </thead>
                         <tbody className="bg-white divide-y divide-gray-200">
-                          {users.map((user) => (
-                            <tr key={user.id}>
+                          {allUsers.map((userItem, index) => (
+                            <tr key={`${userItem.accountType}-${userItem.id || index}`}>
                               <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                {user.name}
+                                {userItem.displayName}
                               </td>
                               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                {user.username}
+                                {userItem.username}
                               </td>
                               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                <Badge variant={user.userType === 'admin' ? 'default' : 'secondary'}>
-                                  {user.userType === 'admin' ? '관리자' : 
-                                   user.userType === 'dealer_worker' ? '근무자' : 
-                                   user.userType === 'dealer_store' ? '판매점' : user.userType}
+                                <Badge variant={
+                                  userItem.userType === 'admin' ? 'default' : 
+                                  userItem.userType === 'sales_manager' ? 'outline' : 'secondary'
+                                }>
+                                  {userItem.userType === 'admin' ? '시스템 관리자' : 
+                                   userItem.userType === 'sales_manager' ? '영업과장' :
+                                   userItem.userType === 'dealer_worker' ? '근무자' : 
+                                   userItem.userType === 'dealer_store' ? '판매점' : userItem.userType}
                                 </Badge>
                               </td>
                               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                {user.dealerName || '-'}
+                                {userItem.teamName}
                               </td>
                               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                {format(new Date(user.createdAt), 'yyyy-MM-dd', { locale: ko })}
+                                {userItem.createdAt ? format(new Date(userItem.createdAt), 'yyyy-MM-dd', { locale: ko }) : '-'}
                               </td>
                               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                 <div className="flex space-x-2">
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => handleEditUser(user)}
-                                  >
-                                    <Edit className="h-4 w-4" />
-                                  </Button>
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => handleDeleteUser(user.id)}
-                                    className="text-red-600 hover:text-red-700"
-                                  >
-                                    <Trash2 className="h-4 w-4" />
-                                  </Button>
+                                  {user?.userType === 'admin' && (
+                                    <>
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => handleEditUser(userItem)}
+                                        title="사용자 정보 수정"
+                                      >
+                                        <Edit className="h-4 w-4" />
+                                      </Button>
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => handleChangePassword(userItem)}
+                                        title="비밀번호 변경"
+                                      >
+                                        <Edit2 className="h-4 w-4" />
+                                      </Button>
+                                    </>
+                                  )}
+                                  {user?.userType !== 'admin' && userItem.userType !== 'admin' && (
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => handleChangePassword(userItem)}
+                                      title="비밀번호 변경"
+                                    >
+                                      <Edit2 className="h-4 w-4" />
+                                    </Button>
+                                  )}
                                 </div>
                               </td>
                             </tr>
@@ -3155,6 +3243,70 @@ export function AdminPanel() {
                 </CardContent>
               </Card>
 
+              {/* Change Password Dialog */}
+              <Dialog open={changePasswordDialogOpen} onOpenChange={setChangePasswordDialogOpen}>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>비밀번호 변경</DialogTitle>
+                    <DialogDescription>
+                      {selectedUser?.displayName} ({selectedUser?.username})의 비밀번호를 변경합니다.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <Form {...changePasswordForm}>
+                    <form onSubmit={changePasswordForm.handleSubmit((data) => {
+                      if (data.newPassword !== data.confirmPassword) {
+                        toast({
+                          title: '오류',
+                          description: '새 비밀번호와 확인 비밀번호가 일치하지 않습니다.',
+                          variant: 'destructive',
+                        });
+                        return;
+                      }
+                      changePasswordMutation.mutate({
+                        userId: selectedUser.id,
+                        accountType: selectedUser.accountType,
+                        newPassword: data.newPassword
+                      });
+                    })} className="space-y-4">
+                      <FormField
+                        control={changePasswordForm.control}
+                        name="newPassword"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>새 비밀번호</FormLabel>
+                            <FormControl>
+                              <Input type="password" placeholder="새 비밀번호를 입력하세요" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={changePasswordForm.control}
+                        name="confirmPassword"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>비밀번호 확인</FormLabel>
+                            <FormControl>
+                              <Input type="password" placeholder="비밀번호를 다시 입력하세요" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <div className="flex justify-end space-x-2">
+                        <Button type="button" variant="outline" onClick={() => setChangePasswordDialogOpen(false)}>
+                          취소
+                        </Button>
+                        <Button type="submit" disabled={changePasswordMutation.isPending}>
+                          {changePasswordMutation.isPending ? '변경 중...' : '변경'}
+                        </Button>
+                      </div>
+                    </form>
+                  </Form>
+                </DialogContent>
+              </Dialog>
+
               {/* Edit User Dialog */}
               <Dialog open={editUserDialogOpen} onOpenChange={setEditUserDialogOpen}>
                 <DialogContent>
@@ -3162,7 +3314,13 @@ export function AdminPanel() {
                     <DialogTitle>사용자 정보 수정</DialogTitle>
                   </DialogHeader>
                   <Form {...editUserForm}>
-                    <form onSubmit={editUserForm.handleSubmit(handleUpdateUser)} className="space-y-4">
+                    <form onSubmit={editUserForm.handleSubmit((data) => {
+                      // Handle user edit logic
+                      toast({
+                        title: '정보',
+                        description: '사용자 정보 수정 기능은 추후 구현 예정입니다.',
+                      });
+                    })} className="space-y-4">
                       <FormField
                         control={editUserForm.control}
                         name="name"

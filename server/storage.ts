@@ -82,6 +82,11 @@ export interface IStorage {
   createSession(userId: number, userType: 'admin' | 'sales_manager', managerId?: number, teamId?: number): Promise<string>;
   getSession(sessionId: string): Promise<AuthSession | undefined>;
   deleteSession(sessionId: string): Promise<void>;
+  
+  // 비밀번호 변경
+  updateAdminPassword(adminId: number, newPassword: string): Promise<void>;
+  updateSalesManagerPassword(managerId: number, newPassword: string): Promise<void>;
+  updateUserPassword(userId: number, newPassword: string): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -296,6 +301,26 @@ export class DatabaseStorage implements IStorage {
 
   async deleteSession(sessionId: string): Promise<void> {
     sessionStore.delete(sessionId);
+  }
+
+  // 비밀번호 변경 메서드들
+  async updateAdminPassword(adminId: number, newPassword: string): Promise<void> {
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    await db.update(admins)
+      .set({ password: hashedPassword })
+      .where(eq(admins.id, adminId));
+  }
+
+  async updateSalesManagerPassword(managerId: number, newPassword: string): Promise<void> {
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    await db.update(salesManagers)
+      .set({ password: hashedPassword, updatedAt: new Date() })
+      .where(eq(salesManagers.id, managerId));
+  }
+
+  async updateUserPassword(userId: number, newPassword: string): Promise<void> {
+    // 기존 사용자 시스템의 비밀번호 변경 (구현 필요시 추가)
+    throw new Error('일반 사용자 비밀번호 변경은 추후 구현 예정입니다.');
   }
   
   // 호환성을 위한 기존 사용자 인증 메서드 (임시)
