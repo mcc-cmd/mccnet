@@ -15,6 +15,7 @@ import { apiRequest } from '@/lib/queryClient';
 import { Plus, Users, User, Settings } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Sidebar } from '@/components/Sidebar';
 
 interface SalesTeam {
   id: number;
@@ -175,12 +176,15 @@ export default function SalesTeamManagement() {
   };
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold">영업조직 관리</h1>
-      </div>
+    <div className="flex h-screen bg-background">
+      <Sidebar />
+      <div className="flex-1 overflow-auto">
+        <div className="container mx-auto px-4 py-8">
+          <div className="flex justify-between items-center mb-6">
+            <h1 className="text-3xl font-bold">영업조직 관리</h1>
+          </div>
 
-      <Tabs defaultValue="teams" className="w-full">
+          <Tabs defaultValue="teams" className="w-full">
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="teams" className="flex items-center gap-2">
             <Users className="h-4 w-4" />
@@ -531,6 +535,8 @@ export default function SalesTeamManagement() {
           </Card>
         </TabsContent>
       </Tabs>
+        </div>
+      </div>
     </div>
   );
 }

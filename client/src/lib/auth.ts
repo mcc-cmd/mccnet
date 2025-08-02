@@ -6,7 +6,7 @@ interface AuthState {
   user: AuthResponse['user'] | null;
   sessionId: string | null;
   isAuthenticated: boolean;
-  login: (credentials: { email: string; password: string }) => Promise<boolean>;
+  login: (credentials: { username: string; password: string }) => Promise<boolean>;
   logout: () => Promise<void>;
   checkAuth: () => Promise<boolean>;
 }

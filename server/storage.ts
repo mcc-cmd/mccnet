@@ -32,6 +32,20 @@ export interface IStorage {
   // 기존 사용자 인증 (호환성)
   authenticateUser(username: string, password: string): Promise<any>;
   
+  // 영업과장 인증
+  authenticateSalesManager(username: string, password: string): Promise<SalesManager | null>;
+  
+  // 기존 시스템과의 호환성을 위한 메서드들
+  getContactCodes(): Promise<any[]>;
+  getServicePlans(): Promise<any[]>;
+  getServicePlansByCarrier(carrier: string): Promise<any[]>;
+  getAdditionalServices(): Promise<any[]>;
+  getDealers(): Promise<any[]>;
+  getUsers(): Promise<any[]>;
+  getDocuments(): Promise<any[]>;
+  getDocumentTemplates(): Promise<any[]>;
+  getSettlementUnitPrices(): Promise<any[]>;
+  
   // 영업팀 관리
   createSalesTeam(data: CreateSalesTeamForm): Promise<SalesTeam>;
   getSalesTeams(): Promise<SalesTeam[]>;
@@ -277,6 +291,64 @@ export class DatabaseStorage implements IStorage {
   async getAdminById(id: number): Promise<Admin | undefined> {
     const [admin] = await db.select().from(admins).where(eq(admins.id, id));
     return admin;
+  }
+  
+  // 기존 시스템과의 호환성을 위한 빈 메서드들 (임시)
+  async getContactCodes(): Promise<any[]> {
+    return [];
+  }
+  
+  async getServicePlans(): Promise<any[]> {
+    return [];
+  }
+  
+  async getServicePlansByCarrier(carrier: string): Promise<any[]> {
+    return [];
+  }
+  
+  async getAdditionalServices(): Promise<any[]> {
+    return [];
+  }
+  
+  async getDealers(): Promise<any[]> {
+    return [];
+  }
+  
+  async getUsers(): Promise<any[]> {
+    return [];
+  }
+  
+  async getDocuments(): Promise<any[]> {
+    return [];
+  }
+  
+  async getDocumentTemplates(): Promise<any[]> {
+    return [];
+  }
+  
+  async getSettlementUnitPrices(): Promise<any[]> {
+    return [];
+  }
+  
+  // 영업과장 인증
+  async authenticateSalesManager(username: string, password: string): Promise<SalesManager | null> {
+    try {
+      console.log('Authenticating sales manager:', username);
+      const manager = await this.getSalesManagerByUsername(username);
+      console.log('Sales manager found:', manager ? 'yes' : 'no');
+      
+      if (!manager) return null;
+      
+      const isValidPassword = await bcrypt.compare(password, manager.password);
+      console.log('Password valid:', isValidPassword);
+      
+      if (!isValidPassword) return null;
+      
+      return manager;
+    } catch (error) {
+      console.error('Sales manager auth error:', error);
+      return null;
+    }
   }
 }
 
