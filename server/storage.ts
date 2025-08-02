@@ -1537,8 +1537,8 @@ export class DatabaseStorage implements IStorage {
         eq(documents.customerName, customerName),
         eq(documents.customerPhone, customerPhone),
         eq(documents.carrier, carrier),
-        gte(documents.createdAt, new Date(monthStart)),
-        lte(documents.createdAt, new Date(monthEnd))
+        gte(documents.uploadedAt, new Date(monthStart)),
+        lte(documents.uploadedAt, new Date(monthEnd))
       ];
       
       // 판매점명 조건 추가 (storeName 또는 contactCode 중 하나라도 있으면)
@@ -1550,7 +1550,7 @@ export class DatabaseStorage implements IStorage {
         .select()
         .from(documents)
         .where(and(...baseConditions))
-        .orderBy(desc(documents.createdAt));
+        .orderBy(desc(documents.uploadedAt));
       
       console.log('Found duplicates:', duplicates.length);
       return duplicates;

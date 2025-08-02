@@ -696,15 +696,16 @@ export function Documents() {
                 <div className="hidden lg:block overflow-x-auto">
                   <table className="w-full table-fixed divide-y divide-gray-300 text-sm">
                     <colgroup>
-                      <col className="w-20" />
+                      <col className="w-16" />
+                      <col className="w-12" />
+                      <col className="w-16" />
+                      <col className="w-16" />
+                      <col className="w-10" />
+                      <col className="w-8" />
                       <col className="w-14" />
+                      <col className="w-16" />
                       <col className="w-18" />
                       <col className="w-12" />
-                      <col className="w-10" />
-                      <col className="w-14" />
-                      <col className="w-20" />
-                      <col className="w-20" />
-                      <col className="w-14" />
                     </colgroup>
                     <thead className="bg-gray-50">
                       <tr>
@@ -716,6 +717,9 @@ export function Documents() {
                         </th>
                         <th className="px-1 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider truncate">
                           연락처
+                        </th>
+                        <th className="px-1 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider truncate">
+                          판매점명
                         </th>
                         <th className="px-1 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider truncate">
                           통신사
@@ -753,6 +757,11 @@ export function Documents() {
                           <td className="px-1 py-1 text-xs text-gray-900">
                             <div className="leading-tight break-words max-w-full">
                               {doc.customerPhone}
+                            </div>
+                          </td>
+                          <td className="px-1 py-1 text-xs text-gray-900">
+                            <div className="leading-tight break-words max-w-full">
+                              {(doc as any).storeName || (doc as any).contactCode || '-'}
                             </div>
                           </td>
                           <td className="px-1 py-1 text-xs text-gray-700">
