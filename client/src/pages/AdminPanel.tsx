@@ -71,6 +71,7 @@ type CreateSalesManagerForm = {
   username: string;
   password: string;
   name: string;
+  team: string;
 };
 
 type UpdateDocumentStatusForm = {
@@ -990,11 +991,11 @@ export function AdminPanel() {
   });
 
   const salesManagerForm = useForm<CreateSalesManagerForm>({
-    resolver: zodResolver(createWorkerSchema), // 동일한 스키마 사용
     defaultValues: {
       username: '',
       password: '',
       name: '',
+      team: 'DX 1팀',
     },
   });
 
@@ -3023,6 +3024,27 @@ export function AdminPanel() {
                                   <FormControl>
                                     <Input type="password" placeholder="비밀번호를 입력하세요" {...field} />
                                   </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            <FormField
+                              control={salesManagerForm.control}
+                              name="team"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>소속 팀</FormLabel>
+                                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                    <FormControl>
+                                      <SelectTrigger>
+                                        <SelectValue placeholder="팀을 선택하세요" />
+                                      </SelectTrigger>
+                                    </FormControl>
+                                    <SelectContent>
+                                      <SelectItem value="DX 1팀">DX 1팀</SelectItem>
+                                      <SelectItem value="DX 2팀">DX 2팀</SelectItem>
+                                    </SelectContent>
+                                  </Select>
                                   <FormMessage />
                                 </FormItem>
                               )}

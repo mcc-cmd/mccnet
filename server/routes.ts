@@ -411,13 +411,34 @@ router.post('/api/admin/create-worker', requireAdmin, async (req, res) => {
 // 영업과장 계정 생성 (관리자 패널용)
 router.post('/api/admin/create-sales-manager', requireAdmin, async (req, res) => {
   try {
-    const data = createWorkerSchema.parse(req.body); // 동일한 스키마 사용
+    const { username, password, name, team } = req.body;
+    
+    if (!username || !password || !name || !team) {
+      return res.status(400).json({ error: '모든 필드를 입력해주세요.' });
+    }
+
+    // 팀이 존재하는지 확인하고, 없으면 생성
+    let salesTeam = await storage.getSalesTeamByName(team);
+    if (!salesTeam) {
+      const teamCode = team === 'DX 1팀' ? 'DX01' : 'DX02';
+      salesTeam = await storage.createSalesTeam({
+        teamName: team,
+        teamCode,
+        description: `${team} 영업팀`
+      });
+    }
+
+    // 영업과장 생성
     const manager = await storage.createSalesManager({
-      username: data.username,
-      password: data.password,
-      name: data.name,
-      type: 'sales_manager'
+      teamId: salesTeam.id,
+      managerName: name,
+      managerCode: `${salesTeam.teamCode}_${username.toUpperCase()}`,
+      username,
+      password,
+      contactPhone: '',
+      email: ''
     });
+    
     res.json(manager);
   } catch (error: any) {
     res.status(400).json({ error: error.message });

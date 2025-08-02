@@ -57,6 +57,7 @@ export interface IStorage {
   createSalesTeam(data: CreateSalesTeamForm): Promise<SalesTeam>;
   getSalesTeams(): Promise<SalesTeam[]>;
   getSalesTeamById(id: number): Promise<SalesTeam | undefined>;
+  getSalesTeamByName(teamName: string): Promise<SalesTeam | undefined>;
   updateSalesTeam(id: number, data: UpdateSalesTeamForm): Promise<SalesTeam>;
   deleteSalesTeam(id: number): Promise<void>;
   
@@ -137,6 +138,13 @@ export class DatabaseStorage implements IStorage {
 
   async getSalesTeamById(id: number): Promise<SalesTeam | undefined> {
     const [team] = await db.select().from(salesTeams).where(eq(salesTeams.id, id));
+    return team;
+  }
+
+  async getSalesTeamByName(teamName: string): Promise<SalesTeam | undefined> {
+    const [team] = await db.select().from(salesTeams).where(
+      and(eq(salesTeams.teamName, teamName), eq(salesTeams.isActive, true))
+    );
     return team;
   }
 
