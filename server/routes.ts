@@ -316,6 +316,7 @@ router.post('/api/auth/logout', requireAuth, async (req: any, res) => {
 router.get('/api/auth/me', requireAuth, async (req: any, res) => {
   try {
     const session = req.session;
+    
     if (session.userType === 'admin') {
       const admin = await storage.getAdminById(session.userId);
       if (admin) {
@@ -330,6 +331,24 @@ router.get('/api/auth/me', requireAuth, async (req: any, res) => {
         });
       } else {
         res.status(404).json({ error: '사용자를 찾을 수 없습니다.' });
+      }
+    } else if (session.userType === 'sales_manager') {
+      const manager = await storage.getSalesManagerById(session.userId);
+      if (manager) {
+        res.json({
+          success: true,
+          user: {
+            id: manager.id,
+            name: manager.managerName,
+            username: manager.username,
+            userType: 'sales_manager',
+            teamId: manager.teamId,
+            managerCode: manager.managerCode,
+            position: manager.position
+          }
+        });
+      } else {
+        res.status(404).json({ error: '영업과장을 찾을 수 없습니다.' });
       }
     } else {
       const user = await storage.getUserById(session.userId);
