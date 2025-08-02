@@ -2194,12 +2194,16 @@ router.post('/api/service-plans/upload-excel', requireAdmin, pricingUpload.singl
         const planName = String(rowData['요금제명'] || rowData['planName'] || '').trim();
         const carrier = String(rowData['통신사'] || rowData['carrier'] || '').trim();
         
+        // 월요금 처리 - 콤마와 공백 제거 후 숫자 변환
+        const monthlyFeeRaw = String(rowData['월요금(원)'] || rowData['월요금'] || rowData['monthlyFee'] || '0');
+        const monthlyFee = parseInt(monthlyFeeRaw.replace(/[^0-9]/g, '')) || 0;
+        
         const planData: any = {
           planName: planName,
           carrier: carrier,
-          planType: String(rowData['요금제유형'] || rowData['planType'] || rowData['유형'] || '4G').trim(),
+          planType: String(rowData['요금제유형'] || rowData['planType'] || rowData['유형'] || 'LTE').trim(),
           dataAllowance: String(rowData['데이터제공량'] || rowData['dataAllowance'] || rowData['데이터'] || '').trim(),
-          monthlyFee: parseInt(String(rowData['월요금'] || rowData['monthlyFee'] || rowData['월요금(원)'] || 0)),
+          monthlyFee: monthlyFee,
           isActive: rowData['활성여부'] !== false && rowData['isActive'] !== false
         };
 

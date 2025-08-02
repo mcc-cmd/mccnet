@@ -660,8 +660,14 @@ export class DatabaseStorage implements IStorage {
 
   async createServicePlan(data: any): Promise<ServicePlan> {
     try {
+      console.log('Creating service plan:', data);
       const [result] = await db.insert(servicePlans).values({
-        ...data,
+        name: data.planName || data.name,
+        carrier: data.carrier,
+        planType: data.planType || 'LTE',
+        dataAllowance: data.dataAllowance || '',
+        monthlyFee: data.monthlyFee || 0,
+        isActive: data.isActive !== false,
         createdAt: new Date(),
         updatedAt: new Date(),
       }).returning();
