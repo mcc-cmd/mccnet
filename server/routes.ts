@@ -586,6 +586,21 @@ router.get('/api/admin/users', requireAdmin, async (req, res) => {
   }
 });
 
+router.post('/api/admin/users', requireAdmin, async (req, res) => {
+  try {
+    const { username, password, name, userType } = req.body;
+    
+    if (!username || !password || !name || !userType) {
+      return res.status(400).json({ error: '모든 필드를 입력해주세요.' });
+    }
+    
+    const user = await storage.createUser({ username, password, name, userType });
+    res.json(user);
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
 router.put('/api/admin/users/:id', requireAdmin, async (req, res) => {
   try {
     const id = parseInt(req.params.id);

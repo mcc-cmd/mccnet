@@ -1421,7 +1421,12 @@ export function AdminPanel() {
   };
 
   const handleCreateUser = (data: CreateUserForm) => {
-    createUserMutation.mutate(data);
+    // role을 userType으로 변환
+    const userData = {
+      ...data,
+      userType: data.role // role 필드를 userType으로 매핑
+    };
+    createUserMutation.mutate(userData);
   };
 
   // 사용자 수정 뮤테이션
@@ -2734,15 +2739,19 @@ export function AdminPanel() {
                               <Select onValueChange={field.onChange} defaultValue={field.value}>
                                 <FormControl>
                                   <SelectTrigger>
-                                    <SelectValue />
+                                    <SelectValue placeholder="계정 유형을 선택하세요" />
                                   </SelectTrigger>
                                 </FormControl>
                                 <SelectContent>
-                                  <SelectItem value="dealer_store">판매점 (읽기 전용)</SelectItem>
-                                  <SelectItem value="dealer_worker">근무자 (개통상태 관리)</SelectItem>
+                                  <SelectItem value="admin">관리자 (시스템 관리)</SelectItem>
+                                  <SelectItem value="worker" disabled>근무자 (개통업무) - 시스템에서 관리됨</SelectItem>
+                                  <SelectItem value="dealer" disabled>판매점 (접수) - 시스템에서 관리됨</SelectItem>
                                 </SelectContent>
                               </Select>
                               <FormMessage />
+                              <p className="text-sm text-gray-600 mt-1">
+                                근무자와 판매점 계정은 시스템에서 자동으로 관리됩니다.
+                              </p>
                             </FormItem>
                           )}
                         />
