@@ -331,8 +331,19 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateUserPassword(userId: number, newPassword: string): Promise<void> {
-    // 기존 사용자 시스템의 비밀번호 변경 (구현 필요시 추가)
-    throw new Error('일반 사용자 비밀번호 변경은 추후 구현 예정입니다.');
+    // 근무자 비밀번호 변경 (메모리 저장소에서)
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    
+    if (workerStore.has(userId)) {
+      const worker = workerStore.get(userId);
+      if (worker) {
+        worker.password = hashedPassword;
+        workerStore.set(userId, worker);
+        return;
+      }
+    }
+    
+    throw new Error('해당 사용자를 찾을 수 없습니다.');
   }
 
   async deleteSalesManager(managerId: number): Promise<void> {

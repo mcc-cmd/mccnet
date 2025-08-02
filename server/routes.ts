@@ -458,7 +458,7 @@ router.get('/api/admin/sales-managers', requireAdmin, async (req, res) => {
 });
 
 // 비밀번호 변경 API (관리자 패널용)
-router.post('/api/admin/change-password', requireAdmin, async (req, res) => {
+router.post('/api/admin/change-password', requireAdmin, async (req: any, res) => {
   try {
     const { userId, accountType, newPassword } = req.body;
     
@@ -470,12 +470,20 @@ router.post('/api/admin/change-password', requireAdmin, async (req, res) => {
       return res.status(400).json({ error: '비밀번호는 최소 6자리 이상이어야 합니다.' });
     }
 
+    // 시스템 관리자 권한 확인 - admin 계정만 허용
+    const currentUser = await storage.getAdminById(req.session.userId);
+    if (!currentUser || currentUser.username !== 'admin') {
+      return res.status(403).json({ error: '비밀번호 변경은 시스템 관리자(admin)만 가능합니다.' });
+    }
+
     if (accountType === 'admin') {
       await storage.updateAdminPassword(userId, newPassword);
     } else if (accountType === 'sales_manager') {
       await storage.updateSalesManagerPassword(userId, newPassword);
-    } else {
+    } else if (accountType === 'worker') {
       await storage.updateUserPassword(userId, newPassword);
+    } else {
+      return res.status(400).json({ error: '지원되지 않는 계정 유형입니다.' });
     }
 
     res.json({ success: true, message: '비밀번호가 성공적으로 변경되었습니다.' });
