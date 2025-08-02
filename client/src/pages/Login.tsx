@@ -43,7 +43,8 @@ export function Login() {
     try {
       const success = await login(formData);
       if (success) {
-        setLocation('/dashboard');
+        // 로그인 성공 시 페이지를 새로고침하여 App 컴포넌트가 새로운 인증 상태를 감지하도록 함
+        window.location.reload();
       } else {
         setError('아이디 또는 비밀번호가 올바르지 않습니다.');
       }
