@@ -693,50 +693,50 @@ export function Documents() {
             ) : documents && documents.length > 0 ? (
               <>
                 {/* Desktop Table View */}
-                <div className="hidden lg:block overflow-x-auto">
-                  <table className="w-full table-fixed divide-y divide-gray-300 text-sm">
+                <div className="hidden lg:block overflow-x-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
+                  <table className="w-full table-auto divide-y divide-gray-300 text-sm min-w-[1200px]">
                     <colgroup>
-                      <col className="w-16" />
-                      <col className="w-12" />
-                      <col className="w-16" />
-                      <col className="w-16" />
-                      <col className="w-10" />
-                      <col className="w-8" />
-                      <col className="w-14" />
-                      <col className="w-16" />
-                      <col className="w-18" />
-                      <col className="w-12" />
+                      <col className="w-[120px]" />
+                      <col className="w-[100px]" />
+                      <col className="w-[120px]" />
+                      <col className="w-[140px]" />
+                      <col className="w-[80px]" />
+                      <col className="w-[80px]" />
+                      <col className="w-[120px]" />
+                      <col className="w-[120px]" />
+                      <col className="w-[140px]" />
+                      <col className="w-[120px]" />
                     </colgroup>
                     <thead className="bg-gray-50">
                       <tr>
-                        <th className="px-1 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider truncate">
+                        <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                           접수일시
                         </th>
-                        <th className="px-1 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider truncate">
+                        <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                           고객명
                         </th>
-                        <th className="px-1 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider truncate">
+                        <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                           연락처
                         </th>
-                        <th className="px-1 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider truncate">
+                        <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                           판매점명
                         </th>
-                        <th className="px-1 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider truncate">
+                        <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                           통신사
                         </th>
-                        <th className="px-1 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider truncate">
+                        <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                           상태
                         </th>
-                        <th className="px-1 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider truncate">
+                        <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                           개통상태
                         </th>
-                        <th className="px-1 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider truncate">
+                        <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                           가입번호
                         </th>
-                        <th className="px-1 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider truncate">
+                        <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                           요금제
                         </th>
-                        <th className="px-1 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider truncate">
+                        <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                           작업
                         </th>
                       </tr>
@@ -744,37 +744,36 @@ export function Documents() {
                     <tbody className="bg-white divide-y divide-gray-200">
                       {documents.map((doc) => (
                         <tr key={doc.id} className="hover:bg-gray-50">
-                          <td className="px-1 py-1 text-xs font-medium text-gray-900">
-                            <div className="leading-tight break-words max-w-full">
+                          <td className="px-3 py-2 text-xs font-medium text-gray-900">
+                            <div className="leading-relaxed">
                               {formatReceptionDateTime(doc.uploadedAt)}
                             </div>
                           </td>
-                          <td className="px-1 py-1 text-xs text-gray-900">
-                            <div className="leading-tight break-words max-w-full">
+                          <td className="px-3 py-2 text-xs text-gray-900">
+                            <div className="leading-relaxed">
                               {doc.customerName}
                             </div>
                           </td>
-                          <td className="px-1 py-1 text-xs text-gray-900">
-                            <div className="leading-tight break-words max-w-full">
+                          <td className="px-3 py-2 text-xs text-gray-900">
+                            <div className="leading-relaxed">
                               {doc.customerPhone}
                             </div>
                           </td>
-                          <td className="px-1 py-1 text-xs text-gray-900">
-                            <div className="leading-tight break-words max-w-full">
-                              {doc.storeName || doc.contactCode || '-'}
+                          <td className="px-3 py-2 text-xs text-gray-900">
+                            <div className="leading-relaxed">
+                              {(doc as any).storeName || (doc as any).contactCode || '-'}
                             </div>
                           </td>
-
-                          <td className="px-1 py-1 text-xs text-gray-700">
-                            <div className="leading-tight break-words max-w-full">
+                          <td className="px-3 py-2 text-xs text-gray-700">
+                            <div className="leading-relaxed">
                               {(doc as any).carrier || '-'}
                             </div>
                           </td>
-                          <td className="px-1 py-1">
+                          <td className="px-3 py-2">
                             {getStatusBadge(doc.status)}
                           </td>
-                          <td className="px-1 py-1">
-                            <div className="space-y-1">
+                          <td className="px-3 py-2">
+                            <div className="space-y-2">
                               {getActivationStatusBadge((doc as any).activationStatus || '대기')}
                               
                               {/* 보완 메모 표시 - 모든 상태에서 표시 */}
@@ -809,17 +808,17 @@ export function Documents() {
                               )}
                             </div>
                           </td>
-                          <td className="px-1 py-1 text-xs text-gray-900">
-                            <div className="leading-tight break-words max-w-full">
+                          <td className="px-3 py-2 text-xs text-gray-900">
+                            <div className="leading-relaxed">
                               {(doc as any).subscriptionNumber || '-'}
                             </div>
                           </td>
-                          <td className="px-1 py-1 text-xs text-gray-900">
-                            <div className="leading-tight break-words max-w-full">
+                          <td className="px-3 py-2 text-xs text-gray-900">
+                            <div className="leading-relaxed">
                               {servicePlans?.find(plan => plan.id.toString() === (doc as any).servicePlanId?.toString())?.planName || '-'}
                             </div>
                           </td>
-                          <td className="px-1 py-1">
+                          <td className="px-3 py-2">
                             <div className="flex flex-wrap gap-1">
                               {doc.filePath && (
                                 <Button
