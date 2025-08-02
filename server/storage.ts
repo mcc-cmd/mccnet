@@ -43,8 +43,14 @@ export interface IStorage {
   // 기존 시스템과의 호환성을 위한 메서드들
   getContactCodes(): Promise<any[]>;
   getServicePlans(): Promise<any[]>;
+  createServicePlan(data: any): Promise<any>;
+  updateServicePlan(id: number, data: any): Promise<any>;
+  deleteServicePlan(id: number): Promise<void>;
   getServicePlansByCarrier(carrier: string): Promise<any[]>;
   getAdditionalServices(): Promise<any[]>;
+  createAdditionalService(data: any): Promise<any>;
+  updateAdditionalService(id: number, data: any): Promise<any>;
+  deleteAdditionalService(id: number): Promise<void>;
   getDealers(): Promise<any[]>;
   getUsers(): Promise<any[]>;
   getAllUsers(): Promise<any[]>;
@@ -573,6 +579,23 @@ export class DatabaseStorage implements IStorage {
   async getServicePlans(): Promise<any[]> {
     return [];
   }
+
+  async createServicePlan(data: any): Promise<any> {
+    // 임시로 빈 객체 반환 (실제 구현 필요)
+    console.log('Creating service plan:', data);
+    return { id: Date.now(), ...data };
+  }
+
+  async updateServicePlan(id: number, data: any): Promise<any> {
+    // 임시로 빈 객체 반환 (실제 구현 필요)
+    console.log('Updating service plan:', id, data);
+    return { id, ...data };
+  }
+
+  async deleteServicePlan(id: number): Promise<void> {
+    // 임시 구현 (실제 구현 필요)
+    console.log('Deleting service plan:', id);
+  }
   
   async getServicePlansByCarrier(carrier: string): Promise<any[]> {
     return [];
@@ -580,6 +603,23 @@ export class DatabaseStorage implements IStorage {
   
   async getAdditionalServices(): Promise<any[]> {
     return [];
+  }
+
+  async createAdditionalService(data: any): Promise<any> {
+    // 임시로 빈 객체 반환 (실제 구현 필요)
+    console.log('Creating additional service:', data);
+    return { id: Date.now(), ...data };
+  }
+
+  async updateAdditionalService(id: number, data: any): Promise<any> {
+    // 임시로 빈 객체 반환 (실제 구현 필요)
+    console.log('Updating additional service:', id, data);
+    return { id, ...data };
+  }
+
+  async deleteAdditionalService(id: number): Promise<void> {
+    // 임시 구현 (실제 구현 필요)
+    console.log('Deleting additional service:', id);
   }
   
   async getDealers(): Promise<any[]> {
