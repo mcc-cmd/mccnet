@@ -995,6 +995,12 @@ export function AdminPanel() {
     queryFn: () => apiRequest('/api/admin/sales-managers'),
   });
 
+  // Carriers Query for contact code form
+  const { data: carriersList = [] } = useQuery({
+    queryKey: ['/api/carriers'],
+    queryFn: () => apiRequest('/api/carriers'),
+  });
+
   // Settlement unit pricing queries
   const { data: settlementPrices, isLoading: settlementPricesLoading } = useQuery({
     queryKey: ['/api/settlement-unit-prices'],
@@ -2594,7 +2600,7 @@ export function AdminPanel() {
                               <SelectValue placeholder="통신사를 선택하세요" />
                             </SelectTrigger>
                             <SelectContent>
-                              {carriers && carriers.map((carrier: any) => (
+                              {carriersList && carriersList.map((carrier: any) => (
                                 <SelectItem key={carrier.id} value={carrier.name}>
                                   {carrier.name}
                                 </SelectItem>
