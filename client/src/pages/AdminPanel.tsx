@@ -860,6 +860,7 @@ export function AdminPanel() {
   const [newContactCode, setNewContactCode] = useState('');
   const [newDealerName, setNewDealerName] = useState('');
   const [newCarrier, setNewCarrier] = useState('');
+  const [newSalesManagerId, setNewSalesManagerId] = useState<number | null>(null);
   const contactCodeExcelInputRef = useRef<HTMLInputElement>(null);
   
   // Analytics dialog states
@@ -986,6 +987,12 @@ export function AdminPanel() {
   const { data: contactCodes, isLoading: contactCodesLoading } = useQuery({
     queryKey: ['/api/contact-codes'],
     queryFn: () => apiRequest('/api/contact-codes') as Promise<ContactCode[]>,
+  });
+
+  // Sales Managers Query for contact code assignment
+  const { data: salesManagersList } = useQuery({
+    queryKey: ['/api/admin/sales-managers'],
+    queryFn: () => apiRequest('/api/admin/sales-managers'),
   });
 
   // Settlement unit pricing queries
@@ -1870,7 +1877,7 @@ export function AdminPanel() {
 
   // Contact Code Mutations
   const createContactCodeMutation = useMutation({
-    mutationFn: (data: { code: string; dealerName: string; carrier: string }) => 
+    mutationFn: (data: { code: string; dealerName: string; carrier: string; salesManagerId?: number | null; salesManagerName?: string | null }) => 
       apiRequest('/api/contact-codes', {
         method: 'POST',
         body: JSON.stringify(data),
@@ -1881,6 +1888,7 @@ export function AdminPanel() {
       setNewContactCode('');
       setNewDealerName('');
       setNewCarrier('');
+      setNewSalesManagerId(null);
       toast({
         title: '성공',
         description: '접점코드가 성공적으로 생성되었습니다.',
@@ -2071,16 +2079,20 @@ export function AdminPanel() {
     if (!newContactCode || !newDealerName || !newCarrier) {
       toast({
         title: '오류',
-        description: '모든 필드를 입력해주세요.',
+        description: '접점코드, 판매점명, 통신사를 모두 입력해주세요.',
         variant: 'destructive',
       });
       return;
     }
 
+    const selectedSalesManager = salesManagersList?.find((manager: any) => manager.id === newSalesManagerId);
+
     createContactCodeMutation.mutate({
       code: newContactCode,
       dealerName: newDealerName,
       carrier: newCarrier,
+      salesManagerId: newSalesManagerId,
+      salesManagerName: selectedSalesManager?.managerName || null,
     });
   };
 
@@ -2582,19 +2594,30 @@ export function AdminPanel() {
                               <SelectValue placeholder="통신사를 선택하세요" />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="SK텔링크">SK텔링크</SelectItem>
-                              <SelectItem value="SK프리티">SK프리티</SelectItem>
-                              <SelectItem value="SK스테이지파이브">SK스테이지파이브</SelectItem>
-                              <SelectItem value="KT엠모바일">KT엠모바일</SelectItem>
-                              <SelectItem value="KT스카이라이프">KT스카이라이프</SelectItem>
-                              <SelectItem value="KT스테이지파이브">KT스테이지파이브</SelectItem>
-                              <SelectItem value="KT코드모바일">KT코드모바일</SelectItem>
-                              <SelectItem value="LG미디어로그">LG미디어로그</SelectItem>
-                              <SelectItem value="LG헬로모바일">LG헬로모바일</SelectItem>
-                              <SelectItem value="LG프리티">LG프리티</SelectItem>
-                              <SelectItem value="LG밸류컴">LG밸류컴</SelectItem>
-                              <SelectItem value="스마텔LG">스마텔LG</SelectItem>
-                              <SelectItem value="KT">KT</SelectItem>
+                              {carriers && carriers.map((carrier: any) => (
+                                <SelectItem key={carrier.id} value={carrier.name}>
+                                  {carrier.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div>
+                          <Label htmlFor="salesManager">담당 영업과장 (선택사항)</Label>
+                          <Select 
+                            value={newSalesManagerId?.toString() || ''} 
+                            onValueChange={(value) => setNewSalesManagerId(value ? parseInt(value) : null)}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="담당 영업과장을 선택하세요" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="">선택 안함</SelectItem>
+                              {salesManagersList && salesManagersList.map((manager: any) => (
+                                <SelectItem key={manager.id} value={manager.id.toString()}>
+                                  {manager.managerName} ({manager.managerCode || manager.teamName})
+                                </SelectItem>
+                              ))}
                             </SelectContent>
                           </Select>
                         </div>

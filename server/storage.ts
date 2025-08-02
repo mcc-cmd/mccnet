@@ -213,6 +213,16 @@ export class DatabaseStorage implements IStorage {
     return manager;
   }
 
+  async getSalesManagers(): Promise<SalesManager[]> {
+    try {
+      const managers = await db.select().from(salesManagers).where(eq(salesManagers.isActive, true));
+      return managers;
+    } catch (error) {
+      console.error('getSalesManagers error:', error);
+      return [];
+    }
+  }
+
   async getSalesManagersByTeamId(teamId: number): Promise<SalesManager[]> {
     return await db.select().from(salesManagers)
       .where(and(eq(salesManagers.teamId, teamId), eq(salesManagers.isActive, true)))
@@ -422,9 +432,37 @@ export class DatabaseStorage implements IStorage {
     return admin;
   }
   
-  // 기존 시스템과의 호환성을 위한 빈 메서드들 (임시)
+  // 접점 코드 관련 메서드들
+  async findContactCodeByCode(contactCode: string): Promise<any> {
+    // 실제 데이터베이스가 있다면 여기서 검색
+    console.log('Finding contact code:', contactCode);
+    return null; // 임시로 null 반환
+  }
+
   async getContactCodes(): Promise<any[]> {
+    // 실제 구현 시 데이터베이스에서 접점 코드 목록을 조회
     return [];
+  }
+
+  async createContactCode(contactCodeData: any): Promise<any> {
+    // 실제 데이터베이스가 있다면 여기서 생성
+    console.log('Creating contact code:', contactCodeData);
+    
+    const newContactCode = {
+      id: Date.now(),
+      code: contactCodeData.code,
+      dealerName: contactCodeData.dealerName,
+      carrier: contactCodeData.carrier,
+      carrierId: contactCodeData.carrierId,
+      carrierName: contactCodeData.carrierName,
+      contactCode: contactCodeData.contactCode || contactCodeData.code,
+      salesManagerId: contactCodeData.salesManagerId || null,
+      salesManagerName: contactCodeData.salesManagerName || null,
+      isActive: contactCodeData.isActive !== false,
+      createdAt: new Date()
+    };
+    
+    return newContactCode;
   }
   
   async getServicePlans(): Promise<any[]> {

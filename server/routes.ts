@@ -436,7 +436,7 @@ router.post('/api/admin/create-sales-manager', requireAdmin, async (req, res) =>
 });
 
 // 영업과장 목록 조회 (관리자 패널용)
-router.get('/api/admin/sales-managers', requireAdmin, async (req, res) => {
+router.get('/api/admin/sales-managers', requireAuth, async (req, res) => {
   try {
     const managers = await storage.getSalesManagers();
     // 팀 정보를 포함한 영업과장 목록 반환
@@ -2677,12 +2677,14 @@ router.get('/api/contact-codes/search/:code', requireAuth, async (req: any, res)
 
 router.post('/api/contact-codes', requireAuth, async (req: any, res) => {
   try {
-    const { code, dealerName, carrier, isActive } = req.body;
+    const { code, dealerName, carrier, isActive, salesManagerId, salesManagerName } = req.body;
     const contactCode = await storage.createContactCode({
       code,
       dealerName,
       carrier,
-      isActive: isActive !== undefined ? isActive : true
+      isActive: isActive !== undefined ? isActive : true,
+      salesManagerId: salesManagerId || null,
+      salesManagerName: salesManagerName || null
     });
     res.json(contactCode);
   } catch (error: any) {
