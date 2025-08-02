@@ -2611,14 +2611,14 @@ export function AdminPanel() {
                         <div>
                           <Label htmlFor="salesManager">담당 영업과장 (선택사항)</Label>
                           <Select 
-                            value={newSalesManagerId?.toString() || ''} 
-                            onValueChange={(value) => setNewSalesManagerId(value ? parseInt(value) : null)}
+                            value={newSalesManagerId?.toString() || 'none'} 
+                            onValueChange={(value) => setNewSalesManagerId(value === 'none' ? null : parseInt(value))}
                           >
                             <SelectTrigger>
                               <SelectValue placeholder="담당 영업과장을 선택하세요" />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="">선택 안함</SelectItem>
+                              <SelectItem value="none">선택 안함</SelectItem>
                               {salesManagersList && salesManagersList.map((manager: any) => (
                                 <SelectItem key={manager.id} value={manager.id.toString()}>
                                   {manager.managerName} ({manager.managerCode || manager.teamName})
