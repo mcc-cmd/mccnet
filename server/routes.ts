@@ -1965,6 +1965,138 @@ router.delete('/api/settlements/:id', requireAdmin, async (req: any, res) => {
   }
 });
 
+// Sales statistics API for sales managers
+router.get('/api/sales-stats', requireAuth, async (req: any, res) => {
+  try {
+    const currentUser = req.user;
+    console.log('Sales stats API called by user:', currentUser?.id, currentUser?.userType);
+    
+    // 전체 문서 중 개통완료 상태인 것들을 가져옴
+    const documents = await storage.getDocumentsByStatus('개통완료');
+    console.log('Found activated documents:', documents.length);
+    
+    // 접점코드 목록을 가져옴
+    const contactCodes = await storage.getContactCodes();
+    console.log('Found contact codes:', contactCodes.length);
+    
+    // 영업과장 목록을 가져옴
+    const salesManagers = await storage.getSalesManagers();
+    console.log('Found sales managers:', salesManagers.length);
+    
+    const currentDate = new Date();
+    const currentMonth = currentDate.getMonth();
+    const currentYear = currentDate.getFullYear();
+    
+    // 이번 달 문서들 필터링
+    const monthlyDocuments = documents.filter(doc => {
+      if (!doc.activatedAt) return false;
+      const docDate = new Date(doc.activatedAt);
+      return docDate.getMonth() === currentMonth && docDate.getFullYear() === currentYear;
+    });
+    
+    // 팀별 통계
+    const teamStats = [];
+    const teams = ['DX 1팀', 'DX 2팀'];
+    
+    for (const team of teams) {
+      const teamManagers = salesManagers.filter(sm => sm.team === team);
+      const teamContactCodes = contactCodes.filter(cc => 
+        teamManagers.some(tm => tm.id === cc.salesManagerId)
+      );
+      
+      const teamDocuments = documents.filter(doc =>
+        teamContactCodes.some(cc => cc.code === doc.contactCode)
+      );
+      
+      const teamMonthlyDocuments = monthlyDocuments.filter(doc =>
+        teamContactCodes.some(cc => cc.code === doc.contactCode)
+      );
+      
+      teamStats.push({
+        team,
+        totalActivations: teamDocuments.length,
+        monthlyActivations: teamMonthlyDocuments.length,
+        salesManagers: teamManagers.map(sm => sm.name)
+      });
+    }
+    
+    // 영업과장별 통계
+    const salesManagerStats = [];
+    
+    for (const manager of salesManagers) {
+      const managerContactCodes = contactCodes.filter(cc => cc.salesManagerId === manager.id);
+      const managerDocuments = documents.filter(doc =>
+        managerContactCodes.some(cc => cc.code === doc.contactCode)
+      );
+      
+      const managerMonthlyDocuments = monthlyDocuments.filter(doc =>
+        managerContactCodes.some(cc => cc.code === doc.contactCode)
+      );
+      
+      // 판매점별 통계
+      const dealerStats = [];
+      for (const contactCode of managerContactCodes) {
+        const dealerDocuments = documents.filter(doc => doc.contactCode === contactCode.code);
+        const dealerMonthlyDocuments = monthlyDocuments.filter(doc => doc.contactCode === contactCode.code);
+        
+        if (dealerDocuments.length > 0 || dealerMonthlyDocuments.length > 0) {
+          dealerStats.push({
+            dealerName: contactCode.dealerName,
+            contactCode: contactCode.code,
+            activations: dealerDocuments.length,
+            monthlyActivations: dealerMonthlyDocuments.length,
+            carrier: contactCode.carrier
+          });
+        }
+      }
+      
+      salesManagerStats.push({
+        id: manager.id,
+        name: manager.name,
+        team: manager.team,
+        totalActivations: managerDocuments.length,
+        monthlyActivations: managerMonthlyDocuments.length,
+        dealers: dealerStats
+      });
+    }
+    
+    // 판매점별 통계 (전체)
+    const dealerStats = [];
+    for (const contactCode of contactCodes) {
+      const dealerDocuments = documents.filter(doc => doc.contactCode === contactCode.code);
+      const dealerMonthlyDocuments = monthlyDocuments.filter(doc => doc.contactCode === contactCode.code);
+      
+      if (dealerDocuments.length > 0 || dealerMonthlyDocuments.length > 0) {
+        dealerStats.push({
+          dealerName: contactCode.dealerName,
+          contactCode: contactCode.code,
+          activations: dealerDocuments.length,
+          monthlyActivations: dealerMonthlyDocuments.length,
+          carrier: contactCode.carrier
+        });
+      }
+    }
+    
+    const stats = {
+      totalActivations: documents.length,
+      monthlyActivations: monthlyDocuments.length,
+      teamStats,
+      salesManagerStats,
+      dealerStats
+    };
+    
+    console.log('Sending sales stats:', JSON.stringify(stats, null, 2));
+    res.json(stats);
+    
+  } catch (error: any) {
+    console.error('Sales stats API error:', error);
+    res.status(500).json({ 
+      error: '실적 데이터를 불러오는 중 오류가 발생했습니다.',
+      details: error.message 
+    });
+  }
+});
+
 // Service Plans management routes (admin only)
 
 router.post('/api/service-plans', requireAdmin, async (req: any, res) => {

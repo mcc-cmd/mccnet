@@ -1,189 +1,295 @@
-import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useQuery } from '@tanstack/react-query';
+import { apiRequest } from '@/lib/queryClient';
+import { useAuth } from '@/lib/auth';
 import { 
-  Users, 
+  BarChart, 
+  Bar, 
+  XAxis, 
+  YAxis, 
+  CartesianGrid, 
+  Tooltip, 
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell
+} from 'recharts';
+import { 
   TrendingUp, 
-  Calendar,
-  Building2,
-  BarChart3,
-  LogOut,
-  User
+  Users, 
+  ShoppingCart, 
+  Award,
+  ChevronRight,
+  ArrowLeft
 } from 'lucide-react';
 
-interface SalesManagerUser {
-  id: number;
-  name: string;
-  type: string;
+interface SalesStats {
+  totalActivations: number;
+  monthlyActivations: number;
+  teamStats: TeamStats[];
+  salesManagerStats: SalesManagerStats[];
+  dealerStats: DealerStats[];
 }
 
+interface TeamStats {
+  team: string;
+  totalActivations: number;
+  monthlyActivations: number;
+  salesManagers: SalesManagerStats[];
+}
+
+interface SalesManagerStats {
+  id: number;
+  name: string;
+  team: string;
+  totalActivations: number;
+  monthlyActivations: number;
+  dealers: DealerStats[];
+}
+
+interface DealerStats {
+  dealerName: string;
+  contactCode: string;
+  activations: number;
+  monthlyActivations: number;
+  carrier: string;
+}
+
+const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8'];
+
 export default function SalesManagerDashboard() {
-  const [user, setUser] = useState<SalesManagerUser | null>(null);
-  const [stats, setStats] = useState({
-    totalTeamMembers: 0,
-    monthlyActivations: 0,
-    activeDeals: 0
+  const { user } = useAuth();
+  const [selectedSalesManager, setSelectedSalesManager] = useState<SalesManagerStats | null>(null);
+  const [viewMode, setViewMode] = useState<'overview' | 'manager' | 'dealer'>('overview');
+
+  const { data: salesStats, isLoading } = useQuery({
+    queryKey: ['/api/sales-stats'],
+    queryFn: () => apiRequest('/api/sales-stats') as Promise<SalesStats>,
   });
 
-  useEffect(() => {
-    // localStorage에서 사용자 정보 가져오기
-    try {
-      const authData = localStorage.getItem('auth-storage');
-      if (authData) {
-        const parsed = JSON.parse(authData);
-        setUser(parsed.state?.user);
-      }
-    } catch (error) {
-      console.error('Failed to parse user data:', error);
-    }
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 p-6">
+        <div className="text-center py-8">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-accent mx-auto"></div>
+          <p className="mt-2 text-sm text-gray-500">실적 데이터 로딩 중...</p>
+        </div>
+      </div>
+    );
+  }
 
-    // 임시 통계 데이터
-    setStats({
-      totalTeamMembers: 8,
-      monthlyActivations: 45,
-      activeDeals: 12
-    });
-  }, []);
+  const currentUserTeam = user?.team || '';
+  const isTeamLeader = user?.name === '황병준' || user?.name === '김영수'; // 팀장 확인
 
-  const handleLogout = () => {
-    localStorage.removeItem('auth-storage');
-    window.location.href = '/sales-manager-login';
-  };
+  const renderOverview = () => (
+    <div className="space-y-6">
+      {/* 전체 통계 카드 */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">총 개통 건수</CardTitle>
+            <ShoppingCart className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{salesStats?.totalActivations || 0}</div>
+            <p className="text-xs text-muted-foreground">누적 개통 건수</p>
+          </CardContent>
+        </Card>
 
-  const handleBackToLogin = () => {
-    window.location.href = '/sales-manager-login';
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">이번 달 개통</CardTitle>
+            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{salesStats?.monthlyActivations || 0}</div>
+            <p className="text-xs text-muted-foreground">이번 달 실적</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">영업과장 수</CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{salesStats?.salesManagerStats.length || 0}</div>
+            <p className="text-xs text-muted-foreground">활성 영업과장</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">판매점 수</CardTitle>
+            <Award className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{salesStats?.dealerStats.length || 0}</div>
+            <p className="text-xs text-muted-foreground">등록된 판매점</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* 팀별 실적 (팀장만 볼 수 있음) */}
+      {isTeamLeader && salesStats?.teamStats && (
+        <Card>
+          <CardHeader>
+            <CardTitle>팀별 실적</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {salesStats.teamStats.map((team) => (
+                <div key={team.team} className="border rounded-lg p-4">
+                  <div className="flex justify-between items-center mb-2">
+                    <h3 className="font-medium">{team.team}</h3>
+                    <Badge variant="outline">
+                      총 {team.totalActivations}건
+                    </Badge>
+                  </div>
+                  <div className="text-sm text-gray-600">
+                    이번 달: {team.monthlyActivations}건
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* 영업과장별 실적 */}
+      <Card>
+        <CardHeader>
+          <CardTitle>영업과장별 실적</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {salesStats?.salesManagerStats
+              .filter(manager => isTeamLeader || manager.name === user?.name)
+              .map((manager) => (
+              <div key={manager.id} className="border rounded-lg p-4">
+                <div className="flex justify-between items-center">
+                  <div>
+                    <h3 className="font-medium">{manager.name}</h3>
+                    <p className="text-sm text-gray-600">{manager.team}</p>
+                    <div className="mt-2 space-y-1">
+                      <div className="text-sm">
+                        <span className="text-gray-500">총 개통:</span> {manager.totalActivations}건
+                      </div>
+                      <div className="text-sm">
+                        <span className="text-gray-500">이번 달:</span> {manager.monthlyActivations}건
+                      </div>
+                    </div>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setSelectedSalesManager(manager);
+                      setViewMode('manager');
+                    }}
+                  >
+                    자세히 보기 <ChevronRight className="ml-1 h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+
+  const renderManagerDetail = () => {
+    if (!selectedSalesManager) return null;
+
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center space-x-4">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setViewMode('overview')}
+          >
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            뒤로 가기
+          </Button>
+          <div>
+            <h2 className="text-xl font-bold">{selectedSalesManager.name} 실적</h2>
+            <p className="text-gray-600">{selectedSalesManager.team}</p>
+          </div>
+        </div>
+
+        {/* 개별 통계 */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-sm font-medium">총 개통 건수</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{selectedSalesManager.totalActivations}</div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-sm font-medium">이번 달 개통</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{selectedSalesManager.monthlyActivations}</div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* 판매점별 실적 */}
+        <Card>
+          <CardHeader>
+            <CardTitle>판매점별 실적</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {selectedSalesManager.dealers.map((dealer, index) => (
+                <div key={`${dealer.contactCode}-${index}`} className="border rounded-lg p-4">
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <h3 className="font-medium">{dealer.dealerName}</h3>
+                      <p className="text-sm text-gray-600">접점코드: {dealer.contactCode}</p>
+                      <Badge variant="outline" className="mt-1">{dealer.carrier}</Badge>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-lg font-semibold">{dealer.activations}건</div>
+                      <div className="text-sm text-gray-600">이번 달: {dealer.monthlyActivations}건</div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+              {selectedSalesManager.dealers.length === 0 && (
+                <div className="text-center py-8 text-gray-500">
+                  등록된 판매점이 없습니다.
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      {/* 헤더 */}
-      <div className="bg-white dark:bg-gray-800 shadow">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-6">
-            <div className="flex items-center">
-              <Building2 className="h-8 w-8 text-primary mr-3" />
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-                  영업과장 대시보드
-                </h1>
-                <p className="text-sm text-gray-500 dark:text-gray-400">
-                  영업 실적 관리 시스템
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center space-x-4">
-              {user && (
-                <div className="flex items-center space-x-2">
-                  <User className="h-5 w-5 text-gray-500" />
-                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                    {user.name}님
-                  </span>
-                  <Badge variant="secondary">영업과장</Badge>
-                </div>
-              )}
-              <Button variant="outline" onClick={handleLogout}>
-                <LogOut className="h-4 w-4 mr-2" />
-                로그아웃
-              </Button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* 메인 콘텐츠 */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* 환영 메시지 */}
-        <div className="mb-8">
-          <h2 className="text-3xl font-bold text-gray-900 dark:text-white">
-            안녕하세요, {user?.name || '사용자'}님!
-          </h2>
-          <p className="mt-2 text-gray-600 dark:text-gray-400">
-            오늘도 좋은 하루 되세요. 팀의 영업 현황을 확인해보세요.
+    <div className="min-h-screen bg-gray-50">
+      <div className="container mx-auto p-6">
+        <div className="mb-6">
+          <h1 className="text-2xl font-bold text-gray-900">영업 실적 대시보드</h1>
+          <p className="text-gray-600">
+            {user?.name}님의 실적 현황을 확인하세요
           </p>
         </div>
 
-        {/* 통계 카드 */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">팀 구성원</CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.totalTeamMembers}명</div>
-              <p className="text-xs text-muted-foreground">
-                활성 영업 담당자
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">이번 달 개통</CardTitle>
-              <TrendingUp className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.monthlyActivations}건</div>
-              <p className="text-xs text-muted-foreground">
-                +12% 전월 대비
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">진행 중 건수</CardTitle>
-              <Calendar className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.activeDeals}건</div>
-              <p className="text-xs text-muted-foreground">
-                처리 대기 중
-              </p>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* 주요 기능 */}
-        <div className="grid grid-cols-1 lg:grid-cols-1 gap-6 max-w-2xl mx-auto">
-          <Card>
-            <CardHeader>
-              <CardTitle>팀 성과 관리</CardTitle>
-              <CardDescription>
-                팀원들의 영업 실적과 성과를 관리합니다
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <Button className="w-full" variant="outline">
-                <BarChart3 className="h-4 w-4 mr-2" />
-                팀 실적 현황
-              </Button>
-              <Button className="w-full" variant="outline">
-                <Users className="h-4 w-4 mr-2" />
-                팀원 관리
-              </Button>
-              <Button className="w-full" variant="outline">
-                <TrendingUp className="h-4 w-4 mr-2" />
-                성과 분석
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* 임시 메시지 */}
-        <div className="mt-8 p-6 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-          <h3 className="text-lg font-semibold text-blue-900 dark:text-blue-100 mb-2">
-            시스템 개발 중
-          </h3>
-          <p className="text-blue-700 dark:text-blue-300 mb-4">
-            영업과장 전용 기능들이 단계적으로 추가될 예정입니다. 
-            현재는 로그인 시스템과 기본 대시보드가 구현되어 있습니다.
-          </p>
-          <Button onClick={handleBackToLogin} variant="outline">
-            로그인 페이지로 돌아가기
-          </Button>
-        </div>
+        {viewMode === 'overview' && renderOverview()}
+        {viewMode === 'manager' && renderManagerDetail()}
       </div>
     </div>
   );

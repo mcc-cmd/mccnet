@@ -39,6 +39,17 @@ function AppRoutes() {
     return <Login />;
   }
 
+  // 영업과장은 실적 대시보드로 리다이렉트
+  if (user?.userType === 'sales_manager') {
+    return (
+      <Switch>
+        <Route path="/" component={() => <Redirect to="/sales-manager-dashboard" />} />
+        <Route path="/sales-manager-dashboard" component={SalesManagerDashboard} />
+        <Route component={() => <Redirect to="/sales-manager-dashboard" />} />
+      </Switch>
+    );
+  }
+
   return (
     <Switch>
       <Route path="/" component={() => <Redirect to="/dashboard" />} />
@@ -71,9 +82,8 @@ function AppRoutes() {
 function SalesManagerRoutes() {
   return (
     <Switch>
-      <Route path="/sales-manager-login" component={SalesManagerLogin} />
       <Route path="/sales-manager-dashboard" component={SalesManagerDashboard} />
-      <Route component={() => <Redirect to="/sales-manager-login" />} />
+      <Route component={() => <Redirect to="/sales-manager-dashboard" />} />
     </Switch>
   );
 }
