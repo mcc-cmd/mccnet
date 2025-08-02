@@ -43,6 +43,7 @@ export interface IStorage {
   getAdditionalServices(): Promise<any[]>;
   getDealers(): Promise<any[]>;
   getUsers(): Promise<any[]>;
+  getAllUsers(): Promise<any[]>;
   getDocuments(): Promise<any[]>;
   getDocumentTemplates(): Promise<any[]>;
   getSettlementUnitPrices(): Promise<any[]>;
@@ -372,7 +373,46 @@ export class DatabaseStorage implements IStorage {
   }
   
   async getUsers(): Promise<any[]> {
-    return [];
+    // 통합 사용자 목록 반환 (관리자, 영업과장 통합)
+    const adminList = await db.select().from(admins).where(eq(admins.isActive, true));
+    const salesManagerList = await db.select({
+      id: salesManagers.id,
+      username: salesManagers.username,
+      name: salesManagers.managerName,
+      createdAt: salesManagers.createdAt,
+      teamId: salesManagers.teamId,
+      isActive: salesManagers.isActive
+    }).from(salesManagers)
+      .leftJoin(salesTeams, eq(salesManagers.teamId, salesTeams.id))
+      .where(eq(salesManagers.isActive, true));
+
+    // 통합 사용자 목록 생성
+    const allUsers = [
+      ...adminList.map(admin => ({
+        id: admin.id,
+        username: admin.username,
+        displayName: admin.name,
+        userType: 'admin' as const,
+        accountType: 'admin' as const,
+        affiliation: '시스템',
+        createdAt: admin.createdAt
+      })),
+      ...salesManagerList.map(manager => ({
+        id: manager.id,
+        username: manager.username,
+        displayName: manager.name,
+        userType: 'sales_manager' as const,
+        accountType: 'sales_manager' as const,
+        affiliation: manager.teamId === 1 ? 'DX 1팀' : manager.teamId === 2 ? 'DX 2팀' : '기타',
+        createdAt: manager.createdAt
+      }))
+    ];
+
+    return allUsers;
+  }
+
+  async getAllUsers(): Promise<any[]> {
+    return this.getUsers();
   }
   
   async getDocuments(): Promise<any[]> {

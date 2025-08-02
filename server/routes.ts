@@ -579,7 +579,7 @@ router.get('/api/admin/kp-info', requireAdmin, async (req, res) => {
 
 router.get('/api/admin/users', requireAdmin, async (req, res) => {
   try {
-    const users = await storage.getAllUsers();
+    const users = await storage.getUsers();
     res.json(users);
   } catch (error: any) {
     res.status(500).json({ error: error.message });
