@@ -34,16 +34,18 @@ const queryClient = new QueryClient({
 });
 
 function AppRoutes() {
-  const { isAuthenticated, user, checkAuth } = useAuth();
+  const { isAuthenticated, user, checkAuth, sessionId } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const initAuth = async () => {
-      await checkAuth();
+      if (sessionId) {
+        await checkAuth();
+      }
       setIsLoading(false);
     };
     initAuth();
-  }, [checkAuth]);
+  }, [sessionId]); // checkAuth 의존성 제거하여 무한 루프 방지
 
   if (isLoading) {
     return (

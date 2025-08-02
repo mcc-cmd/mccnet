@@ -99,17 +99,28 @@ export const useAuth = create<AuthState>()(
 
       checkAuth: async () => {
         const { sessionId } = get();
-        if (!sessionId) return false;
+        if (!sessionId) {
+          set({
+            user: null,
+            sessionId: null,
+            isAuthenticated: false,
+          });
+          return false;
+        }
 
         try {
+          console.log('Checking auth with sessionId:', sessionId ? 'exists' : 'missing');
           const response = await fetch('/api/auth/me', {
             headers: {
               'Authorization': `Bearer ${sessionId}`,
             },
           });
 
+          console.log('Auth check response:', response.status, response.ok);
+
           if (response.ok) {
             const data: AuthResponse = await response.json();
+            console.log('Auth check data:', data);
             if (data.success && data.user) {
               set({
                 user: data.user,
@@ -117,21 +128,22 @@ export const useAuth = create<AuthState>()(
               });
               return true;
             }
+          } else {
+            console.log('Auth check failed:', response.status);
           }
           
-          set({
-            user: null,
-            sessionId: null,
-            isAuthenticated: false,
-          });
+          // 인증 실패 시에만 세션 정보 삭제
+          if (response.status === 401) {
+            set({
+              user: null,
+              sessionId: null,
+              isAuthenticated: false,
+            });
+          }
           return false;
         } catch (error) {
           console.error('Auth check error:', error);
-          set({
-            user: null,
-            sessionId: null,
-            isAuthenticated: false,
-          });
+          // 네트워크 오류 시에는 세션 정보를 유지
           return false;
         }
       },
