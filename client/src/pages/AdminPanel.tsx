@@ -1668,9 +1668,15 @@ export function AdminPanel() {
       queryClient.invalidateQueries({ queryKey: ['/api/service-plans'] });
       queryClient.invalidateQueries({ queryKey: ['/api/settlement-prices'] });
       setSettlementPricingFile(null);
+      
+      let description = `정산단가 ${data.processed || 0}건이 성공적으로 처리되었습니다.`;
+      if (data.duplicatesSkipped > 0) {
+        description += ` (${data.duplicatesSkipped}개 중복건 제외)`;
+      }
+      
       toast({
         title: '성공',
-        description: `정산단가 ${data.processed || 0}건이 성공적으로 처리되었습니다.`,
+        description,
       });
     },
     onError: (error: Error) => {
@@ -1812,7 +1818,10 @@ export function AdminPanel() {
     onSuccess: (data: any) => {
       queryClient.invalidateQueries({ queryKey: ['/api/contact-codes'] });
       
-      let description = data.message || "접점코드가 성공적으로 업로드되었습니다.";
+      let description = `${data.addedCodes || 0}개의 접점코드가 성공적으로 추가되었습니다.`;
+      if (data.duplicatesSkipped > 0) {
+        description += ` (${data.duplicatesSkipped}개 중복건 제외)`;
+      }
       if (data.errors && data.errors.length > 0) {
         description += `\n\n오류가 발생한 행:\n${data.errors.join('\n')}`;
       }
@@ -2110,9 +2119,15 @@ export function AdminPanel() {
       if (fileInput) {
         fileInput.value = '';
       }
+      
+      let description = `${result.addedPlans || 0}개의 요금제가 성공적으로 추가되었습니다.`;
+      if (result.duplicatesSkipped > 0) {
+        description += ` (${result.duplicatesSkipped}개 중복건 제외)`;
+      }
+      
       toast({
         title: '업로드 완료',
-        description: `${result.addedPlans || 0}개의 요금제가 성공적으로 추가되었습니다.`,
+        description,
       });
     },
     onError: (error: Error) => {

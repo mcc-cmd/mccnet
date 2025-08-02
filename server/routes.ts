@@ -2181,6 +2181,8 @@ router.post('/api/service-plans/upload-excel', requireAdmin, pricingUpload.singl
     }
 
     let addedPlans = 0;
+    let duplicatesSkipped = 0;
+    const duplicates: string[] = [];
 
     for (const row of data) {
       try {
@@ -2217,6 +2219,16 @@ router.post('/api/service-plans/upload-excel', requireAdmin, pricingUpload.singl
           continue;
         }
 
+        // 중복 확인 - 요금제명과 통신사가 동일한 경우
+        const existingPlan = await storage.findServicePlanByNameAndCarrier(planData.planName, planData.carrier);
+        if (existingPlan) {
+          const duplicateKey = `${planData.carrier} - ${planData.planName}`;
+          duplicates.push(duplicateKey);
+          duplicatesSkipped++;
+          console.log(`Duplicate service plan skipped: ${duplicateKey}`);
+          continue;
+        }
+
         // Create service plan
         await storage.createServicePlan(planData);
         addedPlans++;
@@ -2228,10 +2240,18 @@ router.post('/api/service-plans/upload-excel', requireAdmin, pricingUpload.singl
     // Clean up uploaded file
     fs.unlinkSync(file.path);
 
+    // 결과 메시지 생성
+    let message = `${addedPlans}개의 요금제가 추가되었습니다.`;
+    if (duplicatesSkipped > 0) {
+      message += ` (${duplicatesSkipped}개 중복건 제외)`;
+    }
+
     res.json({ 
       success: true, 
       addedPlans,
-      message: `${addedPlans}개의 요금제가 추가되었습니다.`
+      duplicatesSkipped,
+      duplicates: duplicates.slice(0, 10), // 최대 10개까지만 표시
+      message
     });
   } catch (error) {
     console.error('Service plan Excel upload error:', error);
@@ -2914,6 +2934,7 @@ router.post('/api/contact-codes/upload-excel', contactCodeUpload.single('file'),
     }
 
     let addedCodes = 0;
+    let duplicatesSkipped = 0;
     const errors: string[] = [];
 
     // 헤더 행 찾기 (접점코드, 판매점명, 통신사, 담당영업과장이 포함된 행)
@@ -2998,7 +3019,7 @@ router.post('/api/contact-codes/upload-excel', contactCodeUpload.single('file'),
         // 기존 접점코드 확인
         const existingCode = await storage.findContactCodeByCode(String(code).trim());
         if (existingCode) {
-          // 통신사가 다르면 업데이트, 같으면 스킵
+          // 통신사가 다르면 업데이트, 같으면 중복으로 처리
           const newCarrier = String(carrier).trim();
           if (existingCode.carrier !== newCarrier) {
             console.log(`Updating contact code ${code}: ${existingCode.carrier} -> ${newCarrier}`);
@@ -3009,9 +3030,8 @@ router.post('/api/contact-codes/upload-excel', contactCodeUpload.single('file'),
             addedCodes++;
             console.log(`Successfully updated contact code: ${code}`);
           } else {
-            const errorMsg = `${i + 2}행: 접점코드 '${code}'가 이미 존재합니다 (통신사: ${existingCode.carrier})`;
-            console.log(errorMsg);
-            errors.push(errorMsg);
+            duplicatesSkipped++;
+            console.log(`Skipping duplicate contact code: ${code} (${existingCode.carrier})`);
           }
           continue;
         }
@@ -3058,10 +3078,11 @@ router.post('/api/contact-codes/upload-excel', contactCodeUpload.single('file'),
     }
 
     res.json({
-      addedCodes,
+      processed: addedCodes,
+      duplicatesSkipped,
       errors: errors.length > 0 ? errors.slice(0, 10) : [],
       totalErrors: errors.length,
-      message: `${addedCodes}개의 접점코드가 성공적으로 추가되었습니다.${errors.length > 0 ? ` (${errors.length}개 오류)` : ''}`
+      message: `${addedCodes}개의 접점코드가 성공적으로 추가되었습니다.${errors.length > 0 ? ` (${errors.length}개 오류)` : ''}${duplicatesSkipped > 0 ? ` (${duplicatesSkipped}개 중복건 제외)` : ''}`
     });
 
   } catch (error: any) {
@@ -3412,6 +3433,7 @@ router.post('/api/admin/settlement-pricing/excel-upload', contactCodeUpload.sing
     }
 
     let processedCount = 0;
+    let duplicatesSkipped = 0;
     const errors: string[] = [];
 
     // 헤더 행 찾기 (통신사, 요금제명, 정산단가가 포함된 행)
@@ -3502,6 +3524,12 @@ router.post('/api/admin/settlement-pricing/excel-upload', contactCodeUpload.sing
         const existingPrice = await storage.getSettlementUnitPriceByServicePlan(matchingPlan.id);
         
         if (existingPrice) {
+          // 기존 단가와 같은 값이면 중복으로 처리
+          if (existingPrice.unitPrice === parsedUnitPrice) {
+            duplicatesSkipped++;
+            console.log(`Skipping duplicate settlement price: ${carrier} - ${planName} (${parsedUnitPrice})`);
+            continue;
+          }
           // 기존 단가 업데이트
           await storage.updateSettlementUnitPrice(matchingPlan.id, {
             unitPrice: parsedUnitPrice,
@@ -3534,8 +3562,9 @@ router.post('/api/admin/settlement-pricing/excel-upload', contactCodeUpload.sing
     res.json({
       success: true,
       processed: processedCount,
+      duplicatesSkipped,
       errors: errors.length > 0 ? errors.slice(0, 10) : [], // 최대 10개 오류만 표시
-      message: `${processedCount}개 정산단가가 처리되었습니다.${errors.length > 0 ? ` (${errors.length}개 오류 발생)` : ''}`
+      message: `${processedCount}개 정산단가가 처리되었습니다.${errors.length > 0 ? ` (${errors.length}개 오류 발생)` : ''}${duplicatesSkipped > 0 ? ` (${duplicatesSkipped}개 중복건 제외)` : ''}`
     });
 
   } catch (error: any) {

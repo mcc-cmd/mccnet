@@ -727,6 +727,21 @@ export class DatabaseStorage implements IStorage {
       return [];
     }
   }
+
+  async findServicePlanByNameAndCarrier(planName: string, carrier: string): Promise<ServicePlan | undefined> {
+    try {
+      const [result] = await db.select().from(servicePlans)
+        .where(and(
+          eq(servicePlans.name, planName),
+          eq(servicePlans.carrier, carrier),
+          eq(servicePlans.isActive, true)
+        ));
+      return result;
+    } catch (error) {
+      console.error('Find service plan by name and carrier error:', error);
+      return undefined;
+    }
+  }
   
   // 부가서비스 관련 메서드
   async getAdditionalServices(): Promise<AdditionalService[]> {
