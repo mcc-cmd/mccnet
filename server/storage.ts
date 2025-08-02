@@ -46,6 +46,13 @@ export interface IStorage {
   getDocumentTemplates(): Promise<any[]>;
   getSettlementUnitPrices(): Promise<any[]>;
   
+  // 대시보드 통계 메서드들
+  getDashboardStats(): Promise<any>;
+  getTodayStats(): Promise<any>;
+  getWorkerStats(): Promise<any[]>;
+  getCarrierStats(): Promise<any[]>;
+  getActivePricingTables(): Promise<any[]>;
+  
   // 영업팀 관리
   createSalesTeam(data: CreateSalesTeamForm): Promise<SalesTeam>;
   getSalesTeams(): Promise<SalesTeam[]>;
@@ -327,6 +334,36 @@ export class DatabaseStorage implements IStorage {
   }
   
   async getSettlementUnitPrices(): Promise<any[]> {
+    return [];
+  }
+  
+  // 대시보드 통계 메서드들 (임시 구현)
+  async getDashboardStats(): Promise<any> {
+    return {
+      totalDocuments: 0,
+      pendingDocuments: 0,
+      completedDocuments: 0,
+      todayDocuments: 0
+    };
+  }
+  
+  async getTodayStats(): Promise<any> {
+    return {
+      todaySubmissions: 0,
+      todayCompletions: 0,
+      todayRevenue: 0
+    };
+  }
+  
+  async getWorkerStats(): Promise<any[]> {
+    return [];
+  }
+  
+  async getCarrierStats(): Promise<any[]> {
+    return [];
+  }
+  
+  async getActivePricingTables(): Promise<any[]> {
     return [];
   }
   

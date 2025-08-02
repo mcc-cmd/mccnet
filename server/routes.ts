@@ -2423,6 +2423,57 @@ router.post('/api/chat/message', requireAuth, async (req: any, res) => {
   }
 });
 
+// 대시보드 API 라우트들
+router.get('/api/dashboard/stats', requireAuth, async (req: any, res) => {
+  try {
+    const stats = await storage.getDashboardStats();
+    res.json(stats);
+  } catch (error: any) {
+    console.error('Dashboard stats error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.get('/api/dashboard/today-stats', requireAuth, async (req: any, res) => {
+  try {
+    const todayStats = await storage.getTodayStats();
+    res.json(todayStats);
+  } catch (error: any) {
+    console.error('Today stats error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.get('/api/dashboard/worker-stats', requireAuth, async (req: any, res) => {
+  try {
+    const workerStats = await storage.getWorkerStats();
+    res.json(workerStats);
+  } catch (error: any) {
+    console.error('Worker stats error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.get('/api/dashboard/carrier-stats', requireAuth, async (req: any, res) => {
+  try {
+    const carrierStats = await storage.getCarrierStats();
+    res.json(carrierStats);
+  } catch (error: any) {
+    console.error('Carrier stats error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.get('/api/pricing-tables/active', requireAuth, async (req: any, res) => {
+  try {
+    const pricingTables = await storage.getActivePricingTables();
+    res.json(pricingTables);
+  } catch (error: any) {
+    console.error('Pricing tables error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // 접점코드 관리 API
 router.get('/api/contact-codes', requireAuth, async (req: any, res) => {
   try {

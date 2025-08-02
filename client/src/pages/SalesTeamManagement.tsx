@@ -60,19 +60,28 @@ export default function SalesTeamManagement() {
   // 영업팀 목록 조회
   const { data: teams = [], isLoading: teamsLoading } = useQuery({
     queryKey: ['/api/admin/sales-teams'],
-    queryFn: () => apiRequest('/api/admin/sales-teams')
+    queryFn: async () => {
+      const res = await apiRequest('GET', '/api/admin/sales-teams');
+      return res.json();
+    }
   });
 
   // 영업과장 목록 조회
   const { data: managers = [], isLoading: managersLoading } = useQuery({
     queryKey: ['/api/admin/sales-managers'],
-    queryFn: () => apiRequest('/api/admin/sales-managers')
+    queryFn: async () => {
+      const res = await apiRequest('GET', '/api/admin/sales-managers');
+      return res.json();
+    }
   });
 
   // 접점 코드 매핑 목록 조회
   const { data: mappings = [], isLoading: mappingsLoading } = useQuery({
     queryKey: ['/api/admin/contact-code-mappings'],
-    queryFn: () => apiRequest('/api/admin/contact-code-mappings')
+    queryFn: async () => {
+      const res = await apiRequest('GET', '/api/admin/contact-code-mappings');
+      return res.json();
+    }
   });
 
   // 영업팀 생성 폼
@@ -111,7 +120,10 @@ export default function SalesTeamManagement() {
 
   // 영업팀 생성 뮤테이션
   const createTeamMutation = useMutation({
-    mutationFn: (data: any) => apiRequest('/api/admin/sales-teams', { method: 'POST', data }),
+    mutationFn: async (data: any) => {
+      const response = await apiRequest('POST', '/api/admin/sales-teams', data);
+      return response.json();
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/admin/sales-teams'] });
       toast({ title: "성공", description: "영업팀이 생성되었습니다." });
@@ -129,7 +141,10 @@ export default function SalesTeamManagement() {
 
   // 영업과장 생성 뮤테이션
   const createManagerMutation = useMutation({
-    mutationFn: (data: any) => apiRequest('/api/admin/sales-managers', { method: 'POST', data }),
+    mutationFn: async (data: any) => {
+      const response = await apiRequest('POST', '/api/admin/sales-managers', data);
+      return response.json();
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/admin/sales-managers'] });
       toast({ title: "성공", description: "영업과장이 생성되었습니다." });
@@ -147,7 +162,10 @@ export default function SalesTeamManagement() {
 
   // 접점 코드 매핑 생성 뮤테이션
   const createMappingMutation = useMutation({
-    mutationFn: (data: any) => apiRequest('/api/admin/contact-code-mappings', { method: 'POST', data }),
+    mutationFn: async (data: any) => {
+      const response = await apiRequest('POST', '/api/admin/contact-code-mappings', data);
+      return response.json();
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/admin/contact-code-mappings'] });
       toast({ title: "성공", description: "접점 코드 매핑이 생성되었습니다." });
