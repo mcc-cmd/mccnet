@@ -2785,10 +2785,10 @@ export function AdminPanel() {
                             아이디
                           </th>
                           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            대리점
+                            소속/팀
                           </th>
                           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            역할
+                            계정 유형
                           </th>
                           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                             생성일
@@ -2802,31 +2802,35 @@ export function AdminPanel() {
                         {users.map((user) => (
                           <tr key={user.id}>
                             <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                              {user.name}
+                              {user.displayName || user.name}
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                               {user.username}
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                              {user.dealerName}
+                              {user.affiliation || '-'}
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                               <Badge variant="secondary">
-                                {user.role === 'dealer_store' ? '판매점' : '근무자'}
+                                {user.accountType === 'admin' ? '시스템 관리자' : 
+                                 user.accountType === 'sales_manager' ? '영업과장' : 
+                                 user.userType === 'worker' ? '근무자' : '기타'}
                               </Badge>
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                               {format(new Date(user.createdAt), 'yyyy-MM-dd', { locale: ko })}
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleDeleteUser(user.id)}
-                                className="text-red-600 hover:text-red-700"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
+                              {user.id !== currentUser?.id && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleDeleteUser(user.id)}
+                                  className="text-red-600 hover:text-red-700"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              )}
                             </td>
                           </tr>
                         ))}
