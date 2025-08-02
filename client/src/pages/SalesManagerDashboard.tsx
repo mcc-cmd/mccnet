@@ -6,8 +6,6 @@ import {
   Users, 
   TrendingUp, 
   Calendar,
-  Phone,
-  Mail,
   Building2,
   BarChart3,
   LogOut,
@@ -25,7 +23,6 @@ export default function SalesManagerDashboard() {
   const [stats, setStats] = useState({
     totalTeamMembers: 0,
     monthlyActivations: 0,
-    teamRevenue: 0,
     activeDeals: 0
   });
 
@@ -45,7 +42,6 @@ export default function SalesManagerDashboard() {
     setStats({
       totalTeamMembers: 8,
       monthlyActivations: 45,
-      teamRevenue: 2850000,
       activeDeals: 12
     });
   }, []);
@@ -108,7 +104,7 @@ export default function SalesManagerDashboard() {
         </div>
 
         {/* 통계 카드 */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">팀 구성원</CardTitle>
@@ -137,21 +133,6 @@ export default function SalesManagerDashboard() {
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">팀 매출</CardTitle>
-              <BarChart3 className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {stats.teamRevenue.toLocaleString()}원
-              </div>
-              <p className="text-xs text-muted-foreground">
-                이번 달 누적
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">진행 중 건수</CardTitle>
               <Calendar className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
@@ -165,7 +146,7 @@ export default function SalesManagerDashboard() {
         </div>
 
         {/* 주요 기능 */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-1 gap-6 max-w-2xl mx-auto">
           <Card>
             <CardHeader>
               <CardTitle>팀 성과 관리</CardTitle>
@@ -185,29 +166,6 @@ export default function SalesManagerDashboard() {
               <Button className="w-full" variant="outline">
                 <TrendingUp className="h-4 w-4 mr-2" />
                 성과 분석
-              </Button>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>고객 관리</CardTitle>
-              <CardDescription>
-                담당 고객과 영업 기회를 관리합니다
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <Button className="w-full" variant="outline">
-                <Phone className="h-4 w-4 mr-2" />
-                고객 현황
-              </Button>
-              <Button className="w-full" variant="outline">
-                <Mail className="h-4 w-4 mr-2" />
-                상담 이력
-              </Button>
-              <Button className="w-full" variant="outline">
-                <Calendar className="h-4 w-4 mr-2" />
-                일정 관리
               </Button>
             </CardContent>
           </Card>
