@@ -95,6 +95,7 @@ export interface IStorage {
   getSalesManagers(): Promise<SalesManager[]>;
   getSalesManagerById(id: number): Promise<SalesManager | undefined>;
   getSalesManagerByUsername(username: string): Promise<SalesManager | undefined>;
+  getSalesManagerByCode(managerCode: string): Promise<SalesManager | undefined>;
   getSalesManagersByTeamId(teamId: number): Promise<SalesManager[]>;
   updateSalesManager(id: number, data: UpdateSalesManagerForm): Promise<SalesManager>;
   deleteSalesManager(id: number): Promise<void>;
@@ -256,6 +257,13 @@ export class DatabaseStorage implements IStorage {
   async getSalesManagerByUsername(username: string): Promise<SalesManager | undefined> {
     const [manager] = await db.select().from(salesManagers).where(
       and(eq(salesManagers.username, username), eq(salesManagers.isActive, true))
+    );
+    return manager;
+  }
+
+  async getSalesManagerByCode(managerCode: string): Promise<SalesManager | undefined> {
+    const [manager] = await db.select().from(salesManagers).where(
+      and(eq(salesManagers.managerCode, managerCode), eq(salesManagers.isActive, true))
     );
     return manager;
   }

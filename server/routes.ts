@@ -437,11 +437,28 @@ router.post('/api/admin/create-sales-manager', requireAdmin, async (req, res) =>
       });
     }
 
+    // 고유한 영업과장 코드 생성
+    let managerCode = `${salesTeam.teamCode}_${username.toUpperCase()}`;
+    let counter = 1;
+    
+    // 중복 확인 및 고유 코드 생성
+    while (true) {
+      try {
+        const existingManager = await storage.getSalesManagerByCode(managerCode);
+        if (!existingManager) break;
+        managerCode = `${salesTeam.teamCode}_${username.toUpperCase()}_${counter.toString().padStart(2, '0')}`;
+        counter++;
+      } catch (error) {
+        // 매니저가 없으면 해당 코드 사용 가능
+        break;
+      }
+    }
+
     // 영업과장 생성
     const manager = await storage.createSalesManager({
       teamId: salesTeam.id,
       managerName: name,
-      managerCode: `${salesTeam.teamCode}_${username.toUpperCase()}`,
+      managerCode,
       username,
       password,
       contactPhone: '',
