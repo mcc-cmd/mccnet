@@ -613,7 +613,17 @@ export class DatabaseStorage implements IStorage {
   async getCarriers(): Promise<Carrier[]> {
     try {
       const result = await db.select().from(carriers).orderBy(carriers.displayOrder, carriers.name);
-      return result;
+      
+      // DB 스네이크케이스 필드를 카멜케이스로 변환
+      return result.map(carrier => ({
+        ...carrier,
+        allowNewCustomer: carrier.allow_new_customer,
+        allowPortIn: carrier.allow_port_in,
+        requireDesiredNumber: carrier.require_desired_number,
+        allow_new_customer: undefined,
+        allow_port_in: undefined,
+        require_desired_number: undefined
+      } as any)) as Carrier[];
     } catch (error) {
       console.error('Get carriers error:', error);
       return [];
@@ -622,12 +632,33 @@ export class DatabaseStorage implements IStorage {
 
   async createCarrier(data: any): Promise<Carrier> {
     try {
-      const [result] = await db.insert(carriers).values({
+      // 카멜케이스를 스네이크케이스로 변환
+      const dbData = {
         ...data,
+        allow_new_customer: data.allowNewCustomer,
+        allow_port_in: data.allowPortIn,
+        require_desired_number: data.requireDesiredNumber,
         createdAt: new Date(),
         updatedAt: new Date(),
-      }).returning();
-      return result;
+      };
+      
+      // 카멜케이스 필드 제거
+      delete dbData.allowNewCustomer;
+      delete dbData.allowPortIn;
+      delete dbData.requireDesiredNumber;
+      
+      const [result] = await db.insert(carriers).values(dbData).returning();
+      
+      // 응답에서 스네이크케이스를 카멜케이스로 변환
+      return {
+        ...result,
+        allowNewCustomer: result.allow_new_customer,
+        allowPortIn: result.allow_port_in,
+        requireDesiredNumber: result.require_desired_number,
+        allow_new_customer: undefined,
+        allow_port_in: undefined,
+        require_desired_number: undefined
+      } as any as Carrier;
     } catch (error) {
       console.error('Create carrier error:', error);
       throw new Error('통신사 생성에 실패했습니다.');
@@ -636,11 +667,22 @@ export class DatabaseStorage implements IStorage {
 
   async updateCarrier(id: number, data: any): Promise<Carrier> {
     try {
+      // 카멜케이스를 스네이크케이스로 변환
+      const dbData = {
+        ...data,
+        allow_new_customer: data.allowNewCustomer,
+        allow_port_in: data.allowPortIn,
+        require_desired_number: data.requireDesiredNumber,
+        updatedAt: new Date(),
+      };
+      
+      // 카멜케이스 필드 제거
+      delete dbData.allowNewCustomer;
+      delete dbData.allowPortIn;
+      delete dbData.requireDesiredNumber;
+      
       const [result] = await db.update(carriers)
-        .set({
-          ...data,
-          updatedAt: new Date(),
-        })
+        .set(dbData)
         .where(eq(carriers.id, id))
         .returning();
       
@@ -648,7 +690,16 @@ export class DatabaseStorage implements IStorage {
         throw new Error('통신사를 찾을 수 없습니다.');
       }
       
-      return result;
+      // 응답에서 스네이크케이스를 카멜케이스로 변환
+      return {
+        ...result,
+        allowNewCustomer: result.allow_new_customer,
+        allowPortIn: result.allow_port_in,
+        requireDesiredNumber: result.require_desired_number,
+        allow_new_customer: undefined,
+        allow_port_in: undefined,
+        require_desired_number: undefined
+      } as any as Carrier;
     } catch (error) {
       console.error('Update carrier error:', error);
       throw new Error('통신사 수정에 실패했습니다.');

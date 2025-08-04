@@ -304,7 +304,10 @@ function CarrierManagement() {
       requirePreviousCarrier: carrier.requirePreviousCarrier || false,
       requireDocumentUpload: carrier.requireDocumentUpload || false,
       requireBundleNumber: carrier.requireBundleNumber || false,
-      requireBundleCarrier: carrier.requireBundleCarrier || false
+      requireBundleCarrier: carrier.requireBundleCarrier || false,
+      allowNewCustomer: carrier.allowNewCustomer !== false,
+      allowPortIn: carrier.allowPortIn !== false,
+      requireDesiredNumber: carrier.requireDesiredNumber || false
     };
     
     carrierForm.reset(editValues);

@@ -861,6 +861,10 @@ export interface Carrier {
   requireDocumentUpload?: boolean; // 서류업로드 필수
   requireBundleNumber?: boolean; // 결합번호 필수
   requireBundleCarrier?: boolean; // 결합통신사 필수
+  // 고객 유형별 지원 설정
+  allowNewCustomer?: boolean; // 신규 고객 지원 여부
+  allowPortIn?: boolean; // 번호이동 고객 지원 여부
+  requireDesiredNumber?: boolean; // 희망번호 입력 필수 여부
   createdAt?: Date;
 }
 
