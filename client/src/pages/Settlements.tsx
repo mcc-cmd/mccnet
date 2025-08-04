@@ -54,6 +54,7 @@ interface CompletedDocument {
   customerPhone: string;
   storeName: string;
   carrier: string;
+  previousCarrier?: string;
   contactCode?: string;
   servicePlanName?: string;
   additionalServices?: string | string[];
@@ -456,7 +457,7 @@ export function Settlements() {
   };
 
   const stats: SettlementStats = React.useMemo(() => {
-    if (!allCompletedDocuments || !settlementPrices) return { total: 0, thisMonth: 0, lastMonth: 0, totalAmount: 0 };
+    if (!allCompletedDocuments) return { total: 0, thisMonth: 0, lastMonth: 0, totalAmount: 0 };
     
     const now = new Date();
     const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -468,8 +469,11 @@ export function Settlements() {
     let totalAmount = 0;
     
     allCompletedDocuments.forEach(doc => {
-      const amount = calculateSettlementAmount(doc, settlementPrices, deductionPolicies);
-      totalAmount += amount;
+      // 정산단가가 있을 때만 정산 금액 계산
+      if (settlementPrices) {
+        const amount = calculateSettlementAmount(doc, settlementPrices, deductionPolicies);
+        totalAmount += amount;
+      }
       
       if (doc.activatedAt) {
         try {
@@ -493,7 +497,7 @@ export function Settlements() {
       lastMonth,
       totalAmount
     };
-  }, [allCompletedDocuments, settlementPrices]);
+  }, [allCompletedDocuments, settlementPrices, deductionPolicies]);
 
   // 검색 실행
   const handleSearch = () => {
@@ -910,36 +914,36 @@ export function Settlements() {
         </div>
 
         {/* 통계 카드 */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <Card>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
+          <Card className="hover:shadow-md transition-shadow">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">총 개통건수</CardTitle>
               <Users className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stats.total}</div>
+              <div className="text-2xl font-bold text-teal-600">{stats.total}</div>
               <p className="text-xs text-muted-foreground">전체 개통 완료</p>
             </CardContent>
           </Card>
           
-          <Card>
+          <Card className="hover:shadow-md transition-shadow">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">이번달 개통</CardTitle>
               <Calendar className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stats.thisMonth}</div>
+              <div className="text-2xl font-bold text-blue-600">{stats.thisMonth}</div>
               <p className="text-xs text-muted-foreground">이번달 개통</p>
             </CardContent>
           </Card>
           
-          <Card>
+          <Card className="hover:shadow-md transition-shadow sm:col-span-2 lg:col-span-1">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">지난달 개통</CardTitle>
               <Clock className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stats.lastMonth}</div>
+              <div className="text-2xl font-bold text-green-600">{stats.lastMonth}</div>
               <p className="text-xs text-muted-foreground">지난달 개통</p>
             </CardContent>
           </Card>
@@ -1060,7 +1064,7 @@ export function Settlements() {
                       <span>단가 미설정:</span>
                       <span className="font-mono">
                         {completedDocuments?.filter(doc => 
-                          !settlementPrices?.find(p => p.servicePlanId === doc.servicePlanId && p.isActive)
+                          !settlementPrices?.find((p: any) => p.servicePlanId === doc.servicePlanId && p.isActive)
                         ).length || 0}건
                       </span>
                     </div>
@@ -1087,25 +1091,30 @@ export function Settlements() {
           </CardHeader>
           <CardContent>
             {isLoading ? (
-              <div className="text-center py-8">로딩 중...</div>
+              <div className="text-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-600 mx-auto"></div>
+                <p className="mt-2 text-sm text-gray-500">로딩 중...</p>
+              </div>
             ) : completedDocuments && Array.isArray(completedDocuments) && completedDocuments.length > 0 ? (
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="whitespace-nowrap text-xs font-medium">개통날짜</TableHead>
-                      <TableHead className="whitespace-nowrap text-xs font-medium">고객명</TableHead>
-                      <TableHead className="whitespace-nowrap text-xs font-medium">연락처</TableHead>
-                      <TableHead className="whitespace-nowrap text-xs font-medium">판매점명</TableHead>
-                      <TableHead className="whitespace-nowrap text-xs font-medium">통신사</TableHead>
-                      <TableHead className="whitespace-nowrap text-xs font-medium">요금제</TableHead>
-                      <TableHead className="whitespace-nowrap text-xs font-medium">부가서비스</TableHead>
-                      <TableHead className="whitespace-nowrap text-xs font-medium">결합여부</TableHead>
-                      <TableHead className="whitespace-nowrap text-xs font-medium">정산금액</TableHead>
-                      <TableHead className="whitespace-nowrap text-xs font-medium">가입번호</TableHead>
-                      <TableHead className="whitespace-nowrap text-xs font-medium">기기/유심</TableHead>
-                    </TableRow>
-                  </TableHeader>
+              <>
+                {/* Desktop Table View */}
+                <div className="hidden lg:block overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="w-20 text-xs font-medium">개통날짜</TableHead>
+                        <TableHead className="w-20 text-xs font-medium">고객명</TableHead>
+                        <TableHead className="w-28 text-xs font-medium">연락처</TableHead>
+                        <TableHead className="w-32 text-xs font-medium">판매점명</TableHead>
+                        <TableHead className="w-24 text-xs font-medium">통신사</TableHead>
+                        <TableHead className="w-32 text-xs font-medium">요금제</TableHead>
+                        <TableHead className="w-24 text-xs font-medium">부가서비스</TableHead>
+                        <TableHead className="w-20 text-xs font-medium">결합여부</TableHead>
+                        <TableHead className="w-24 text-xs font-medium">정산금액</TableHead>
+                        <TableHead className="w-28 text-xs font-medium">가입번호</TableHead>
+                        <TableHead className="w-24 text-xs font-medium">기기/유심</TableHead>
+                      </TableRow>
+                    </TableHeader>
                   <TableBody>
                     {completedDocuments.map((doc) => (
                       <TableRow key={doc.id}>
@@ -1180,10 +1189,73 @@ export function Settlements() {
                     ))}
                   </TableBody>
                 </Table>
-              </div>
+                </div>
+
+                {/* Mobile Card View */}
+                <div className="lg:hidden space-y-4">
+                  {completedDocuments.map((doc) => (
+                    <Card key={doc.id} className="border border-gray-200">
+                      <CardContent className="p-4">
+                        <div className="flex justify-between items-start mb-3">
+                          <div>
+                            <h3 className="font-medium text-sm">{doc.customerName}</h3>
+                            <p className="text-xs text-muted-foreground">{doc.customerPhone}</p>
+                          </div>
+                          <div className="text-right">
+                            <Badge variant="outline" className="text-xs mb-1">{doc.carrier}</Badge>
+                            <div className="text-xs text-muted-foreground">
+                              {doc.activatedAt ? (() => {
+                                try {
+                                  const date = new Date(doc.activatedAt);
+                                  return isValid(date) ? format(date, 'MM-dd', { locale: ko }) : '-';
+                                } catch (e) {
+                                  return '-';
+                                }
+                              })() : '-'}
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div className="grid grid-cols-2 gap-3 text-sm">
+                          <div>
+                            <span className="text-muted-foreground">판매점:</span>
+                            <p className="font-medium text-xs truncate">{doc.storeName || doc.dealerName}</p>
+                          </div>
+                          <div>
+                            <span className="text-muted-foreground">정산금액:</span>
+                            <p className="font-medium text-xs">
+                              {settlementPrices ? 
+                                `${calculateSettlementAmount(doc, settlementPrices, deductionPolicies).toLocaleString()}원`
+                                : '단가 미설정'
+                              }
+                            </p>
+                          </div>
+                          <div>
+                            <span className="text-muted-foreground">요금제:</span>
+                            <p className="font-medium text-xs truncate">{doc.servicePlanName || '-'}</p>
+                          </div>
+                          <div>
+                            <span className="text-muted-foreground">결합여부:</span>
+                            <div className="mt-1">{getStatusBadge(doc.bundleApplied, doc.bundleNotApplied)}</div>
+                          </div>
+                        </div>
+                        
+                        {doc.subscriptionNumber && (
+                          <div className="mt-3 pt-3 border-t border-gray-100">
+                            <span className="text-muted-foreground text-xs">가입번호:</span>
+                            <p className="font-mono text-xs">{doc.subscriptionNumber}</p>
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </>
             ) : (
               <div className="text-center py-8 text-muted-foreground">
-                {completedDocuments ? `개통 완료된 문서가 없습니다. (${JSON.stringify(completedDocuments)})` : '데이터를 불러오는 중...'}
+                <FileText className="mx-auto h-12 w-12 text-gray-400" />
+                <h3 className="mt-2 text-sm font-medium">개통 완료된 문서가 없습니다</h3>
+                <p className="mt-1 text-xs">선택된 기간에 개통 완료된 문서가 없습니다.</p>
               </div>
             )}
           </CardContent>

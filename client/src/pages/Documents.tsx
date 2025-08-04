@@ -896,43 +896,8 @@ export function Documents() {
             </DialogHeader>
             <div id="activation-dialog-description" className="text-sm text-gray-600 mb-4">
               선택된 문서의 개통 상태를 변경할 수 있습니다.
-                        </div>
-                        <div className="flex space-x-1">
-                          {getStatusBadge(doc.status)}
-                          {getActivationStatusBadge((doc as any).activationStatus || '대기')}
-                        </div>
-                      </div>
-                      
-                      <div className="grid grid-cols-2 gap-2 text-sm mb-3">
-                        <div>
-                          <span className="text-gray-500">연락처:</span>
-                          <span className="ml-1 text-gray-900">{doc.customerPhone}</span>
-                        </div>
-                        {(doc as any).carrier && (
-                          <div>
-                            <span className="text-gray-500">통신사:</span>
-                            <span className="ml-1 text-gray-900">{(doc as any).carrier}</span>
-                          </div>
-                        )}
-                      </div>
-
-                      {/* 보완 메모 표시 - 더 눈에 띄게 */}
-                      {(doc as any).supplementNotes && (
-                        <div className="mt-3 p-4 bg-gradient-to-r from-orange-50 to-red-50 border-l-4 border-orange-500 rounded-r-lg shadow-sm">
-                          <div className="flex items-center mb-2">
-                            <span className="text-lg mr-2">📋</span>
-                            <div className="text-sm font-bold text-orange-800">보완 요청 사항</div>
-                          </div>
-                          <div className="text-sm text-orange-900 bg-white p-3 rounded border border-orange-200">
-                            {(doc as any).supplementNotes}
-                          </div>
-                          {(doc as any).supplementRequiredAt && (
-                            <div className="text-xs text-orange-600 mt-2 flex items-center">
-                              <span className="mr-1">⏰</span>
-                              요청일: {format(new Date((doc as any).supplementRequiredAt || Date.now()), 'yyyy-MM-dd HH:mm', { locale: ko })}
-                            </div>
-                          )}
-                        </div>
+            </div>
+            <div className="space-y-4">
                       )}
 
                       {/* 판매점 전달 메모 표시 - 근무자와 판매점 모두 확인 가능 */}
