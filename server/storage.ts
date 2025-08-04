@@ -1075,6 +1075,8 @@ export class DatabaseStorage implements IStorage {
         contactCode: documents.contactCode,
         carrier: documents.carrier,
         previousCarrier: documents.previousCarrier,
+        customerType: documents.customerType,
+        desiredNumber: documents.desiredNumber,
         status: documents.status,
         activationStatus: documents.activationStatus,
         uploadedAt: documents.uploadedAt,
