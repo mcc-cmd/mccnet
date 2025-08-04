@@ -338,13 +338,20 @@ export default function WorkRequests() {
                             <SelectValue placeholder="요금제를 선택하세요..." />
                           </SelectTrigger>
                           <SelectContent>
-                            {servicePlans
-                              .filter((plan: any) => plan.carrier === selectedDocument?.carrier)
-                              .map((plan: any) => (
+                            {(() => {
+                              console.log('Service plans data:', { 
+                                total: servicePlans?.length,
+                                carrier: selectedDocument?.carrier,
+                                plans: servicePlans?.slice(0, 3) // 처음 3개만 로그
+                              });
+                              const filtered = servicePlans?.filter((plan: any) => plan.carrier === selectedDocument?.carrier) || [];
+                              console.log('Filtered plans:', filtered.length);
+                              return filtered.map((plan: any) => (
                                 <SelectItem key={plan.id} value={plan.id.toString()}>
                                   {plan.name}
                                 </SelectItem>
-                              ))}
+                              ));
+                            })()}
                           </SelectContent>
                         </Select>
                       </FormControl>
