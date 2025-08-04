@@ -683,17 +683,17 @@ export function Documents() {
               <>
                 {/* Responsive Table View */}
                 <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
-                  <table className="w-full divide-y divide-gray-300 text-sm" style={{ minWidth: '1000px' }}>
+                  <table className="w-full divide-y divide-gray-300 text-sm" style={{ minWidth: '1200px' }}>
                     <colgroup>
-                      <col style={{ width: '100px' }} />
-                      <col style={{ width: '80px' }} />
-                      <col style={{ width: '100px' }} />
-                      <col style={{ width: '100px' }} />
-                      <col style={{ width: '60px' }} />
-                      <col style={{ width: '60px' }} />
-                      <col style={{ width: '90px' }} />
+                      <col style={{ width: '110px' }} />
                       <col style={{ width: '90px' }} />
                       <col style={{ width: '110px' }} />
+                      <col style={{ width: '120px' }} />
+                      <col style={{ width: '70px' }} />
+                      <col style={{ width: '70px' }} />
+                      <col style={{ width: '100px' }} />
+                      <col style={{ width: '100px' }} />
+                      <col style={{ width: '120px' }} />
                       <col style={{ width: '100px' }} />
                     </colgroup>
                     <thead className="bg-gray-50">
