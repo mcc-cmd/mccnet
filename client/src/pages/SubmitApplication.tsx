@@ -97,10 +97,21 @@ export function SubmitApplication() {
       if (formData.customerType === 'new' && !availableCustomerTypes.new && availableCustomerTypes.portIn) {
         setFormData(prev => ({ ...prev, customerType: 'port-in' }));
       } else if (formData.customerType === 'port-in' && !availableCustomerTypes.portIn && availableCustomerTypes.new) {
-        setFormData(prev => ({ ...prev, customerType: 'new' }));
+        setFormData(prev => ({ ...prev, customerType: 'new', previousCarrier: '' }));
       }
     }
   }, [selectedCarrier, formData.customerType, availableCustomerTypes.new, availableCustomerTypes.portIn]);
+
+  // 고객 유형 변경 시 관련 필드 초기화
+  useEffect(() => {
+    if (formData.customerType === 'new') {
+      // 신규 고객으로 변경 시 이전통신사 초기화
+      setFormData(prev => ({ ...prev, previousCarrier: '' }));
+    } else if (formData.customerType === 'port-in') {
+      // 번호이동으로 변경 시 희망번호 초기화
+      setFormData(prev => ({ ...prev, desiredNumber: '' }));
+    }
+  }, [formData.customerType]);
 
   // 중복 체크 함수
   const checkDuplicate = async () => {
@@ -193,7 +204,7 @@ export function SubmitApplication() {
       if (selectedCarrier.requireCarrier && !formData.carrier) {
         errors.push("통신사");
       }
-      if (selectedCarrier.requirePreviousCarrier && !formData.previousCarrier) {
+      if (selectedCarrier.requirePreviousCarrier && formData.customerType === 'port-in' && !formData.previousCarrier) {
         errors.push("이전통신사");
       }
       if (selectedCarrier.requireBundleNumber && !formData.bundleNumber) {
@@ -447,7 +458,8 @@ export function SubmitApplication() {
                     )}
                   </div>
                   
-                  {selectedCarrier?.requirePreviousCarrier && (
+                  {/* 이전통신사는 번호이동 고객에게만 표시 */}
+                  {formData.customerType === 'port-in' && selectedCarrier?.requirePreviousCarrier && (
                     <div>
                       <Label htmlFor="previousCarrier">
                         이전통신사 *
