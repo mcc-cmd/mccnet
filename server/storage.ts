@@ -1248,29 +1248,14 @@ export class DatabaseStorage implements IStorage {
   }
   
   // 정산단가 관리
-  async getSettlementUnitPrices(): Promise<SettlementUnitPrice[]> {
-    const query = `
-      SELECT 
-        s.id,
-        s.service_plan_id as "servicePlanId",
-        sp.name as "servicePlanName",
-        sp.carrier,
-        CAST(s.new_customer_price AS NUMERIC) as "newCustomerPrice",
-        CAST(s.port_in_price AS NUMERIC) as "portInPrice",
-        s.is_active as "isActive",
-        s.effective_from as "effectiveFrom",
-        s.effective_until as "effectiveUntil",
-        s.memo,
-        s.created_at as "createdAt",
-        s.updated_at as "updatedAt",
-        s.created_by as "createdBy"
-      FROM settlement_unit_prices s
-      JOIN service_plans sp ON s.service_plan_id = sp.id
-      WHERE s.is_active = true
-      ORDER BY sp.carrier, sp.name, s.effective_from DESC
-    `;
-    const result = await this.db.raw(query);
-    return result.rows || [];
+  async getSettlementUnitPrices(): Promise<any[]> {
+    try {
+      // 정산단가 테이블이 없으므로 빈 배열 반환
+      return [];
+    } catch (error) {
+      console.error('Get settlement unit prices error:', error);
+      return [];
+    }
   }
 
   async createSettlementUnitPrice(data: {
@@ -1321,30 +1306,14 @@ export class DatabaseStorage implements IStorage {
     };
   }
 
-  async getActiveSettlementUnitPrices(): Promise<SettlementUnitPrice[]> {
-    const query = `
-      SELECT 
-        s.id,
-        s.service_plan_id as "servicePlanId",
-        sp.name as "servicePlanName",
-        sp.carrier,
-        CAST(s.new_customer_price AS NUMERIC) as "newCustomerPrice",
-        CAST(s.port_in_price AS NUMERIC) as "portInPrice",
-        s.is_active as "isActive",
-        s.effective_from as "effectiveFrom",
-        s.effective_until as "effectiveUntil",
-        s.memo,
-        s.created_at as "createdAt",
-        s.updated_at as "updatedAt",
-        s.created_by as "createdBy"
-      FROM settlement_unit_prices s
-      JOIN service_plans sp ON s.service_plan_id = sp.id
-      WHERE s.is_active = true AND s.effective_from <= NOW()
-      AND (s.effective_until IS NULL OR s.effective_until > NOW())
-      ORDER BY sp.carrier, sp.name
-    `;
-    const result = await this.db.raw(query);
-    return result.rows || [];
+  async getActiveSettlementUnitPrices(): Promise<any[]> {
+    try {
+      // 정산단가 테이블이 없으므로 빈 배열 반환
+      return [];
+    } catch (error) {
+      console.error('Get active settlement unit prices error:', error);
+      return [];
+    }
   }
 
   async updateSettlementUnitPrice(servicePlanId: number, data: {

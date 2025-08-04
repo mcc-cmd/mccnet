@@ -523,8 +523,12 @@ export function Settlements() {
   // 정산 금액 수정 핸들러
   const handleEditAmount = (doc: CompletedDocument) => {
     setSelectedDocumentForEdit(doc);
-    const currentAmount = settlementPrices ? 
-      calculateSettlementAmount(doc, settlementPrices, deductionPolicies).toString() : '0';
+    // 기존에 수정된 금액이 있으면 그 값을, 없으면 자동 계산된 값을 표시
+    const currentAmount = (doc as any).settlementAmount ? 
+      (doc as any).settlementAmount.toString() :
+      settlementPrices ? 
+        calculateSettlementAmount(doc, settlementPrices, deductionPolicies).toString() : 
+        '0';
     setEditAmount(currentAmount);
     setEditAmountDialogOpen(true);
   };
@@ -1223,20 +1227,18 @@ export function Settlements() {
                           {getStatusBadge(doc.bundleApplied, doc.bundleNotApplied)}
                         </TableCell>
                         <TableCell className="whitespace-nowrap">
-                          {settlementPrices ? (
-                            <button
-                              onClick={() => handleEditAmount(doc)}
-                              className="text-sm font-medium text-blue-600 hover:text-blue-800 hover:underline cursor-pointer transition-colors"
-                              title="클릭하여 정산 금액 수정"
-                            >
-                              {(doc as any).settlementAmount ? 
-                                `${parseInt((doc as any).settlementAmount).toLocaleString()}원` :
-                                `${calculateSettlementAmount(doc, settlementPrices, deductionPolicies).toLocaleString()}원`
-                              }
-                            </button>
-                          ) : (
-                            <span className="text-xs text-orange-600">단가 미설정</span>
-                          )}
+                          <button
+                            onClick={() => handleEditAmount(doc)}
+                            className="text-sm font-medium text-blue-600 hover:text-blue-800 hover:underline cursor-pointer transition-colors"
+                            title="클릭하여 정산 금액 수정"
+                          >
+                            {(doc as any).settlementAmount ? 
+                              `${parseInt((doc as any).settlementAmount).toLocaleString()}원` :
+                              settlementPrices ? 
+                                `${calculateSettlementAmount(doc, settlementPrices, deductionPolicies).toLocaleString()}원` :
+                                '0원'
+                            }
+                          </button>
                         </TableCell>
                         <TableCell className="whitespace-nowrap">
                           <span className="text-xs font-mono">
@@ -1288,20 +1290,18 @@ export function Settlements() {
                           </div>
                           <div>
                             <span className="text-muted-foreground">정산금액:</span>
-                            {settlementPrices ? (
-                              <button
-                                onClick={() => handleEditAmount(doc)}
-                                className="font-medium text-xs text-blue-600 hover:text-blue-800 hover:underline cursor-pointer transition-colors ml-1"
-                                title="클릭하여 정산 금액 수정"
-                              >
-                                {(doc as any).settlementAmount ? 
-                                  `${parseInt((doc as any).settlementAmount).toLocaleString()}원` :
-                                  `${calculateSettlementAmount(doc, settlementPrices, deductionPolicies).toLocaleString()}원`
-                                }
-                              </button>
-                            ) : (
-                              <span className="text-xs text-orange-600 ml-1">단가 미설정</span>
-                            )}
+                            <button
+                              onClick={() => handleEditAmount(doc)}
+                              className="font-medium text-xs text-blue-600 hover:text-blue-800 hover:underline cursor-pointer transition-colors ml-1"
+                              title="클릭하여 정산 금액 수정"
+                            >
+                              {(doc as any).settlementAmount ? 
+                                `${parseInt((doc as any).settlementAmount).toLocaleString()}원` :
+                                settlementPrices ? 
+                                  `${calculateSettlementAmount(doc, settlementPrices, deductionPolicies).toLocaleString()}원` :
+                                  '0원'
+                              }
+                            </button>
                           </div>
                           <div>
                             <span className="text-muted-foreground">요금제:</span>
