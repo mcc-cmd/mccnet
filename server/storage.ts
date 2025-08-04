@@ -1367,7 +1367,7 @@ export class DatabaseStorage implements IStorage {
       const created = result.rows[0] as any;
       
       // Add carrier and servicePlanName by joining
-      const servicePlan = await this.getServicePlan(data.servicePlanId);
+      const [servicePlan] = await db.select().from(servicePlans).where(eq(servicePlans.id, data.servicePlanId));
       return {
         id: created.id,
         servicePlanId: created.service_plan_id,
