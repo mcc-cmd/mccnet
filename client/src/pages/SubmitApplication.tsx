@@ -30,6 +30,8 @@ export function SubmitApplication() {
     previousCarrier: '',
     bundleNumber: '',
     bundleCarrier: '',
+    customerType: 'new', // 'new' 또는 'port-in'
+    desiredNumber: '',
     notes: ''
   });
 
@@ -82,6 +84,23 @@ export function SubmitApplication() {
   
   // 선택된 통신사의 정보 가져오기
   const selectedCarrier = carriers.find(c => c.name === formData.carrier);
+  
+  // 통신사 설정에 따른 고객 유형 필터링
+  const availableCustomerTypes = {
+    new: selectedCarrier?.allowNewCustomer !== false,
+    portIn: selectedCarrier?.allowPortIn !== false
+  };
+
+  // 통신사가 지원하지 않는 고객 유형이 선택된 경우 변경
+  useEffect(() => {
+    if (selectedCarrier) {
+      if (formData.customerType === 'new' && !availableCustomerTypes.new && availableCustomerTypes.portIn) {
+        setFormData(prev => ({ ...prev, customerType: 'port-in' }));
+      } else if (formData.customerType === 'port-in' && !availableCustomerTypes.portIn && availableCustomerTypes.new) {
+        setFormData(prev => ({ ...prev, customerType: 'new' }));
+      }
+    }
+  }, [selectedCarrier, formData.customerType, availableCustomerTypes.new, availableCustomerTypes.portIn]);
 
   // 중복 체크 함수
   const checkDuplicate = async () => {
@@ -136,7 +155,11 @@ export function SubmitApplication() {
       });
 
       // Reset form
-      setFormData({ customerName: '', customerPhone: '', customerEmail: '', contactCode: '', storeName: '', carrier: '', previousCarrier: '', bundleNumber: '', bundleCarrier: '', notes: '' });
+      setFormData({ 
+        customerName: '', customerPhone: '', customerEmail: '', contactCode: '', storeName: '', 
+        carrier: '', previousCarrier: '', bundleNumber: '', bundleCarrier: '', 
+        customerType: 'new', desiredNumber: '', notes: '' 
+      });
       setSelectedFile(null);
     },
     onError: (error: Error) => {
@@ -182,6 +205,9 @@ export function SubmitApplication() {
       if (selectedCarrier.requireDocumentUpload && !selectedFile) {
         errors.push("서류 첨부");
       }
+      if (selectedCarrier.requireDesiredNumber && formData.customerType === 'new' && !formData.desiredNumber) {
+        errors.push("희망번호");
+      }
       
       if (errors.length > 0) {
         toast({
@@ -214,6 +240,8 @@ export function SubmitApplication() {
     data.append('previousCarrier', formData.previousCarrier);
     data.append('bundleNumber', formData.bundleNumber);
     data.append('bundleCarrier', formData.bundleCarrier);
+    data.append('customerType', formData.customerType);
+    data.append('desiredNumber', formData.desiredNumber);
     data.append('notes', formData.notes);
     
     if (selectedFile) {
@@ -287,6 +315,79 @@ export function SubmitApplication() {
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
+              {/* 고객 유형 선택 섹션 */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-medium text-gray-900 flex items-center">
+                  <User className="mr-2 h-4 w-4" />
+                  고객 유형
+                </h3>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="radio"
+                      id="customer-type-new"
+                      name="customerType"
+                      value="new"
+                      checked={formData.customerType === 'new'}
+                      onChange={(e) => setFormData(prev => ({ ...prev, customerType: e.target.value }))}
+                      disabled={!availableCustomerTypes.new}
+                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                    />
+                    <Label 
+                      htmlFor="customer-type-new" 
+                      className={`text-sm font-medium ${availableCustomerTypes.new ? 'text-gray-700' : 'text-gray-400'}`}
+                    >
+                      신규
+                      {!availableCustomerTypes.new && " (지원안함)"}
+                    </Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="radio"
+                      id="customer-type-port-in"
+                      name="customerType"
+                      value="port-in"
+                      checked={formData.customerType === 'port-in'}
+                      onChange={(e) => setFormData(prev => ({ ...prev, customerType: e.target.value }))}
+                      disabled={!availableCustomerTypes.portIn}
+                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                    />
+                    <Label 
+                      htmlFor="customer-type-port-in" 
+                      className={`text-sm font-medium ${availableCustomerTypes.portIn ? 'text-gray-700' : 'text-gray-400'}`}
+                    >
+                      번호이동
+                      {!availableCustomerTypes.portIn && " (지원안함)"}
+                    </Label>
+                  </div>
+                </div>
+                
+                {/* 희망번호 입력 (신규 선택 시에만 표시) */}
+                {formData.customerType === 'new' && (
+                  <div>
+                    <Label htmlFor="desiredNumber">
+                      희망번호
+                      {selectedCarrier?.requireDesiredNumber && " *"}
+                    </Label>
+                    <Input
+                      id="desiredNumber"
+                      type="text"
+                      value={formData.desiredNumber}
+                      onChange={(e) => setFormData(prev => ({ ...prev, desiredNumber: e.target.value }))}
+                      placeholder="희망하는 전화번호를 입력하세요 (예: 010-1234-5678)"
+                      className="mt-1"
+                      required={selectedCarrier?.requireDesiredNumber}
+                    />
+                    {selectedCarrier?.requireDesiredNumber && (
+                      <p className="text-xs text-gray-500 mt-1">
+                        이 통신사는 신규 고객의 희망번호 입력이 필수입니다.
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
+
               {/* 통신사 선택 섹션 */}
               <div className="space-y-4">
                 <h3 className="text-lg font-medium text-gray-900 flex items-center">
