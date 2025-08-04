@@ -1535,6 +1535,22 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
+  async getCarriersFromDocuments(): Promise<string[]> {
+    try {
+      // 데이터베이스에서 고유한 통신사 목록 조회
+      const result = await db.selectDistinct({ carrier: documents.carrier })
+        .from(documents)
+        .where(ne(documents.carrier, ''))
+        .orderBy(documents.carrier);
+      
+      return result.map(row => row.carrier);
+    } catch (error) {
+      console.error('Error getting carriers from documents in DB:', error);
+      // 폴백으로 기본 통신사 목록 반환
+      return ['SK', 'KT', 'LG', 'SK알뜰', 'KT알뜰', 'LG알뜰'];
+    }
+  }
+
   // 중복 접수 확인 메서드 (새로운 인터페이스)
   async findDuplicateDocuments(params: {
     customerName: string;

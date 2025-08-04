@@ -395,6 +395,7 @@ export function Documents() {
         additionalServiceIds: [],
         registrationFeePrepaid: false,
         registrationFeePostpaid: false,
+        registrationFeeInstallment: false,
         simFeePrepaid: false,
         simFeePostpaid: false,
         bundleApplied: false,
@@ -874,110 +875,6 @@ export function Documents() {
                       ))}
                     </tbody>
                   </table>
-                </div>
-              </>
-            ) : (
-              <div className="text-center py-12">
-                <FileText className="mx-auto h-12 w-12 text-gray-400" />
-                <h3 className="mt-2 text-sm font-medium text-gray-900">서류가 없습니다</h3>
-                <p className="mt-1 text-sm text-gray-500">
-                  {!isAdmin ? '첫 번째 서류를 업로드해보세요.' : '업로드된 서류가 없습니다.'}
-                </p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Activation Status Dialog */}
-        <Dialog open={activationDialogOpen} onOpenChange={setActivationDialogOpen}>
-          <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto" aria-describedby="activation-dialog-description">
-            <DialogHeader>
-              <DialogTitle>개통 상태 변경</DialogTitle>
-            </DialogHeader>
-            <div id="activation-dialog-description" className="text-sm text-gray-600 mb-4">
-              선택된 문서의 개통 상태를 변경할 수 있습니다.
-            </div>
-            <div className="space-y-4">
-                      )}
-
-                      {/* 판매점 전달 메모 표시 - 근무자와 판매점 모두 확인 가능 */}
-                      {(doc as any).dealerNotes && (
-                        <div className="mt-3 p-4 bg-gradient-to-r from-green-50 to-teal-50 border-l-4 border-green-500 rounded-r-lg shadow-sm">
-                          <div className="flex items-center mb-2">
-                            <span className="text-lg mr-2">💼</span>
-                            <div className="text-sm font-bold text-green-800">판매점 전달 메모</div>
-                          </div>
-                          <div className="text-sm text-green-900 bg-white p-3 rounded border border-green-200">
-                            {(doc as any).dealerNotes}
-                          </div>
-                        </div>
-                      )}
-                      
-                      <div className="flex justify-between items-center">
-                        <span className="text-xs text-gray-500">
-                          {formatReceptionDateTime(doc.uploadedAt)}
-                        </span>
-                        <div className="flex space-x-2">
-                          {doc.filePath && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleDownload(doc.id)}
-                              title="파일 다운로드"
-                            >
-                              <Download className="h-4 w-4" />
-                            </Button>
-                          )}
-                          {canManageActivationStatus() && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleActivationStatusChange(doc)}
-                              title="개통상태 변경"
-                            >
-                              개통상태
-                            </Button>
-                          )}
-                          {(doc as any).activationStatus === '진행중' && (
-                            <ChatDialog 
-                              documentId={doc.id}
-                              dealerId={doc.dealerId}
-                              trigger={
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  title="채팅"
-                                >
-                                  <MessageCircle className="h-4 w-4" />
-                                </Button>
-                              }
-                            />
-                          )}
-                          {(doc as any).activationStatus === '개통' && canManageActivationStatus() && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => openServicePlanDialog(doc)}
-                              title="요금제 선택"
-                            >
-                              요금제
-                            </Button>
-                          )}
-                          {user?.userType === 'admin' && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleDelete(doc.id)}
-                              disabled={doc.status !== '접수'}
-                              title="서류 삭제"
-                            >
-                              삭제
-                            </Button>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
                 </div>
               </>
             ) : (
