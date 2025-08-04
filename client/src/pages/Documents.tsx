@@ -52,6 +52,7 @@ export function Documents() {
     additionalServiceIds: [] as string[],
     registrationFeePrepaid: false,
     registrationFeePostpaid: false,
+    registrationFeeInstallment: false,
     simFeePrepaid: false,
     simFeePostpaid: false,
     bundleApplied: false,
@@ -92,13 +93,13 @@ export function Documents() {
   });
 
   const { data: servicePlans, isLoading: servicePlansLoading } = useQuery({
-    queryKey: ['/api/service-plans', selectedDocument?.carrier],
+    queryKey: ['/api/service-plans', selectedDocument?.carrier || 'all'],
     queryFn: () => {
       const carrier = selectedDocument?.carrier;
       const params = carrier ? `?carrier=${encodeURIComponent(carrier)}` : '';
       return apiRequest(`/api/service-plans${params}`) as Promise<any[]>;
     },
-    enabled: !!selectedDocument, // 선택된 문서가 있을 때만 실행
+    enabled: activationDialogOpen, // 활성화 대화상자가 열렸을 때 실행
   });
 
   console.log('Service plans data:', { 
@@ -788,7 +789,7 @@ export function Documents() {
                                   </div>
                                   {(doc as any).supplementRequiredAt && (
                                     <div className="text-orange-600 mt-1 text-xs">
-                                      요청일: {format(new Date((doc as any).supplementRequiredAt || new Date()), 'MM-dd HH:mm', { locale: ko })}
+                                      요청일: {format(new Date((doc as any).supplementRequiredAt || Date.now()), 'MM-dd HH:mm', { locale: ko })}
                                     </div>
                                   )}
                                 </div>
@@ -928,7 +929,7 @@ export function Documents() {
                           {(doc as any).supplementRequiredAt && (
                             <div className="text-xs text-orange-600 mt-2 flex items-center">
                               <span className="mr-1">⏰</span>
-                              요청일: {format(new Date((doc as any).supplementRequiredAt || new Date()), 'yyyy-MM-dd HH:mm', { locale: ko })}
+                              요청일: {format(new Date((doc as any).supplementRequiredAt || Date.now()), 'yyyy-MM-dd HH:mm', { locale: ko })}
                             </div>
                           )}
                         </div>
