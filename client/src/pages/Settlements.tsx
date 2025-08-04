@@ -460,7 +460,7 @@ export function Settlements() {
   };
 
   const stats: SettlementStats = React.useMemo(() => {
-    if (!allCompletedDocuments) return { total: 0, thisMonth: 0, lastMonth: 0, totalAmount: 0 };
+    if (!completedDocuments || !Array.isArray(completedDocuments)) return { total: 0, thisMonth: 0, lastMonth: 0, totalAmount: 0 };
     
     const now = new Date();
     const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -471,13 +471,18 @@ export function Settlements() {
     let lastMonth = 0;
     let totalAmount = 0;
     
-    allCompletedDocuments.forEach(doc => {
+    completedDocuments.forEach(doc => {
       // 수동 입력된 정산 금액이 있으면 그것을 사용, 없으면 자동 계산
       let amount = 0;
       if ((doc as any).settlementAmount) {
-        amount = parseFloat((doc as any).settlementAmount);
-      } else if (settlementPrices) {
+        const parsedAmount = parseFloat((doc as any).settlementAmount);
+        if (!isNaN(parsedAmount)) {
+          amount = parsedAmount;
+          console.log(`Document ${doc.id}: Using manual amount ${amount}`);
+        }
+      } else if (settlementPrices && settlementPrices.length > 0) {
         amount = calculateSettlementAmount(doc, settlementPrices, deductionPolicies);
+        console.log(`Document ${doc.id}: Using calculated amount ${amount}`);
       }
       totalAmount += amount;
       
@@ -497,13 +502,20 @@ export function Settlements() {
       }
     });
     
+    console.log('Settlement stats calculation:', {
+      totalDocuments: completedDocuments.length,
+      totalAmount,
+      thisMonth,
+      lastMonth
+    });
+    
     return {
-      total: allCompletedDocuments.length,
+      total: completedDocuments.length,
       thisMonth,
       lastMonth,
       totalAmount
     };
-  }, [allCompletedDocuments, settlementPrices, deductionPolicies]);
+  }, [completedDocuments, settlementPrices, deductionPolicies]);
 
   // 검색 실행
   const handleSearch = () => {
