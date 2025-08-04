@@ -1249,10 +1249,33 @@ export class DatabaseStorage implements IStorage {
   }
   
   // 정산단가 관리
-  async getSettlementUnitPrices(): Promise<any[]> {
+  async getSettlementUnitPrices(): Promise<SettlementUnitPrice[]> {
     try {
-      // 정산단가 테이블이 없으므로 빈 배열 반환
-      return [];
+      const result = await db.execute(sql`
+        SELECT 
+          sup.id, 
+          sup.service_plan_id as "servicePlanId",
+          sup.new_customer_price as "newCustomerPrice",
+          sup.port_in_price as "portInPrice", 
+          sup.is_active as "isActive",
+          sup.effective_from as "effectiveFrom",
+          sup.effective_until as "effectiveUntil",
+          sup.memo,
+          sup.created_at as "createdAt",
+          sup.updated_at as "updatedAt",
+          sup.created_by as "createdBy",
+          sp.carrier,
+          sp.plan_name as "servicePlanName"
+        FROM settlement_unit_prices sup
+        LEFT JOIN service_plans sp ON sup.service_plan_id = sp.id
+        ORDER BY sup.created_at DESC
+      `);
+
+      return result.rows.map((row: any) => ({
+        ...row,
+        newCustomerPrice: Number(row.newCustomerPrice),
+        portInPrice: Number(row.portInPrice)
+      }));
     } catch (error) {
       console.error('Get settlement unit prices error:', error);
       return [];
@@ -1267,50 +1290,80 @@ export class DatabaseStorage implements IStorage {
     memo?: string;
     createdBy: number;
   }): Promise<SettlementUnitPrice> {
-    // 기존 활성 단가 비활성화
-    await this.db.raw(`
-      UPDATE settlement_unit_prices 
-      SET is_active = false, effective_until = NOW()
-      WHERE service_plan_id = ? AND is_active = true
-    `, [data.servicePlanId]);
+    try {
+      // 기존 활성 단가 비활성화
+      await db.execute(sql`
+        UPDATE settlement_unit_prices 
+        SET is_active = false, effective_until = NOW()
+        WHERE service_plan_id = ${data.servicePlanId} AND is_active = true
+      `);
 
-    // 새 단가 등록
-    const insertQuery = `
-      INSERT INTO settlement_unit_prices 
-      (service_plan_id, new_customer_price, port_in_price, effective_from, memo, created_by)
-      VALUES (?, ?, ?, ?, ?, ?)
-      RETURNING id, service_plan_id as "servicePlanId", 
-        CAST(new_customer_price AS NUMERIC) as "newCustomerPrice", 
-        CAST(port_in_price AS NUMERIC) as "portInPrice",
-        is_active as "isActive", effective_from as "effectiveFrom",
-        effective_until as "effectiveUntil", memo,
-        created_at as "createdAt", updated_at as "updatedAt",
-        created_by as "createdBy"
-    `;
-    
-    const result = await this.db.raw(insertQuery, [
-      data.servicePlanId,
-      data.newCustomerPrice,
-      data.portInPrice,
-      data.effectiveFrom || new Date(),
-      data.memo,
-      data.createdBy
-    ]);
+      // 새 단가 등록
+      const result = await db.execute(sql`
+        INSERT INTO settlement_unit_prices 
+        (service_plan_id, new_customer_price, port_in_price, effective_from, memo, created_by)
+        VALUES (${data.servicePlanId}, ${data.newCustomerPrice}, ${data.portInPrice}, ${data.effectiveFrom || new Date()}, ${data.memo || ''}, ${data.createdBy})
+        RETURNING id, service_plan_id as service_plan_id, 
+          new_customer_price, port_in_price,
+          is_active, effective_from,
+          effective_until, memo,
+          created_at, updated_at,
+          created_by
+      `);
 
-    const created = result.rows[0];
-    // Add carrier and servicePlanName by joining
-    const servicePlan = await this.getServicePlan(data.servicePlanId);
-    return {
-      ...created,
-      carrier: servicePlan?.carrier || '',
-      servicePlanName: servicePlan?.planName || ''
-    };
+      const created = result.rows[0] as any;
+      
+      // Add carrier and servicePlanName by joining
+      const servicePlan = await this.getServicePlan(data.servicePlanId);
+      return {
+        id: created.id,
+        servicePlanId: created.service_plan_id,
+        newCustomerPrice: Number(created.new_customer_price),
+        portInPrice: Number(created.port_in_price),
+        isActive: created.is_active,
+        effectiveFrom: created.effective_from,
+        effectiveUntil: created.effective_until,
+        memo: created.memo,
+        createdAt: created.created_at,
+        updatedAt: created.updated_at,
+        createdBy: created.created_by,
+        carrier: servicePlan?.carrier || '',
+        servicePlanName: servicePlan?.planName || ''
+      };
+    } catch (error) {
+      console.error('Error creating settlement unit price:', error);
+      throw new Error('정산단가 생성에 실패했습니다.');
+    }
   }
 
-  async getActiveSettlementUnitPrices(): Promise<any[]> {
+  async getActiveSettlementUnitPrices(): Promise<SettlementUnitPrice[]> {
     try {
-      // 정산단가 테이블이 없으므로 빈 배열 반환
-      return [];
+      const result = await db.execute(sql`
+        SELECT 
+          sup.id, 
+          sup.service_plan_id as "servicePlanId",
+          sup.new_customer_price as "newCustomerPrice",
+          sup.port_in_price as "portInPrice", 
+          sup.is_active as "isActive",
+          sup.effective_from as "effectiveFrom",
+          sup.effective_until as "effectiveUntil",
+          sup.memo,
+          sup.created_at as "createdAt",
+          sup.updated_at as "updatedAt",
+          sup.created_by as "createdBy",
+          sp.carrier,
+          sp.plan_name as "servicePlanName"
+        FROM settlement_unit_prices sup
+        LEFT JOIN service_plans sp ON sup.service_plan_id = sp.id
+        WHERE sup.is_active = true
+        ORDER BY sup.created_at DESC
+      `);
+
+      return result.rows.map((row: any) => ({
+        ...row,
+        newCustomerPrice: Number(row.newCustomerPrice),
+        portInPrice: Number(row.portInPrice)
+      }));
     } catch (error) {
       console.error('Get active settlement unit prices error:', error);
       return [];
@@ -1336,11 +1389,49 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteSettlementUnitPrice(servicePlanId: number): Promise<void> {
-    await this.db.raw(`
+    await db.execute(sql`
       UPDATE settlement_unit_prices 
       SET is_active = false, effective_until = NOW()
-      WHERE service_plan_id = ? AND is_active = true
-    `, [servicePlanId]);
+      WHERE service_plan_id = ${servicePlanId} AND is_active = true
+    `);
+  }
+
+  async getSettlementUnitPriceByServicePlan(servicePlanId: number): Promise<SettlementUnitPrice | null> {
+    try {
+      const result = await db.execute(sql`
+        SELECT 
+          sup.id, 
+          sup.service_plan_id as "servicePlanId",
+          sup.new_customer_price as "newCustomerPrice",
+          sup.port_in_price as "portInPrice", 
+          sup.is_active as "isActive",
+          sup.effective_from as "effectiveFrom",
+          sup.effective_until as "effectiveUntil",
+          sup.memo,
+          sup.created_at as "createdAt",
+          sup.updated_at as "updatedAt",
+          sup.created_by as "createdBy",
+          sp.carrier,
+          sp.plan_name as "servicePlanName"
+        FROM settlement_unit_prices sup
+        LEFT JOIN service_plans sp ON sup.service_plan_id = sp.id
+        WHERE sup.service_plan_id = ${servicePlanId} AND sup.is_active = true
+        ORDER BY sup.created_at DESC
+        LIMIT 1
+      `);
+
+      if (result.rows.length === 0) return null;
+
+      const row = result.rows[0] as any;
+      return {
+        ...row,
+        newCustomerPrice: Number(row.newCustomerPrice),
+        portInPrice: Number(row.portInPrice)
+      };
+    } catch (error) {
+      console.error('Get settlement unit price by service plan error:', error);
+      return null;
+    }
   }
   
   // 대시보드 통계 메서드들 (임시 구현)
