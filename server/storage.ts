@@ -1265,7 +1265,7 @@ export class DatabaseStorage implements IStorage {
           sup.updated_at as "updatedAt",
           sup.created_by as "createdBy",
           sp.carrier,
-          sp.plan_name as "servicePlanName"
+          sp.name as "servicePlanName"
         FROM settlement_unit_prices sup
         LEFT JOIN service_plans sp ON sup.service_plan_id = sp.id
         ORDER BY sup.created_at DESC
@@ -1352,7 +1352,7 @@ export class DatabaseStorage implements IStorage {
           sup.updated_at as "updatedAt",
           sup.created_by as "createdBy",
           sp.carrier,
-          sp.plan_name as "servicePlanName"
+          sp.name as "servicePlanName"
         FROM settlement_unit_prices sup
         LEFT JOIN service_plans sp ON sup.service_plan_id = sp.id
         WHERE sup.is_active = true
@@ -1412,7 +1412,7 @@ export class DatabaseStorage implements IStorage {
           sup.updated_at as "updatedAt",
           sup.created_by as "createdBy",
           sp.carrier,
-          sp.plan_name as "servicePlanName"
+          sp.name as "servicePlanName"
         FROM settlement_unit_prices sup
         LEFT JOIN service_plans sp ON sup.service_plan_id = sp.id
         WHERE sup.service_plan_id = ${servicePlanId} AND sup.is_active = true

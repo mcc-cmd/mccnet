@@ -1969,6 +1969,22 @@ router.get('/api/settlements/export', requireAuth, async (req: any, res) => {
         console.warn('Additional services parsing error for document:', doc.id, error);
       }
 
+      // 번호이동 여부 확인
+      const isPortIn = doc.previousCarrier && doc.previousCarrier !== doc.carrier;
+      const customerType = isPortIn ? '번호이동' : '신규';
+      
+      // 해당 고객 유형에 따른 정산단가 조회
+      const settlementAmount = calculateSettlementAmount(doc);
+      let applicablePrice = '';
+      
+      if (doc.servicePlanId) {
+        const priceInfo = settlementPrices.find(p => p.servicePlanId === doc.servicePlanId);
+        if (priceInfo) {
+          const price = isPortIn ? priceInfo.portInPrice : priceInfo.newCustomerPrice;
+          applicablePrice = price ? price.toLocaleString() + '원' : '';
+        }
+      }
+
       return {
         '개통날짜': activatedDate,
         '문서번호': doc.documentNumber || '',
@@ -1976,14 +1992,17 @@ router.get('/api/settlements/export', requireAuth, async (req: any, res) => {
         '연락처': doc.customerPhone || '',
         '판매점명': doc.storeName || doc.dealerName || '',
         '통신사': doc.carrier || '',
+        '이전통신사': doc.previousCarrier || '',
+        '고객유형': customerType,
         '접점코드': doc.contactCode || '',
         '요금제': doc.servicePlanName || '',
         '부가서비스': additionalServicesText,
+        '단가': applicablePrice,
         '결합여부': doc.bundleApplied ? '결합' : (doc.bundleNotApplied ? '미결합' : '미지정'),
         '기기모델': doc.deviceModel || '',
         '유심번호': doc.simNumber || '',
         '가입번호': doc.subscriptionNumber || '',
-        '정산금액': calculateSettlementAmount(doc).toLocaleString() + '원',
+        '정산금액': settlementAmount.toLocaleString() + '원',
         '비고': doc.notes || ''
       };
     });
