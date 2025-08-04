@@ -9,7 +9,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Textarea } from '@/components/ui/textarea';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { createSalesTeamSchema, createSalesManagerSchema, createContactCodeMappingSchema } from '@shared/schema';
+import { createSalesTeamSchema, createSalesManagerSchema, assignSalesManagerToTeamSchema, createContactCodeMappingSchema } from '@shared/schema';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
 import { Plus, Users, User, Settings, Edit, Trash2 } from 'lucide-react';
@@ -82,6 +82,15 @@ export default function SalesTeamManagement() {
     }
   });
 
+  // 팀에 배정되지 않은 영업과장 계정 목록 조회
+  const { data: unassignedManagers = [], isLoading: unassignedLoading } = useQuery({
+    queryKey: ['/api/admin/unassigned-sales-managers'],
+    queryFn: async () => {
+      const res = await apiRequest('GET', '/api/admin/unassigned-sales-managers');
+      return res.json();
+    }
+  });
+
   // 접점 코드 매핑 목록 조회
   const { data: mappings = [], isLoading: mappingsLoading } = useQuery({
     queryKey: ['/api/admin/contact-code-mappings'],
@@ -111,15 +120,13 @@ export default function SalesTeamManagement() {
     }
   });
 
-  // 영업과장 생성 폼
+  // 영업과장 배정 폼 (기존 계정을 팀에 배정)
   const managerForm = useForm({
-    resolver: zodResolver(createSalesManagerSchema),
+    resolver: zodResolver(assignSalesManagerToTeamSchema),
     defaultValues: {
       teamId: 0,
-      managerName: '',
+      salesManagerUserId: 0,
       managerCode: '',
-      username: '',
-      password: '',
       position: '대리' as const,
       contactPhone: '',
       email: ''
@@ -212,22 +219,23 @@ export default function SalesTeamManagement() {
     }
   });
 
-  // 영업과장 생성 뮤테이션
-  const createManagerMutation = useMutation({
+  // 영업과장 배정 뮤테이션 (기존 계정을 팀에 배정)
+  const assignManagerMutation = useMutation({
     mutationFn: async (data: any) => {
-      const response = await apiRequest('POST', '/api/admin/sales-managers', data);
+      const response = await apiRequest('POST', '/api/admin/assign-sales-manager', data);
       return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/admin/sales-managers'] });
-      toast({ title: "성공", description: "영업과장이 생성되었습니다." });
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/unassigned-sales-managers'] });
+      toast({ title: "성공", description: "영업과장이 팀에 배정되었습니다." });
       setIsManagerDialogOpen(false);
       managerForm.reset();
     },
     onError: (error: any) => {
       toast({ 
         title: "오류", 
-        description: error.message || "영업과장 생성 중 오류가 발생했습니다.",
+        description: error.message || "영업과장 배정 중 오류가 발생했습니다.",
         variant: "destructive"
       });
     }
@@ -281,7 +289,7 @@ export default function SalesTeamManagement() {
   };
 
   const onManagerSubmit = (data: any) => {
-    createManagerMutation.mutate(data);
+    assignManagerMutation.mutate(data);
   };
 
   const onMappingSubmit = (data: any) => {
@@ -543,113 +551,136 @@ export default function SalesTeamManagement() {
                 </DialogTrigger>
                 <DialogContent>
                   <DialogHeader>
-                    <DialogTitle>새 영업과장 추가</DialogTitle>
+                    <DialogTitle>영업과장 팀 배정</DialogTitle>
+                    <p className="text-sm text-muted-foreground">
+                      관리자 패널에서 생성된 영업과장 계정을 팀에 배정합니다.
+                    </p>
                   </DialogHeader>
-                  <Form {...managerForm}>
-                    <form onSubmit={managerForm.handleSubmit(onManagerSubmit)} className="space-y-4">
-                      <FormField
-                        control={managerForm.control}
-                        name="teamId"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>소속 팀</FormLabel>
-                            <Select onValueChange={(value) => field.onChange(parseInt(value))}>
+                  {unassignedManagers.length === 0 ? (
+                    <div className="text-center py-4">
+                      <p className="text-muted-foreground">배정 가능한 영업과장 계정이 없습니다.</p>
+                      <p className="text-sm text-muted-foreground mt-2">
+                        관리자 패널에서 영업과장 계정을 먼저 생성해주세요.
+                      </p>
+                    </div>
+                  ) : (
+                    <Form {...managerForm}>
+                      <form onSubmit={managerForm.handleSubmit(onManagerSubmit)} className="space-y-4">
+                        <FormField
+                          control={managerForm.control}
+                          name="salesManagerUserId"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>영업과장 계정 선택</FormLabel>
+                              <Select onValueChange={(value) => field.onChange(parseInt(value))}>
+                                <FormControl>
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="영업과장 계정을 선택하세요" />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  {unassignedManagers.map((manager: any) => (
+                                    <SelectItem key={manager.id} value={manager.id.toString()}>
+                                      {manager.name} ({manager.username})
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={managerForm.control}
+                          name="teamId"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>소속 팀</FormLabel>
+                              <Select onValueChange={(value) => field.onChange(parseInt(value))}>
+                                <FormControl>
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="팀을 선택하세요" />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  {teams.map((team: SalesTeam) => (
+                                    <SelectItem key={team.id} value={team.id.toString()}>
+                                      {team.teamName}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={managerForm.control}
+                          name="managerCode"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>과장 코드</FormLabel>
                               <FormControl>
-                                <SelectTrigger>
-                                  <SelectValue placeholder="팀을 선택하세요" />
-                                </SelectTrigger>
+                                <Input placeholder="예: MGR001" {...field} />
                               </FormControl>
-                              <SelectContent>
-                                {teams.map((team: SalesTeam) => (
-                                  <SelectItem key={team.id} value={team.id.toString()}>
-                                    {team.teamName}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={managerForm.control}
-                        name="managerName"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>이름</FormLabel>
-                            <FormControl>
-                              <Input placeholder="예: 홍길동" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={managerForm.control}
-                        name="position"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>직급</FormLabel>
-                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={managerForm.control}
+                          name="position"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>직급</FormLabel>
+                              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <FormControl>
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="직급을 선택하세요" />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  <SelectItem value="팀장">팀장</SelectItem>
+                                  <SelectItem value="과장">과장</SelectItem>
+                                  <SelectItem value="대리">대리</SelectItem>
+                                </SelectContent>
+                              </Select>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={managerForm.control}
+                          name="contactPhone"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>연락처 (선택사항)</FormLabel>
                               <FormControl>
-                                <SelectTrigger>
-                                  <SelectValue placeholder="직급을 선택하세요" />
-                                </SelectTrigger>
+                                <Input placeholder="연락처" {...field} />
                               </FormControl>
-                              <SelectContent>
-                                <SelectItem value="팀장">팀장</SelectItem>
-                                <SelectItem value="과장">과장</SelectItem>
-                                <SelectItem value="대리">대리</SelectItem>
-                              </SelectContent>
-                            </Select>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={managerForm.control}
-                        name="managerCode"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>과장 코드</FormLabel>
-                            <FormControl>
-                              <Input placeholder="예: MGR001" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={managerForm.control}
-                        name="username"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>로그인 ID</FormLabel>
-                            <FormControl>
-                              <Input placeholder="로그인에 사용할 ID" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={managerForm.control}
-                        name="password"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>비밀번호</FormLabel>
-                            <FormControl>
-                              <Input type="password" placeholder="비밀번호" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <Button type="submit" disabled={createManagerMutation.isPending}>
-                        {createManagerMutation.isPending ? '생성 중...' : '생성'}
-                      </Button>
-                    </form>
-                  </Form>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={managerForm.control}
+                          name="email"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>이메일 (선택사항)</FormLabel>
+                              <FormControl>
+                                <Input type="email" placeholder="이메일" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <Button type="submit" disabled={assignManagerMutation.isPending}>
+                          {assignManagerMutation.isPending ? '배정 중...' : '팀에 배정'}
+                        </Button>
+                      </form>
+                    </Form>
+                  )}
                 </DialogContent>
               </Dialog>
             </CardHeader>

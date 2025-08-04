@@ -127,6 +127,10 @@ export interface IStorage {
   updateDocumentNotes(id: number, notes: string): Promise<void>;
   updateDocumentSettlementAmount(id: number, settlementAmount: number): Promise<void>;
   getDocument(id: number): Promise<any>;
+  
+  // 영업과장 계정 관리 (관리자 패널에서 생성된 계정들)
+  getUnassignedSalesManagerAccounts(): Promise<any[]>;
+  assignSalesManagerToTeam(data: any): Promise<any>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1151,14 +1155,19 @@ export class DatabaseStorage implements IStorage {
         // Get service plan info if available
         let servicePlanName = null;
         if (doc.servicePlanId) {
-          const servicePlanResult = await db.select({
-            planName: servicePlans.planName
-          })
-          .from(servicePlans)
-          .where(eq(servicePlans.id, doc.servicePlanId))
-          .limit(1);
-          
-          servicePlanName = servicePlanResult.length > 0 ? servicePlanResult[0].planName : null;
+          try {
+            const servicePlanResult = await db.select({
+              planName: servicePlans.planName
+            })
+            .from(servicePlans)
+            .where(eq(servicePlans.id, doc.servicePlanId))
+            .limit(1);
+            
+            servicePlanName = servicePlanResult.length > 0 ? servicePlanResult[0].planName : null;
+          } catch (error) {
+            console.error('Error fetching service plan:', error);
+            servicePlanName = null;
+          }
         }
         
         return {
@@ -2066,6 +2075,68 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error('Get document error:', error);
       throw new Error('문서 조회에 실패했습니다.');
+    }
+  }
+
+  // 관리자 패널에서 생성된 영업과장 계정 중 팀에 배정되지 않은 계정들 조회
+  async getUnassignedSalesManagerAccounts(): Promise<any[]> {
+    try {
+      // admins 테이블에서 영업과장 계정을 조회 (salesManagers 테이블에 없는 계정들)
+      const unassignedAccounts = await db
+        .select({
+          id: admins.id,
+          username: admins.username,
+          name: admins.name,
+          isActive: admins.isActive,
+          createdAt: admins.createdAt
+        })
+        .from(admins)
+        .leftJoin(salesManagers, eq(salesManagers.username, admins.username))
+        .where(
+          and(
+            eq(admins.isActive, true),
+            isNull(salesManagers.id) // 팀에 배정되지 않은 계정
+          )
+        )
+        .orderBy(admins.createdAt);
+
+      return unassignedAccounts;
+    } catch (error) {
+      console.error('Error getting unassigned sales manager accounts:', error);
+      return [];
+    }
+  }
+
+  // 관리자 패널에서 생성된 영업과장 계정을 팀에 배정
+  async assignSalesManagerToTeam(data: any): Promise<any> {
+    try {
+      // 선택된 관리자 계정 정보 조회
+      const [adminAccount] = await db
+        .select()
+        .from(admins)
+        .where(eq(admins.id, data.salesManagerUserId));
+
+      if (!adminAccount) {
+        throw new Error('선택된 영업과장 계정을 찾을 수 없습니다.');
+      }
+
+      // salesManagers 테이블에 배정 정보 추가
+      const [result] = await db.insert(salesManagers).values({
+        teamId: data.teamId,
+        managerName: adminAccount.name,
+        managerCode: data.managerCode,
+        username: adminAccount.username,
+        password: adminAccount.password, // 기존 암호화된 비밀번호 사용
+        position: data.position || '대리',
+        contactPhone: data.contactPhone || '',
+        email: data.email || '',
+        isActive: true
+      }).returning();
+
+      return result;
+    } catch (error) {
+      console.error('Error assigning sales manager to team:', error);
+      throw error;
     }
   }
 }

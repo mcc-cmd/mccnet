@@ -926,6 +926,16 @@ export const createSalesManagerSchema = z.object({
 
 export const updateSalesManagerSchema = createSalesManagerSchema.partial().omit({ password: true });
 
+// 팀에 영업과장을 배정하는 스키마 (기존 계정을 선택하는 방식)
+export const assignSalesManagerToTeamSchema = z.object({
+  teamId: z.number().min(1, "영업팀을 선택해주세요"),
+  salesManagerUserId: z.number().min(1, "영업과장 계정을 선택해주세요"),
+  managerCode: z.string().min(1, "과장 코드를 입력해주세요"),
+  position: z.enum(['팀장', '과장', '대리']).default('대리'),
+  contactPhone: z.string().optional(),
+  email: z.string().email("올바른 이메일을 입력해주세요").optional().or(z.literal(""))
+});
+
 // 접점 코드 매핑 스키마
 export const createContactCodeMappingSchema = z.object({
   managerId: z.number().min(1, "영업과장을 선택해주세요"),

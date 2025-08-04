@@ -10,6 +10,7 @@ import { storage } from "./storage";
 import { 
   createSalesTeamSchema,
   createSalesManagerSchema,
+  assignSalesManagerToTeamSchema,
   createContactCodeMappingSchema,
   updateSalesTeamSchema, 
   updateSalesManagerSchema,
@@ -2866,6 +2867,29 @@ router.post('/api/chat/message', requireAuth, async (req: any, res) => {
   } catch (error: any) {
     console.error('Send message error:', error);
     res.status(500).json({ error: '메시지 전송에 실패했습니다.' });
+  }
+});
+
+// 관리자 패널에서 생성된 영업과장 계정 목록 조회 (팀에 배정되지 않은 계정들)
+router.get('/api/admin/unassigned-sales-managers', requireAuth, async (req: any, res) => {
+  try {
+    const unassignedManagers = await storage.getUnassignedSalesManagerAccounts();
+    res.json(unassignedManagers);
+  } catch (error: any) {
+    console.error('Get unassigned sales managers error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// 영업과장을 팀에 배정하는 API
+router.post('/api/admin/assign-sales-manager', requireAuth, async (req: any, res) => {
+  try {
+    const data = assignSalesManagerToTeamSchema.parse(req.body);
+    const result = await storage.assignSalesManagerToTeam(data);
+    res.json(result);
+  } catch (error: any) {
+    console.error('Assign sales manager error:', error);
+    res.status(400).json({ error: error.message });
   }
 });
 
