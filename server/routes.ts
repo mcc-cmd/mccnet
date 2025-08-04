@@ -426,6 +426,12 @@ router.post('/api/admin/create-sales-manager', requireAdmin, async (req, res) =>
       return res.status(400).json({ error: '모든 필드를 입력해주세요.' });
     }
 
+    // 사용자명 중복 체크
+    const existingUser = await storage.getSalesManagerByUsername(username);
+    if (existingUser) {
+      return res.status(400).json({ error: `로그인 ID '${username}'는 이미 사용 중입니다.` });
+    }
+
     // 팀이 존재하는지 확인하고, 없으면 생성
     let salesTeam = await storage.getSalesTeamByName(team);
     if (!salesTeam) {
@@ -437,63 +443,37 @@ router.post('/api/admin/create-sales-manager', requireAdmin, async (req, res) =>
       });
     }
 
-    // 고유한 영업과장 코드 생성
-    let managerCode = `${salesTeam.teamCode}_${username.toUpperCase()}`;
-    let counter = 1;
-    let maxAttempts = 100; // 무한 루프 방지
-    
-    // 중복 확인 및 고유 코드 생성
-    while (counter <= maxAttempts) {
+    // 고유한 영업과장 코드 생성 - 타임스탬프와 랜덤 요소 포함
+    const timestamp = Date.now().toString();
+    const randomSuffix = Math.random().toString(36).substring(2, 5).toUpperCase();
+    let managerCode = `${salesTeam.teamCode}_${username.toUpperCase()}_${timestamp.slice(-6)}_${randomSuffix}`;
+
+    // 만약 이것도 중복이면 더 긴 랜덤 문자열 사용
+    let attempts = 0;
+    while (attempts < 5) {
       const existingManager = await storage.getSalesManagerByCode(managerCode);
       if (!existingManager) break;
       
-      managerCode = `${salesTeam.teamCode}_${username.toUpperCase()}_${counter.toString().padStart(2, '0')}`;
-      counter++;
+      const longRandom = Math.random().toString(36).substring(2, 10).toUpperCase();
+      managerCode = `${salesTeam.teamCode}_${username.toUpperCase()}_${longRandom}`;
+      attempts++;
     }
 
-    // 영업과장 생성 - 중복 체크를 우회하기 위해 직접 DB 삽입
-    try {
-      const manager = await storage.createSalesManager({
-        teamId: salesTeam.id,
-        managerName: name,
-        managerCode,
-        username,
-        password,
-        contactPhone: '',
-        email: ''
-      });
-      
-      res.json(manager);
-    } catch (error: any) {
-      console.error('Sales manager creation error:', error);
-      // 중복 오류인 경우 다른 코드로 재시도
-      if (error.message.includes('duplicate') || error.message.includes('중복')) {
-        const timestamp = Date.now().toString().slice(-4);
-        const alternativeCode = `${salesTeam.teamCode}_${username.toUpperCase()}_${timestamp}`;
-        
-        try {
-          const manager = await storage.createSalesManager({
-            teamId: salesTeam.id,
-            managerName: name,
-            managerCode: alternativeCode,
-            username,
-            password,
-            contactPhone: '',
-            email: ''
-          });
-          
-          res.json(manager);
-        } catch (retryError: any) {
-          console.error('Sales manager retry creation error:', retryError);
-          res.status(400).json({ error: `영업과장 생성에 실패했습니다: ${retryError.message}` });
-        }
-      } else {
-        res.status(400).json({ error: `영업과장 생성에 실패했습니다: ${error.message}` });
-      }
-    }
+    // 영업과장 생성
+    const manager = await storage.createSalesManager({
+      teamId: salesTeam.id,
+      managerName: name,
+      managerCode,
+      username,
+      password,
+      contactPhone: '',
+      email: ''
+    });
+
+    res.json(manager);
   } catch (error: any) {
-    console.error('Outer sales manager creation error:', error);
-    res.status(500).json({ error: `영업과장 생성 중 오류가 발생했습니다: ${error.message}` });
+    console.error('Sales manager creation error:', error);
+    res.status(400).json({ error: `영업과장 생성에 실패했습니다: ${error.message}` });
   }
 });
 
