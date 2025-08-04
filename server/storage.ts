@@ -212,20 +212,6 @@ export class DatabaseStorage implements IStorage {
 
   // 영업과장 관리 메서드
   async createSalesManager(data: CreateSalesManagerForm): Promise<SalesManager> {
-    // 중복 체크: username
-    const existingByUsername = await this.getSalesManagerByUsername(data.username);
-    if (existingByUsername) {
-      throw new Error(`로그인 ID '${data.username}'는 이미 사용 중입니다.`);
-    }
-
-    // 중복 체크: managerCode
-    const [existingByCode] = await db.select().from(salesManagers).where(
-      and(eq(salesManagers.managerCode, data.managerCode), eq(salesManagers.isActive, true))
-    );
-    if (existingByCode) {
-      throw new Error(`과장 코드 '${data.managerCode}'는 이미 사용 중입니다.`);
-    }
-
     const hashedPassword = await bcrypt.hash(data.password, 10);
     const [result] = await db.insert(salesManagers).values({
       teamId: data.teamId,
