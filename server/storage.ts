@@ -1138,8 +1138,8 @@ export class DatabaseStorage implements IStorage {
       const result = await query.orderBy(desc(documents.uploadedAt));
       console.log('Documents found:', result.length);
       
-      // Add dealer name from contact codes
-      const documentsWithDealerName = await Promise.all(result.map(async (doc) => {
+      // Add dealer name and service plan info
+      const documentsWithDetails = await Promise.all(result.map(async (doc) => {
         // Get dealer name from contact codes table
         const contactCodeResult = await db.select({
           dealerName: contactCodes.dealerName
@@ -1148,13 +1148,27 @@ export class DatabaseStorage implements IStorage {
         .where(eq(contactCodes.code, doc.contactCode))
         .limit(1);
         
+        // Get service plan info if available
+        let servicePlanName = null;
+        if (doc.servicePlanId) {
+          const servicePlanResult = await db.select({
+            planName: servicePlans.planName
+          })
+          .from(servicePlans)
+          .where(eq(servicePlans.id, doc.servicePlanId))
+          .limit(1);
+          
+          servicePlanName = servicePlanResult.length > 0 ? servicePlanResult[0].planName : null;
+        }
+        
         return {
           ...doc,
-          dealerName: contactCodeResult.length > 0 ? contactCodeResult[0].dealerName : '미확인'
+          dealerName: contactCodeResult.length > 0 ? contactCodeResult[0].dealerName : '미확인',
+          servicePlanName
         };
       }));
       
-      return documentsWithDealerName;
+      return documentsWithDetails;
     } catch (error) {
       console.error('Error fetching documents:', error);
       throw new Error('문서 조회에 실패했습니다.');
