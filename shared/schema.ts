@@ -109,6 +109,9 @@ export const carriers = pgTable("carriers", {
   requireDocumentUpload: boolean("require_document_upload").default(false), // 서류 업로드 필수
   requireBundleNumber: boolean("require_bundle_number").default(false), // 결합 번호 필수
   requireBundleCarrier: boolean("require_bundle_carrier").default(false), // 결합 통신사 필수
+  allowNewCustomer: boolean("allow_new_customer").default(true), // 신규 고객 허용
+  allowPortIn: boolean("allow_port_in").default(true), // 번호이동 허용
+  requireDesiredNumber: boolean("require_desired_number").default(false), // 희망번호 필수 (신규시)
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -879,6 +882,9 @@ export const createCarrierSchema = z.object({
   requireDocumentUpload: z.boolean().default(false),
   requireBundleNumber: z.boolean().default(false),
   requireBundleCarrier: z.boolean().default(false),
+  allowNewCustomer: z.boolean().default(true),
+  allowPortIn: z.boolean().default(true),
+  requireDesiredNumber: z.boolean().default(false),
 });
 
 export const updateCarrierSchema = createCarrierSchema.partial();

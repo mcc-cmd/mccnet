@@ -148,7 +148,10 @@ function CarrierManagement() {
         requirePreviousCarrier: editingCarrier.requirePreviousCarrier || false,
         requireDocumentUpload: editingCarrier.requireDocumentUpload || false,
         requireBundleNumber: editingCarrier.requireBundleNumber || false,
-        requireBundleCarrier: editingCarrier.requireBundleCarrier || false
+        requireBundleCarrier: editingCarrier.requireBundleCarrier || false,
+        allowNewCustomer: editingCarrier.allowNewCustomer !== false,
+        allowPortIn: editingCarrier.allowPortIn !== false,
+        requireDesiredNumber: editingCarrier.requireDesiredNumber || false
       };
     }
     return {
@@ -167,7 +170,10 @@ function CarrierManagement() {
       requirePreviousCarrier: false,
       requireDocumentUpload: false,
       requireBundleNumber: false,
-      requireBundleCarrier: false
+      requireBundleCarrier: false,
+      allowNewCustomer: true,
+      allowPortIn: true,
+      requireDesiredNumber: false
     };
   };
 
@@ -796,6 +802,67 @@ function CarrierManagement() {
                         <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
                           <div className="space-y-0.5">
                             <FormLabel className="text-sm">결합통신사</FormLabel>
+                          </div>
+                          <FormControl>
+                            <Switch
+                              checked={field.value}
+                              onCheckedChange={field.onChange}
+                            />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                </div>
+
+                {/* 고객 유형 설정 */}
+                <div className="space-y-4">
+                  <h4 className="text-sm font-medium text-gray-900">고객 유형별 지원 설정</h4>
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                      control={carrierForm.control}
+                      name="allowNewCustomer"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
+                          <div className="space-y-0.5">
+                            <FormLabel className="text-sm">신규</FormLabel>
+                            <FormDescription className="text-xs">신규 고객 지원 여부</FormDescription>
+                          </div>
+                          <FormControl>
+                            <Switch
+                              checked={field.value}
+                              onCheckedChange={field.onChange}
+                            />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={carrierForm.control}
+                      name="allowPortIn"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
+                          <div className="space-y-0.5">
+                            <FormLabel className="text-sm">번호이동</FormLabel>
+                            <FormDescription className="text-xs">번호이동 고객 지원 여부</FormDescription>
+                          </div>
+                          <FormControl>
+                            <Switch
+                              checked={field.value}
+                              onCheckedChange={field.onChange}
+                            />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={carrierForm.control}
+                      name="requireDesiredNumber"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
+                          <div className="space-y-0.5">
+                            <FormLabel className="text-sm">희망번호</FormLabel>
+                            <FormDescription className="text-xs">신규 시 희망번호 입력 필수</FormDescription>
                           </div>
                           <FormControl>
                             <Switch
