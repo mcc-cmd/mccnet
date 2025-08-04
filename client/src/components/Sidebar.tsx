@@ -70,7 +70,7 @@ export function Sidebar({ isOpen = true, onClose }: SidebarProps) {
       
       {/* Sidebar */}
       <div className={cn(
-        "fixed inset-y-0 left-0 z-30 w-64 bg-primary transform transition-transform duration-300 ease-in-out md:translate-x-0 md:static md:inset-0",
+        "fixed inset-y-0 left-0 z-30 w-auto min-w-64 max-w-80 bg-primary transform transition-transform duration-300 ease-in-out md:translate-x-0 md:static md:inset-0",
         isOpen ? "translate-x-0" : "-translate-x-full"
       )}>
         <div className="flex flex-col h-full">
@@ -83,7 +83,7 @@ export function Sidebar({ isOpen = true, onClose }: SidebarProps) {
                 className="h-12 w-auto mb-3"
               />
               <div className="text-center">
-                <h1 className="text-lg font-semibold text-white leading-tight">MCC네트월드</h1>
+                <h1 className="text-lg font-semibold text-white leading-tight whitespace-nowrap">MCC네트월드</h1>
               </div>
             </Link>
           </div>
@@ -104,14 +104,14 @@ export function Sidebar({ isOpen = true, onClose }: SidebarProps) {
           )}
 
           {/* Navigation */}
-          <nav className="flex-1 px-2 pb-4 space-y-1">
+          <nav className="flex-1 px-3 pb-4 space-y-1">
             {currentNavigation.map((item) => {
               const isActive = location === item.href;
               return (
                 <Link key={item.name} href={item.href}>
                   <div
                     className={cn(
-                      "group flex items-center px-2 py-2 text-sm font-medium rounded-md transition-colors cursor-pointer",
+                      "group flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors cursor-pointer whitespace-nowrap",
                       isActive
                         ? "bg-accent text-white"
                         : "text-gray-300 hover:bg-gray-700 hover:text-white"
@@ -124,7 +124,7 @@ export function Sidebar({ isOpen = true, onClose }: SidebarProps) {
                         isActive ? "text-white" : "text-gray-400"
                       )}
                     />
-                    {item.name}
+                    <span className="flex-1">{item.name}</span>
                   </div>
                 </Link>
               );

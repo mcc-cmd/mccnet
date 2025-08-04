@@ -14,7 +14,7 @@ export function Layout({ children, title }: LayoutProps) {
     <div className="flex h-screen bg-gray-100">
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       
-      <div className="flex flex-col w-0 flex-1 overflow-hidden">
+      <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
         <TopNavigation title={title} onMenuClick={() => setSidebarOpen(true)} />
         
         <main className="flex-1 relative overflow-y-auto focus:outline-none">
