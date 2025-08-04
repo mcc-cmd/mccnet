@@ -36,7 +36,8 @@ import {
   DollarSign,
   FileSpreadsheet,
   Image as ImageIcon,
-  Info
+  Info,
+  Search
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
@@ -1118,6 +1119,10 @@ export function AdminPanel() {
   const [pricingTitle, setPricingTitle] = useState('');
   const [templateTitle, setTemplateTitle] = useState('');
   const [templateCategory, setTemplateCategory] = useState<'가입서류' | '변경서류'>('가입서류');
+  
+  // 정산단가 검색 상태
+  const [settlementSearchTerm, setSettlementSearchTerm] = useState('');
+  const [settlementCarrierFilter, setSettlementCarrierFilter] = useState('all');
   
   // 접점코드 관리 상태
   const [newContactCode, setNewContactCode] = useState('');
@@ -2604,7 +2609,12 @@ export function AdminPanel() {
       });
     } else {
       // Create new price
-      console.log('Creating new price');
+      console.log('Creating new price with data:', {
+        servicePlanId: selectedServicePlan.id,
+        newCustomerPrice: data.newCustomerPrice,
+        portInPrice: data.portInPrice,
+        memo: data.memo,
+      });
       createSettlementPriceMutation.mutate({
         servicePlanId: selectedServicePlan.id,
         newCustomerPrice: data.newCustomerPrice,
@@ -5458,9 +5468,45 @@ export function AdminPanel() {
                   </div>
                 ) : (
                   <div className="space-y-4">
+                    {/* 검색 및 필터 */}
+                    <div className="flex flex-col sm:flex-row gap-4 mb-6">
+                      <div className="flex-1 relative">
+                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                        <Input
+                          placeholder="통신사 또는 요금제명으로 검색..."
+                          value={settlementSearchTerm}
+                          onChange={(e) => setSettlementSearchTerm(e.target.value)}
+                          className="w-full pl-10"
+                        />
+                      </div>
+                      <div className="min-w-[200px]">
+                        <Select
+                          value={settlementCarrierFilter}
+                          onValueChange={setSettlementCarrierFilter}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="통신사 선택" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">전체 통신사</SelectItem>
+                            {Array.from(new Set(servicePlans?.map(plan => plan.carrier) || [])).map((carrier) => (
+                              <SelectItem key={carrier} value={carrier}>
+                                {carrier}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+
                     {/* Service Plans with Unit Pricing */}
                     <div className="grid gap-4">
-                      {servicePlans?.map((plan) => {
+                      {servicePlans?.filter((plan) => {
+                        const matchesSearch = plan.planName.toLowerCase().includes(settlementSearchTerm.toLowerCase()) ||
+                                            plan.carrier.toLowerCase().includes(settlementSearchTerm.toLowerCase());
+                        const matchesCarrier = settlementCarrierFilter === 'all' || plan.carrier === settlementCarrierFilter;
+                        return matchesSearch && matchesCarrier;
+                      }).map((plan) => {
                         const currentPrice = settlementPrices?.find(p => p.servicePlanId === plan.id);
                         return (
                           <div key={plan.id} className="flex items-center justify-between p-4 border rounded-lg bg-gray-50">
@@ -5513,6 +5559,20 @@ export function AdminPanel() {
                         );
                       })}
                     </div>
+
+                    {/* 검색 결과가 없을 때 */}
+                    {servicePlans?.filter((plan) => {
+                      const matchesSearch = plan.planName.toLowerCase().includes(settlementSearchTerm.toLowerCase()) ||
+                                          plan.carrier.toLowerCase().includes(settlementSearchTerm.toLowerCase());
+                      const matchesCarrier = settlementCarrierFilter === 'all' || plan.carrier === settlementCarrierFilter;
+                      return matchesSearch && matchesCarrier;
+                    }).length === 0 && servicePlans?.length > 0 && (
+                      <div className="text-center py-8">
+                        <Search className="mx-auto h-12 w-12 text-gray-400" />
+                        <h3 className="mt-2 text-sm font-medium text-gray-900">검색 결과가 없습니다</h3>
+                        <p className="mt-1 text-sm text-gray-500">다른 검색어나 필터를 시도해보세요.</p>
+                      </div>
+                    )}
 
                     {servicePlans?.length === 0 && (
                       <div className="text-center py-8">

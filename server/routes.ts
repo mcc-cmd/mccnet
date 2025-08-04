@@ -2395,13 +2395,16 @@ router.get('/api/settlement-unit-prices/all', requireAdmin, async (req: any, res
 
 router.post('/api/settlement-unit-prices', requireAdmin, async (req: any, res) => {
   try {
+    console.log('Settlement unit price creation request body:', req.body);
     const data = createSettlementUnitPriceSchema.parse(req.body);
+    console.log('Parsed data:', data);
     const price = await storage.createSettlementUnitPrice({
       ...data,
       createdBy: req.session.userId
     });
     res.json(price);
   } catch (error: any) {
+    console.error('Settlement unit price creation error:', error);
     res.status(400).json({ error: error.message });
   }
 });
