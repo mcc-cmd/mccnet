@@ -1040,7 +1040,8 @@ export class DatabaseStorage implements IStorage {
         subscriptionNumber: documents.subscriptionNumber,
         servicePlanId: documents.servicePlanId,
         deviceModel: documents.deviceModel,
-        simNumber: documents.simNumber
+        simNumber: documents.simNumber,
+        settlementAmount: documents.settlementAmount
       }).from(documents);
 
       const conditions = [];
