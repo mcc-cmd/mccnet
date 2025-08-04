@@ -80,7 +80,7 @@ export function Documents() {
 
   const { data: documents, isLoading } = useQuery({
     queryKey: ['/api/documents', filters],
-    queryFn: () => {
+    queryFn: async () => {
       const params = new URLSearchParams();
       // 접수 관리는 모든 근무자가 볼 수 있도록 설정 (대기/진행중 상태만 표시)
       params.append('activationStatus', '대기,진행중');
@@ -88,16 +88,18 @@ export function Documents() {
       Object.entries(filters).forEach(([key, value]) => {
         if (value && value !== 'all' && key !== 'activationStatus') params.append(key, value);
       });
-      return apiRequest(`/api/documents?${params}`) as Promise<Document[]>;
+      const response = await apiRequest(`/api/documents?${params}`, { method: 'GET' });
+      return response.json();
     },
   });
 
   const { data: servicePlans, isLoading: servicePlansLoading } = useQuery({
     queryKey: ['/api/service-plans', selectedDocument?.carrier || 'all'],
-    queryFn: () => {
+    queryFn: async () => {
       const carrier = selectedDocument?.carrier;
       const params = carrier ? `?carrier=${encodeURIComponent(carrier)}` : '';
-      return apiRequest(`/api/service-plans${params}`) as Promise<any[]>;
+      const response = await apiRequest(`/api/service-plans${params}`, { method: 'GET' });
+      return response.json();
     },
     enabled: activationDialogOpen, // 활성화 대화상자가 열렸을 때 실행
   });
