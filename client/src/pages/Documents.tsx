@@ -80,7 +80,7 @@ export function Documents() {
 
   const { data: documents, isLoading } = useQuery({
     queryKey: ['/api/documents', filters],
-    queryFn: async () => {
+    queryFn: () => {
       const params = new URLSearchParams();
       // 접수 관리는 모든 근무자가 볼 수 있도록 설정 (대기/진행중 상태만 표시)
       params.append('activationStatus', '대기,진행중');
@@ -88,18 +88,16 @@ export function Documents() {
       Object.entries(filters).forEach(([key, value]) => {
         if (value && value !== 'all' && key !== 'activationStatus') params.append(key, value);
       });
-      const response = await apiRequest(`/api/documents?${params}`, { method: 'GET' });
-      return response.json();
+      return apiRequest(`/api/documents?${params}`);
     },
   });
 
   const { data: servicePlans, isLoading: servicePlansLoading } = useQuery({
     queryKey: ['/api/service-plans', selectedDocument?.carrier || 'all'],
-    queryFn: async () => {
+    queryFn: () => {
       const carrier = selectedDocument?.carrier;
       const params = carrier ? `?carrier=${encodeURIComponent(carrier)}` : '';
-      const response = await apiRequest(`/api/service-plans${params}`, { method: 'GET' });
-      return response.json();
+      return apiRequest(`/api/service-plans${params}`);
     },
     enabled: activationDialogOpen, // 활성화 대화상자가 열렸을 때 실행
   });
@@ -374,23 +372,11 @@ export function Documents() {
   };
 
   const updateActivationMutation = useMutation({
-    mutationFn: async ({ id, data }: { id: number; data: any }) => {
-      const sessionId = useAuth.getState().sessionId;
-      const response = await fetch(`/api/documents/${id}/activation`, {
+    mutationFn: ({ id, data }: { id: number; data: any }) => {
+      return apiRequest(`/api/documents/${id}/activation`, {
         method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${sessionId}`,
-        },
-        body: JSON.stringify(data),
+        body: JSON.stringify(data)
       });
-      
-      if (!response.ok) {
-        const error = await response.json().catch(() => ({ error: '개통 상태 변경에 실패했습니다.' }));
-        throw new Error(error.error || '개통 상태 변경에 실패했습니다.');
-      }
-      
-      return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/documents'] });
