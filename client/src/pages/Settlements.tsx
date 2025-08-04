@@ -1038,11 +1038,11 @@ export function Settlements() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="grid lg:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
               {/* 필터링 옵션 */}
               <div className="space-y-4">
                 <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100">필터링 옵션</h3>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="start-date">시작 날짜</Label>
                     <Input
@@ -1072,7 +1072,7 @@ export function Settlements() {
                     onChange={(e) => setSearchQuery(e.target.value)}
                   />
                 </div>
-                <div className="flex gap-2">
+                <div className="flex flex-col sm:flex-row gap-2">
                   <Button
                     onClick={handleSearch}
                     className="bg-blue-600 hover:bg-blue-700 flex-1"
@@ -1092,7 +1092,7 @@ export function Settlements() {
 
               {/* 정산 금액 요약 */}
               <div className="space-y-4">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                   <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100">정산 금액 요약</h3>
                   <div className="text-sm text-gray-500 dark:text-gray-400">
                     {startDate === currentMonthDates.start && endDate === currentMonthDates.end 
@@ -1103,7 +1103,7 @@ export function Settlements() {
                     }
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="bg-blue-50 dark:bg-blue-900 p-4 rounded-lg">
                     <div className="text-sm text-blue-600 dark:text-blue-400">검색 결과 건수</div>
                     <div className="text-2xl font-bold text-blue-900 dark:text-blue-100">
@@ -1113,9 +1113,21 @@ export function Settlements() {
                   <div className="bg-teal-50 dark:bg-teal-900 p-4 rounded-lg">
                     <div className="text-sm text-teal-600 dark:text-teal-400">예상 정산액</div>
                     <div className="text-2xl font-bold text-teal-900 dark:text-teal-100">
-                      {completedDocuments && settlementPrices ? 
+                      {completedDocuments ? 
                         completedDocuments
-                          .reduce((sum, doc) => sum + calculateSettlementAmount(doc, settlementPrices, deductionPolicies), 0)
+                          .reduce((sum, doc) => {
+                            // 수동 입력된 정산 금액이 있으면 그것을 사용, 없으면 자동 계산
+                            let amount = 0;
+                            if ((doc as any).settlementAmount) {
+                              const parsedAmount = parseFloat((doc as any).settlementAmount);
+                              if (!isNaN(parsedAmount)) {
+                                amount = parsedAmount;
+                              }
+                            } else if (settlementPrices && settlementPrices.length > 0) {
+                              amount = calculateSettlementAmount(doc, settlementPrices, deductionPolicies);
+                            }
+                            return sum + amount;
+                          }, 0)
                           .toLocaleString()
                         : '0'
                       }원
@@ -1175,23 +1187,24 @@ export function Settlements() {
             ) : completedDocuments && Array.isArray(completedDocuments) && completedDocuments.length > 0 ? (
               <>
                 {/* Desktop Table View */}
-                <div className="hidden lg:block overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead className="w-20 text-xs font-medium">개통날짜</TableHead>
-                        <TableHead className="w-20 text-xs font-medium">고객명</TableHead>
-                        <TableHead className="w-28 text-xs font-medium">연락처</TableHead>
-                        <TableHead className="w-32 text-xs font-medium">판매점명</TableHead>
-                        <TableHead className="w-24 text-xs font-medium">통신사</TableHead>
-                        <TableHead className="w-32 text-xs font-medium">요금제</TableHead>
-                        <TableHead className="w-24 text-xs font-medium">부가서비스</TableHead>
-                        <TableHead className="w-20 text-xs font-medium">결합여부</TableHead>
-                        <TableHead className="w-24 text-xs font-medium">정산금액</TableHead>
-                        <TableHead className="w-28 text-xs font-medium">가입번호</TableHead>
-                        <TableHead className="w-24 text-xs font-medium">기기/유심</TableHead>
-                      </TableRow>
-                    </TableHeader>
+                <div className="hidden md:block">
+                  <div className="overflow-x-auto">
+                    <Table className="min-w-full">
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="min-w-[80px] text-xs font-medium">개통날짜</TableHead>
+                          <TableHead className="min-w-[80px] text-xs font-medium">고객명</TableHead>
+                          <TableHead className="min-w-[120px] text-xs font-medium">연락처</TableHead>
+                          <TableHead className="min-w-[120px] text-xs font-medium">판매점명</TableHead>
+                          <TableHead className="min-w-[80px] text-xs font-medium">통신사</TableHead>
+                          <TableHead className="min-w-[100px] text-xs font-medium">요금제</TableHead>
+                          <TableHead className="min-w-[80px] text-xs font-medium">부가서비스</TableHead>
+                          <TableHead className="min-w-[80px] text-xs font-medium">결합여부</TableHead>
+                          <TableHead className="min-w-[100px] text-xs font-medium">정산금액</TableHead>
+                          <TableHead className="min-w-[120px] text-xs font-medium">가입번호</TableHead>
+                          <TableHead className="min-w-[100px] text-xs font-medium">기기/유심</TableHead>
+                        </TableRow>
+                      </TableHeader>
                   <TableBody>
                     {completedDocuments.map((doc) => (
                       <TableRow key={doc.id}>
@@ -1269,12 +1282,13 @@ export function Settlements() {
                         </TableCell>
                       </TableRow>
                     ))}
-                  </TableBody>
-                </Table>
+                    </TableBody>
+                  </Table>
+                  </div>
                 </div>
 
                 {/* Mobile Card View */}
-                <div className="lg:hidden space-y-4">
+                <div className="md:hidden space-y-4">
                   {completedDocuments.map((doc) => (
                     <Card key={doc.id} className="border border-gray-200">
                       <CardContent className="p-4">
