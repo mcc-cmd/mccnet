@@ -1296,6 +1296,26 @@ router.patch('/api/documents/:id', requireAdmin, async (req: any, res) => {
   }
 });
 
+// 정산 금액 수정 API
+router.patch('/api/documents/:id/settlement-amount', requireAdmin, async (req: any, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const { settlementAmount } = req.body;
+    
+    console.log('Updating settlement amount for document:', id, 'amount:', settlementAmount);
+    
+    if (typeof settlementAmount !== 'number' || settlementAmount < 0) {
+      return res.status(400).json({ error: '유효하지 않은 정산 금액입니다.' });
+    }
+    
+    await storage.updateDocumentSettlementAmount(id, settlementAmount);
+    res.json({ success: true, message: '정산 금액이 수정되었습니다.' });
+  } catch (error: any) {
+    console.error('Settlement amount update error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 router.delete('/api/documents/:id', requireAdmin, async (req: any, res) => {
   try {
     const id = parseInt(req.params.id);

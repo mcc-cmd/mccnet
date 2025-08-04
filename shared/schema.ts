@@ -208,6 +208,8 @@ export const documents = pgTable("documents", {
   settlementNewCustomerPrice: decimal("settlement_new_customer_price", { precision: 10, scale: 2 }),
   settlementPortInPrice: decimal("settlement_port_in_price", { precision: 10, scale: 2 }),
   settlementCalculatedAt: timestamp("settlement_calculated_at"),
+  // 수정된 정산 금액 (관리자가 직접 수정한 경우)
+  settlementAmount: decimal("settlement_amount", { precision: 10, scale: 2 }),
 });
 
 // Database schema types

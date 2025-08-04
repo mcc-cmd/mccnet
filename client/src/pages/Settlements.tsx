@@ -143,6 +143,9 @@ export function Settlements() {
   const [endDate, setEndDate] = useState(currentMonthDates.end);
   const [searchQuery, setSearchQuery] = useState('');
   const [manualDialogOpen, setManualDialogOpen] = useState(false);
+  const [editAmountDialogOpen, setEditAmountDialogOpen] = useState(false);
+  const [selectedDocumentForEdit, setSelectedDocumentForEdit] = useState<CompletedDocument | null>(null);
+  const [editAmount, setEditAmount] = useState('');
 
 
   // 관리자 권한 확인
@@ -515,6 +518,61 @@ export function Settlements() {
   // 수기 정산 등록 제출
   const onSubmit = (data: ManualSettlementForm) => {
     createManualSettlement.mutate(data);
+  };
+
+  // 정산 금액 수정 핸들러
+  const handleEditAmount = (doc: CompletedDocument) => {
+    setSelectedDocumentForEdit(doc);
+    const currentAmount = settlementPrices ? 
+      calculateSettlementAmount(doc, settlementPrices, deductionPolicies).toString() : '0';
+    setEditAmount(currentAmount);
+    setEditAmountDialogOpen(true);
+  };
+
+  // 정산 금액 업데이트 mutation
+  const updateSettlementAmount = useMutation({
+    mutationFn: async ({ documentId, amount }: { documentId: number; amount: number }) => {
+      console.log('Updating settlement amount:', documentId, amount);
+      const response = await apiRequest('PATCH', `/api/documents/${documentId}/settlement-amount`, { settlementAmount: amount });
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "정산 금액 수정 완료",
+        description: "정산 금액이 성공적으로 수정되었습니다.",
+      });
+      setEditAmountDialogOpen(false);
+      setSelectedDocumentForEdit(null);
+      setEditAmount('');
+      queryClient.invalidateQueries({ queryKey: ['/api/documents'] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "수정 실패",
+        description: error.message || "정산 금액 수정 중 오류가 발생했습니다.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // 정산 금액 수정 제출
+  const handleUpdateAmount = () => {
+    if (!selectedDocumentForEdit) return;
+    
+    const amount = parseFloat(editAmount);
+    if (isNaN(amount) || amount < 0) {
+      toast({
+        title: "유효하지 않은 금액",
+        description: "올바른 금액을 입력해주세요.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    updateSettlementAmount.mutate({ 
+      documentId: selectedDocumentForEdit.id, 
+      amount 
+    });
   };
 
 
@@ -1166,9 +1224,16 @@ export function Settlements() {
                         </TableCell>
                         <TableCell className="whitespace-nowrap">
                           {settlementPrices ? (
-                            <div className="text-sm font-medium">
-                              {calculateSettlementAmount(doc, settlementPrices, deductionPolicies).toLocaleString()}원
-                            </div>
+                            <button
+                              onClick={() => handleEditAmount(doc)}
+                              className="text-sm font-medium text-blue-600 hover:text-blue-800 hover:underline cursor-pointer transition-colors"
+                              title="클릭하여 정산 금액 수정"
+                            >
+                              {(doc as any).settlementAmount ? 
+                                `${parseInt((doc as any).settlementAmount).toLocaleString()}원` :
+                                `${calculateSettlementAmount(doc, settlementPrices, deductionPolicies).toLocaleString()}원`
+                              }
+                            </button>
                           ) : (
                             <span className="text-xs text-orange-600">단가 미설정</span>
                           )}
@@ -1223,12 +1288,20 @@ export function Settlements() {
                           </div>
                           <div>
                             <span className="text-muted-foreground">정산금액:</span>
-                            <p className="font-medium text-xs">
-                              {settlementPrices ? 
-                                `${calculateSettlementAmount(doc, settlementPrices, deductionPolicies).toLocaleString()}원`
-                                : '단가 미설정'
-                              }
-                            </p>
+                            {settlementPrices ? (
+                              <button
+                                onClick={() => handleEditAmount(doc)}
+                                className="font-medium text-xs text-blue-600 hover:text-blue-800 hover:underline cursor-pointer transition-colors ml-1"
+                                title="클릭하여 정산 금액 수정"
+                              >
+                                {(doc as any).settlementAmount ? 
+                                  `${parseInt((doc as any).settlementAmount).toLocaleString()}원` :
+                                  `${calculateSettlementAmount(doc, settlementPrices, deductionPolicies).toLocaleString()}원`
+                                }
+                              </button>
+                            ) : (
+                              <span className="text-xs text-orange-600 ml-1">단가 미설정</span>
+                            )}
                           </div>
                           <div>
                             <span className="text-muted-foreground">요금제:</span>
@@ -1260,6 +1333,62 @@ export function Settlements() {
             )}
           </CardContent>
         </Card>
+
+        {/* 정산 금액 수정 다이얼로그 */}
+        <Dialog open={editAmountDialogOpen} onOpenChange={setEditAmountDialogOpen}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>정산 금액 수정</DialogTitle>
+            </DialogHeader>
+            {selectedDocumentForEdit && (
+              <div className="space-y-4">
+                <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                  <div className="text-sm">
+                    <div className="font-medium">{selectedDocumentForEdit.customerName}</div>
+                    <div className="text-gray-600 dark:text-gray-400">{selectedDocumentForEdit.customerPhone}</div>
+                    <div className="text-gray-600 dark:text-gray-400">{selectedDocumentForEdit.storeName || selectedDocumentForEdit.dealerName}</div>
+                  </div>
+                </div>
+                
+                <div>
+                  <Label htmlFor="editAmount">정산 금액 (원)</Label>
+                  <Input
+                    id="editAmount"
+                    type="number"
+                    value={editAmount}
+                    onChange={(e) => setEditAmount(e.target.value)}
+                    placeholder="정산 금액을 입력하세요"
+                    min="0"
+                    step="1000"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    현재 자동 계산된 금액: {settlementPrices ? 
+                      calculateSettlementAmount(selectedDocumentForEdit, settlementPrices, deductionPolicies).toLocaleString() : '0'
+                    }원
+                  </p>
+                </div>
+
+                <div className="flex justify-end space-x-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setEditAmountDialogOpen(false)}
+                  >
+                    취소
+                  </Button>
+                  <Button
+                    type="button"
+                    onClick={handleUpdateAmount}
+                    className="bg-blue-600 hover:bg-blue-700"
+                    disabled={updateSettlementAmount.isPending}
+                  >
+                    {updateSettlementAmount.isPending ? '수정 중...' : '수정'}
+                  </Button>
+                </div>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
     </Layout>
   );

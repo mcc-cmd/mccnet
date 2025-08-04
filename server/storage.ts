@@ -121,6 +121,11 @@ export interface IStorage {
   
   // 근무자 관리
   createWorker(data: CreateWorkerForm): Promise<any>;
+  
+  // 문서 관련 업데이트 메서드들
+  updateDocumentNotes(id: number, notes: string): Promise<void>;
+  updateDocumentSettlementAmount(id: number, settlementAmount: number): Promise<void>;
+  getDocument(id: number): Promise<any>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1770,6 +1775,41 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error('Sales manager auth error:', error);
       return null;
+    }
+  }
+
+  // 문서 관련 업데이트 메서드들
+  async updateDocumentNotes(id: number, notes: string): Promise<void> {
+    try {
+      await db.update(documents)
+        .set({ notes, updatedAt: new Date() })
+        .where(eq(documents.id, id));
+    } catch (error) {
+      console.error('Document notes update error:', error);
+      throw new Error('문서 작업내용 업데이트에 실패했습니다.');
+    }
+  }
+
+  async updateDocumentSettlementAmount(id: number, settlementAmount: number): Promise<void> {
+    try {
+      await db.update(documents)
+        .set({ settlementAmount, updatedAt: new Date() })
+        .where(eq(documents.id, id));
+    } catch (error) {
+      console.error('Document settlement amount update error:', error);
+      throw new Error('정산 금액 업데이트에 실패했습니다.');
+    }
+  }
+
+  async getDocument(id: number): Promise<any> {
+    try {
+      const [document] = await db.select()
+        .from(documents)
+        .where(eq(documents.id, id));
+      return document;
+    } catch (error) {
+      console.error('Get document error:', error);
+      throw new Error('문서 조회에 실패했습니다.');
     }
   }
 }
