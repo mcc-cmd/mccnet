@@ -1,6 +1,6 @@
 import bcrypt from 'bcrypt';
 import { nanoid } from 'nanoid';
-import { eq, and, desc, sql, or, like, gte, lte, inArray, count } from 'drizzle-orm';
+import { eq, and, desc, sql, or, like, gte, lte, inArray, count, isNull, ne } from 'drizzle-orm';
 import { db } from './db';
 import { 
   admins, salesTeams, salesManagers, contactCodeMappings, contactCodes,
