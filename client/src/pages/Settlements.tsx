@@ -472,11 +472,14 @@ export function Settlements() {
     let totalAmount = 0;
     
     allCompletedDocuments.forEach(doc => {
-      // 정산단가가 있을 때만 정산 금액 계산
-      if (settlementPrices) {
-        const amount = calculateSettlementAmount(doc, settlementPrices, deductionPolicies);
-        totalAmount += amount;
+      // 수동 입력된 정산 금액이 있으면 그것을 사용, 없으면 자동 계산
+      let amount = 0;
+      if ((doc as any).settlementAmount) {
+        amount = parseFloat((doc as any).settlementAmount);
+      } else if (settlementPrices) {
+        amount = calculateSettlementAmount(doc, settlementPrices, deductionPolicies);
       }
+      totalAmount += amount;
       
       if (doc.activatedAt) {
         try {
