@@ -1264,18 +1264,12 @@ export function AdminPanel() {
 
   const { data: servicePlans, isLoading: servicePlansLoading } = useQuery({
     queryKey: ['/api/service-plans'],
-    queryFn: async () => {
-      const response = await apiRequest('/api/service-plans', { method: 'GET' });
-      return response.json();
-    },
+    queryFn: () => apiRequest('/api/service-plans') as Promise<ServicePlan[]>,
   });
 
   const { data: additionalServices, isLoading: additionalServicesLoading } = useQuery({
     queryKey: ['/api/additional-services'],
-    queryFn: async () => {
-      const response = await apiRequest('/api/additional-services', { method: 'GET' });
-      return response.json();
-    },
+    queryFn: () => apiRequest('/api/additional-services') as Promise<AdditionalService[]>,
   });
 
   // Contact Codes Query
