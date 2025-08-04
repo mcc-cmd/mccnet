@@ -692,6 +692,7 @@ export function Documents() {
                       <col style={{ width: '100px' }} />
                       <col style={{ width: '60px' }} />
                       <col style={{ width: '60px' }} />
+                      <col style={{ width: '60px' }} />
                       <col style={{ width: '90px' }} />
                       <col style={{ width: '90px' }} />
                       <col style={{ width: '110px' }} />
@@ -713,6 +714,9 @@ export function Documents() {
                         </th>
                         <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                           통신사
+                        </th>
+                        <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          유형
                         </th>
                         <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                           상태
@@ -758,6 +762,13 @@ export function Documents() {
                             <div className="leading-relaxed">
                               {(doc as any).carrier || '-'}
                             </div>
+                          </td>
+                          <td className="px-3 py-2 text-xs">
+                            <Badge variant={
+                              (doc as any).customerType === 'port-in' ? 'destructive' : 'default'
+                            }>
+                              {(doc as any).customerType === 'port-in' ? '번호이동' : '신규'}
+                            </Badge>
                           </td>
                           <td className="px-3 py-2">
                             {getStatusBadge(doc.status)}

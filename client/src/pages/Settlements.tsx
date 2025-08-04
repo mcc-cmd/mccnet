@@ -398,7 +398,8 @@ export function Settlements() {
       if (!fallbackPrice) return 0;
       
       let baseAmount = 0;
-      if (doc.previousCarrier && doc.previousCarrier !== doc.carrier) {
+      const customerType = (doc as any).customerType;
+      if (customerType === 'port-in' || (!customerType && doc.previousCarrier && doc.previousCarrier !== doc.carrier)) {
         baseAmount = fallbackPrice.portInPrice || 0;
       } else {
         baseAmount = fallbackPrice.newCustomerPrice || 0;
@@ -427,10 +428,10 @@ export function Settlements() {
       return Math.max(0, baseAmount - totalDeduction);
     }
     
-    // 기본적으로 신규고객 가격을 사용하고, 번호이동이 있는 경우 해당 가격 사용
-    // previousCarrier가 있으면 번호이동, 없으면 신규 가입으로 판단
+    // customerType 필드가 있으면 우선 사용, 없으면 previousCarrier로 판단 (이전 버전 호환성)
     let baseAmount = 0;
-    if (doc.previousCarrier && doc.previousCarrier !== doc.carrier) {
+    const customerType = (doc as any).customerType;
+    if (customerType === 'port-in' || (!customerType && doc.previousCarrier && doc.previousCarrier !== doc.carrier)) {
       baseAmount = price.portInPrice || 0;
     } else {
       baseAmount = price.newCustomerPrice || 0;
@@ -1197,6 +1198,7 @@ export function Settlements() {
                           <TableHead className="min-w-[120px] text-xs font-medium">연락처</TableHead>
                           <TableHead className="min-w-[120px] text-xs font-medium">판매점명</TableHead>
                           <TableHead className="min-w-[80px] text-xs font-medium">통신사</TableHead>
+                          <TableHead className="min-w-[60px] text-xs font-medium">유형</TableHead>
                           <TableHead className="min-w-[100px] text-xs font-medium">요금제</TableHead>
                           <TableHead className="min-w-[80px] text-xs font-medium">부가서비스</TableHead>
                           <TableHead className="min-w-[80px] text-xs font-medium">결합여부</TableHead>
@@ -1223,6 +1225,13 @@ export function Settlements() {
                         <TableCell className="whitespace-nowrap text-sm max-w-[120px] truncate">{doc.storeName || doc.dealerName}</TableCell>
                         <TableCell className="whitespace-nowrap">
                           <Badge variant="outline" className="text-xs">{doc.carrier}</Badge>
+                        </TableCell>
+                        <TableCell className="whitespace-nowrap">
+                          <Badge variant={
+                            (doc as any).customerType === 'port-in' ? 'destructive' : 'default'
+                          } className="text-xs">
+                            {(doc as any).customerType === 'port-in' ? '번호이동' : '신규'}
+                          </Badge>
                         </TableCell>
                         <TableCell className="whitespace-nowrap text-sm max-w-[140px] truncate">{doc.servicePlanName || '-'}</TableCell>
                         <TableCell className="whitespace-nowrap">
@@ -1316,6 +1325,14 @@ export function Settlements() {
                           <div>
                             <span className="text-muted-foreground">판매점:</span>
                             <p className="font-medium text-xs truncate">{doc.storeName || doc.dealerName}</p>
+                          </div>
+                          <div>
+                            <span className="text-muted-foreground">유형:</span>
+                            <Badge variant={
+                              (doc as any).customerType === 'port-in' ? 'destructive' : 'default'
+                            } className="text-xs mt-1">
+                              {(doc as any).customerType === 'port-in' ? '번호이동' : '신규'}
+                            </Badge>
                           </div>
                           <div>
                             <span className="text-muted-foreground">정산금액:</span>

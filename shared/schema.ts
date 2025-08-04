@@ -168,6 +168,8 @@ export const documents = pgTable("documents", {
   contactCode: varchar("contact_code", { length: 50 }),
   carrier: varchar("carrier", { length: 100 }).notNull(),
   previousCarrier: varchar("previous_carrier", { length: 100 }),
+  customerType: varchar("customer_type", { length: 20 }).default('new'), // 'new' or 'port-in'
+  desiredNumber: varchar("desired_number", { length: 20 }),
   status: varchar("status", { length: 20 }).notNull().default('접수'),
   activationStatus: varchar("activation_status", { length: 20 }).notNull().default('대기'),
   filePath: varchar("file_path", { length: 500 }),
@@ -532,6 +534,8 @@ export const uploadDocumentSchema = z.object({
   contactCode: z.string().min(1, "개통방명 코드를 입력하세요"),
   carrier: z.string().min(1, "통신사를 선택하세요"),
   previousCarrier: z.string().optional(),
+  customerType: z.enum(['new', 'port-in']).optional().default('new'),
+  desiredNumber: z.string().optional(),
   subscriptionNumber: z.string().optional(),
   notes: z.string().optional(),
 });
