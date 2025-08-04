@@ -1495,22 +1495,134 @@ export class DatabaseStorage implements IStorage {
     }
   }
   
-  // 대시보드 통계 메서드들 (임시 구현)
+  // 대시보드 통계 메서드들
   async getDashboardStats(): Promise<any> {
-    return {
-      totalDocuments: 0,
-      pendingDocuments: 0,
-      completedDocuments: 0,
-      todayDocuments: 0
-    };
+    try {
+      const today = new Date();
+      const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+      const todayEnd = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59);
+
+      // 당일 전체 접수 건수
+      const todayTotal = await db.select({ count: sql`count(*)` })
+        .from(documents)
+        .where(
+          and(
+            gte(documents.uploadedAt, todayStart),
+            lte(documents.uploadedAt, todayEnd)
+          )
+        );
+
+      // 당일 접수 중 폐기/취소된 건수
+      const todayDiscarded = await db.select({ count: sql`count(*)` })
+        .from(documents)
+        .where(
+          and(
+            gte(documents.uploadedAt, todayStart),
+            lte(documents.uploadedAt, todayEnd),
+            inArray(documents.activationStatus, ['폐기', '취소'])
+          )
+        );
+
+      // 당일 개통 완료 건수 (신규/번호이동 구분)
+      const todayCompletions = await db.select({
+        customerType: documents.customerType,
+        count: sql`count(*)`
+      })
+        .from(documents)
+        .where(
+          and(
+            gte(documents.activatedAt, todayStart),
+            lte(documents.activatedAt, todayEnd),
+            eq(documents.activationStatus, '개통')
+          )
+        )
+        .groupBy(documents.customerType);
+
+      // 전체 통계
+      const totalStats = await db.select({
+        total: sql`count(*)`,
+        pending: sql`count(case when activation_status in ('대기', '진행중', '업무요청중') then 1 end)`,
+        completed: sql`count(case when activation_status = '개통' then 1 end)`
+      }).from(documents);
+
+      return {
+        totalDocuments: parseInt(String(totalStats[0]?.total || 0)),
+        pendingDocuments: parseInt(String(totalStats[0]?.pending || 0)),
+        completedDocuments: parseInt(String(totalStats[0]?.completed || 0)),
+        todaySubmissions: parseInt(String(todayTotal[0]?.count || 0)),
+        todayDiscarded: parseInt(String(todayDiscarded[0]?.count || 0)),
+        todayCompletions: {
+          new: parseInt(String(todayCompletions.find(c => c.customerType === 'new')?.count || 0)),
+          portIn: parseInt(String(todayCompletions.find(c => c.customerType === 'port-in')?.count || 0)),
+          total: todayCompletions.reduce((sum, c) => sum + parseInt(String(c.count)), 0)
+        }
+      };
+    } catch (error) {
+      console.error('Get dashboard stats error:', error);
+      return {
+        totalDocuments: 0,
+        pendingDocuments: 0,
+        completedDocuments: 0,
+        todaySubmissions: 0,
+        todayDiscarded: 0,
+        todayCompletions: { new: 0, portIn: 0, total: 0 }
+      };
+    }
   }
   
   async getTodayStats(): Promise<any> {
-    return {
-      todaySubmissions: 0,
-      todayCompletions: 0,
-      todayRevenue: 0
-    };
+    try {
+      const today = new Date();
+      const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+      const todayEnd = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59);
+
+      // 당일 접수 건수
+      const todaySubmissions = await db.select({ count: sql`count(*)` })
+        .from(documents)
+        .where(
+          and(
+            gte(documents.uploadedAt, todayStart),
+            lte(documents.uploadedAt, todayEnd)
+          )
+        );
+
+      // 당일 개통 완료 건수
+      const todayCompletions = await db.select({ count: sql`count(*)` })
+        .from(documents)
+        .where(
+          and(
+            gte(documents.activatedAt, todayStart),
+            lte(documents.activatedAt, todayEnd),
+            eq(documents.activationStatus, '개통')
+          )
+        );
+
+      // 당일 정산 금액 (수동 입력된 정산 금액 포함)
+      const todayRevenue = await db.select({
+        total: sql`sum(case when settlement_amount is not null then settlement_amount else 0 end)`
+      })
+        .from(documents)
+        .where(
+          and(
+            gte(documents.activatedAt, todayStart),
+            lte(documents.activatedAt, todayEnd),
+            eq(documents.activationStatus, '개통')
+          )
+        );
+
+      return {
+        todaySubmissions: parseInt(String(todaySubmissions[0]?.count || 0)),
+        todayCompletions: parseInt(String(todayCompletions[0]?.count || 0)),
+        todayRevenue: parseInt(String(todayRevenue[0]?.total || 0))
+      };
+    } catch (error) {
+      console.error('Get today stats error:', error);
+      return {
+        todaySubmissions: 0,
+        todayCompletions: 0,
+        todayRevenue: 0
+      };
+    }
   }
   
   async getWorkerStats(): Promise<any[]> {

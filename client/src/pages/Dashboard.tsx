@@ -204,14 +204,28 @@ export function Dashboard() {
                       <Upload className="h-8 w-8 text-blue-600" />
                     </div>
                     <div className="mt-3">
-                      {todayStatsLoading ? (
+                      {statsLoading ? (
                         <Skeleton className="h-10 w-16" />
                       ) : (
-                        <div className="text-2xl font-bold text-blue-600">
-                          {todayStats?.todayReception || 0}
-                        </div>
+                        <>
+                          <div className="text-2xl font-bold text-blue-600">
+                            {stats?.todaySubmissions || 0}
+                          </div>
+                          <div className="text-sm text-blue-600 mt-1">건</div>
+                          
+                          {/* 폐기/취소 세부사항 */}
+                          {stats?.todayDiscarded > 0 && (
+                            <div className="mt-3 p-2 rounded bg-red-100 border border-red-200">
+                              <div className="text-sm font-medium text-red-700">
+                                폐기/취소: {stats.todayDiscarded}건
+                              </div>
+                              <div className="text-xs text-red-600 mt-1">
+                                당일 접수 후 처리된 건수
+                              </div>
+                            </div>
+                          )}
+                        </>
                       )}
-                      <div className="text-sm text-blue-600 mt-1">건</div>
                     </div>
                   </div>
 
@@ -225,14 +239,30 @@ export function Dashboard() {
                       <CheckCircle className="h-8 w-8 text-green-600" />
                     </div>
                     <div className="mt-3">
-                      {todayStatsLoading ? (
+                      {statsLoading ? (
                         <Skeleton className="h-10 w-16" />
                       ) : (
-                        <div className="text-2xl font-bold text-green-600">
-                          {todayStats?.todayActivation || 0}
-                        </div>
+                        <>
+                          <div className="text-2xl font-bold text-green-600">
+                            {stats?.todayCompletions?.total || 0}
+                          </div>
+                          <div className="text-sm text-green-600 mt-1">건</div>
+                          
+                          {/* 신규/번호이동 세부사항 */}
+                          <div className="mt-3 grid grid-cols-2 gap-2">
+                            <div className="p-2 rounded bg-green-100 border border-green-200">
+                              <div className="text-sm font-medium text-green-700">
+                                신규: {stats?.todayCompletions?.new || 0}건
+                              </div>
+                            </div>
+                            <div className="p-2 rounded bg-blue-100 border border-blue-200">
+                              <div className="text-sm font-medium text-blue-700">
+                                번호이동: {stats?.todayCompletions?.portIn || 0}건
+                              </div>
+                            </div>
+                          </div>
+                        </>
                       )}
-                      <div className="text-sm text-green-600 mt-1">건</div>
                     </div>
                   </div>
                 </div>
