@@ -118,7 +118,10 @@ export interface IStorage {
   updateAdminPassword(adminId: number, newPassword: string): Promise<void>;
   updateSalesManagerPassword(managerId: number, newPassword: string): Promise<void>;
   updateUserPassword(userId: number, newPassword: string): Promise<void>;
-  deleteSalesManager(managerId: number): Promise<void>;
+  
+  // 사용 가능한 영업과장 계정 조회 (조직관리용)
+  getAvailableManagers(): Promise<SalesManager[]>;
+  assignManagerToTeam(managerId: number, teamId: number): Promise<SalesManager>;
   
   // 근무자 관리
   createWorker(data: CreateWorkerForm): Promise<any>;
@@ -182,7 +185,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getSalesTeams(): Promise<SalesTeam[]> {
-    return await db.select().from(salesTeams).where(eq(salesTeams.isActive, true)).orderBy(salesTeams.teamName);
+    return await db.select().from(salesTeams).where(eq(salesTeams.isActive, 1)).orderBy(salesTeams.teamName);
   }
 
   async getSalesTeamById(id: number): Promise<SalesTeam | undefined> {
@@ -192,7 +195,7 @@ export class DatabaseStorage implements IStorage {
 
   async getSalesTeamByName(teamName: string): Promise<SalesTeam | undefined> {
     const [team] = await db.select().from(salesTeams).where(
-      and(eq(salesTeams.teamName, teamName), eq(salesTeams.isActive, true))
+      and(eq(salesTeams.teamName, teamName), eq(salesTeams.isActive, 1))
     );
     return team;
   }
@@ -210,7 +213,7 @@ export class DatabaseStorage implements IStorage {
 
   async deleteSalesTeam(id: number): Promise<void> {
     await db.update(salesTeams)
-      .set({ isActive: false, updatedAt: new Date() })
+      .set({ isActive: 0, updatedAt: new Date() })
       .where(eq(salesTeams.id, id));
   }
 
@@ -231,7 +234,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getSalesManagers(): Promise<SalesManager[]> {
-    return await db.select().from(salesManagers).where(eq(salesManagers.isActive, true)).orderBy(salesManagers.managerName);
+    return await db.select().from(salesManagers).where(eq(salesManagers.isActive, 1)).orderBy(salesManagers.managerName);
   }
 
   async getSalesManagerById(id: number): Promise<SalesManager | undefined> {
@@ -246,31 +249,31 @@ export class DatabaseStorage implements IStorage {
 
   async getSalesManagerByUsername(username: string): Promise<SalesManager | undefined> {
     const [manager] = await db.select().from(salesManagers).where(
-      and(eq(salesManagers.username, username), eq(salesManagers.isActive, true))
+      and(eq(salesManagers.username, username), eq(salesManagers.isActive, 1))
     );
     return manager;
   }
 
   async getSalesManagerByCode(managerCode: string): Promise<SalesManager | undefined> {
     const [manager] = await db.select().from(salesManagers).where(
-      and(eq(salesManagers.managerCode, managerCode), eq(salesManagers.isActive, true))
+      and(eq(salesManagers.managerCode, managerCode), eq(salesManagers.isActive, 1))
     );
     return manager;
   }
 
-  async getSalesManagers(): Promise<SalesManager[]> {
+  async getAvailableManagers(): Promise<SalesManager[]> {
     try {
-      const managers = await db.select().from(salesManagers).where(eq(salesManagers.isActive, true));
+      const managers = await db.select().from(salesManagers).where(eq(salesManagers.isActive, 1));
       return managers;
     } catch (error) {
-      console.error('getSalesManagers error:', error);
+      console.error('getAvailableManagers error:', error);
       return [];
     }
   }
 
   async getSalesManagersByTeamId(teamId: number): Promise<SalesManager[]> {
     return await db.select().from(salesManagers)
-      .where(and(eq(salesManagers.teamId, teamId), eq(salesManagers.isActive, true)))
+      .where(and(eq(salesManagers.teamId, teamId), eq(salesManagers.isActive, 1)))
       .orderBy(salesManagers.managerName);
   }
 
@@ -280,7 +283,7 @@ export class DatabaseStorage implements IStorage {
       const [existingByUsername] = await db.select().from(salesManagers).where(
         and(
           eq(salesManagers.username, data.username), 
-          eq(salesManagers.isActive, true),
+          eq(salesManagers.isActive, 1),
           sql`${salesManagers.id} != ${id}`
         )
       );
@@ -315,8 +318,16 @@ export class DatabaseStorage implements IStorage {
 
   async deleteSalesManager(id: number): Promise<void> {
     await db.update(salesManagers)
-      .set({ isActive: false, updatedAt: new Date() })
+      .set({ isActive: 0, updatedAt: new Date() })
       .where(eq(salesManagers.id, id));
+  }
+
+  async assignManagerToTeam(managerId: number, teamId: number): Promise<SalesManager> {
+    const [result] = await db.update(salesManagers)
+      .set({ teamId, updatedAt: new Date() })
+      .where(eq(salesManagers.id, managerId))
+      .returning();
+    return result;
   }
 
   // 접점 코드 매핑 관리 메서드
@@ -331,19 +342,19 @@ export class DatabaseStorage implements IStorage {
 
   async getContactCodeMappings(): Promise<ContactCodeMapping[]> {
     return await db.select().from(contactCodeMappings)
-      .where(eq(contactCodeMappings.isActive, true))
+      .where(eq(contactCodeMappings.isActive, 1))
       .orderBy(contactCodeMappings.carrier, contactCodeMappings.contactCode);
   }
 
   async getContactCodeMappingsByManagerId(managerId: number): Promise<ContactCodeMapping[]> {
     return await db.select().from(contactCodeMappings)
-      .where(and(eq(contactCodeMappings.managerId, managerId), eq(contactCodeMappings.isActive, true)))
+      .where(and(eq(contactCodeMappings.managerId, managerId), eq(contactCodeMappings.isActive, 1)))
       .orderBy(contactCodeMappings.carrier, contactCodeMappings.contactCode);
   }
 
   async getContactCodeMappingsByContactCode(contactCode: string): Promise<ContactCodeMapping[]> {
     return await db.select().from(contactCodeMappings)
-      .where(and(eq(contactCodeMappings.contactCode, contactCode), eq(contactCodeMappings.isActive, true)));
+      .where(and(eq(contactCodeMappings.contactCode, contactCode), eq(contactCodeMappings.isActive, 1)));
   }
 
   async getContactCodeByCode(contactCode: string): Promise<any> {
@@ -372,7 +383,7 @@ export class DatabaseStorage implements IStorage {
 
   async deleteContactCodeMapping(id: number): Promise<void> {
     await db.update(contactCodeMappings)
-      .set({ isActive: false, updatedAt: new Date() })
+      .set({ isActive: 0, updatedAt: new Date() })
       .where(eq(contactCodeMappings.id, id));
   }
 
