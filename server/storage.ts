@@ -1538,17 +1538,29 @@ export class DatabaseStorage implements IStorage {
         )
         .groupBy(documents.customerType);
 
-      // 전체 통계
+      // 전체 통계 (상태별 세부 분류)
       const totalStats = await db.select({
         total: sql`count(*)`,
-        pending: sql`count(case when activation_status in ('대기', '진행중', '업무요청중') then 1 end)`,
-        completed: sql`count(case when activation_status = '개통' then 1 end)`
+        pending: sql`count(case when activation_status = '대기' then 1 end)`,
+        inProgress: sql`count(case when activation_status = '진행중' then 1 end)`,
+        workRequest: sql`count(case when activation_status = '업무요청중' then 1 end)`,
+        activated: sql`count(case when activation_status = '개통' then 1 end)`,
+        cancelled: sql`count(case when activation_status = '취소' then 1 end)`,
+        needsReview: sql`count(case when activation_status = '보완필요' then 1 end)`,
+        otherCompleted: sql`count(case when activation_status = '기타완료' then 1 end)`,
+        discarded: sql`count(case when activation_status = '폐기' then 1 end)`
       }).from(documents);
 
       return {
         totalDocuments: parseInt(String(totalStats[0]?.total || 0)),
-        pendingDocuments: parseInt(String(totalStats[0]?.pending || 0)),
-        completedDocuments: parseInt(String(totalStats[0]?.completed || 0)),
+        pendingActivations: parseInt(String(totalStats[0]?.pending || 0)),
+        inProgressCount: parseInt(String(totalStats[0]?.inProgress || 0)),
+        workRequestCount: parseInt(String(totalStats[0]?.workRequest || 0)),
+        activatedCount: parseInt(String(totalStats[0]?.activated || 0)),
+        canceledCount: parseInt(String(totalStats[0]?.cancelled || 0)),
+        needsReviewCount: parseInt(String(totalStats[0]?.needsReview || 0)),
+        otherCompletedCount: parseInt(String(totalStats[0]?.otherCompleted || 0)),
+        discardedCount: parseInt(String(totalStats[0]?.discarded || 0)),
         todaySubmissions: parseInt(String(todayTotal[0]?.count || 0)),
         todayDiscarded: parseInt(String(todayDiscarded[0]?.count || 0)),
         todayCompletions: {
@@ -1561,8 +1573,14 @@ export class DatabaseStorage implements IStorage {
       console.error('Get dashboard stats error:', error);
       return {
         totalDocuments: 0,
-        pendingDocuments: 0,
-        completedDocuments: 0,
+        pendingActivations: 0,
+        inProgressCount: 0,
+        workRequestCount: 0,
+        activatedCount: 0,
+        canceledCount: 0,
+        needsReviewCount: 0,
+        otherCompletedCount: 0,
+        discardedCount: 0,
         todaySubmissions: 0,
         todayDiscarded: 0,
         todayCompletions: { new: 0, portIn: 0, total: 0 }
