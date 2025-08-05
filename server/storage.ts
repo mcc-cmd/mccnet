@@ -140,6 +140,23 @@ export class DatabaseStorage implements IStorage {
   
   // 관리자 관련 메서드
   async createAdmin(admin: { username: string; password: string; name: string }): Promise<Admin> {
+    // 중복 아이디 체크
+    const existingAdmin = await this.getAdminByUsername(admin.username);
+    if (existingAdmin) {
+      throw new Error('이미 존재하는 아이디입니다.');
+    }
+    
+    // 영업과장과 근무자에서도 중복 체크
+    const existingManager = await this.getSalesManagerByUsername(admin.username);
+    if (existingManager) {
+      throw new Error('이미 존재하는 아이디입니다.');
+    }
+    
+    const existingUser = await this.getUserByUsername(admin.username);
+    if (existingUser) {
+      throw new Error('이미 존재하는 아이디입니다.');
+    }
+    
     const hashedPassword = await bcrypt.hash(admin.password, 10);
     const [result] = await db.insert(admins).values({
       username: admin.username,
@@ -152,6 +169,16 @@ export class DatabaseStorage implements IStorage {
   async getAdminByUsername(username: string): Promise<Admin | undefined> {
     const [admin] = await db.select().from(admins).where(eq(admins.username, username));
     return admin;
+  }
+
+  async getUserByUsername(username: string): Promise<any | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.username, username));
+    return user;
+  }
+
+  async getSalesManagerByUsername(username: string): Promise<any | undefined> {
+    const [manager] = await db.select().from(salesManagers).where(eq(salesManagers.username, username));
+    return manager;
   }
 
   async authenticateAdmin(username: string, password: string): Promise<Admin | null> {
