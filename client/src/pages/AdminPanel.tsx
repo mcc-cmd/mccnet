@@ -4077,18 +4077,21 @@ export function AdminPanel() {
               {/* Edit User Dialog */}
               {console.log('Rendering edit dialog, open state:', editUserDialogOpen, 'editing user:', editingUser)}
               <Dialog 
-                open={editUserDialogOpen} 
+                open={editUserDialogOpen && editingUser !== null} 
                 onOpenChange={(open) => {
                   console.log('=== DIALOG OPEN CHANGE ===');
                   console.log('New open state:', open);
                   console.log('Current open state:', editUserDialogOpen);
+                  console.log('editingUser:', editingUser);
                   
-                  if (!open) {
-                    console.log('Dialog closing, clearing editing user');
+                  if (!open || !editingUser) {
+                    console.log('Dialog closing or no editing user, clearing state');
                     setEditingUser(null);
                     editUserForm.reset();
+                    setEditUserDialogOpen(false);
+                  } else {
+                    setEditUserDialogOpen(open);
                   }
-                  setEditUserDialogOpen(open);
                   console.log('Set editUserDialogOpen to:', open);
                 }}
               >
@@ -4096,34 +4099,53 @@ export function AdminPanel() {
                   <DialogHeader>
                     <DialogTitle>사용자 정보 수정</DialogTitle>
                     <DialogDescription id="edit-user-description">
-                      {editingUser?.displayName} ({editingUser?.username}) 사용자의 정보를 수정합니다.
+                      {editingUser ? 
+                        `${editingUser.displayName || editingUser.name} (${editingUser.username}) 사용자의 정보를 수정합니다.` :
+                        '사용자를 선택하여 정보를 수정하세요.'
+                      }
                     </DialogDescription>
                   </DialogHeader>
                   <Form {...editUserForm}>
                     <form onSubmit={editUserForm.handleSubmit((data) => {
-                      if (editingUser) {
-                        // 역할이 변경되었는지 확인
-                        const currentRole = editingUser.accountType === 'admin' ? 'admin' : 
-                                          editingUser.accountType === 'sales_manager' ? 'sales_manager' : 'worker';
+                      console.log('=== FORM SUBMIT ===');
+                      console.log('Form data:', data);
+                      console.log('editingUser:', editingUser);
+                      
+                      if (!editingUser) {
+                        console.error('No editing user set!');
+                        toast({
+                          title: '오류',
+                          description: '편집할 사용자가 선택되지 않았습니다.',
+                          variant: 'destructive'
+                        });
+                        return;
+                      }
+                      
+                      // 역할이 변경되었는지 확인
+                      const currentRole = editingUser.accountType === 'admin' ? 'admin' : 
+                                        editingUser.accountType === 'sales_manager' ? 'sales_manager' : 'worker';
+                      
+                      console.log('Current role:', currentRole, 'New role:', data.role);
+                      
+                      if (data.role !== currentRole) {
+                        console.log('Role changed, calling changeUserRoleMutation');
+                        // 역할 변경
+                        changeUserRoleMutation.mutate({
+                          userId: editingUser.id,
+                          accountType: data.role as 'admin' | 'sales_manager' | 'worker'
+                        });
+                      } else {
+                        console.log('Role not changed, updating basic info');
+                        // 기본 정보 변경
+                        const updateData: any = {};
+                        if (data.name !== editingUser.name) updateData.name = data.name;
+                        if (data.username !== editingUser.username) updateData.username = data.username;
+                        if (data.password) updateData.password = data.password;
                         
-                        if (data.role !== currentRole) {
-                          // 역할 변경
-                          changeUserRoleMutation.mutate({
-                            userId: editingUser.id,
-                            accountType: data.role as 'admin' | 'sales_manager' | 'worker'
-                          });
+                        if (Object.keys(updateData).length > 0) {
+                          updateUserMutation.mutate({ id: editingUser.id, data: updateData });
                         } else {
-                          // 기본 정보 변경
-                          const updateData: any = {};
-                          if (data.name !== editingUser.name) updateData.name = data.name;
-                          if (data.username !== editingUser.username) updateData.username = data.username;
-                          if (data.password) updateData.password = data.password;
-                          
-                          if (Object.keys(updateData).length > 0) {
-                            updateUserMutation.mutate({ id: editingUser.id, data: updateData });
-                          } else {
-                            setEditUserDialogOpen(false);
-                          }
+                          setEditUserDialogOpen(false);
                         }
                       }
                     })} className="space-y-4">
@@ -4198,8 +4220,16 @@ export function AdminPanel() {
                         <Button type="button" variant="outline" onClick={() => setEditUserDialogOpen(false)}>
                           취소
                         </Button>
-                        <Button type="submit" disabled={updateUserMutation.isPending}>
-                          {updateUserMutation.isPending ? '수정 중...' : '수정'}
+                        <Button 
+                          type="submit" 
+                          disabled={updateUserMutation.isPending || changeUserRoleMutation.isPending}
+                          onClick={() => {
+                            console.log('Submit button clicked');
+                            console.log('Current editingUser:', editingUser);
+                            console.log('Form values:', editUserForm.getValues());
+                          }}
+                        >
+                          {(updateUserMutation.isPending || changeUserRoleMutation.isPending) ? '수정 중...' : '수정'}
                         </Button>
                       </div>
                     </form>
