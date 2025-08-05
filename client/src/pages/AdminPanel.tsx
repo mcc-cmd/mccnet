@@ -3489,31 +3489,44 @@ export function AdminPanel() {
                                   variant="outline"
                                   size="sm"
                                   onClick={() => {
-                                    console.log('Edit button clicked for user:', user);
+                                    console.log('=== EDIT BUTTON CLICKED ===');
+                                    console.log('User:', user);
+                                    console.log('Current editUserDialogOpen:', editUserDialogOpen);
                                     
-                                    // 모든 다른 다이얼로그 닫기
+                                    // 모든 다른 다이얼로그 강제로 닫기
                                     setChangePasswordDialogOpen(false);
                                     setUserDialogOpen(false);
                                     setAdminDialogOpen(false);
                                     setWorkerDialogOpen(false);
                                     setSalesManagerDialogOpen(false);
+                                    setDealerDialogOpen(false);
+                                    setTemplateDialogOpen(false);
+                                    setContactCodeDialogOpen(false);
                                     
                                     // 편집할 사용자 설정
                                     setEditingUser(user);
-                                    
-                                    // Form 값 즉시 설정
-                                    editUserForm.setValue('username', user.username);
-                                    editUserForm.setValue('name', user.displayName || user.name);
-                                    editUserForm.setValue('password', '');
+                                    console.log('Set editing user:', user);
                                     
                                     // 현재 역할 설정
                                     const currentRole = user.accountType === 'admin' ? 'admin' : 
                                                       user.accountType === 'sales_manager' ? 'sales_manager' : 'worker';
-                                    editUserForm.setValue('role', currentRole);
                                     
-                                    console.log('Opening edit dialog for user:', user.username, 'with role:', currentRole);
+                                    // Form 즉시 리셋 후 새 값 설정
+                                    editUserForm.reset({
+                                      username: user.username,
+                                      name: user.displayName || user.name,
+                                      password: '',
+                                      role: currentRole
+                                    });
                                     
-                                    // 다이얼로그 열기
+                                    console.log('Form reset with values:', {
+                                      username: user.username,
+                                      name: user.displayName || user.name,
+                                      role: currentRole
+                                    });
+                                    
+                                    // 다이얼로그 강제로 열기
+                                    console.log('OPENING EDIT DIALOG NOW');
                                     setEditUserDialogOpen(true);
                                   }}
                                   className="text-blue-600 hover:text-blue-700"
@@ -4062,15 +4075,21 @@ export function AdminPanel() {
               </Dialog>
 
               {/* Edit User Dialog */}
+              {console.log('Rendering edit dialog, open state:', editUserDialogOpen, 'editing user:', editingUser)}
               <Dialog 
                 open={editUserDialogOpen} 
                 onOpenChange={(open) => {
-                  console.log('Edit dialog open state changed to:', open);
+                  console.log('=== DIALOG OPEN CHANGE ===');
+                  console.log('New open state:', open);
+                  console.log('Current open state:', editUserDialogOpen);
+                  
                   if (!open) {
+                    console.log('Dialog closing, clearing editing user');
                     setEditingUser(null);
                     editUserForm.reset();
                   }
                   setEditUserDialogOpen(open);
+                  console.log('Set editUserDialogOpen to:', open);
                 }}
               >
                 <DialogContent className="max-w-md" aria-describedby="edit-user-description">
