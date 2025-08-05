@@ -243,31 +243,43 @@ export class DatabaseStorage implements IStorage {
 
   // 영업과장 관리 메서드
   async createSalesManager(data: CreateSalesManagerForm): Promise<SalesManager> {
-    // 중복 아이디 체크
-    const existingAdmin = await this.getAdminByUsername(data.username);
-    if (existingAdmin) {
-      throw new Error('이미 존재하는 아이디입니다.');
+    try {
+      // 중복 아이디 체크
+      const existingAdmin = await this.getAdminByUsername(data.username);
+      if (existingAdmin) {
+        throw new Error('이미 존재하는 아이디입니다.');
+      }
+      
+      const existingManager = await this.getSalesManagerByUsername(data.username);
+      if (existingManager) {
+        throw new Error('이미 존재하는 아이디입니다.');
+      }
+      
+      const existingUser = await this.getUserByUsername(data.username);
+      if (existingUser) {
+        throw new Error('이미 존재하는 아이디입니다.');
+      }
+      
+      const hashedPassword = await bcrypt.hash(data.password, 10);
+      
+      // team 이름을 teamId로 변환
+      let teamId = 1; // 기본값
+      if (data.team === 'DX 2팀') {
+        teamId = 2;
+      }
+      
+      const [result] = await db.insert(salesManagers).values({
+        teamId: teamId,
+        managerName: data.name,
+        managerCode: data.username,
+        username: data.username,
+        password: hashedPassword,
+      }).returning();
+      return result;
+    } catch (error) {
+      console.error('Sales manager creation error:', error);
+      throw error;
     }
-    
-    const existingManager = await this.getSalesManagerByUsername(data.username);
-    if (existingManager) {
-      throw new Error('이미 존재하는 아이디입니다.');
-    }
-    
-    const existingUser = await this.getUserByUsername(data.username);
-    if (existingUser) {
-      throw new Error('이미 존재하는 아이디입니다.');
-    }
-    
-    const hashedPassword = await bcrypt.hash(data.password, 10);
-    const [result] = await db.insert(salesManagers).values({
-      teamId: data.teamId || 1,
-      managerName: data.managerName || data.name,
-      managerCode: data.managerCode || data.username,
-      username: data.username,
-      password: hashedPassword,
-    }).returning();
-    return result;
   }
 
   async getSalesManagers(): Promise<SalesManager[]> {
