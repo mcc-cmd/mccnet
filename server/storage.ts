@@ -4,8 +4,8 @@ import { eq, and, desc, sql, or, like, gte, lte, inArray, count, isNull, ne } fr
 import { db } from './db';
 import { 
   admins, salesTeams, salesManagers, contactCodeMappings, contactCodes,
-  carriers, servicePlans, additionalServices, documents
-} from '@shared/schema';
+  carriers, servicePlans, additionalServices, documents, users
+} from '../shared/schema-sqlite';
 import type {
   Admin,
   SalesTeam,
@@ -23,7 +23,7 @@ import type {
   UpdateSalesManagerForm,
   UpdateContactCodeMappingForm,
   CreateWorkerForm
-} from '../shared/schema';
+} from '../shared/schema-sqlite';
 
 // 인메모리 세션 저장소 (임시)
 const sessionStore: Map<string, AuthSession> = new Map();
@@ -145,8 +145,6 @@ export class DatabaseStorage implements IStorage {
       username: admin.username,
       password: hashedPassword,
       name: admin.name,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
     }).returning();
     return result;
   }
@@ -204,10 +202,7 @@ export class DatabaseStorage implements IStorage {
 
   async updateSalesTeam(id: number, data: UpdateSalesTeamForm): Promise<SalesTeam> {
     const [result] = await db.update(salesTeams)
-      .set({
-        ...data,
-        updatedAt: new Date().toISOString(),
-      })
+      .set(data)
       .where(eq(salesTeams.id, id))
       .returning();
     return result;
@@ -215,7 +210,7 @@ export class DatabaseStorage implements IStorage {
 
   async deleteSalesTeam(id: number): Promise<void> {
     await db.update(salesTeams)
-      .set({ isActive: 0, updatedAt: new Date().toISOString() })
+      .set({ isActive: 0 })
       .where(eq(salesTeams.id, id));
   }
 
@@ -231,8 +226,6 @@ export class DatabaseStorage implements IStorage {
       position: data.position,
       contactPhone: data.contactPhone,
       email: data.email,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
     }).returning();
     return result;
   }
@@ -311,10 +304,7 @@ export class DatabaseStorage implements IStorage {
     }
 
     const [result] = await db.update(salesManagers)
-      .set({
-        ...data,
-        updatedAt: new Date().toISOString(),
-      })
+      .set(data)
       .where(eq(salesManagers.id, id))
       .returning();
     return result;
@@ -322,13 +312,13 @@ export class DatabaseStorage implements IStorage {
 
   async deleteSalesManager(id: number): Promise<void> {
     await db.update(salesManagers)
-      .set({ isActive: 0, updatedAt: new Date().toISOString() })
+      .set({ isActive: 0 })
       .where(eq(salesManagers.id, id));
   }
 
   async assignManagerToTeam(managerId: number, teamId: number): Promise<SalesManager> {
     const [result] = await db.update(salesManagers)
-      .set({ teamId, updatedAt: new Date().toISOString() })
+      .set({ teamId })
       .where(eq(salesManagers.id, managerId))
       .returning();
     return result;
@@ -376,10 +366,7 @@ export class DatabaseStorage implements IStorage {
 
   async updateContactCodeMapping(id: number, data: UpdateContactCodeMappingForm): Promise<ContactCodeMapping> {
     const [result] = await db.update(contactCodeMappings)
-      .set({
-        ...data,
-        updatedAt: new Date().toISOString(),
-      })
+      .set(data)
       .where(eq(contactCodeMappings.id, id))
       .returning();
     return result;
@@ -387,7 +374,7 @@ export class DatabaseStorage implements IStorage {
 
   async deleteContactCodeMapping(id: number): Promise<void> {
     await db.update(contactCodeMappings)
-      .set({ isActive: 0, updatedAt: new Date().toISOString() })
+      .set({ isActive: 0 })
       .where(eq(contactCodeMappings.id, id));
   }
 
@@ -468,38 +455,26 @@ export class DatabaseStorage implements IStorage {
     // 중복 아이디 확인
     const existingAdmins = await db.select().from(admins).where(eq(admins.username, data.username));
     const existingSalesManagers = await db.select().from(salesManagers).where(eq(salesManagers.username, data.username));
+    const existingUsers = await db.select().from(users).where(eq(users.username, data.username));
     
-    // 메모리에서 중복 근무자 확인
-    const existingWorkers = Array.from(workerStore.values()).filter(worker => worker.username === data.username);
-    
-    if (existingAdmins.length > 0 || existingSalesManagers.length > 0 || existingWorkers.length > 0) {
+    if (existingAdmins.length > 0 || existingSalesManagers.length > 0 || existingUsers.length > 0) {
       throw new Error('이미 존재하는 아이디입니다.');
     }
     
-    // 기존 시스템 호환성을 위해 임시로 메모리 저장
     const hashedPassword = await bcrypt.hash(data.password, 10);
-    
-    // 임시 근무자 정보 저장 (실제 시스템에서는 별도 데이터베이스 사용)
-    const workerId = Date.now();
-    const worker = {
-      id: workerId,
+    const [result] = await db.insert(users).values({
       username: data.username,
-      name: data.name,
-      userType: 'worker',
-      accountType: 'worker',
-      displayName: data.name,
-      affiliation: '근무자',
       password: hashedPassword,
-      createdAt: new Date().toISOString()
-    };
-    
-    // 메모리 저장소에 저장
-    workerStore.set(workerId, worker);
+      name: data.name,
+      dealerId: data.dealerId,
+      role: data.role || 'user',
+      canChangePassword: data.canChangePassword ? 1 : 0,
+    }).returning();
     
     return {
-      id: worker.id,
-      username: worker.username,
-      name: worker.name,
+      id: result.id,
+      username: result.username,
+      name: result.name,
       userType: 'worker'
     };
   }
@@ -593,10 +568,7 @@ export class DatabaseStorage implements IStorage {
   async updateContactCode(id: number, contactCodeData: any): Promise<ContactCode> {
     try {
       const [updatedContactCode] = await db.update(contactCodes)
-        .set({
-          ...contactCodeData,
-          updatedAt: new Date(),
-        })
+        .set(contactCodeData)
         .where(eq(contactCodes.id, id))
         .returning();
       
@@ -614,7 +586,7 @@ export class DatabaseStorage implements IStorage {
   async deleteContactCode(id: number): Promise<void> {
     try {
       await db.update(contactCodes)
-        .set({ isActive: false, updatedAt: new Date() })
+        .set({ isActive: 0 })
         .where(eq(contactCodes.id, id));
     } catch (error) {
       console.error('Delete contact code error:', error);
@@ -878,11 +850,7 @@ export class DatabaseStorage implements IStorage {
 
   async createAdditionalService(data: any): Promise<AdditionalService> {
     try {
-      const [result] = await db.insert(additionalServices).values({
-        ...data,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      }).returning();
+      const [result] = await db.insert(additionalServices).values(data).returning();
       return result;
     } catch (error) {
       console.error('Create additional service error:', error);
@@ -893,10 +861,7 @@ export class DatabaseStorage implements IStorage {
   async updateAdditionalService(id: number, data: any): Promise<AdditionalService> {
     try {
       const [result] = await db.update(additionalServices)
-        .set({
-          ...data,
-          updatedAt: new Date(),
-        })
+        .set(data)
         .where(eq(additionalServices.id, id))
         .returning();
       
@@ -915,8 +880,7 @@ export class DatabaseStorage implements IStorage {
     try {
       await db.update(additionalServices)
         .set({
-          isActive: false,
-          updatedAt: new Date(),
+          isActive: 0,
         })
         .where(eq(additionalServices.id, id));
     } catch (error) {
