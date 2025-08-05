@@ -3490,22 +3490,31 @@ export function AdminPanel() {
                                   size="sm"
                                   onClick={() => {
                                     console.log('Edit button clicked for user:', user);
-                                    setEditingUser(user);
-                                    console.log('Setting editUserDialogOpen to true');
-                                    setEditUserDialogOpen(true);
-                                    setChangePasswordDialogOpen(false); // 비밀번호 다이얼로그 닫기
                                     
-                                    // Form 값들을 다음 렌더 사이클에서 설정
-                                    setTimeout(() => {
-                                      editUserForm.setValue('username', user.username);
-                                      editUserForm.setValue('name', user.displayName || user.name);
-                                      editUserForm.setValue('password', '');
-                                      // 현재 역할 설정
-                                      const currentRole = user.accountType === 'admin' ? 'admin' : 
-                                                        user.accountType === 'sales_manager' ? 'sales_manager' : 'worker';
-                                      editUserForm.setValue('role', currentRole);
-                                      console.log('Form values set, role:', currentRole);
-                                    }, 0);
+                                    // 모든 다른 다이얼로그 닫기
+                                    setChangePasswordDialogOpen(false);
+                                    setUserDialogOpen(false);
+                                    setAdminDialogOpen(false);
+                                    setWorkerDialogOpen(false);
+                                    setSalesManagerDialogOpen(false);
+                                    
+                                    // 편집할 사용자 설정
+                                    setEditingUser(user);
+                                    
+                                    // Form 값 즉시 설정
+                                    editUserForm.setValue('username', user.username);
+                                    editUserForm.setValue('name', user.displayName || user.name);
+                                    editUserForm.setValue('password', '');
+                                    
+                                    // 현재 역할 설정
+                                    const currentRole = user.accountType === 'admin' ? 'admin' : 
+                                                      user.accountType === 'sales_manager' ? 'sales_manager' : 'worker';
+                                    editUserForm.setValue('role', currentRole);
+                                    
+                                    console.log('Opening edit dialog for user:', user.username, 'with role:', currentRole);
+                                    
+                                    // 다이얼로그 열기
+                                    setEditUserDialogOpen(true);
                                   }}
                                   className="text-blue-600 hover:text-blue-700"
                                   title="사용자 정보 수정"
@@ -4053,11 +4062,18 @@ export function AdminPanel() {
               </Dialog>
 
               {/* Edit User Dialog */}
-              <Dialog open={editUserDialogOpen} onOpenChange={(open) => {
-                console.log('Edit dialog open state changed to:', open);
-                setEditUserDialogOpen(open);
-              }}>
-                <DialogContent aria-describedby="edit-user-description">
+              <Dialog 
+                open={editUserDialogOpen} 
+                onOpenChange={(open) => {
+                  console.log('Edit dialog open state changed to:', open);
+                  if (!open) {
+                    setEditingUser(null);
+                    editUserForm.reset();
+                  }
+                  setEditUserDialogOpen(open);
+                }}
+              >
+                <DialogContent className="max-w-md" aria-describedby="edit-user-description">
                   <DialogHeader>
                     <DialogTitle>사용자 정보 수정</DialogTitle>
                     <DialogDescription id="edit-user-description">
