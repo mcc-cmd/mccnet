@@ -544,7 +544,7 @@ export class DatabaseStorage implements IStorage {
       await db.insert(admins).values({
         username: currentUser.username,
         password: currentUser.password,
-        name: currentUser.name || currentUser.manager_name,
+        name: currentUser.name || currentUser.managerName,
         isActive: true,
         createdAt: new Date(),
         updatedAt: new Date()
@@ -557,7 +557,7 @@ export class DatabaseStorage implements IStorage {
       await db.insert(salesManagers).values({
         username: currentUser.username,
         password: currentUser.password,
-        managerName: currentUser.name || currentUser.manager_name,
+        managerName: currentUser.name || currentUser.managerName,
         teamId: teamId,
         managerCode: `${Date.now()}_${currentUser.username}`,
         position: '대리',
@@ -571,7 +571,7 @@ export class DatabaseStorage implements IStorage {
       await db.insert(users).values({
         username: currentUser.username,
         password: currentUser.password,
-        name: currentUser.name || currentUser.manager_name,
+        name: currentUser.name || currentUser.managerName,
         role: 'user',
         canChangePassword: 1,
         createdAt: new Date(),

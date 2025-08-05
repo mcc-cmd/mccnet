@@ -113,56 +113,7 @@ const CARRIERS = [
   { id: 'mvno-prepaid', name: 'LG스마텔' },
 ];
 
-// 사용자 역할 드롭다운 컴포넌트
-function UserRoleDropdown({ user, onRoleChange }: { 
-  user: any; 
-  onRoleChange: (newRole: 'admin' | 'sales_manager' | 'worker') => void; 
-}) {
-  const [isOpen, setIsOpen] = useState(false);
-  
-  const getCurrentRole = () => {
-    if (user.accountType === 'admin') return 'admin';
-    if (user.accountType === 'sales_manager') return 'sales_manager';
-    return 'worker';
-  };
-  
-  const getRoleDisplayName = (role: string) => {
-    switch (role) {
-      case 'admin': return '시스템 관리자';
-      case 'sales_manager': return '영업과장';
-      case 'worker': return '근무자';
-      default: return '기타';
-    }
-  };
-  
-  const handleRoleChange = (newRole: 'admin' | 'sales_manager' | 'worker') => {
-    onRoleChange(newRole);
-    setIsOpen(false);
-  };
-  
-  return (
-    <Select value={getCurrentRole()} onValueChange={handleRoleChange}>
-      <SelectTrigger className="w-32">
-        <SelectValue>
-          <Badge variant="secondary">
-            {getRoleDisplayName(getCurrentRole())}
-          </Badge>
-        </SelectValue>
-      </SelectTrigger>
-      <SelectContent>
-        <SelectItem value="admin">
-          <Badge variant="secondary">시스템 관리자</Badge>
-        </SelectItem>
-        <SelectItem value="sales_manager">
-          <Badge variant="secondary">영업과장</Badge>
-        </SelectItem>
-        <SelectItem value="worker">
-          <Badge variant="secondary">근무자</Badge>
-        </SelectItem>
-      </SelectContent>
-    </Select>
-  );
-}
+
 
 // 통신사 관리 컴포넌트
 function CarrierManagement() {
@@ -1484,6 +1435,7 @@ export function AdminPanel() {
       username: '',
       password: '',
       name: '',
+      role: 'worker',
     },
   });
 
@@ -3520,16 +3472,11 @@ export function AdminPanel() {
                               {user.affiliation || '-'}
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                              <UserRoleDropdown 
-                                user={user} 
-                                onRoleChange={(newRole) => {
-                                  // 역할 변경 API 호출
-                                  changeUserRoleMutation.mutate({
-                                    userId: user.id,
-                                    accountType: newRole
-                                  });
-                                }}
-                              />
+                              <Badge variant="secondary">
+                                {user.accountType === 'admin' ? '시스템 관리자' : 
+                                 user.accountType === 'sales_manager' ? '영업과장' : 
+                                 user.userType === 'worker' ? '근무자' : '기타'}
+                              </Badge>
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                               {format(new Date(user.createdAt), 'yyyy-MM-dd', { locale: ko })}
@@ -3540,8 +3487,15 @@ export function AdminPanel() {
                                   variant="outline"
                                   size="sm"
                                   onClick={() => {
-                                    setSelectedUser(user);
-                                    setChangePasswordDialogOpen(true);
+                                    setEditingUser(user);
+                                    setEditUserDialogOpen(true);
+                                    editUserForm.setValue('username', user.username);
+                                    editUserForm.setValue('name', user.displayName || user.name);
+                                    editUserForm.setValue('password', '');
+                                    // 현재 역할 설정
+                                    const currentRole = user.accountType === 'admin' ? 'admin' : 
+                                                      user.accountType === 'sales_manager' ? 'sales_manager' : 'worker';
+                                    editUserForm.setValue('role', currentRole);
                                   }}
                                   className="text-blue-600 hover:text-blue-700"
                                 >
@@ -4095,11 +4049,31 @@ export function AdminPanel() {
                   </DialogHeader>
                   <Form {...editUserForm}>
                     <form onSubmit={editUserForm.handleSubmit((data) => {
-                      // Handle user edit logic
-                      toast({
-                        title: '정보',
-                        description: '사용자 정보 수정 기능은 추후 구현 예정입니다.',
-                      });
+                      if (editingUser) {
+                        // 역할이 변경되었는지 확인
+                        const currentRole = editingUser.accountType === 'admin' ? 'admin' : 
+                                          editingUser.accountType === 'sales_manager' ? 'sales_manager' : 'worker';
+                        
+                        if (data.role !== currentRole) {
+                          // 역할 변경
+                          changeUserRoleMutation.mutate({
+                            userId: editingUser.id,
+                            accountType: data.role as 'admin' | 'sales_manager' | 'worker'
+                          });
+                        } else {
+                          // 기본 정보 변경
+                          const updateData: any = {};
+                          if (data.name !== editingUser.name) updateData.name = data.name;
+                          if (data.username !== editingUser.username) updateData.username = data.username;
+                          if (data.password) updateData.password = data.password;
+                          
+                          if (Object.keys(updateData).length > 0) {
+                            updateUserMutation.mutate({ id: editingUser.id, data: updateData });
+                          } else {
+                            setEditUserDialogOpen(false);
+                          }
+                        }
+                      }
                     })} className="space-y-4">
                       <FormField
                         control={editUserForm.control}
@@ -4136,6 +4110,28 @@ export function AdminPanel() {
                             <FormControl>
                               <Input type="password" placeholder="변경할 경우에만 입력하세요" {...field} />
                             </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={editUserForm.control}
+                        name="role"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>계정 유형</FormLabel>
+                            <Select value={field.value} onValueChange={field.onChange}>
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="계정 유형을 선택하세요" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                <SelectItem value="admin">시스템 관리자</SelectItem>
+                                <SelectItem value="sales_manager">영업과장</SelectItem>
+                                <SelectItem value="worker">근무자</SelectItem>
+                              </SelectContent>
+                            </Select>
                             <FormMessage />
                           </FormItem>
                         )}
