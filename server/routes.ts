@@ -504,8 +504,12 @@ router.post('/api/admin/change-password', requireAdmin, async (req: any, res) =>
     const { userId, accountType, newPassword } = req.body;
     console.log('Password change request:', { userId, accountType, newPassword: '***' });
     
-    if (!userId || !accountType || !newPassword) {
-      console.log('Missing required fields:', { userId: !!userId, accountType: !!accountType, newPassword: !!newPassword });
+    // userId가 없으면 세션에서 가져오기 (자신의 비밀번호 변경인 경우)
+    const targetUserId = userId || req.session.userId;
+    const targetAccountType = accountType || 'admin';
+    
+    if (!targetUserId || !targetAccountType || !newPassword) {
+      console.log('Missing required fields:', { userId: !!targetUserId, accountType: !!targetAccountType, newPassword: !!newPassword });
       return res.status(400).json({ error: '필수 정보가 누락되었습니다.' });
     }
 
@@ -521,20 +525,20 @@ router.post('/api/admin/change-password', requireAdmin, async (req: any, res) =>
       return res.status(403).json({ error: '비밀번호 변경은 시스템 관리자(admin)만 가능합니다.' });
     }
 
-    console.log('Processing password change for:', { userId, accountType });
+    console.log('Processing password change for:', { userId: targetUserId, accountType: targetAccountType });
 
-    if (accountType === 'admin') {
-      await storage.updateAdminPassword(userId, newPassword);
-    } else if (accountType === 'sales_manager') {
-      await storage.updateSalesManagerPassword(userId, newPassword);
-    } else if (accountType === 'worker') {
-      await storage.updateUserPassword(userId, newPassword);
+    if (targetAccountType === 'admin') {
+      await storage.updateAdminPassword(targetUserId, newPassword);
+    } else if (targetAccountType === 'sales_manager') {
+      await storage.updateSalesManagerPassword(targetUserId, newPassword);
+    } else if (targetAccountType === 'worker') {
+      await storage.updateUserPassword(targetUserId, newPassword);
     } else {
-      console.log('Unsupported account type:', accountType);
+      console.log('Unsupported account type:', targetAccountType);
       return res.status(400).json({ error: '지원되지 않는 계정 유형입니다.' });
     }
 
-    console.log('Password change successful for user:', userId);
+    console.log('Password change successful for user:', targetUserId);
     res.json({ success: true, message: '비밀번호가 성공적으로 변경되었습니다.' });
   } catch (error: any) {
     console.error('Password change error:', error);
