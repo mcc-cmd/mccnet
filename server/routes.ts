@@ -439,8 +439,7 @@ router.post('/api/admin/create-sales-manager', requireAdmin, async (req, res) =>
       const teamCode = team === 'DX 1팀' ? 'DX01' : 'DX02';
       salesTeam = await storage.createSalesTeam({
         teamName: team,
-        teamCode,
-        description: `${team} 영업팀`
+        teamCode
       });
     }
 
@@ -462,13 +461,12 @@ router.post('/api/admin/create-sales-manager', requireAdmin, async (req, res) =>
 
     // 영업과장 생성
     const manager = await storage.createSalesManager({
-      teamId: salesTeam.id,
-      managerName: name,
-      managerCode,
+      name,
       username,
       password,
-      contactPhone: '',
-      email: ''
+      team,
+      teamId: salesTeam.id,
+      managerCode
     });
 
     res.json(manager);
