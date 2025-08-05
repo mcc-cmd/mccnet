@@ -690,6 +690,25 @@ router.delete('/api/admin/users/:id', requireAdmin, async (req, res) => {
   }
 });
 
+router.post('/api/admin/change-user-role', requireAdmin, async (req, res) => {
+  try {
+    const { userId, accountType } = req.body;
+    
+    if (!userId || !accountType) {
+      return res.status(400).json({ error: '사용자 ID와 계정 유형이 필요합니다.' });
+    }
+
+    if (!['admin', 'sales_manager', 'worker'].includes(accountType)) {
+      return res.status(400).json({ error: '유효하지 않은 계정 유형입니다.' });
+    }
+
+    await storage.changeUserRole(userId, accountType);
+    res.json({ success: true, message: '사용자 권한이 성공적으로 변경되었습니다.' });
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
 
 
 router.post('/api/admin/pricing-tables', requireAdmin, pricingUpload.single('file'), async (req: any, res) => {

@@ -501,6 +501,85 @@ export class DatabaseStorage implements IStorage {
       .where(eq(salesManagers.id, managerId));
   }
 
+  async changeUserRole(userId: number, newAccountType: 'admin' | 'sales_manager' | 'worker'): Promise<void> {
+    // 먼저 사용자가 어느 테이블에 있는지 확인
+    const adminUser = await db.select().from(admins).where(eq(admins.id, userId)).limit(1);
+    const salesManagerUser = await db.select().from(salesManagers).where(eq(salesManagers.id, userId)).limit(1);
+    const workerUser = await db.select().from(users).where(eq(users.id, userId)).limit(1);
+
+    let currentUser: any = null;
+    let currentTable: 'admin' | 'sales_manager' | 'worker' | null = null;
+
+    if (adminUser.length > 0) {
+      currentUser = adminUser[0];
+      currentTable = 'admin';
+    } else if (salesManagerUser.length > 0) {
+      currentUser = salesManagerUser[0];
+      currentTable = 'sales_manager';
+    } else if (workerUser.length > 0) {
+      currentUser = workerUser[0];
+      currentTable = 'worker';
+    }
+
+    if (!currentUser) {
+      throw new Error('사용자를 찾을 수 없습니다.');
+    }
+
+    // 이미 같은 역할이면 아무것도 하지 않음
+    if (currentTable === newAccountType) {
+      return;
+    }
+
+    // 현재 테이블에서 사용자 삭제
+    if (currentTable === 'admin') {
+      await db.delete(admins).where(eq(admins.id, userId));
+    } else if (currentTable === 'sales_manager') {
+      await db.delete(salesManagers).where(eq(salesManagers.id, userId));
+    } else if (currentTable === 'worker') {
+      await db.delete(users).where(eq(users.id, userId));
+    }
+
+    // 새로운 테이블에 사용자 추가
+    if (newAccountType === 'admin') {
+      await db.insert(admins).values({
+        username: currentUser.username,
+        password: currentUser.password,
+        name: currentUser.name || currentUser.manager_name,
+        isActive: true,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      });
+    } else if (newAccountType === 'sales_manager') {
+      // DX 1팀을 기본값으로 설정
+      const defaultTeam = await db.select().from(salesTeams).where(eq(salesTeams.teamName, 'DX 1팀')).limit(1);
+      const teamId = defaultTeam.length > 0 ? defaultTeam[0].id : 1;
+      
+      await db.insert(salesManagers).values({
+        username: currentUser.username,
+        password: currentUser.password,
+        managerName: currentUser.name || currentUser.manager_name,
+        teamId: teamId,
+        managerCode: `${Date.now()}_${currentUser.username}`,
+        position: '대리',
+        contactPhone: '',
+        email: '',
+        isActive: true,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      });
+    } else if (newAccountType === 'worker') {
+      await db.insert(users).values({
+        username: currentUser.username,
+        password: currentUser.password,
+        name: currentUser.name || currentUser.manager_name,
+        role: 'user',
+        canChangePassword: 1,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      });
+    }
+  }
+
   // 근무자 관리
   async createWorker(data: CreateWorkerForm): Promise<any> {
     // 중복 아이디 확인

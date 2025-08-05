@@ -81,6 +81,11 @@ type UpdateDocumentStatusForm = {
   notes?: string;
 };
 
+type ChangeUserRoleForm = {
+  userId: number;
+  accountType: 'admin' | 'sales_manager' | 'worker';
+};
+
 interface ContactCode {
   id?: number;
   carrierId?: string;
@@ -107,6 +112,57 @@ const CARRIERS = [
   { id: 'mvno-china', name: '중고KT' },
   { id: 'mvno-prepaid', name: 'LG스마텔' },
 ];
+
+// 사용자 역할 드롭다운 컴포넌트
+function UserRoleDropdown({ user, onRoleChange }: { 
+  user: any; 
+  onRoleChange: (newRole: 'admin' | 'sales_manager' | 'worker') => void; 
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+  
+  const getCurrentRole = () => {
+    if (user.accountType === 'admin') return 'admin';
+    if (user.accountType === 'sales_manager') return 'sales_manager';
+    return 'worker';
+  };
+  
+  const getRoleDisplayName = (role: string) => {
+    switch (role) {
+      case 'admin': return '시스템 관리자';
+      case 'sales_manager': return '영업과장';
+      case 'worker': return '근무자';
+      default: return '기타';
+    }
+  };
+  
+  const handleRoleChange = (newRole: 'admin' | 'sales_manager' | 'worker') => {
+    onRoleChange(newRole);
+    setIsOpen(false);
+  };
+  
+  return (
+    <Select value={getCurrentRole()} onValueChange={handleRoleChange}>
+      <SelectTrigger className="w-32">
+        <SelectValue>
+          <Badge variant="secondary">
+            {getRoleDisplayName(getCurrentRole())}
+          </Badge>
+        </SelectValue>
+      </SelectTrigger>
+      <SelectContent>
+        <SelectItem value="admin">
+          <Badge variant="secondary">시스템 관리자</Badge>
+        </SelectItem>
+        <SelectItem value="sales_manager">
+          <Badge variant="secondary">영업과장</Badge>
+        </SelectItem>
+        <SelectItem value="worker">
+          <Badge variant="secondary">근무자</Badge>
+        </SelectItem>
+      </SelectContent>
+    </Select>
+  );
+}
 
 // 통신사 관리 컴포넌트
 function CarrierManagement() {
@@ -1645,6 +1701,28 @@ export function AdminPanel() {
       toast({
         title: '성공',
         description: '영업과장 계정이 성공적으로 삭제되었습니다.',
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: '오류',
+        description: error.message,
+        variant: 'destructive',
+      });
+    },
+  });
+
+  const changeUserRoleMutation = useMutation({
+    mutationFn: (data: ChangeUserRoleForm) => apiRequest('/api/admin/change-user-role', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/users'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/sales-managers'] });
+      toast({
+        title: '성공',
+        description: '사용자 권한이 성공적으로 변경되었습니다.',
       });
     },
     onError: (error: Error) => {
@@ -3442,11 +3520,16 @@ export function AdminPanel() {
                               {user.affiliation || '-'}
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                              <Badge variant="secondary">
-                                {user.accountType === 'admin' ? '시스템 관리자' : 
-                                 user.accountType === 'sales_manager' ? '영업과장' : 
-                                 user.userType === 'worker' ? '근무자' : '기타'}
-                              </Badge>
+                              <UserRoleDropdown 
+                                user={user} 
+                                onRoleChange={(newRole) => {
+                                  // 역할 변경 API 호출
+                                  changeUserRoleMutation.mutate({
+                                    userId: user.id,
+                                    accountType: newRole
+                                  });
+                                }}
+                              />
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                               {format(new Date(user.createdAt), 'yyyy-MM-dd', { locale: ko })}
