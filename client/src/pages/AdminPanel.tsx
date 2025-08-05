@@ -75,15 +75,15 @@ type CreateSalesManagerForm = {
   team: string;
 };
 
+type ChangeUserRoleForm = {
+  userId: number;
+  accountType: 'admin' | 'sales_manager' | 'worker';
+};
+
 type UpdateDocumentStatusForm = {
   status: '접수' | '보완필요' | '완료';
   activationStatus?: '대기' | '개통' | '취소';
   notes?: string;
-};
-
-type ChangeUserRoleForm = {
-  userId: number;
-  accountType: 'admin' | 'sales_manager' | 'worker';
 };
 
 interface ContactCode {
@@ -1672,6 +1672,8 @@ export function AdminPanel() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/admin/users'] });
       queryClient.invalidateQueries({ queryKey: ['/api/admin/sales-managers'] });
+      setEditUserDialogOpen(false);
+      editUserForm.reset();
       toast({
         title: '성공',
         description: '사용자 권한이 성공적으로 변경되었습니다.',
@@ -3498,7 +3500,7 @@ export function AdminPanel() {
                                     const currentRole = user.accountType === 'admin' ? 'admin' : 
                                                       user.accountType === 'sales_manager' ? 'sales_manager' : 'worker';
                                     editUserForm.setValue('role', currentRole);
-                                    console.log('Edit user dialog should open now');
+                                    console.log('Edit user dialog should open now, role set to:', currentRole);
                                   }}
                                   className="text-blue-600 hover:text-blue-700"
                                   title="사용자 정보 수정"
@@ -4127,7 +4129,10 @@ export function AdminPanel() {
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel>계정 유형</FormLabel>
-                            <Select value={field.value} onValueChange={field.onChange}>
+                            <Select value={field.value} onValueChange={(value) => {
+                              console.log('Role changed to:', value);
+                              field.onChange(value);
+                            }}>
                               <FormControl>
                                 <SelectTrigger>
                                   <SelectValue placeholder="계정 유형을 선택하세요" />
@@ -4140,6 +4145,9 @@ export function AdminPanel() {
                               </SelectContent>
                             </Select>
                             <FormMessage />
+                            <div className="text-xs text-gray-500 mt-1">
+                              현재 값: {field.value}
+                            </div>
                           </FormItem>
                         )}
                       />
