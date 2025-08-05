@@ -1143,7 +1143,17 @@ export class DatabaseStorage implements IStorage {
     try {
       console.log('Attempting to delete user with id:', id);
       
-      // 관리자 삭제 시도 (hard delete)
+      // 1. users 테이블에서 삭제 시도 (일반 사용자)
+      const userResult = await db.delete(users)
+        .where(eq(users.id, id))
+        .returning();
+        
+      if (userResult.length > 0) {
+        console.log('Deleted user from users table:', userResult[0]);
+        return;
+      }
+      
+      // 2. 관리자 삭제 시도 (hard delete)
       const adminResult = await db.delete(admins)
         .where(eq(admins.id, id))
         .returning();
@@ -1153,7 +1163,7 @@ export class DatabaseStorage implements IStorage {
         return;
       }
       
-      // 영업과장 삭제 시도 (soft delete)
+      // 3. 영업과장 삭제 시도 (soft delete)
       const managerResult = await db.update(salesManagers)
         .set({ isActive: false })
         .where(eq(salesManagers.id, id))
@@ -1164,7 +1174,7 @@ export class DatabaseStorage implements IStorage {
         return;
       }
       
-      // 근무자는 인메모리 저장소에서 삭제
+      // 4. 근무자는 인메모리 저장소에서 삭제
       if (workerStore.has(id)) {
         workerStore.delete(id);
         console.log('Deleted worker from memory store');
