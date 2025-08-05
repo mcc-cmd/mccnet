@@ -243,16 +243,29 @@ export class DatabaseStorage implements IStorage {
 
   // 영업과장 관리 메서드
   async createSalesManager(data: CreateSalesManagerForm): Promise<SalesManager> {
+    // 중복 아이디 체크
+    const existingAdmin = await this.getAdminByUsername(data.username);
+    if (existingAdmin) {
+      throw new Error('이미 존재하는 아이디입니다.');
+    }
+    
+    const existingManager = await this.getSalesManagerByUsername(data.username);
+    if (existingManager) {
+      throw new Error('이미 존재하는 아이디입니다.');
+    }
+    
+    const existingUser = await this.getUserByUsername(data.username);
+    if (existingUser) {
+      throw new Error('이미 존재하는 아이디입니다.');
+    }
+    
     const hashedPassword = await bcrypt.hash(data.password, 10);
     const [result] = await db.insert(salesManagers).values({
-      teamId: data.teamId,
-      managerName: data.managerName,
-      managerCode: data.managerCode,
+      teamId: data.teamId || 1,
+      managerName: data.managerName || data.name,
+      managerCode: data.managerCode || data.username,
       username: data.username,
       password: hashedPassword,
-      position: data.position,
-      contactPhone: data.contactPhone,
-      email: data.email,
     }).returning();
     return result;
   }

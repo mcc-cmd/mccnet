@@ -3608,7 +3608,7 @@ export function AdminPanel() {
                                 <FormItem>
                                   <FormLabel>아이디</FormLabel>
                                   <FormControl>
-                                    <Input type="text" placeholder="아이디를 입력하세요" {...field} />
+                                    <Input type="text" placeholder="아이디를 입력하세요" autoComplete="off" {...field} />
                                   </FormControl>
                                   <FormMessage />
                                 </FormItem>
@@ -3685,7 +3685,7 @@ export function AdminPanel() {
                                 <FormItem>
                                   <FormLabel>아이디</FormLabel>
                                   <FormControl>
-                                    <Input type="text" placeholder="아이디를 입력하세요" {...field} />
+                                    <Input type="text" placeholder="아이디를 입력하세요" autoComplete="off" {...field} />
                                   </FormControl>
                                   <FormMessage />
                                 </FormItem>
@@ -3762,7 +3762,7 @@ export function AdminPanel() {
                                 <FormItem>
                                   <FormLabel>아이디</FormLabel>
                                   <FormControl>
-                                    <Input type="text" placeholder="아이디를 입력하세요" {...field} />
+                                    <Input type="text" placeholder="아이디를 입력하세요" autoComplete="off" {...field} />
                                   </FormControl>
                                   <FormMessage />
                                 </FormItem>
