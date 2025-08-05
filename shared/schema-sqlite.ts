@@ -33,7 +33,6 @@ export const salesTeams = sqliteTable("sales_teams", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   teamName: text("team_name").notNull(),
   teamCode: text("team_code").notNull(),
-  description: text("description"),
   isActive: integer("is_active", { mode: 'boolean' }).default(1),
   createdAt: text("created_at").default(sql`CURRENT_TIMESTAMP`),
   updatedAt: text("updated_at").default(sql`CURRENT_TIMESTAMP`),

@@ -206,7 +206,6 @@ export class DatabaseStorage implements IStorage {
     const [result] = await db.insert(salesTeams).values({
       teamName: data.teamName,
       teamCode: data.teamCode,
-      description: data.description,
     }).returning();
     return result;
   }
