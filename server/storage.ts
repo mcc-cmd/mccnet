@@ -466,7 +466,6 @@ export class DatabaseStorage implements IStorage {
       username: data.username,
       password: hashedPassword,
       name: data.name,
-      dealerId: data.dealerId,
       role: data.role || 'user',
       canChangePassword: data.canChangePassword ? 1 : 0,
     }).returning();
@@ -896,7 +895,7 @@ export class DatabaseStorage implements IStorage {
   async getUsers(): Promise<any[]> {
     try {
       // 관리자 목록 조회
-      const adminList = await db.select().from(admins);
+      const adminList = await db.select().from(admins).where(eq(admins.isActive, 1));
       
       // 영업과장 목록 조회
       const salesManagerList = await db.select({
@@ -907,10 +906,10 @@ export class DatabaseStorage implements IStorage {
         teamId: salesManagers.teamId,
         isActive: salesManagers.isActive
       }).from(salesManagers)
-        .where(eq(salesManagers.isActive, true));
+        .where(eq(salesManagers.isActive, 1));
 
-      // 메모리에서 근무자 목록 조회
-      const workers = Array.from(workerStore.values());
+      // 근무자 목록 조회 (데이터베이스에서)
+      const workersList = await db.select().from(users).where(eq(users.isActive, 1));
 
       // 통합 사용자 목록 생성
       const allUsers = [
@@ -932,13 +931,13 @@ export class DatabaseStorage implements IStorage {
           affiliation: manager.teamId === 1 ? 'DX 1팀' : manager.teamId === 2 ? 'DX 2팀' : '기타',
           createdAt: manager.createdAt
         })),
-        ...workers.map(worker => ({
+        ...workersList.map(worker => ({
           id: worker.id,
           username: worker.username,
-          displayName: worker.displayName,
+          displayName: worker.name,
           userType: 'worker' as const,
           accountType: 'worker' as const,
-          affiliation: worker.affiliation,
+          affiliation: '근무자',
           createdAt: worker.createdAt
         }))
       ];

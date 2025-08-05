@@ -104,7 +104,6 @@ export const users = sqliteTable("users", {
   username: text("username").notNull(),
   password: text("password").notNull(),
   name: text("name").notNull(),
-  dealerId: integer("dealer_id"),
   role: text("role").notNull().default('user'),
   isActive: integer("is_active", { mode: 'boolean' }).default(1),
   canChangePassword: integer("can_change_password", { mode: 'boolean' }).default(1),
