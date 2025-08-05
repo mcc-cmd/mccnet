@@ -145,6 +145,8 @@ export class DatabaseStorage implements IStorage {
       username: admin.username,
       password: hashedPassword,
       name: admin.name,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
     }).returning();
     return result;
   }
@@ -204,7 +206,7 @@ export class DatabaseStorage implements IStorage {
     const [result] = await db.update(salesTeams)
       .set({
         ...data,
-        updatedAt: new Date(),
+        updatedAt: new Date().toISOString(),
       })
       .where(eq(salesTeams.id, id))
       .returning();
@@ -213,7 +215,7 @@ export class DatabaseStorage implements IStorage {
 
   async deleteSalesTeam(id: number): Promise<void> {
     await db.update(salesTeams)
-      .set({ isActive: 0, updatedAt: new Date() })
+      .set({ isActive: 0, updatedAt: new Date().toISOString() })
       .where(eq(salesTeams.id, id));
   }
 
@@ -229,6 +231,8 @@ export class DatabaseStorage implements IStorage {
       position: data.position,
       contactPhone: data.contactPhone,
       email: data.email,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
     }).returning();
     return result;
   }
@@ -309,7 +313,7 @@ export class DatabaseStorage implements IStorage {
     const [result] = await db.update(salesManagers)
       .set({
         ...data,
-        updatedAt: new Date(),
+        updatedAt: new Date().toISOString(),
       })
       .where(eq(salesManagers.id, id))
       .returning();
@@ -318,13 +322,13 @@ export class DatabaseStorage implements IStorage {
 
   async deleteSalesManager(id: number): Promise<void> {
     await db.update(salesManagers)
-      .set({ isActive: 0, updatedAt: new Date() })
+      .set({ isActive: 0, updatedAt: new Date().toISOString() })
       .where(eq(salesManagers.id, id));
   }
 
   async assignManagerToTeam(managerId: number, teamId: number): Promise<SalesManager> {
     const [result] = await db.update(salesManagers)
-      .set({ teamId, updatedAt: new Date() })
+      .set({ teamId, updatedAt: new Date().toISOString() })
       .where(eq(salesManagers.id, managerId))
       .returning();
     return result;
@@ -374,7 +378,7 @@ export class DatabaseStorage implements IStorage {
     const [result] = await db.update(contactCodeMappings)
       .set({
         ...data,
-        updatedAt: new Date(),
+        updatedAt: new Date().toISOString(),
       })
       .where(eq(contactCodeMappings.id, id))
       .returning();
@@ -383,7 +387,7 @@ export class DatabaseStorage implements IStorage {
 
   async deleteContactCodeMapping(id: number): Promise<void> {
     await db.update(contactCodeMappings)
-      .set({ isActive: 0, updatedAt: new Date() })
+      .set({ isActive: 0, updatedAt: new Date().toISOString() })
       .where(eq(contactCodeMappings.id, id));
   }
 
