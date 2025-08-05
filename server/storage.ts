@@ -1140,26 +1140,42 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteUser(id: number): Promise<void> {
-    // 관리자 삭제 (hard delete)
-    const adminResult = await db.delete(admins)
-      .where(eq(admins.id, id))
-      .returning();
+    try {
+      console.log('Attempting to delete user with id:', id);
       
-    if (adminResult.length > 0) {
-      return;
-    }
-    
-    // 영업과장 삭제 (soft delete)
-    const managerResult = await db.update(salesManagers)
-      .set({ isActive: false })
-      .where(eq(salesManagers.id, id))
-      .returning();
+      // 관리자 삭제 시도 (hard delete)
+      const adminResult = await db.delete(admins)
+        .where(eq(admins.id, id))
+        .returning();
+        
+      if (adminResult.length > 0) {
+        console.log('Deleted admin user:', adminResult[0]);
+        return;
+      }
       
-    if (managerResult.length > 0) {
-      return;
+      // 영업과장 삭제 시도 (soft delete)
+      const managerResult = await db.update(salesManagers)
+        .set({ isActive: false })
+        .where(eq(salesManagers.id, id))
+        .returning();
+        
+      if (managerResult.length > 0) {
+        console.log('Deactivated sales manager:', managerResult[0]);
+        return;
+      }
+      
+      // 근무자는 인메모리 저장소에서 삭제
+      if (workerStore.has(id)) {
+        workerStore.delete(id);
+        console.log('Deleted worker from memory store');
+        return;
+      }
+      
+      throw new Error('사용자를 찾을 수 없습니다.');
+    } catch (error) {
+      console.error('Delete user error:', error);
+      throw error;
     }
-    
-    throw new Error('사용자를 찾을 수 없습니다.');
   }
   
   async getDocuments(filters?: {

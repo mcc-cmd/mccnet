@@ -3491,16 +3491,21 @@ export function AdminPanel() {
                                   onClick={() => {
                                     console.log('Edit button clicked for user:', user);
                                     setEditingUser(user);
+                                    console.log('Setting editUserDialogOpen to true');
                                     setEditUserDialogOpen(true);
                                     setChangePasswordDialogOpen(false); // 비밀번호 다이얼로그 닫기
-                                    editUserForm.setValue('username', user.username);
-                                    editUserForm.setValue('name', user.displayName || user.name);
-                                    editUserForm.setValue('password', '');
-                                    // 현재 역할 설정
-                                    const currentRole = user.accountType === 'admin' ? 'admin' : 
-                                                      user.accountType === 'sales_manager' ? 'sales_manager' : 'worker';
-                                    editUserForm.setValue('role', currentRole);
-                                    console.log('Edit user dialog should open now, role set to:', currentRole);
+                                    
+                                    // Form 값들을 다음 렌더 사이클에서 설정
+                                    setTimeout(() => {
+                                      editUserForm.setValue('username', user.username);
+                                      editUserForm.setValue('name', user.displayName || user.name);
+                                      editUserForm.setValue('password', '');
+                                      // 현재 역할 설정
+                                      const currentRole = user.accountType === 'admin' ? 'admin' : 
+                                                        user.accountType === 'sales_manager' ? 'sales_manager' : 'worker';
+                                      editUserForm.setValue('role', currentRole);
+                                      console.log('Form values set, role:', currentRole);
+                                    }, 0);
                                   }}
                                   className="text-blue-600 hover:text-blue-700"
                                   title="사용자 정보 수정"
@@ -4048,11 +4053,14 @@ export function AdminPanel() {
               </Dialog>
 
               {/* Edit User Dialog */}
-              <Dialog open={editUserDialogOpen} onOpenChange={setEditUserDialogOpen}>
-                <DialogContent>
+              <Dialog open={editUserDialogOpen} onOpenChange={(open) => {
+                console.log('Edit dialog open state changed to:', open);
+                setEditUserDialogOpen(open);
+              }}>
+                <DialogContent aria-describedby="edit-user-description">
                   <DialogHeader>
                     <DialogTitle>사용자 정보 수정</DialogTitle>
-                    <DialogDescription>
+                    <DialogDescription id="edit-user-description">
                       {editingUser?.displayName} ({editingUser?.username}) 사용자의 정보를 수정합니다.
                     </DialogDescription>
                   </DialogHeader>
