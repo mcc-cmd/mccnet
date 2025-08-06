@@ -3465,7 +3465,7 @@ export function AdminPanel() {
                         {users.map((user, index) => (
                           <tr key={`user-${user.id}-${index}`}>
                             <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                              {user.displayName || user.name}
+                              {(user as any).displayName || user.name}
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                               {user.username}
@@ -3475,8 +3475,8 @@ export function AdminPanel() {
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                               <Badge variant="secondary">
-                                {user.accountType === 'admin' ? '시스템 관리자' : 
-                                 user.accountType === 'sales_manager' ? '영업과장' : 
+                                {(user as any).accountType === 'admin' ? '시스템 관리자' : 
+                                 (user as any).accountType === 'sales_manager' ? '영업과장' : 
                                  user.userType === 'worker' ? '근무자' : '기타'}
                               </Badge>
                             </td>
@@ -3497,13 +3497,13 @@ export function AdminPanel() {
                                     setEditingUser(user);
                                     
                                     // 현재 역할 설정
-                                    const currentRole = user.accountType === 'admin' ? 'admin' : 
-                                                      user.accountType === 'sales_manager' ? 'sales_manager' : 'worker';
+                                    const currentRole = (user as any).accountType === 'admin' ? 'admin' : 
+                                                      (user as any).accountType === 'sales_manager' ? 'sales_manager' : 'worker';
                                     
                                     // Form 리셋
                                     editUserForm.reset({
                                       username: user.username,
-                                      name: user.displayName || user.name,
+                                      name: (user as any).displayName || user.name,
                                       password: '',
                                       role: currentRole
                                     });
