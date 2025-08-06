@@ -1233,7 +1233,13 @@ export class DatabaseStorage implements IStorage {
 
         if (filters.activationStatus) {
           const statuses = filters.activationStatus.split(',').map(s => s.trim());
-          conditions.push(inArray(documents.activationStatus, statuses));
+          if (statuses.length === 1) {
+            conditions.push(eq(documents.activationStatus, statuses[0]));
+          } else {
+            // inArray 대신 OR 조건 사용
+            const statusConditions = statuses.map(status => eq(documents.activationStatus, status));
+            conditions.push(or(...statusConditions));
+          }
         }
 
         if (filters.search) {
@@ -1336,6 +1342,35 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error('Error deleting document:', error);
       throw new Error('문서 삭제에 실패했습니다.');
+    }
+  }
+
+  async findDuplicateDocuments(params: {
+    customerName: string;
+    customerPhone: string;
+    carrier: string;
+    storeName: string;
+    contactCode: string;
+    monthStart: string;
+    monthEnd: string;
+  }): Promise<any[]> {
+    try {
+      const result = await db.select()
+        .from(documents)
+        .where(
+          and(
+            eq(documents.customerName, params.customerName),
+            eq(documents.customerPhone, params.customerPhone),
+            eq(documents.carrier, params.carrier),
+            gte(documents.uploadedAt, new Date(params.monthStart)),
+            lte(documents.uploadedAt, new Date(params.monthEnd))
+          )
+        );
+      
+      return result;
+    } catch (error) {
+      console.error('Error finding duplicate documents:', error);
+      return [];
     }
   }
 
