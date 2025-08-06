@@ -1221,99 +1221,82 @@ export class DatabaseStorage implements IStorage {
     dealerId?: number;
   }): Promise<any[]> {
     try {
-      // First, get all documents with dealer information
-      let query = db.select().from(documents);
-
-      const conditions = [];
-
+      // 기본 쿼리로 모든 문서 조회
+      let result = await db.select().from(documents).orderBy(desc(documents.uploadedAt));
+      
+      // 필터 적용 (메모리에서 처리)
       if (filters) {
         if (filters.status) {
-          conditions.push(eq(documents.status, filters.status));
+          result = result.filter(doc => doc.status === filters.status);
         }
-
+        
         if (filters.activationStatus) {
           const statuses = filters.activationStatus.split(',').map(s => s.trim());
-          if (statuses.length === 1) {
-            conditions.push(eq(documents.activationStatus, statuses[0]));
-          } else {
-            // inArray 대신 OR 조건 사용
-            const statusConditions = statuses.map(status => eq(documents.activationStatus, status));
-            conditions.push(or(...statusConditions));
-          }
+          result = result.filter(doc => statuses.includes(doc.activationStatus || ''));
         }
-
+        
         if (filters.search) {
-          const searchValue = `%${filters.search}%`;
-          conditions.push(
-            or(
-              like(documents.customerName, searchValue),
-              like(documents.documentNumber, searchValue),
-              like(documents.contactCode, searchValue),
-              sql`${documents.customerPhone} LIKE ${searchValue}`
-            )
+          result = result.filter(doc => 
+            doc.customerName?.includes(filters.search!) ||
+            doc.documentNumber?.includes(filters.search!) ||
+            doc.contactCode?.includes(filters.search!) ||
+            (doc.customerPhone && doc.customerPhone.includes(filters.search!))
           );
         }
-
-        if (filters.startDate) {
-          conditions.push(gte(documents.uploadedAt, new Date(filters.startDate)));
-        }
-
-        if (filters.endDate) {
-          conditions.push(lte(documents.uploadedAt, new Date(filters.endDate)));
-        }
-
+        
         if (filters.carrier) {
-          conditions.push(eq(documents.carrier, filters.carrier));
+          result = result.filter(doc => doc.carrier === filters.carrier);
         }
-
+        
         if (filters.dealerId) {
-          conditions.push(eq(documents.dealerId, filters.dealerId));
+          result = result.filter(doc => doc.dealerId === filters.dealerId);
+        }
+        
+        if (filters.startDate) {
+          const startDate = new Date(filters.startDate);
+          result = result.filter(doc => new Date(doc.uploadedAt) >= startDate);
+        }
+        
+        if (filters.endDate) {
+          const endDate = new Date(filters.endDate);
+          result = result.filter(doc => new Date(doc.uploadedAt) <= endDate);
         }
       }
-
-      if (conditions.length > 0) {
-        query = query.where(and(...conditions));
-      }
-
-      const result = await query.orderBy(desc(documents.uploadedAt));
+      
       console.log('Documents found:', result.length);
       
-      // Add dealer name and service plan info
-      const documentsWithDetails = result.map((doc) => {
-        return {
-          id: doc.id,
-          documentNumber: doc.documentNumber,
-          customerName: doc.customerName,
-          customerPhone: doc.customerPhone || '',
-          contactCode: doc.contactCode,
-          carrier: doc.carrier,
-          previousCarrier: doc.previousCarrier,
-          customerType: doc.customerType,
-          desiredNumber: doc.desiredNumber,
-          status: doc.status,
-          activationStatus: doc.activationStatus,
-          uploadedAt: doc.uploadedAt,
-          updatedAt: doc.updatedAt,
-          activatedAt: doc.activatedAt,
-          notes: doc.notes,
-          dealerId: doc.dealerId,
-          userId: doc.userId,
-          assignedWorkerId: doc.assignedWorkerId,
-          filePath: doc.filePath,
-          fileName: doc.fileName,
-          fileSize: doc.fileSize,
-          dealerNotes: doc.dealerNotes,
-          subscriptionNumber: doc.subscriptionNumber,
-          servicePlanId: doc.servicePlanId,
-          deviceModel: doc.deviceModel,
-          simNumber: doc.simNumber,
-          settlementAmount: doc.settlementAmount,
-          dealerName: '미확인', // 임시로 기본값 설정
-          servicePlanName: null
-        };
-      });
-      
-      return documentsWithDetails;
+      // 결과 포맷팅
+      return result.map(doc => ({
+        id: doc.id,
+        documentNumber: doc.documentNumber,
+        customerName: doc.customerName,
+        customerPhone: doc.customerPhone || '',
+        contactCode: doc.contactCode,
+        carrier: doc.carrier,
+        previousCarrier: doc.previousCarrier,
+        customerType: doc.customerType,
+        desiredNumber: doc.desiredNumber,
+        status: doc.status,
+        activationStatus: doc.activationStatus,
+        uploadedAt: doc.uploadedAt,
+        updatedAt: doc.updatedAt,
+        activatedAt: doc.activatedAt,
+        notes: doc.notes,
+        dealerId: doc.dealerId,
+        userId: doc.userId,
+        assignedWorkerId: doc.assignedWorkerId,
+        filePath: doc.filePath,
+        fileName: doc.fileName,
+        fileSize: doc.fileSize,
+        dealerNotes: doc.dealerNotes,
+        subscriptionNumber: doc.subscriptionNumber,
+        servicePlanId: doc.servicePlanId,
+        deviceModel: doc.deviceModel,
+        simNumber: doc.simNumber,
+        settlementAmount: doc.settlementAmount,
+        dealerName: '미확인',
+        servicePlanName: null
+      }));
     } catch (error) {
       console.error('Error fetching documents:', error);
       throw new Error('문서 조회에 실패했습니다.');
@@ -1355,19 +1338,20 @@ export class DatabaseStorage implements IStorage {
     monthEnd: string;
   }): Promise<any[]> {
     try {
-      const result = await db.select()
-        .from(documents)
-        .where(
-          and(
-            eq(documents.customerName, params.customerName),
-            eq(documents.customerPhone, params.customerPhone),
-            eq(documents.carrier, params.carrier),
-            gte(documents.uploadedAt, new Date(params.monthStart)),
-            lte(documents.uploadedAt, new Date(params.monthEnd))
-          )
-        );
+      // 모든 문서를 가져와서 메모리에서 필터링
+      const allDocs = await db.select().from(documents);
+      const startDate = new Date(params.monthStart);
+      const endDate = new Date(params.monthEnd);
       
-      return result;
+      const duplicates = allDocs.filter(doc => 
+        doc.customerName === params.customerName &&
+        doc.customerPhone === params.customerPhone &&
+        doc.carrier === params.carrier &&
+        new Date(doc.uploadedAt) >= startDate &&
+        new Date(doc.uploadedAt) <= endDate
+      );
+      
+      return duplicates;
     } catch (error) {
       console.error('Error finding duplicate documents:', error);
       return [];
