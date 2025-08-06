@@ -82,25 +82,40 @@ export function SubmitApplication() {
     'SK', 'KT', 'LG', 'SK알뜰', 'KT알뜰', 'LG알뜰'
   ];
   
-  // 선택된 통신사의 정보 가져오기
+  // 선택된 통신사의 정보 가져오기 (Boolean 값 변환)
   const selectedCarrier = carriers.find(c => c.name === formData.carrier);
+  const carrierSettings = selectedCarrier ? {
+    ...selectedCarrier,
+    requireCustomerName: Boolean(selectedCarrier.requireCustomerName),
+    requireCustomerPhone: Boolean(selectedCarrier.requireCustomerPhone),
+    requireCustomerEmail: Boolean(selectedCarrier.requireCustomerEmail),
+    requireContactCode: Boolean(selectedCarrier.requireContactCode),
+    requireCarrier: Boolean(selectedCarrier.requireCarrier),
+    requirePreviousCarrier: Boolean(selectedCarrier.requirePreviousCarrier),
+    requireDocumentUpload: Boolean(selectedCarrier.requireDocumentUpload),
+    requireBundleNumber: Boolean(selectedCarrier.requireBundleNumber),
+    requireBundleCarrier: Boolean(selectedCarrier.requireBundleCarrier),
+    requireDesiredNumber: Boolean(selectedCarrier.requireDesiredNumber),
+    allowNewCustomer: Boolean(selectedCarrier.allowNewCustomer),
+    allowPortIn: Boolean(selectedCarrier.allowPortIn)
+  } : null;
   
   // 통신사 설정에 따른 고객 유형 필터링
   const availableCustomerTypes = {
-    new: selectedCarrier?.allowNewCustomer !== false,
-    portIn: selectedCarrier?.allowPortIn !== false
+    new: carrierSettings?.allowNewCustomer !== false,
+    portIn: carrierSettings?.allowPortIn !== false
   };
 
   // 통신사가 지원하지 않는 고객 유형이 선택된 경우 변경
   useEffect(() => {
-    if (selectedCarrier) {
+    if (carrierSettings) {
       if (formData.customerType === 'new' && !availableCustomerTypes.new && availableCustomerTypes.portIn) {
         setFormData(prev => ({ ...prev, customerType: 'port-in' }));
       } else if (formData.customerType === 'port-in' && !availableCustomerTypes.portIn && availableCustomerTypes.new) {
         setFormData(prev => ({ ...prev, customerType: 'new', previousCarrier: '' }));
       }
     }
-  }, [selectedCarrier, formData.customerType, availableCustomerTypes.new, availableCustomerTypes.portIn]);
+  }, [carrierSettings, formData.customerType, availableCustomerTypes.new, availableCustomerTypes.portIn]);
 
   // 고객 유형 변경 시 관련 필드 초기화
   useEffect(() => {
@@ -375,7 +390,7 @@ export function SubmitApplication() {
                 </div>
                 
                 {/* 희망번호 입력 (신규 선택 시에만 표시) */}
-                {formData.customerType === 'new' && Boolean(selectedCarrier?.requireDesiredNumber) && (
+                {formData.customerType === 'new' && carrierSettings?.requireDesiredNumber && (
                   <div>
                     <Label htmlFor="desiredNumber">
                       희망번호 *
@@ -432,31 +447,31 @@ export function SubmitApplication() {
                           carriers.map((carrier) => (
                             <SelectItem key={carrier.id} value={carrier.name}>
                               {carrier.name}
-                              {carrier.requireDocumentUpload && " (서류 필수)"}
+                              {Boolean(carrier.requireDocumentUpload) && " (서류 필수)"}
                             </SelectItem>
                           ))
                         )}
                       </SelectContent>
                     </Select>
-                    {selectedCarrier?.requireDocumentUpload && (
+                    {carrierSettings?.requireDocumentUpload && (
                       <Alert className="mt-2">
                         <AlertDescription>
                           {formData.carrier} 접수 시 서류 업로드는 필수입니다.
                         </AlertDescription>
                       </Alert>
                     )}
-                    {selectedCarrier?.bundleNumber && (
+                    {carrierSettings?.bundleNumber && (
                       <Alert className="mt-2">
                         <AlertDescription>
-                          결합 번호: {selectedCarrier.bundleNumber}
-                          {selectedCarrier.bundleCarrier && ` (${selectedCarrier.bundleCarrier})`}
+                          결합 번호: {carrierSettings.bundleNumber}
+                          {carrierSettings.bundleCarrier && ` (${carrierSettings.bundleCarrier})`}
                         </AlertDescription>
                       </Alert>
                     )}
                   </div>
                   
                   {/* 이전통신사는 번호이동 고객에게만 표시 */}
-                  {formData.customerType === 'port-in' && Boolean(selectedCarrier?.requirePreviousCarrier) && (
+                  {formData.customerType === 'port-in' && carrierSettings?.requirePreviousCarrier && (
                     <div>
                       <Label htmlFor="previousCarrier">
                         이전통신사 *
@@ -486,10 +501,10 @@ export function SubmitApplication() {
                 </h3>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {(!selectedCarrier || Boolean(selectedCarrier.requireCustomerName)) && (
+                  {(!carrierSettings || carrierSettings.requireCustomerName) && (
                     <div>
                       <Label htmlFor="customerName">
-                        고객명 {Boolean(selectedCarrier?.requireCustomerName) && "*"}
+                        고객명 {carrierSettings?.requireCustomerName && "*"}
                       </Label>
                       <Input
                         id="customerName"
@@ -498,15 +513,15 @@ export function SubmitApplication() {
                         onChange={handleInputChange}
                         placeholder="고객명을 입력하세요"
                         className="mt-1"
-                        required={Boolean(selectedCarrier?.requireCustomerName)}
+                        required={carrierSettings?.requireCustomerName}
                       />
                     </div>
                   )}
                   
-                  {(!selectedCarrier || Boolean(selectedCarrier.requireCustomerPhone)) && (
+                  {(!carrierSettings || carrierSettings.requireCustomerPhone) && (
                     <div>
                       <Label htmlFor="customerPhone">
-                        연락처 {Boolean(selectedCarrier?.requireCustomerPhone) && "*"}
+                        연락처 {carrierSettings?.requireCustomerPhone && "*"}
                       </Label>
                       <Input
                         id="customerPhone"
@@ -516,12 +531,12 @@ export function SubmitApplication() {
                         onChange={handleInputChange}
                         placeholder="010-0000-0000"
                         className="mt-1"
-                        required={Boolean(selectedCarrier?.requireCustomerPhone)}
+                        required={carrierSettings?.requireCustomerPhone}
                       />
                     </div>
                   )}
                   
-                  {Boolean(selectedCarrier?.requireCustomerEmail) && (
+                  {carrierSettings?.requireCustomerEmail && (
                     <div>
                       <Label htmlFor="customerEmail">
                         이메일 *
@@ -541,10 +556,10 @@ export function SubmitApplication() {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {(!selectedCarrier || Boolean(selectedCarrier.requireContactCode)) && (
+                  {(!carrierSettings || carrierSettings.requireContactCode) && (
                     <div>
                       <Label htmlFor="contactCode">
-                        개통방명 코드 {Boolean(selectedCarrier?.requireContactCode) && "*"}
+                        개통방명 코드 {carrierSettings?.requireContactCode && "*"}
                       </Label>
                       <Input
                         id="contactCode"
@@ -553,7 +568,7 @@ export function SubmitApplication() {
                         onChange={(e) => handleContactCodeChange(e.target.value)}
                         placeholder="개통방명 코드를 입력하세요"
                         className="mt-1"
-                        required={Boolean(selectedCarrier?.requireContactCode)}
+                        required={carrierSettings?.requireContactCode}
                       />
                     </div>
                   )}
@@ -571,7 +586,7 @@ export function SubmitApplication() {
                     />
                   </div>
                   
-                  {Boolean(selectedCarrier?.requireBundleNumber) && (
+                  {carrierSettings?.requireBundleNumber && (
                     <div>
                       <Label htmlFor="bundleNumber">
                         결합번호 *
@@ -588,7 +603,7 @@ export function SubmitApplication() {
                     </div>
                   )}
                   
-                  {Boolean(selectedCarrier?.requireBundleCarrier) && (
+                  {carrierSettings?.requireBundleCarrier && (
                     <div>
                       <Label htmlFor="bundleCarrier">
                         결합통신사 *
