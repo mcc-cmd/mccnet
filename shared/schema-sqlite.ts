@@ -251,6 +251,16 @@ export type CreateWorkerForm = z.infer<typeof createWorkerSchema>;
 export type User = typeof users.$inferSelect;
 
 // 통신사 스키마
+export const createCarrierSchema = createInsertSchema(carriers).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const updateCarrierSchema = createCarrierSchema.partial();
+
+export type CreateCarrierForm = z.infer<typeof createCarrierSchema>;
+export type UpdateCarrierForm = z.infer<typeof updateCarrierSchema>;
 export type Carrier = typeof carriers.$inferSelect;
 
 // 문서 스키마

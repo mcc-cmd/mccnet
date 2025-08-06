@@ -1826,21 +1826,11 @@ export class DatabaseStorage implements IStorage {
       // 데이터베이스에 저장
       const [newCarrier] = await db.insert(carriers).values({
         name: carrierData.name,
-        displayOrder: carrierData.displayOrder || 0,
+        code: carrierData.code || carrierData.name.replace(/[^a-zA-Z0-9가-힣]/g, ''),
+        color: carrierData.color || '#0000FF',
+        supportNewCustomers: carrierData.supportNewCustomers ?? true,
+        supportPortIn: carrierData.supportPortIn ?? true,
         isActive: carrierData.isActive ?? true,
-        isWired: carrierData.isWired ?? false,
-        bundleNumber: carrierData.bundleNumber || '',
-        bundleCarrier: carrierData.bundleCarrier || '',
-        documentRequired: carrierData.documentRequired ?? false,
-        requireCustomerName: carrierData.requireCustomerName ?? true,
-        requireCustomerPhone: carrierData.requireCustomerPhone ?? true,
-        requireCustomerEmail: carrierData.requireCustomerEmail ?? false,
-        requireContactCode: carrierData.requireContactCode ?? true,
-        requireCarrier: carrierData.requireCarrier ?? true,
-        requirePreviousCarrier: carrierData.requirePreviousCarrier ?? true,
-        requireDocumentUpload: carrierData.requireDocumentUpload ?? false,
-        requireBundleNumber: carrierData.requireBundleNumber ?? false,
-        requireBundleCarrier: carrierData.requireBundleCarrier ?? false,
       }).returning();
       
       return newCarrier;
@@ -1867,21 +1857,11 @@ export class DatabaseStorage implements IStorage {
       const [updatedCarrier] = await db.update(carriers)
         .set({
           name: carrierData.name,
-          displayOrder: carrierData.displayOrder,
+          code: carrierData.code || carrierData.name?.replace(/[^a-zA-Z0-9가-힣]/g, ''),
+          color: carrierData.color,
+          supportNewCustomers: carrierData.supportNewCustomers,
+          supportPortIn: carrierData.supportPortIn,
           isActive: carrierData.isActive,
-          isWired: carrierData.isWired,
-          bundleNumber: carrierData.bundleNumber,
-          bundleCarrier: carrierData.bundleCarrier,
-          documentRequired: carrierData.documentRequired,
-          requireCustomerName: carrierData.requireCustomerName,
-          requireCustomerPhone: carrierData.requireCustomerPhone,
-          requireCustomerEmail: carrierData.requireCustomerEmail,
-          requireContactCode: carrierData.requireContactCode,
-          requireCarrier: carrierData.requireCarrier,
-          requirePreviousCarrier: carrierData.requirePreviousCarrier,
-          requireDocumentUpload: carrierData.requireDocumentUpload,
-          requireBundleNumber: carrierData.requireBundleNumber,
-          requireBundleCarrier: carrierData.requireBundleCarrier,
           updatedAt: new Date()
         })
         .where(eq(carriers.id, id))
