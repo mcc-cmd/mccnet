@@ -223,7 +223,9 @@ router.post('/api/auth/login', async (req, res) => {
     console.log('Login attempt - parsed:', { username, password: password ? '***' : 'empty' });
     
     // Try admin login first
+    console.log('Authenticating admin:', username);
     const admin = await storage.authenticateAdmin(username, password);
+    console.log('Admin found:', admin ? 'yes' : 'no');
     console.log('Admin auth result:', admin ? 'success' : 'failed');
     
     if (admin) {
@@ -244,9 +246,13 @@ router.post('/api/auth/login', async (req, res) => {
     }
 
     // Try user login (includes workers, sales managers, and other users)
+    console.log('Authenticating user:', username);
     const userResult = await storage.authenticateUser(username, password);
+    console.log('User found:', userResult ? 'yes' : 'no');
+    console.log('User auth result:', userResult ? 'success' : 'failed');
+    
     if (userResult) {
-      const sessionId = await storage.createSession(userResult.id, userResult.userType);
+      const sessionId = await storage.createSession(userResult.id, userResult.userType || 'user');
       console.log('User session created:', sessionId, 'Type:', userResult.userType);
       
       const response: AuthResponse = {
@@ -255,7 +261,7 @@ router.post('/api/auth/login', async (req, res) => {
           id: userResult.id,
           name: userResult.name || username, // fallback to username if name not available
           username: username,
-          userType: userResult.userType
+          userType: userResult.userType || 'user'
         },
         sessionId
       };

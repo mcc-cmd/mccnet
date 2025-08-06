@@ -633,16 +633,18 @@ export class DatabaseStorage implements IStorage {
   
   // 호환성을 위한 기존 사용자 인증 메서드 (임시)
   async authenticateUser(username: string, password: string): Promise<any> {
-    // 관리자 인증 (관리자 계정 우선)
-    const admin = await this.getAdminByUsername(username);
-    if (admin && await bcrypt.compare(password, admin.password)) {
-      return { id: admin.id, userType: 'admin' };
-    }
-
-    // 영업 과장 인증
-    const salesManager = await this.getSalesManagerByUsername(username);
-    if (salesManager && await bcrypt.compare(password, salesManager.password)) {
-      return { id: salesManager.id, userType: 'sales_manager' };
+    // 일반 사용자 인증 (users 테이블에서)
+    try {
+      const [user] = await db.select().from(users).where(eq(users.username, username)).limit(1);
+      if (user && await bcrypt.compare(password, user.password)) {
+        return { 
+          id: user.id, 
+          name: user.name,
+          userType: user.role || 'user' 
+        };
+      }
+    } catch (error) {
+      console.error('User authentication error:', error);
     }
 
     // 근무자 인증 (메모리 저장소에서)
