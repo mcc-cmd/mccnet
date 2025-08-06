@@ -1242,12 +1242,13 @@ export class DatabaseStorage implements IStorage {
         }
 
         if (filters.search) {
+          const searchValue = `%${filters.search}%`;
           conditions.push(
             or(
-              like(documents.customerName, `%${filters.search}%`),
-              like(documents.customerPhone, `%${filters.search}%`),
-              like(documents.documentNumber, `%${filters.search}%`),
-              like(documents.contactCode, `%${filters.search}%`)
+              like(documents.customerName, searchValue),
+              like(documents.documentNumber, searchValue),
+              like(documents.contactCode, searchValue),
+              sql`${documents.customerPhone} LIKE ${searchValue}`
             )
           );
         }
