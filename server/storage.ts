@@ -138,6 +138,29 @@ export interface IStorage {
 
 export class DatabaseStorage implements IStorage {
   
+  constructor() {
+    // KT 통신사 기본 설정 초기화 (ID 9번은 KT)
+    this.carrierFieldSettings.set(9, {
+      displayOrder: 1,
+      isWired: false,
+      bundleNumber: '',
+      bundleCarrier: '',
+      documentRequired: false,
+      requireCustomerName: true,
+      requireCustomerPhone: true, // KT는 연락처 필수
+      requireCustomerEmail: false,
+      requireContactCode: true,
+      requireCarrier: true,
+      requirePreviousCarrier: true,
+      requireDocumentUpload: false,
+      requireBundleNumber: false,
+      requireBundleCarrier: false,
+      allowNewCustomer: true,
+      allowPortIn: true,
+      requireDesiredNumber: false
+    });
+  }
+  
   // 관리자 관련 메서드
   async createAdmin(admin: { username: string; password: string; name: string }): Promise<Admin> {
     // 중복 아이디 체크
@@ -1199,35 +1222,7 @@ export class DatabaseStorage implements IStorage {
   }): Promise<any[]> {
     try {
       // First, get all documents with dealer information
-      let query = db.select({
-        id: documents.id,
-        documentNumber: documents.documentNumber,
-        customerName: documents.customerName,
-        customerPhone: documents.customerPhone,
-        contactCode: documents.contactCode,
-        carrier: documents.carrier,
-        previousCarrier: documents.previousCarrier,
-        customerType: documents.customerType,
-        desiredNumber: documents.desiredNumber,
-        status: documents.status,
-        activationStatus: documents.activationStatus,
-        uploadedAt: documents.uploadedAt,
-        updatedAt: documents.updatedAt,
-        activatedAt: documents.activatedAt,
-        notes: documents.notes,
-        dealerId: documents.dealerId,
-        userId: documents.userId,
-        assignedWorkerId: documents.assignedWorkerId,
-        filePath: documents.filePath,
-        fileName: documents.fileName,
-        fileSize: documents.fileSize,
-        dealerNotes: documents.dealerNotes,
-        subscriptionNumber: documents.subscriptionNumber,
-        servicePlanId: documents.servicePlanId,
-        deviceModel: documents.deviceModel,
-        simNumber: documents.simNumber,
-        settlementAmount: documents.settlementAmount
-      }).from(documents);
+      let query = db.select().from(documents);
 
       const conditions = [];
 
@@ -1278,39 +1273,39 @@ export class DatabaseStorage implements IStorage {
       console.log('Documents found:', result.length);
       
       // Add dealer name and service plan info
-      const documentsWithDetails = await Promise.all(result.map(async (doc) => {
-        // Get dealer name from contact codes table
-        const contactCodeResult = await db.select({
-          dealerName: contactCodes.dealerName
-        })
-        .from(contactCodes)
-        .where(eq(contactCodes.code, doc.contactCode))
-        .limit(1);
-        
-        // Get service plan info if available
-        let servicePlanName = null;
-        if (doc.servicePlanId) {
-          try {
-            const servicePlanResult = await db.select({
-              planName: servicePlans.planName
-            })
-            .from(servicePlans)
-            .where(eq(servicePlans.id, doc.servicePlanId))
-            .limit(1);
-            
-            servicePlanName = servicePlanResult.length > 0 ? servicePlanResult[0].planName : null;
-          } catch (error) {
-            console.error('Error fetching service plan:', error);
-            servicePlanName = null;
-          }
-        }
-        
+      const documentsWithDetails = result.map((doc) => {
         return {
-          ...doc,
-          dealerName: contactCodeResult.length > 0 ? contactCodeResult[0].dealerName : '미확인',
-          servicePlanName
+          id: doc.id,
+          documentNumber: doc.documentNumber,
+          customerName: doc.customerName,
+          customerPhone: doc.customerPhone || '',
+          contactCode: doc.contactCode,
+          carrier: doc.carrier,
+          previousCarrier: doc.previousCarrier,
+          customerType: doc.customerType,
+          desiredNumber: doc.desiredNumber,
+          status: doc.status,
+          activationStatus: doc.activationStatus,
+          uploadedAt: doc.uploadedAt,
+          updatedAt: doc.updatedAt,
+          activatedAt: doc.activatedAt,
+          notes: doc.notes,
+          dealerId: doc.dealerId,
+          userId: doc.userId,
+          assignedWorkerId: doc.assignedWorkerId,
+          filePath: doc.filePath,
+          fileName: doc.fileName,
+          fileSize: doc.fileSize,
+          dealerNotes: doc.dealerNotes,
+          subscriptionNumber: doc.subscriptionNumber,
+          servicePlanId: doc.servicePlanId,
+          deviceModel: doc.deviceModel,
+          simNumber: doc.simNumber,
+          settlementAmount: doc.settlementAmount,
+          dealerName: '미확인', // 임시로 기본값 설정
+          servicePlanName: null
         };
-      }));
+      });
       
       return documentsWithDetails;
     } catch (error) {
