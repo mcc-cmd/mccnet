@@ -1823,15 +1823,18 @@ export class DatabaseStorage implements IStorage {
     console.log('Creating carrier:', carrierData);
     
     try {
-      // 데이터베이스에 저장
-      const [newCarrier] = await db.insert(carriers).values({
+      // Boolean 값들을 정수로 변환
+      const insertData = {
         name: carrierData.name,
         code: carrierData.code || carrierData.name.replace(/[^a-zA-Z0-9가-힣]/g, ''),
         color: carrierData.color || '#0000FF',
-        supportNewCustomers: carrierData.supportNewCustomers ?? true,
-        supportPortIn: carrierData.supportPortIn ?? true,
-        isActive: carrierData.isActive ?? true,
-      }).returning();
+        supportNewCustomers: carrierData.supportNewCustomers ? 1 : 0,
+        supportPortIn: carrierData.supportPortIn ? 1 : 0,
+        isActive: carrierData.isActive ? 1 : 0,
+      };
+      
+      // 데이터베이스에 저장
+      const [newCarrier] = await db.insert(carriers).values(insertData).returning();
       
       return newCarrier;
     } catch (error) {
@@ -1854,16 +1857,19 @@ export class DatabaseStorage implements IStorage {
     console.log('Updating carrier:', id, carrierData);
     
     try {
+      // Boolean 값들을 정수로 변환
+      const updateData = {
+        name: carrierData.name,
+        code: carrierData.code || carrierData.name?.replace(/[^a-zA-Z0-9가-힣]/g, ''),
+        color: carrierData.color || '#0000FF',
+        supportNewCustomers: carrierData.supportNewCustomers ? 1 : 0,
+        supportPortIn: carrierData.supportPortIn ? 1 : 0,
+        isActive: carrierData.isActive ? 1 : 0,
+        updatedAt: new Date()
+      };
+      
       const [updatedCarrier] = await db.update(carriers)
-        .set({
-          name: carrierData.name,
-          code: carrierData.code || carrierData.name?.replace(/[^a-zA-Z0-9가-힣]/g, ''),
-          color: carrierData.color,
-          supportNewCustomers: carrierData.supportNewCustomers,
-          supportPortIn: carrierData.supportPortIn,
-          isActive: carrierData.isActive,
-          updatedAt: new Date()
-        })
+        .set(updateData)
         .where(eq(carriers.id, id))
         .returning();
       

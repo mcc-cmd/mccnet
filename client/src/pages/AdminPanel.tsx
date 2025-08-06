@@ -4086,7 +4086,7 @@ export function AdminPanel() {
                     <DialogTitle>사용자 정보 수정</DialogTitle>
                     <DialogDescription id="edit-user-description">
                       {editingUser ? 
-                        `${editingUser.displayName || editingUser.name} (${editingUser.username}) 사용자의 정보를 수정합니다.` :
+                        `${(editingUser as any).displayName || editingUser.name} (${editingUser.username}) 사용자의 정보를 수정합니다.` :
                         '사용자를 선택하여 정보를 수정하세요.'
                       }
                     </DialogDescription>
@@ -4108,8 +4108,8 @@ export function AdminPanel() {
                       }
                       
                       // 역할이 변경되었는지 확인
-                      const currentRole = editingUser.accountType === 'admin' ? 'admin' : 
-                                        editingUser.accountType === 'sales_manager' ? 'sales_manager' : 'worker';
+                      const currentRole = (editingUser as any).accountType === 'admin' ? 'admin' : 
+                                        (editingUser as any).accountType === 'sales_manager' ? 'sales_manager' : 'worker';
                       
                       console.log('Current role:', currentRole, 'New role:', data.role);
                       
