@@ -1810,9 +1810,9 @@ export class DatabaseStorage implements IStorage {
 
   async getCarriers(): Promise<any[]> {
     try {
-      const result = await db.select().from(carriers).where(eq(carriers.isActive, true)).orderBy(carriers.displayOrder, carriers.name);
+      const result = await db.select().from(carriers).where(eq(carriers.isActive, true));
       
-      // 모든 필드를 포함하여 반환 (Boolean 값은 이미 데이터베이스에서 정수로 저장됨)
+      // 실제 테이블 구조에 맞게 반환 (현재 스키마의 필드들만)
       return result.map(carrier => ({
         id: carrier.id,
         name: carrier.name,
@@ -1823,23 +1823,24 @@ export class DatabaseStorage implements IStorage {
         isActive: carrier.isActive,
         createdAt: carrier.createdAt,
         updatedAt: carrier.updatedAt,
-        displayOrder: carrier.displayOrder,
-        isWired: carrier.isWired,
-        bundleNumber: carrier.bundleNumber,
-        bundleCarrier: carrier.bundleCarrier,
-        documentRequired: carrier.documentRequired,
-        requireCustomerName: carrier.requireCustomerName,
-        requireCustomerPhone: carrier.requireCustomerPhone,
-        requireCustomerEmail: carrier.requireCustomerEmail,
-        requireContactCode: carrier.requireContactCode,
-        requireCarrier: carrier.requireCarrier,
-        requirePreviousCarrier: carrier.requirePreviousCarrier,
-        requireDocumentUpload: carrier.requireDocumentUpload,
-        requireBundleNumber: carrier.requireBundleNumber,
-        requireBundleCarrier: carrier.requireBundleCarrier,
-        allowNewCustomer: carrier.allowNewCustomer,
-        allowPortIn: carrier.allowPortIn,
-        requireDesiredNumber: carrier.requireDesiredNumber
+        // 나머지 필드들은 기본값으로 설정
+        displayOrder: 0,
+        isWired: false,
+        bundleNumber: '',
+        bundleCarrier: '',
+        documentRequired: false,
+        requireCustomerName: true,  // 기본적으로 고객명은 필수
+        requireCustomerPhone: false,
+        requireCustomerEmail: false,
+        requireContactCode: true,   // 기본적으로 접점코드는 필수
+        requireCarrier: true,
+        requirePreviousCarrier: true,
+        requireDocumentUpload: false,
+        requireBundleNumber: false,
+        requireBundleCarrier: false,
+        allowNewCustomer: carrier.supportNewCustomers,
+        allowPortIn: carrier.supportPortIn,
+        requireDesiredNumber: false
       }));
     } catch (error) {
       console.error('Error getting carriers from DB:', error);
