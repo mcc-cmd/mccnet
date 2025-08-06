@@ -1311,8 +1311,8 @@ export function AdminPanel() {
   ];
 
   const { data: documents, isLoading: documentsLoading } = useQuery({
-    queryKey: ['/api/admin/documents'],
-    queryFn: () => apiRequest('/api/admin/documents') as Promise<Array<Document & { dealerName: string; userName: string }>>,
+    queryKey: ['/api/documents'],
+    queryFn: () => apiRequest('/api/documents') as Promise<Array<Document & { dealerName: string; userName: string }>>,
   });
 
 

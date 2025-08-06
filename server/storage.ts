@@ -1221,8 +1221,8 @@ export class DatabaseStorage implements IStorage {
     dealerId?: number;
   }): Promise<any[]> {
     try {
-      // 기본 쿼리로 모든 문서 조회
-      let result = await db.select().from(documents).orderBy(desc(documents.uploadedAt));
+      // 기본 쿼리로 모든 문서 조회 (orderBy 제거)
+      let result = await db.select().from(documents);
       
       // 필터 적용 (메모리에서 처리)
       if (filters) {
@@ -1264,6 +1264,9 @@ export class DatabaseStorage implements IStorage {
       }
       
       console.log('Documents found:', result.length);
+      
+      // 날짜순 정렬 (최신순)
+      result = result.sort((a, b) => new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime());
       
       // 결과 포맷팅
       return result.map(doc => ({
