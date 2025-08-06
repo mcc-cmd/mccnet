@@ -1683,7 +1683,10 @@ export class DatabaseStorage implements IStorage {
           )
         );
 
-      // 당일 개통 완료 건수 (신규/번호이동 구분)
+      // 당일 개통 완료 건수 (신규/번호이동 구분) - ISO 문자열 형식으로 수정
+      const todayStartISO = new Date(today.getFullYear(), today.getMonth(), today.getDate()).toISOString();
+      const todayEndISO = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1).toISOString();
+
       const todayCompletions = await db.select({
         customerType: documents.customerType,
         count: sql`count(*)`
@@ -1691,8 +1694,8 @@ export class DatabaseStorage implements IStorage {
         .from(documents)
         .where(
           and(
-            gte(documents.activatedAt, todayStart),
-            lte(documents.activatedAt, todayEnd),
+            gte(documents.activatedAt, todayStartISO),
+            lt(documents.activatedAt, todayEndISO),
             eq(documents.activationStatus, '개통')
           )
         )
@@ -1750,32 +1753,31 @@ export class DatabaseStorage implements IStorage {
   
   async getTodayStats(): Promise<any> {
     try {
-      const today = new Date();
-      const todayStart = today.getFullYear() + '-' + 
-        String(today.getMonth() + 1).padStart(2, '0') + '-' + 
-        String(today.getDate()).padStart(2, '0') + ' 00:00:00';
-      const todayEnd = today.getFullYear() + '-' + 
-        String(today.getMonth() + 1).padStart(2, '0') + '-' + 
-        String(today.getDate()).padStart(2, '0') + ' 23:59:59';
+      const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD 형식
+      console.log('Today stats for date:', today);
 
-      // 당일 접수 건수
+      // 당일 접수 건수 - SQL의 date() 함수 사용
       const todaySubmissions = await db.select({ count: sql`count(*)` })
         .from(documents)
-        .where(
-          and(
-            gte(documents.uploadedAt, todayStart),
-            lte(documents.uploadedAt, todayEnd)
-          )
-        );
+        .where(sql`date(uploaded_at) = ${today}`);
 
-      // 당일 개통 완료 건수
+      // 당일 개통 완료 건수 - SQL의 date() 함수 사용
       const todayCompletions = await db.select({ count: sql`count(*)` })
         .from(documents)
         .where(
           and(
-            gte(documents.activatedAt, todayStart),
-            lte(documents.activatedAt, todayEnd),
+            sql`date(activated_at) = ${today}`,
             eq(documents.activationStatus, '개통')
+          )
+        );
+
+      // 기타완료 건수
+      const todayOtherCompleted = await db.select({ count: sql`count(*)` })
+        .from(documents)
+        .where(
+          and(
+            sql`date(activated_at) = ${today}`,
+            eq(documents.activationStatus, '기타완료')
           )
         );
 
@@ -1786,22 +1788,26 @@ export class DatabaseStorage implements IStorage {
         .from(documents)
         .where(
           and(
-            gte(documents.activatedAt, todayStart),
-            lte(documents.activatedAt, todayEnd),
+            sql`date(activated_at) = ${today}`,
             eq(documents.activationStatus, '개통')
           )
         );
 
-      return {
+      const result = {
         todaySubmissions: parseInt(String(todaySubmissions[0]?.count || 0)),
         todayCompletions: parseInt(String(todayCompletions[0]?.count || 0)),
+        todayOtherCompleted: parseInt(String(todayOtherCompleted[0]?.count || 0)),
         todayRevenue: parseInt(String(todayRevenue[0]?.total || 0))
       };
+
+      console.log('Today stats result:', result);
+      return result;
     } catch (error) {
       console.error('Get today stats error:', error);
       return {
         todaySubmissions: 0,
         todayCompletions: 0,
+        todayOtherCompleted: 0,
         todayRevenue: 0
       };
     }

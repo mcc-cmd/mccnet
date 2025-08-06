@@ -1122,13 +1122,19 @@ router.get('/api/dashboard/worker-stats', requireAuth, async (req: any, res) => 
 // 당일 통계 API
 router.get('/api/dashboard/today-stats', requireAuth, async (req: any, res) => {
   try {
-    const userType = req.session.userType === 'admin' ? 'admin' : 
-                    req.session.userRole === 'dealer_worker' ? 'dealer_worker' : 'dealer_store';
-    const userId = req.session.userId;
+    const stats = await storage.getTodayStats();
     
-    const stats = await storage.getTodayStats(userId, userType);
-    res.json(stats);
+    // API 응답 형식을 프론트엔드 기대값에 맞춤
+    const response = {
+      todayReception: stats.todaySubmissions,
+      todayActivation: stats.todayCompletions,
+      todayOtherCompleted: stats.todayOtherCompleted || 0,
+      carrierStats: []
+    };
+    
+    res.json(response);
   } catch (error: any) {
+    console.error('Today stats error:', error);
     res.status(500).json({ error: error.message });
   }
 });
@@ -2949,15 +2955,7 @@ router.get('/api/dashboard/stats', requireAuth, async (req: any, res) => {
   }
 });
 
-router.get('/api/dashboard/today-stats', requireAuth, async (req: any, res) => {
-  try {
-    const todayStats = await storage.getTodayStats();
-    res.json(todayStats);
-  } catch (error: any) {
-    console.error('Today stats error:', error);
-    res.status(500).json({ error: error.message });
-  }
-});
+// 중복 라우트 제거됨 - 위에 정의된 라우트 사용
 
 router.get('/api/dashboard/worker-stats', requireAuth, async (req: any, res) => {
   try {
