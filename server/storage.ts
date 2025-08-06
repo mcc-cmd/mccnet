@@ -1387,12 +1387,12 @@ export class DatabaseStorage implements IStorage {
     try {
       const updateData: any = {
         activationStatus: data.activationStatus,
-        updatedAt: new Date()
+        updatedAt: new Date().toISOString()
       };
 
       // 상태별 특별 처리
       if (data.activationStatus === '개통') {
-        updateData.activatedAt = new Date();
+        updateData.activatedAt = new Date().toISOString();
         updateData.activatedBy = workerId || data.activatedBy;
         updateData.servicePlanId = data.servicePlanId;
         updateData.servicePlanName = data.servicePlanName;
@@ -1415,14 +1415,14 @@ export class DatabaseStorage implements IStorage {
         updateData.cancelledBy = workerId || data.cancelledBy;
       } else if (data.activationStatus === '진행중') {
         updateData.assignedWorkerId = workerId;
-        updateData.assignedAt = new Date();
+        updateData.assignedAt = new Date().toISOString();
       } else if (data.activationStatus === '폐기') {
         updateData.discardReason = data.discardReason;
       } else if (data.activationStatus === '보완필요') {
         updateData.supplementRequired = data.supplementRequired;
         updateData.supplementNotes = data.supplementNotes;
         updateData.supplementRequiredBy = workerId;
-        updateData.supplementRequiredAt = new Date();
+        updateData.supplementRequiredAt = new Date().toISOString();
       }
 
       // 추가 필드들
@@ -1663,8 +1663,12 @@ export class DatabaseStorage implements IStorage {
   async getDashboardStats(): Promise<any> {
     try {
       const today = new Date();
-      const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-      const todayEnd = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59);
+      const todayStart = today.getFullYear() + '-' + 
+        String(today.getMonth() + 1).padStart(2, '0') + '-' + 
+        String(today.getDate()).padStart(2, '0') + ' 00:00:00';
+      const todayEnd = today.getFullYear() + '-' + 
+        String(today.getMonth() + 1).padStart(2, '0') + '-' + 
+        String(today.getDate()).padStart(2, '0') + ' 23:59:59';
 
       // 당일 전체 접수 건수
       const todayTotal = await db.select({ count: sql`count(*)` })
@@ -1755,8 +1759,12 @@ export class DatabaseStorage implements IStorage {
   async getTodayStats(): Promise<any> {
     try {
       const today = new Date();
-      const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-      const todayEnd = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59);
+      const todayStart = today.getFullYear() + '-' + 
+        String(today.getMonth() + 1).padStart(2, '0') + '-' + 
+        String(today.getDate()).padStart(2, '0') + ' 00:00:00';
+      const todayEnd = today.getFullYear() + '-' + 
+        String(today.getMonth() + 1).padStart(2, '0') + '-' + 
+        String(today.getDate()).padStart(2, '0') + ' 23:59:59';
 
       // 당일 접수 건수
       const todaySubmissions = await db.select({ count: sql`count(*)` })
