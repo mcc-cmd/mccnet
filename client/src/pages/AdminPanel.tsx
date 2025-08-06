@@ -142,23 +142,23 @@ function CarrierManagement() {
       return {
         name: editingCarrier.name || '',
         displayOrder: Number(editingCarrier.displayOrder) || 0,
-        isActive: editingCarrier.isActive !== false,
-        isWired: editingCarrier.isWired || false,
+        isActive: Boolean(editingCarrier.isActive),
+        isWired: Boolean(editingCarrier.isWired),
         bundleNumber: editingCarrier.bundleNumber || '',
         bundleCarrier: editingCarrier.bundleCarrier || '',
-        documentRequired: editingCarrier.documentRequired || false,
-        requireCustomerName: editingCarrier.requireCustomerName !== false,
-        requireCustomerPhone: editingCarrier.requireCustomerPhone !== false,
-        requireCustomerEmail: editingCarrier.requireCustomerEmail || false,
-        requireContactCode: editingCarrier.requireContactCode !== false,
-        requireCarrier: editingCarrier.requireCarrier !== false,
-        requirePreviousCarrier: editingCarrier.requirePreviousCarrier || false,
-        requireDocumentUpload: editingCarrier.requireDocumentUpload || false,
-        requireBundleNumber: editingCarrier.requireBundleNumber || false,
-        requireBundleCarrier: editingCarrier.requireBundleCarrier || false,
-        allowNewCustomer: editingCarrier.allowNewCustomer !== false,
-        allowPortIn: editingCarrier.allowPortIn !== false,
-        requireDesiredNumber: editingCarrier.requireDesiredNumber || false
+        documentRequired: Boolean(editingCarrier.documentRequired),
+        requireCustomerName: Boolean(editingCarrier.requireCustomerName),
+        requireCustomerPhone: Boolean(editingCarrier.requireCustomerPhone),
+        requireCustomerEmail: Boolean(editingCarrier.requireCustomerEmail),
+        requireContactCode: Boolean(editingCarrier.requireContactCode),
+        requireCarrier: Boolean(editingCarrier.requireCarrier),
+        requirePreviousCarrier: Boolean(editingCarrier.requirePreviousCarrier),
+        requireDocumentUpload: Boolean(editingCarrier.requireDocumentUpload),
+        requireBundleNumber: Boolean(editingCarrier.requireBundleNumber),
+        requireBundleCarrier: Boolean(editingCarrier.requireBundleCarrier),
+        allowNewCustomer: Boolean(editingCarrier.allowNewCustomer),
+        allowPortIn: Boolean(editingCarrier.allowPortIn),
+        requireDesiredNumber: Boolean(editingCarrier.requireDesiredNumber)
       };
     }
     return {
@@ -294,27 +294,27 @@ function CarrierManagement() {
   const handleEditCarrier = (carrier: Carrier) => {
     setEditingCarrier(carrier);
     
-    // 폼을 기존 값으로 리셋
+    // 폼을 기존 값으로 리셋 (정수 값을 Boolean으로 변환)
     const editValues = {
       name: carrier.name || '',
       displayOrder: Number(carrier.displayOrder) || 0,
-      isActive: carrier.isActive !== false,
-      isWired: carrier.isWired || false,
+      isActive: Boolean(carrier.isActive),
+      isWired: Boolean(carrier.isWired),
       bundleNumber: carrier.bundleNumber || '',
       bundleCarrier: carrier.bundleCarrier || '',
-      documentRequired: carrier.documentRequired || false,
-      requireCustomerName: carrier.requireCustomerName !== false,
-      requireCustomerPhone: carrier.requireCustomerPhone !== false,
-      requireCustomerEmail: carrier.requireCustomerEmail || false,
-      requireContactCode: carrier.requireContactCode !== false,
-      requireCarrier: carrier.requireCarrier !== false,
-      requirePreviousCarrier: carrier.requirePreviousCarrier || false,
-      requireDocumentUpload: carrier.requireDocumentUpload || false,
-      requireBundleNumber: carrier.requireBundleNumber || false,
-      requireBundleCarrier: carrier.requireBundleCarrier || false,
-      allowNewCustomer: carrier.allowNewCustomer !== false,
-      allowPortIn: carrier.allowPortIn !== false,
-      requireDesiredNumber: carrier.requireDesiredNumber || false
+      documentRequired: Boolean(carrier.documentRequired),
+      requireCustomerName: Boolean(carrier.requireCustomerName),
+      requireCustomerPhone: Boolean(carrier.requireCustomerPhone),
+      requireCustomerEmail: Boolean(carrier.requireCustomerEmail),
+      requireContactCode: Boolean(carrier.requireContactCode),
+      requireCarrier: Boolean(carrier.requireCarrier),
+      requirePreviousCarrier: Boolean(carrier.requirePreviousCarrier),
+      requireDocumentUpload: Boolean(carrier.requireDocumentUpload),
+      requireBundleNumber: Boolean(carrier.requireBundleNumber),
+      requireBundleCarrier: Boolean(carrier.requireBundleCarrier),
+      allowNewCustomer: Boolean(carrier.allowNewCustomer),
+      allowPortIn: Boolean(carrier.allowPortIn),
+      requireDesiredNumber: Boolean(carrier.requireDesiredNumber)
     };
     
     carrierForm.reset(editValues);
