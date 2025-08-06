@@ -100,10 +100,18 @@ export function SubmitApplication() {
     allowPortIn: Boolean(selectedCarrier.allowPortIn)
   } : null;
 
-  // 디버깅용 로그
-  console.log('Current carrier:', formData.carrier);
-  console.log('Selected carrier:', selectedCarrier);
-  console.log('Carrier settings:', carrierSettings);
+  // 필드 스타일 헬퍼 함수
+  const getFieldStyle = (isRequired: boolean) => {
+    return isRequired 
+      ? "border-red-500 focus:border-red-600 focus:ring-red-500" 
+      : "border-input focus:border-primary focus:ring-primary";
+  };
+
+  const getLabelStyle = (isRequired: boolean) => {
+    return isRequired 
+      ? "text-red-700 dark:text-red-400 font-medium" 
+      : "text-foreground";
+  };
   
   // 통신사 설정에 따른 고객 유형 필터링
   const availableCustomerTypes = {
@@ -348,7 +356,7 @@ export function SubmitApplication() {
             <form onSubmit={handleSubmit} className="space-y-6">
               {/* 고객 유형 선택 섹션 */}
               <div className="space-y-4">
-                <h3 className="text-lg font-medium text-gray-900 flex items-center">
+                <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 flex items-center">
                   <User className="mr-2 h-4 w-4" />
                   고객 유형
                 </h3>
@@ -396,8 +404,11 @@ export function SubmitApplication() {
                 
                 {/* 희망번호 입력 (신규 선택 시에만 표시) */}
                 {formData.customerType === 'new' && carrierSettings?.requireDesiredNumber && (
-                  <div>
-                    <Label htmlFor="desiredNumber">
+                  <div className="relative">
+                    <Label 
+                      htmlFor="desiredNumber" 
+                      className={getLabelStyle(true)}
+                    >
                       희망번호 *
                     </Label>
                     <Input
@@ -406,10 +417,11 @@ export function SubmitApplication() {
                       value={formData.desiredNumber}
                       onChange={(e) => setFormData(prev => ({ ...prev, desiredNumber: e.target.value }))}
                       placeholder="희망하는 전화번호를 입력하세요 (예: 010-1234-5678)"
-                      className="mt-1"
+                      className={`mt-1 ${getFieldStyle(true)}`}
                       required
                     />
-                    <p className="text-xs text-gray-500 mt-1">
+                    <div className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
+                    <p className="text-xs text-red-600 dark:text-red-400 mt-1 font-medium">
                       이 통신사는 신규 고객의 희망번호 입력이 필수입니다.
                     </p>
                   </div>
@@ -418,7 +430,7 @@ export function SubmitApplication() {
 
               {/* 통신사 선택 섹션 */}
               <div className="space-y-4">
-                <h3 className="text-lg font-medium text-gray-900 flex items-center">
+                <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 flex items-center">
                   <Phone className="mr-2 h-4 w-4" />
                   통신사 선택
                 </h3>
@@ -477,12 +489,15 @@ export function SubmitApplication() {
                   
                   {/* 이전통신사는 번호이동 고객에게만 표시 */}
                   {formData.customerType === 'port-in' && carrierSettings?.requirePreviousCarrier && (
-                    <div>
-                      <Label htmlFor="previousCarrier">
+                    <div className="relative">
+                      <Label 
+                        htmlFor="previousCarrier" 
+                        className={getLabelStyle(true)}
+                      >
                         이전통신사 *
                       </Label>
                       <Select value={formData.previousCarrier} onValueChange={(value) => setFormData(prev => ({ ...prev, previousCarrier: value }))}>
-                        <SelectTrigger className="mt-1">
+                        <SelectTrigger className={`mt-1 ${getFieldStyle(true)}`}>
                           <SelectValue placeholder="이전통신사를 선택하세요" />
                         </SelectTrigger>
                         <SelectContent>
@@ -493,6 +508,7 @@ export function SubmitApplication() {
                           ))}
                         </SelectContent>
                       </Select>
+                      <div className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
                     </div>
                   )}
                 </div>
@@ -500,15 +516,18 @@ export function SubmitApplication() {
 
               {/* 고객 정보 섹션 */}
               <div className="space-y-4">
-                <h3 className="text-lg font-medium text-gray-900 flex items-center">
+                <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 flex items-center">
                   <User className="mr-2 h-4 w-4" />
                   고객 정보
                 </h3>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {carrierSettings?.requireCustomerName && (
-                    <div>
-                      <Label htmlFor="customerName">
+                    <div className="relative">
+                      <Label 
+                        htmlFor="customerName" 
+                        className={getLabelStyle(true)}
+                      >
                         고객명 *
                       </Label>
                       <Input
@@ -517,15 +536,19 @@ export function SubmitApplication() {
                         value={formData.customerName}
                         onChange={handleInputChange}
                         placeholder="고객명을 입력하세요"
-                        className="mt-1"
+                        className={`mt-1 ${getFieldStyle(true)}`}
                         required
                       />
+                      <div className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
                     </div>
                   )}
                   
                   {carrierSettings?.requireCustomerPhone && (
-                    <div>
-                      <Label htmlFor="customerPhone">
+                    <div className="relative">
+                      <Label 
+                        htmlFor="customerPhone" 
+                        className={getLabelStyle(true)}
+                      >
                         연락처 *
                       </Label>
                       <Input
@@ -535,15 +558,19 @@ export function SubmitApplication() {
                         value={formData.customerPhone}
                         onChange={handleInputChange}
                         placeholder="010-0000-0000"
-                        className="mt-1"
+                        className={`mt-1 ${getFieldStyle(true)}`}
                         required
                       />
+                      <div className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
                     </div>
                   )}
                   
                   {carrierSettings?.requireCustomerEmail && (
-                    <div>
-                      <Label htmlFor="customerEmail">
+                    <div className="relative">
+                      <Label 
+                        htmlFor="customerEmail" 
+                        className={getLabelStyle(true)}
+                      >
                         이메일 *
                       </Label>
                       <Input
@@ -553,17 +580,21 @@ export function SubmitApplication() {
                         value={formData.customerEmail}
                         onChange={handleInputChange}
                         placeholder="email@example.com"
-                        className="mt-1"
+                        className={`mt-1 ${getFieldStyle(true)}`}
                         required
                       />
+                      <div className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
                     </div>
                   )}
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {carrierSettings?.requireContactCode && (
-                    <div>
-                      <Label htmlFor="contactCode">
+                    <div className="relative">
+                      <Label 
+                        htmlFor="contactCode" 
+                        className={getLabelStyle(true)}
+                      >
                         개통방명 코드 *
                       </Label>
                       <Input
@@ -572,28 +603,37 @@ export function SubmitApplication() {
                         value={formData.contactCode}
                         onChange={(e) => handleContactCodeChange(e.target.value)}
                         placeholder="개통방명 코드를 입력하세요"
-                        className="mt-1"
+                        className={`mt-1 ${getFieldStyle(true)}`}
                         required
                       />
+                      <div className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
                     </div>
                   )}
                   
                   <div>
-                    <Label htmlFor="storeName">판매점명</Label>
+                    <Label 
+                      htmlFor="storeName" 
+                      className={getLabelStyle(false)}
+                    >
+                      판매점명
+                    </Label>
                     <Input
                       id="storeName"
                       name="storeName"
                       value={formData.storeName}
                       readOnly={!formData.carrier.includes('기타')}
                       placeholder={formData.carrier.includes('기타') ? "판매점명을 입력하세요" : "접점코드 입력 시 자동 설정"}
-                      className={`mt-1 ${!formData.carrier.includes('기타') ? 'bg-gray-50 text-gray-700' : ''}`}
+                      className={`mt-1 ${getFieldStyle(false)} ${!formData.carrier.includes('기타') ? 'bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300' : ''}`}
                       onChange={formData.carrier.includes('기타') ? handleInputChange : undefined}
                     />
                   </div>
                   
                   {carrierSettings?.requireBundleNumber && (
-                    <div>
-                      <Label htmlFor="bundleNumber">
+                    <div className="relative">
+                      <Label 
+                        htmlFor="bundleNumber" 
+                        className={getLabelStyle(true)}
+                      >
                         결합번호 *
                       </Label>
                       <Input
@@ -602,15 +642,19 @@ export function SubmitApplication() {
                         value={formData.bundleNumber}
                         onChange={handleInputChange}
                         placeholder="결합번호를 입력하세요"
-                        className="mt-1"
+                        className={`mt-1 ${getFieldStyle(true)}`}
                         required
                       />
+                      <div className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
                     </div>
                   )}
                   
                   {carrierSettings?.requireBundleCarrier && (
-                    <div>
-                      <Label htmlFor="bundleCarrier">
+                    <div className="relative">
+                      <Label 
+                        htmlFor="bundleCarrier" 
+                        className={getLabelStyle(true)}
+                      >
                         결합통신사 *
                       </Label>
                       <Input
@@ -619,9 +663,10 @@ export function SubmitApplication() {
                         value={formData.bundleCarrier}
                         onChange={handleInputChange}
                         placeholder="결합통신사를 입력하세요"
-                        className="mt-1"
+                        className={`mt-1 ${getFieldStyle(true)}`}
                         required
                       />
+                      <div className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
                     </div>
                   )}
                 </div>
@@ -629,14 +674,19 @@ export function SubmitApplication() {
 
 
                 <div>
-                  <Label htmlFor="notes">메모</Label>
+                  <Label 
+                    htmlFor="notes" 
+                    className={getLabelStyle(false)}
+                  >
+                    메모
+                  </Label>
                   <Textarea
                     id="notes"
                     name="notes"
                     value={formData.notes}
                     onChange={handleInputChange}
                     placeholder="추가 메모사항이 있으면 입력하세요"
-                    className="mt-1"
+                    className={`mt-1 ${getFieldStyle(false)}`}
                     rows={3}
                   />
                 </div>
@@ -644,19 +694,30 @@ export function SubmitApplication() {
 
               {/* 파일 업로드 섹션 */}
               <div className="space-y-4">
-                <h3 className="text-lg font-medium text-gray-900 flex items-center">
+                <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 flex items-center">
                   <Upload className="mr-2 h-4 w-4" />
-                  서류 업로드 (선택사항)
+                  서류 업로드
+                  {carrierSettings?.requireDocumentUpload ? (
+                    <span className="ml-1 text-red-600 dark:text-red-400">*</span>
+                  ) : (
+                    <span className="ml-1 text-gray-500 text-sm">(선택사항)</span>
+                  )}
                 </h3>
                 
                 <div
                   className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
-                    dragActive
-                      ? 'border-blue-400 bg-blue-50'
-                      : selectedFile
-                      ? 'border-green-400 bg-green-50'
-                      : 'border-gray-300 hover:border-gray-400'
-                  }`}
+                    carrierSettings?.requireDocumentUpload 
+                      ? (dragActive
+                          ? 'border-red-400 bg-red-50 dark:bg-red-900/20'
+                          : selectedFile
+                          ? 'border-green-400 bg-green-50 dark:bg-green-900/20'
+                          : 'border-red-300 hover:border-red-400 bg-red-50/50 dark:bg-red-900/10')
+                      : (dragActive
+                          ? 'border-blue-400 bg-blue-50 dark:bg-blue-900/20'
+                          : selectedFile
+                          ? 'border-green-400 bg-green-50 dark:bg-green-900/20'
+                          : 'border-gray-300 hover:border-gray-400 dark:border-gray-600')
+                  } ${carrierSettings?.requireDocumentUpload ? 'ring-1 ring-red-200 dark:ring-red-800' : ''}`}
                   onDrop={handleDrop}
                   onDragOver={handleDragOver}
                   onDragLeave={handleDragLeave}
