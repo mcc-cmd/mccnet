@@ -1857,16 +1857,33 @@ export class DatabaseStorage implements IStorage {
     console.log('Updating carrier:', id, carrierData);
     
     try {
-      // Boolean 값들을 정수로 변환
-      const updateData = {
+      // 모든 Boolean 값들을 정수로 변환
+      const updateData: any = {
         name: carrierData.name,
         code: carrierData.code || carrierData.name?.replace(/[^a-zA-Z0-9가-힣]/g, ''),
         color: carrierData.color || '#0000FF',
         supportNewCustomers: carrierData.supportNewCustomers ? 1 : 0,
         supportPortIn: carrierData.supportPortIn ? 1 : 0,
         isActive: carrierData.isActive ? 1 : 0,
-        updatedAt: new Date()
+        updatedAt: new Date().toISOString()
       };
+      
+      // 추가 Boolean 필드들도 변환
+      if (carrierData.hasOwnProperty('displayOrder')) updateData.displayOrder = carrierData.displayOrder || 0;
+      if (carrierData.hasOwnProperty('isWired')) updateData.isWired = carrierData.isWired ? 1 : 0;
+      if (carrierData.hasOwnProperty('documentRequired')) updateData.documentRequired = carrierData.documentRequired ? 1 : 0;
+      if (carrierData.hasOwnProperty('requireCustomerName')) updateData.requireCustomerName = carrierData.requireCustomerName ? 1 : 0;
+      if (carrierData.hasOwnProperty('requireCustomerPhone')) updateData.requireCustomerPhone = carrierData.requireCustomerPhone ? 1 : 0;
+      if (carrierData.hasOwnProperty('requireCustomerEmail')) updateData.requireCustomerEmail = carrierData.requireCustomerEmail ? 1 : 0;
+      if (carrierData.hasOwnProperty('requireContactCode')) updateData.requireContactCode = carrierData.requireContactCode ? 1 : 0;
+      if (carrierData.hasOwnProperty('requireCarrier')) updateData.requireCarrier = carrierData.requireCarrier ? 1 : 0;
+      if (carrierData.hasOwnProperty('requirePreviousCarrier')) updateData.requirePreviousCarrier = carrierData.requirePreviousCarrier ? 1 : 0;
+      if (carrierData.hasOwnProperty('requireDocumentUpload')) updateData.requireDocumentUpload = carrierData.requireDocumentUpload ? 1 : 0;
+      if (carrierData.hasOwnProperty('requireBundleNumber')) updateData.requireBundleNumber = carrierData.requireBundleNumber ? 1 : 0;
+      if (carrierData.hasOwnProperty('requireBundleCarrier')) updateData.requireBundleCarrier = carrierData.requireBundleCarrier ? 1 : 0;
+      if (carrierData.hasOwnProperty('allowNewCustomer')) updateData.allowNewCustomer = carrierData.allowNewCustomer ? 1 : 0;
+      if (carrierData.hasOwnProperty('allowPortIn')) updateData.allowPortIn = carrierData.allowPortIn ? 1 : 0;
+      if (carrierData.hasOwnProperty('requireDesiredNumber')) updateData.requireDesiredNumber = carrierData.requireDesiredNumber ? 1 : 0;
       
       const [updatedCarrier] = await db.update(carriers)
         .set(updateData)

@@ -459,7 +459,7 @@ export function SubmitApplication() {
                   </div>
                   
                   {/* 이전통신사는 번호이동 고객에게만 표시 */}
-                  {formData.customerType === 'port-in' && selectedCarrier?.requirePreviousCarrier && (
+                  {formData.customerType === 'port-in' && (
                     <div>
                       <Label htmlFor="previousCarrier">
                         이전통신사 *
