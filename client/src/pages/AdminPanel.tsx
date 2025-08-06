@@ -3462,8 +3462,8 @@ export function AdminPanel() {
                         </tr>
                       </thead>
                       <tbody className="bg-white divide-y divide-gray-200">
-                        {users.map((user) => (
-                          <tr key={user.id}>
+                        {users.map((user, index) => (
+                          <tr key={`user-${user.id}-${index}`}>
                             <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                               {user.displayName || user.name}
                             </td>
@@ -3485,33 +3485,22 @@ export function AdminPanel() {
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                               <div className="flex space-x-2">
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => {
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
                                     console.log('=== EDIT BUTTON CLICKED ===');
                                     console.log('User:', user);
-                                    console.log('Current editUserDialogOpen:', editUserDialogOpen);
-                                    
-                                    // 모든 다른 다이얼로그 강제로 닫기
-                                    setChangePasswordDialogOpen(false);
-                                    setUserDialogOpen(false);
-                                    setAdminDialogOpen(false);
-                                    setWorkerDialogOpen(false);
-                                    setSalesManagerDialogOpen(false);
-                                    setDealerDialogOpen(false);
-                                    setTemplateDialogOpen(false);
-                                    setContactCodeDialogOpen(false);
                                     
                                     // 편집할 사용자 설정
                                     setEditingUser(user);
-                                    console.log('Set editing user:', user);
                                     
                                     // 현재 역할 설정
                                     const currentRole = user.accountType === 'admin' ? 'admin' : 
                                                       user.accountType === 'sales_manager' ? 'sales_manager' : 'worker';
                                     
-                                    // Form 즉시 리셋 후 새 값 설정
+                                    // Form 리셋
                                     editUserForm.reset({
                                       username: user.username,
                                       name: user.displayName || user.name,
@@ -3519,30 +3508,27 @@ export function AdminPanel() {
                                       role: currentRole
                                     });
                                     
-                                    console.log('Form reset with values:', {
-                                      username: user.username,
-                                      name: user.displayName || user.name,
-                                      role: currentRole
-                                    });
-                                    
-                                    // 다이얼로그 강제로 열기
-                                    console.log('OPENING EDIT DIALOG NOW');
+                                    // 다이얼로그 열기
                                     setEditUserDialogOpen(true);
                                   }}
-                                  className="text-blue-600 hover:text-blue-700"
+                                  className="inline-flex items-center px-2 py-1 border border-gray-300 rounded text-sm bg-white text-blue-600 hover:bg-blue-50 hover:border-blue-300"
                                   title="사용자 정보 수정"
                                 >
                                   <Edit className="h-4 w-4" />
-                                </Button>
+                                </button>
                                 {user.id !== 1 && (
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => handleDeleteUser(user.id)}
-                                    className="text-red-600 hover:text-red-700"
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      e.stopPropagation();
+                                      handleDeleteUser(user.id);
+                                    }}
+                                    className="inline-flex items-center px-2 py-1 border border-gray-300 rounded text-sm bg-white text-red-600 hover:bg-red-50 hover:border-red-300"
+                                    title="사용자 삭제"
                                   >
                                     <Trash2 className="h-4 w-4" />
-                                  </Button>
+                                  </button>
                                 )}
                               </div>
                             </td>
