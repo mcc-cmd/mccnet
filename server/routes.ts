@@ -200,8 +200,12 @@ router.get('/api/service-plans', async (req: any, res) => {
   try {
     console.log('Service plans API called - public endpoint');
     const { carrier } = req.query;
-    const servicePlans = carrier 
-      ? await storage.getServicePlansByCarrier(carrier)
+    
+    // carrier 파라미터 검증 및 정리
+    const cleanCarrier = carrier ? String(carrier).trim() : null;
+    
+    const servicePlans = cleanCarrier 
+      ? await storage.getServicePlansByCarrier(cleanCarrier)
       : await storage.getServicePlans();
     console.log(`Found ${servicePlans.length} service plans`);
     res.json(servicePlans);

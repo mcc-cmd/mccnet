@@ -1398,13 +1398,13 @@ export class DatabaseStorage implements IStorage {
         updateData.servicePlanName = data.servicePlanName;
         updateData.additionalServiceIds = data.additionalServiceIds ? JSON.stringify(data.additionalServiceIds) : null;
         updateData.registrationFee = data.registrationFee;
-        updateData.registrationFeePrepaid = data.registrationFeePrepaid || false;
-        updateData.registrationFeePostpaid = data.registrationFeePostpaid || false;
-        updateData.registrationFeeInstallment = data.registrationFeeInstallment || false;
-        updateData.simFeePrepaid = data.simFeePrepaid || false;
-        updateData.simFeePostpaid = data.simFeePostpaid || false;
-        updateData.bundleApplied = data.bundleApplied || false;
-        updateData.bundleNotApplied = data.bundleNotApplied || false;
+        updateData.registrationFeePrepaid = data.registrationFeePrepaid ? 1 : 0;
+        updateData.registrationFeePostpaid = data.registrationFeePostpaid ? 1 : 0;
+        updateData.registrationFeeInstallment = data.registrationFeeInstallment ? 1 : 0;
+        updateData.simFeePrepaid = data.simFeePrepaid ? 1 : 0;
+        updateData.simFeePostpaid = data.simFeePostpaid ? 1 : 0;
+        updateData.bundleApplied = data.bundleApplied ? 1 : 0;
+        updateData.bundleNotApplied = data.bundleNotApplied ? 1 : 0;
         updateData.bundleDiscount = data.bundleDiscount;
         updateData.totalMonthlyFee = data.totalMonthlyFee;
         updateData.deviceModel = data.deviceModel;
@@ -2217,17 +2217,22 @@ export class DatabaseStorage implements IStorage {
         documentNumber: documentNumber,
         customerName: data.customerName,
         customerPhone: data.customerPhone,
+        customerEmail: data.customerEmail || null,
         contactCode: data.contactCode || null,
+        storeName: data.storeName || null,
         carrier: data.carrier,
         previousCarrier: data.previousCarrier || null,
         customerType: data.customerType || 'new',
         desiredNumber: data.desiredNumber || null,
+        bundleNumber: data.bundleNumber || null,
+        bundleCarrier: data.bundleCarrier || null,
         notes: data.notes || null,
         filePath: data.filePath || null,
         fileName: data.fileName || null,
         fileSize: data.fileSize || null,
         status: '접수',
-        activationStatus: '대기'
+        activationStatus: '대기',
+        uploadedAt: new Date().toISOString()
       }).returning();
       console.log('Document saved to database:', document);
       
