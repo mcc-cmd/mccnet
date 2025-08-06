@@ -1810,8 +1810,37 @@ export class DatabaseStorage implements IStorage {
 
   async getCarriers(): Promise<any[]> {
     try {
-      const result = await db.select().from(carriers).where(eq(carriers.isActive, true));
-      return result;
+      const result = await db.select().from(carriers).where(eq(carriers.isActive, true)).orderBy(carriers.displayOrder, carriers.name);
+      
+      // 모든 필드를 포함하여 반환 (Boolean 값은 이미 데이터베이스에서 정수로 저장됨)
+      return result.map(carrier => ({
+        id: carrier.id,
+        name: carrier.name,
+        code: carrier.code,
+        color: carrier.color,
+        supportNewCustomers: carrier.supportNewCustomers,
+        supportPortIn: carrier.supportPortIn,
+        isActive: carrier.isActive,
+        createdAt: carrier.createdAt,
+        updatedAt: carrier.updatedAt,
+        displayOrder: carrier.displayOrder,
+        isWired: carrier.isWired,
+        bundleNumber: carrier.bundleNumber,
+        bundleCarrier: carrier.bundleCarrier,
+        documentRequired: carrier.documentRequired,
+        requireCustomerName: carrier.requireCustomerName,
+        requireCustomerPhone: carrier.requireCustomerPhone,
+        requireCustomerEmail: carrier.requireCustomerEmail,
+        requireContactCode: carrier.requireContactCode,
+        requireCarrier: carrier.requireCarrier,
+        requirePreviousCarrier: carrier.requirePreviousCarrier,
+        requireDocumentUpload: carrier.requireDocumentUpload,
+        requireBundleNumber: carrier.requireBundleNumber,
+        requireBundleCarrier: carrier.requireBundleCarrier,
+        allowNewCustomer: carrier.allowNewCustomer,
+        allowPortIn: carrier.allowPortIn,
+        requireDesiredNumber: carrier.requireDesiredNumber
+      }));
     } catch (error) {
       console.error('Error getting carriers from DB:', error);
       // 데이터베이스 연결 실패 시 메모리 기본값 반환
