@@ -99,6 +99,11 @@ export function SubmitApplication() {
     allowNewCustomer: Boolean(selectedCarrier.allowNewCustomer),
     allowPortIn: Boolean(selectedCarrier.allowPortIn)
   } : null;
+
+  // 디버깅용 로그
+  console.log('Current carrier:', formData.carrier);
+  console.log('Selected carrier:', selectedCarrier);
+  console.log('Carrier settings:', carrierSettings);
   
   // 통신사 설정에 따른 고객 유형 필터링
   const availableCustomerTypes = {
@@ -501,10 +506,10 @@ export function SubmitApplication() {
                 </h3>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {(!carrierSettings || carrierSettings.requireCustomerName) && (
+                  {carrierSettings?.requireCustomerName && (
                     <div>
                       <Label htmlFor="customerName">
-                        고객명 {carrierSettings?.requireCustomerName && "*"}
+                        고객명 *
                       </Label>
                       <Input
                         id="customerName"
@@ -513,15 +518,15 @@ export function SubmitApplication() {
                         onChange={handleInputChange}
                         placeholder="고객명을 입력하세요"
                         className="mt-1"
-                        required={carrierSettings?.requireCustomerName}
+                        required
                       />
                     </div>
                   )}
                   
-                  {(!carrierSettings || carrierSettings.requireCustomerPhone) && (
+                  {carrierSettings?.requireCustomerPhone && (
                     <div>
                       <Label htmlFor="customerPhone">
-                        연락처 {carrierSettings?.requireCustomerPhone && "*"}
+                        연락처 *
                       </Label>
                       <Input
                         id="customerPhone"
@@ -531,7 +536,7 @@ export function SubmitApplication() {
                         onChange={handleInputChange}
                         placeholder="010-0000-0000"
                         className="mt-1"
-                        required={carrierSettings?.requireCustomerPhone}
+                        required
                       />
                     </div>
                   )}
@@ -556,10 +561,10 @@ export function SubmitApplication() {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {(!carrierSettings || carrierSettings.requireContactCode) && (
+                  {carrierSettings?.requireContactCode && (
                     <div>
                       <Label htmlFor="contactCode">
-                        개통방명 코드 {carrierSettings?.requireContactCode && "*"}
+                        개통방명 코드 *
                       </Label>
                       <Input
                         id="contactCode"
@@ -568,7 +573,7 @@ export function SubmitApplication() {
                         onChange={(e) => handleContactCodeChange(e.target.value)}
                         placeholder="개통방명 코드를 입력하세요"
                         className="mt-1"
-                        required={carrierSettings?.requireContactCode}
+                        required
                       />
                     </div>
                   )}
