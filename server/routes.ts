@@ -761,6 +761,20 @@ router.post('/api/documents', requireAuth, upload.single('file'), async (req: an
     // 모든 사용자 유형(관리자, 작업자, 대리점)이 접수 신청 가능
     const data = uploadDocumentSchema.parse(req.body);
     
+    // 통신사별 필수 필드 검증
+    if (data.carrier) {
+      const carrierInfo = await storage.getCarrierById(parseInt(data.carrier));
+      if (carrierInfo) {
+        // 필수 필드 검증
+        if (carrierInfo.requireCustomerPhone && (!data.customerPhone || data.customerPhone.trim() === '')) {
+          return res.status(400).json({ error: '연락처를 입력하세요' });
+        }
+        if (carrierInfo.requireCustomerEmail && (!data.customerEmail || data.customerEmail.trim() === '')) {
+          return res.status(400).json({ error: '이메일을 입력하세요' });
+        }
+      }
+    }
+    
     // dealerId 설정: 관리자/작업자는 null, 일반 사용자는 본인의 dealerId
     let dealerId = null;
     if (req.session.userType === 'user' && req.session.dealerId) {

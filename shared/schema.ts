@@ -530,12 +530,16 @@ export const createUserSchema = z.object({
 
 export const uploadDocumentSchema = z.object({
   customerName: z.string().min(1, "고객명을 입력하세요"),
-  customerPhone: z.string().min(1, "연락처를 입력하세요"),
+  customerPhone: z.string().optional(), // 통신사별로 필수 여부가 달라질 수 있음
+  customerEmail: z.string().optional(),
   contactCode: z.string().min(1, "개통방명 코드를 입력하세요"),
+  storeName: z.string().optional(),
   carrier: z.string().min(1, "통신사를 선택하세요"),
   previousCarrier: z.string().optional(),
   customerType: z.enum(['new', 'port-in']).optional().default('new'),
   desiredNumber: z.string().optional(),
+  bundleNumber: z.string().optional(),
+  bundleCarrier: z.string().optional(),
   subscriptionNumber: z.string().optional(),
   notes: z.string().optional(),
 });

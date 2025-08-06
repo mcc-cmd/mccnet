@@ -1858,6 +1858,52 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
+  async getCarrierById(id: number): Promise<any> {
+    try {
+      const result = await db.select().from(carriers).where(eq(carriers.id, id)).limit(1);
+      
+      if (result.length === 0) {
+        return null;
+      }
+      
+      const carrier = result[0];
+      const savedSettings = this.carrierFieldSettings.get(carrier.id) || {};
+      
+      return {
+        id: carrier.id,
+        name: carrier.name,
+        code: carrier.code,
+        color: carrier.color,
+        supportNewCustomers: carrier.supportNewCustomers,
+        supportPortIn: carrier.supportPortIn,
+        isActive: carrier.isActive,
+        createdAt: carrier.createdAt,
+        updatedAt: carrier.updatedAt,
+        // 저장된 설정이 있으면 사용, 없으면 기본값
+        displayOrder: savedSettings.displayOrder || 0,
+        isWired: savedSettings.isWired || false,
+        bundleNumber: savedSettings.bundleNumber || '',
+        bundleCarrier: savedSettings.bundleCarrier || '',
+        documentRequired: savedSettings.documentRequired || false,
+        requireCustomerName: savedSettings.requireCustomerName !== undefined ? savedSettings.requireCustomerName : true,
+        requireCustomerPhone: savedSettings.requireCustomerPhone || false,
+        requireCustomerEmail: savedSettings.requireCustomerEmail || false,
+        requireContactCode: savedSettings.requireContactCode !== undefined ? savedSettings.requireContactCode : true,
+        requireCarrier: savedSettings.requireCarrier !== undefined ? savedSettings.requireCarrier : true,
+        requirePreviousCarrier: savedSettings.requirePreviousCarrier !== undefined ? savedSettings.requirePreviousCarrier : true,
+        requireDocumentUpload: savedSettings.requireDocumentUpload || false,
+        requireBundleNumber: savedSettings.requireBundleNumber || false,
+        requireBundleCarrier: savedSettings.requireBundleCarrier || false,
+        allowNewCustomer: carrier.supportNewCustomers,
+        allowPortIn: carrier.supportPortIn,
+        requireDesiredNumber: savedSettings.requireDesiredNumber || false
+      };
+    } catch (error) {
+      console.error('Error getting carrier by ID:', error);
+      return null;
+    }
+  }
+
   async createCarrier(carrierData: any): Promise<any> {
     console.log('Creating carrier:', carrierData);
     
