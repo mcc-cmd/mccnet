@@ -368,7 +368,7 @@ export function Documents() {
 
   const canManageActivationStatus = () => {
     // 관리자는 모든 권한, 근무자도 개통상태 관리 가능
-    return user?.userType === 'admin' || user?.role === 'dealer_worker';
+    return user?.userType === 'admin' || user?.userType === 'worker' || user?.role === 'worker' || user?.role === 'dealer_worker';
   };
 
   const updateActivationMutation = useMutation({
@@ -451,6 +451,7 @@ export function Documents() {
   };
 
   const isAdmin = user?.userType === 'admin';
+  const isWorker = user?.userType === 'user' && user?.role === 'worker';
 
   const openServicePlanDialog = (doc: Document) => {
     setSelectedDocument(doc);
