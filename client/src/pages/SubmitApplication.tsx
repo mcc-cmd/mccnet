@@ -375,11 +375,10 @@ export function SubmitApplication() {
                 </div>
                 
                 {/* 희망번호 입력 (신규 선택 시에만 표시) */}
-                {formData.customerType === 'new' && (
+                {formData.customerType === 'new' && Boolean(selectedCarrier?.requireDesiredNumber) && (
                   <div>
                     <Label htmlFor="desiredNumber">
-                      희망번호
-                      {selectedCarrier?.requireDesiredNumber && " *"}
+                      희망번호 *
                     </Label>
                     <Input
                       id="desiredNumber"
@@ -388,13 +387,11 @@ export function SubmitApplication() {
                       onChange={(e) => setFormData(prev => ({ ...prev, desiredNumber: e.target.value }))}
                       placeholder="희망하는 전화번호를 입력하세요 (예: 010-1234-5678)"
                       className="mt-1"
-                      required={selectedCarrier?.requireDesiredNumber}
+                      required
                     />
-                    {selectedCarrier?.requireDesiredNumber && (
-                      <p className="text-xs text-gray-500 mt-1">
-                        이 통신사는 신규 고객의 희망번호 입력이 필수입니다.
-                      </p>
-                    )}
+                    <p className="text-xs text-gray-500 mt-1">
+                      이 통신사는 신규 고객의 희망번호 입력이 필수입니다.
+                    </p>
                   </div>
                 )}
               </div>
@@ -459,7 +456,7 @@ export function SubmitApplication() {
                   </div>
                   
                   {/* 이전통신사는 번호이동 고객에게만 표시 */}
-                  {formData.customerType === 'port-in' && (
+                  {formData.customerType === 'port-in' && Boolean(selectedCarrier?.requirePreviousCarrier) && (
                     <div>
                       <Label htmlFor="previousCarrier">
                         이전통신사 *
@@ -489,10 +486,10 @@ export function SubmitApplication() {
                 </h3>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {(!selectedCarrier || selectedCarrier.requireCustomerName) && (
+                  {(!selectedCarrier || Boolean(selectedCarrier.requireCustomerName)) && (
                     <div>
                       <Label htmlFor="customerName">
-                        고객명 {selectedCarrier?.requireCustomerName && "*"}
+                        고객명 {Boolean(selectedCarrier?.requireCustomerName) && "*"}
                       </Label>
                       <Input
                         id="customerName"
@@ -501,14 +498,15 @@ export function SubmitApplication() {
                         onChange={handleInputChange}
                         placeholder="고객명을 입력하세요"
                         className="mt-1"
+                        required={Boolean(selectedCarrier?.requireCustomerName)}
                       />
                     </div>
                   )}
                   
-                  {(!selectedCarrier || selectedCarrier.requireCustomerPhone) && (
+                  {(!selectedCarrier || Boolean(selectedCarrier.requireCustomerPhone)) && (
                     <div>
                       <Label htmlFor="customerPhone">
-                        연락처 {selectedCarrier?.requireCustomerPhone && "*"}
+                        연락처 {Boolean(selectedCarrier?.requireCustomerPhone) && "*"}
                       </Label>
                       <Input
                         id="customerPhone"
@@ -518,11 +516,12 @@ export function SubmitApplication() {
                         onChange={handleInputChange}
                         placeholder="010-0000-0000"
                         className="mt-1"
+                        required={Boolean(selectedCarrier?.requireCustomerPhone)}
                       />
                     </div>
                   )}
                   
-                  {selectedCarrier?.requireCustomerEmail && (
+                  {Boolean(selectedCarrier?.requireCustomerEmail) && (
                     <div>
                       <Label htmlFor="customerEmail">
                         이메일 *
@@ -535,16 +534,17 @@ export function SubmitApplication() {
                         onChange={handleInputChange}
                         placeholder="email@example.com"
                         className="mt-1"
+                        required
                       />
                     </div>
                   )}
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {(!selectedCarrier || selectedCarrier.requireContactCode) && (
+                  {(!selectedCarrier || Boolean(selectedCarrier.requireContactCode)) && (
                     <div>
                       <Label htmlFor="contactCode">
-                        개통방명 코드 {selectedCarrier?.requireContactCode && "*"}
+                        개통방명 코드 {Boolean(selectedCarrier?.requireContactCode) && "*"}
                       </Label>
                       <Input
                         id="contactCode"
@@ -553,6 +553,7 @@ export function SubmitApplication() {
                         onChange={(e) => handleContactCodeChange(e.target.value)}
                         placeholder="개통방명 코드를 입력하세요"
                         className="mt-1"
+                        required={Boolean(selectedCarrier?.requireContactCode)}
                       />
                     </div>
                   )}
@@ -570,7 +571,7 @@ export function SubmitApplication() {
                     />
                   </div>
                   
-                  {selectedCarrier?.requireBundleNumber && (
+                  {Boolean(selectedCarrier?.requireBundleNumber) && (
                     <div>
                       <Label htmlFor="bundleNumber">
                         결합번호 *
@@ -582,11 +583,12 @@ export function SubmitApplication() {
                         onChange={handleInputChange}
                         placeholder="결합번호를 입력하세요"
                         className="mt-1"
+                        required
                       />
                     </div>
                   )}
                   
-                  {selectedCarrier?.requireBundleCarrier && (
+                  {Boolean(selectedCarrier?.requireBundleCarrier) && (
                     <div>
                       <Label htmlFor="bundleCarrier">
                         결합통신사 *
@@ -598,6 +600,7 @@ export function SubmitApplication() {
                         onChange={handleInputChange}
                         placeholder="결합통신사를 입력하세요"
                         className="mt-1"
+                        required
                       />
                     </div>
                   )}
