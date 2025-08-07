@@ -26,16 +26,17 @@ export default function WorkRequests() {
   const [selectedDocument, setSelectedDocument] = useState<Document | null>(null);
   const [statusDialogOpen, setStatusDialogOpen] = useState(false);
   const [showCompletionMessage, setShowCompletionMessage] = useState(false);
+  const [statusFilter, setStatusFilter] = useState('대기,진행중');
   const { user } = useAuth();
   const apiRequest = useApiRequest();
 
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
-  // 업무 요청중 상태의 서류들 조회
+  // 선택된 상태의 서류들 조회
   const { data: documents = [], isLoading } = useQuery({
-    queryKey: ['/api/documents', { activationStatus: '업무요청중' }],
-    queryFn: () => apiRequest(`/api/documents?activationStatus=업무요청중`)
+    queryKey: ['/api/documents', { activationStatus: statusFilter }],
+    queryFn: () => apiRequest(`/api/documents?activationStatus=${encodeURIComponent(statusFilter)}`)
   });
 
   // 서비스 플랜 조회
@@ -134,7 +135,14 @@ export default function WorkRequests() {
 
   const getStatusBadgeVariant = (status: string) => {
     switch (status) {
-      case '업무요청중': return 'secondary';
+      case '대기': return 'secondary';
+      case '진행중': return 'default';
+      case '업무요청중': return 'destructive';
+      case '개통완료': return 'default';
+      case '취소': return 'secondary';
+      case '보완필요': return 'destructive';
+      case '기타완료': return 'default';
+      case '폐기': return 'secondary';
       default: return 'default';
     }
   };
@@ -151,29 +159,48 @@ export default function WorkRequests() {
   }
 
   return (
-    <Layout>
+    <Layout title="작업">
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold">업무 요청중</h1>
-            <p className="text-muted-foreground mt-1">
-              업무 요청중인 서류들을 확인하고 완료 처리할 수 있습니다.
-            </p>
-          </div>
-          <div className="flex items-center space-x-2">
-            <Badge variant="outline" className="text-lg px-3 py-1">
-              총 {documents.length}건
-            </Badge>
-          </div>
-        </div>
+        {/* 상태 필터 */}
+        <Card>
+          <CardHeader>
+            <CardTitle>서류 목록</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center space-x-4">
+              <div className="flex items-center space-x-2">
+                <label className="text-sm font-medium">상태:</label>
+                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                  <SelectTrigger className="w-48">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="대기,진행중">대기,진행중</SelectItem>
+                    <SelectItem value="업무요청중">업무요청중</SelectItem>
+                    <SelectItem value="개통완료">개통완료</SelectItem>
+                    <SelectItem value="취소">취소</SelectItem>
+                    <SelectItem value="보완필요">보완필요</SelectItem>
+                    <SelectItem value="기타완료">기타완료</SelectItem>
+                    <SelectItem value="폐기">폐기</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Badge variant="outline" className="text-lg px-3 py-1">
+                  총 {documents.length}건
+                </Badge>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
       {documents.length === 0 ? (
         <Card>
           <CardContent className="py-16">
             <div className="text-center">
               <FileText className="mx-auto h-12 w-12 text-gray-400" />
-              <h3 className="mt-2 text-sm font-medium text-gray-900">업무 요청중인 서류가 없습니다</h3>
-              <p className="mt-1 text-sm text-gray-500">현재 처리 대기중인 업무가 없습니다.</p>
+              <h3 className="mt-2 text-sm font-medium text-gray-900">서류가 없습니다</h3>
+              <p className="mt-1 text-sm text-gray-500">선택한 상태의 서류가 없습니다.</p>
             </div>
           </CardContent>
         </Card>
