@@ -3,6 +3,14 @@
 ## Overview
 This project is a document management system for MCC네트월드 telecommunications dealers. Its main purpose is to streamline the handling of customer reception documents, offering capabilities such as role-based authentication, secure file uploads, comprehensive document tracking, and administrative functionalities. The system aims to enhance efficiency in managing customer activations and related processes.
 
+## Recent Changes (January 2025)
+- **2025-01-07**: Fixed critical upload functionality issues and data persistence problems
+  - Resolved form auto-initialization preventing user input preservation in SubmitApplication.tsx
+  - Fixed activatedBy field tracking for proper worker identification in completion records
+  - Enhanced CompletedActivations.tsx to display correct role information (개통처리자 vs 관리자)
+  - Improved worker-specific dashboard filtering for daily activations and monthly status tracking
+  - Added includeActivatedBy parameter to documents API for proper activation processor identification
+
 ## User Preferences
 Preferred communication style: Simple, everyday language.
 Code preservation: Keep existing code and settings intact during modifications. Only modify specific requested changes without resetting or initializing other parts.

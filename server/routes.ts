@@ -1149,8 +1149,8 @@ router.get('/api/dashboard/today-stats', requireAuth, async (req: any, res) => {
 
 router.get('/api/documents', requireAuth, async (req: any, res) => {
   try {
-    const { status, activationStatus, search, startDate, endDate, carrier, allWorkers } = req.query;
-    console.log('Documents API request:', { status, activationStatus, search, startDate, endDate, carrier, allWorkers });
+    const { status, activationStatus, search, startDate, endDate, carrier, allWorkers, includeActivatedBy } = req.query;
+    console.log('Documents API request:', { status, activationStatus, search, startDate, endDate, carrier, allWorkers, includeActivatedBy });
     console.log('Session data:', { 
       userId: req.session.userId, 
       dealerId: req.session.dealerId, 
@@ -1219,9 +1219,23 @@ router.get('/api/documents', requireAuth, async (req: any, res) => {
         }
       }
       
+      let activatedByName = null;
+      // includeActivatedBy가 true이고 activatedBy가 있는 경우 개통처리자 이름 조회
+      if (includeActivatedBy === 'true' && doc.activatedBy) {
+        try {
+          const user = await storage.getUserById(doc.activatedBy);
+          if (user) {
+            activatedByName = user.name;
+          }
+        } catch (e) {
+          console.warn('User lookup failed for activatedBy:', e);
+        }
+      }
+      
       return {
         ...doc,
-        storeName: storeName || doc.contactCode || '-'
+        storeName: storeName || doc.contactCode || '-',
+        ...(activatedByName && { activatedByName })
       };
     }));
     
