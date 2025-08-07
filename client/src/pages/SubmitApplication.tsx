@@ -119,27 +119,34 @@ export function SubmitApplication() {
     portIn: carrierSettings?.allowPortIn !== false
   };
 
-  // 통신사가 지원하지 않는 고객 유형이 선택된 경우 변경
+  // 통신사가 지원하지 않는 고객 유형이 선택된 경우에만 변경 (초기 로드 시에만)
   useEffect(() => {
-    if (carrierSettings) {
+    if (carrierSettings && formData.carrier) {
+      // 통신사가 처음 선택되었을 때만 고객 유형 자동 조정
       if (formData.customerType === 'new' && !availableCustomerTypes.new && availableCustomerTypes.portIn) {
         setFormData(prev => ({ ...prev, customerType: 'port-in' }));
       } else if (formData.customerType === 'port-in' && !availableCustomerTypes.portIn && availableCustomerTypes.new) {
-        setFormData(prev => ({ ...prev, customerType: 'new', previousCarrier: '' }));
+        setFormData(prev => ({ ...prev, customerType: 'new' }));
       }
     }
-  }, [carrierSettings, formData.customerType, availableCustomerTypes.new, availableCustomerTypes.portIn]);
+  }, [formData.carrier]); // carrier 변경 시에만 실행
 
-  // 고객 유형 변경 시 관련 필드 초기화
-  useEffect(() => {
-    if (formData.customerType === 'new') {
-      // 신규 고객으로 변경 시 이전통신사 초기화
-      setFormData(prev => ({ ...prev, previousCarrier: '' }));
-    } else if (formData.customerType === 'port-in') {
-      // 번호이동으로 변경 시 희망번호 초기화
-      setFormData(prev => ({ ...prev, desiredNumber: '' }));
-    }
-  }, [formData.customerType]);
+  // 고객 유형 변경 시 관련 필드 초기화 (수동 변경 시에만)
+  const handleCustomerTypeChange = (newType: 'new' | 'port-in') => {
+    setFormData(prev => {
+      const newData = { ...prev, customerType: newType };
+      
+      if (newType === 'new') {
+        // 신규 고객으로 변경 시 이전통신사만 초기화
+        newData.previousCarrier = '';
+      } else if (newType === 'port-in') {
+        // 번호이동으로 변경 시 희망번호만 초기화
+        newData.desiredNumber = '';
+      }
+      
+      return newData;
+    });
+  };
 
   // 중복 체크 함수
   const checkDuplicate = async () => {
@@ -369,7 +376,7 @@ export function SubmitApplication() {
                       name="customerType"
                       value="new"
                       checked={formData.customerType === 'new'}
-                      onChange={(e) => setFormData(prev => ({ ...prev, customerType: e.target.value }))}
+                      onChange={(e) => handleCustomerTypeChange(e.target.value as 'new' | 'port-in')}
                       disabled={!availableCustomerTypes.new}
                       className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
                     />
@@ -388,7 +395,7 @@ export function SubmitApplication() {
                       name="customerType"
                       value="port-in"
                       checked={formData.customerType === 'port-in'}
-                      onChange={(e) => setFormData(prev => ({ ...prev, customerType: e.target.value }))}
+                      onChange={(e) => handleCustomerTypeChange(e.target.value as 'new' | 'port-in')}
                       disabled={!availableCustomerTypes.portIn}
                       className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
                     />
