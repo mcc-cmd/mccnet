@@ -2148,15 +2148,19 @@ export class DatabaseStorage implements IStorage {
         let dealerName = doc.storeName || '미확인';
         
         if (doc.contactCode) {
-          const contactCodeResult = await db.select({
-            dealerName: contactCodes.dealerName
-          })
-          .from(contactCodes)
-          .where(eq(contactCodes.code, doc.contactCode))
-          .limit(1);
-          
-          if (contactCodeResult.length > 0) {
-            dealerName = contactCodeResult[0].dealerName;
+          try {
+            const contactCodeResult = await db.select({
+              dealerName: contactCodes.dealerName
+            })
+            .from(contactCodes)
+            .where(eq(contactCodes.code, doc.contactCode))
+            .limit(1);
+            
+            if (contactCodeResult.length > 0) {
+              dealerName = contactCodeResult[0].dealerName;
+            }
+          } catch (error) {
+            console.log('Contact code lookup in duplicate check error:', error);
           }
         }
         

@@ -5,6 +5,7 @@ This project is a document management system for MCC네트월드 telecommunicati
 
 ## User Preferences
 Preferred communication style: Simple, everyday language.
+Code preservation: Keep existing code and settings intact during modifications. Only modify specific requested changes without resetting or initializing other parts.
 
 ## System Architecture
 ### Frontend
