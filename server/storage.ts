@@ -491,33 +491,50 @@ export class DatabaseStorage implements IStorage {
   // 사용자 정보 조회 메서드 (개통처리자 이름 조회용)
   async getUserById(userId: number): Promise<{ id: number; name: string; username: string; userType: string } | null> {
     try {
+      console.log('getUserById called with userId:', userId);
+      
       // 먼저 관리자 테이블에서 조회
-      const [admin] = await db.select({
+      const adminResults = await db.select({
         id: admins.id,
         name: admins.name,
-        username: admins.username,
-        userType: sql<string>`'admin'`.as('userType')
+        username: admins.username
       })
       .from(admins)
       .where(eq(admins.id, userId))
       .limit(1);
 
-      if (admin) {
-        return admin;
+      console.log('Admin query results:', adminResults);
+      
+      if (adminResults.length > 0) {
+        const admin = adminResults[0];
+        return {
+          ...admin,
+          userType: 'admin'
+        };
       }
 
       // 일반 사용자 테이블에서 조회
-      const [user] = await db.select({
+      const userResults = await db.select({
         id: users.id,
         name: users.name,
-        username: users.username,
-        userType: sql<string>`'user'`.as('userType')
+        username: users.username
       })
       .from(users)
       .where(eq(users.id, userId))
       .limit(1);
 
-      return user || null;
+      console.log('User query results:', userResults);
+
+      if (userResults.length > 0) {
+        const user = userResults[0];
+        return {
+          ...user,
+          userType: 'user'
+        };
+      }
+
+      console.log('No user found with ID:', userId);
+      return null;
     } catch (error) {
       console.error('getUserById error:', error);
       return null;

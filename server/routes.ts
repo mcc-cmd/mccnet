@@ -1223,12 +1223,15 @@ router.get('/api/documents', requireAuth, async (req: any, res) => {
       // includeActivatedBy가 true이고 activatedBy가 있는 경우 개통처리자 이름 조회
       if (includeActivatedBy === 'true' && doc.activatedBy) {
         try {
+          console.log('Looking up user for activatedBy:', doc.activatedBy);
           const user = await storage.getUserById(doc.activatedBy);
+          console.log('User lookup result:', user);
           if (user) {
-            activatedByName = user.name;
+            activatedByName = user.name || user.username;
+            console.log('Setting activatedByName to:', activatedByName);
           }
         } catch (e) {
-          console.warn('User lookup failed for activatedBy:', e);
+          console.error('User lookup failed for activatedBy:', doc.activatedBy, e);
         }
       }
       
