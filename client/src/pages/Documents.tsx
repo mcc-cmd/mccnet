@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+
 import { useApiRequest, useAuth } from '@/lib/auth';
 import { useToast } from '@/hooks/use-toast';
 import type { Document } from '../../../shared/schema';
@@ -26,8 +26,7 @@ export function Documents() {
   const { toast } = useToast();
   const { user } = useAuth();
   
-  const [activeTab, setActiveTab] = useState('reception');
-  const [workStatusFilter, setWorkStatusFilter] = useState('대기,진행중');
+
   const [filters, setFilters] = useState({
     status: '',
     search: '',
@@ -81,35 +80,19 @@ export function Documents() {
     subscriptionNumber: ''
   });
 
-  // 접수 관리 탭용 쿼리 (대기,진행중만)
-  const { data: receptionDocuments, isLoading: receptionLoading } = useQuery({
-    queryKey: ['/api/documents', 'reception', filters],
+  const { data: documents, isLoading } = useQuery({
+    queryKey: ['/api/documents', filters],
     queryFn: () => {
       const params = new URLSearchParams();
+      // 접수 관리는 모든 근무자가 볼 수 있도록 설정 (대기/진행중 상태만 표시)
       params.append('activationStatus', '대기,진행중');
-      params.append('allWorkers', 'true');
+      params.append('allWorkers', 'true'); // 모든 근무자가 볼 수 있도록 설정
       Object.entries(filters).forEach(([key, value]) => {
         if (value && value !== 'all' && key !== 'activationStatus') params.append(key, value);
       });
       return apiRequest(`/api/documents?${params}`);
     },
-    enabled: activeTab === 'reception'
   });
-
-  // 작업 탭용 쿼리 (선택된 상태)
-  const { data: workDocuments, isLoading: workLoading } = useQuery({
-    queryKey: ['/api/documents', 'work', workStatusFilter],
-    queryFn: () => {
-      const params = new URLSearchParams();
-      params.append('activationStatus', workStatusFilter);
-      return apiRequest(`/api/documents?${params}`);
-    },
-    enabled: activeTab === 'work'
-  });
-
-  // 현재 탭에 따른 문서와 로딩 상태 선택
-  const documents = activeTab === 'reception' ? receptionDocuments : workDocuments;
-  const isLoading = activeTab === 'reception' ? receptionLoading : workLoading;
 
   const { data: servicePlans, isLoading: servicePlansLoading } = useQuery({
     queryKey: ['/api/service-plans', selectedDocument?.carrier || 'all'],
@@ -555,95 +538,86 @@ export function Documents() {
   return (
     <Layout title="접수 관리">
       <div className="space-y-6">
-        {/* 탭 */}
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="reception">접수 관리</TabsTrigger>
-            <TabsTrigger value="work">작업</TabsTrigger>
-          </TabsList>
-          
-          {/* 접수 관리 탭 */}
-          <TabsContent value="reception" className="space-y-6">
-            {/* Header with Upload Button */}
-            <div className="flex justify-between items-center">
-              <div>
-                <h3 className="text-lg font-medium text-gray-900">서류 목록</h3>
-                <p className="text-sm text-gray-500">
-                  업로드된 서류를 관리하고 상태를 확인할 수 있습니다.
-                </p>
-              </div>
-              {canUploadDocuments() && (
-                <Dialog open={uploadDialogOpen} onOpenChange={setUploadDialogOpen}>
-                  <DialogTrigger asChild>
-                    <Button>
-                      <Upload className="mr-2 h-4 w-4" />
-                      서류 업로드
+        {/* Header with Upload Button */}
+        <div className="flex justify-between items-center">
+          <div>
+            <h3 className="text-lg font-medium text-gray-900">서류 목록</h3>
+            <p className="text-sm text-gray-500">
+              업로드된 서류를 관리하고 상태를 확인할 수 있습니다.
+            </p>
+          </div>
+          {canUploadDocuments() && (
+            <Dialog open={uploadDialogOpen} onOpenChange={setUploadDialogOpen}>
+              <DialogTrigger asChild>
+                <Button>
+                  <Upload className="mr-2 h-4 w-4" />
+                  서류 업로드
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>서류 업로드</DialogTitle>
+                </DialogHeader>
+                <form onSubmit={handleUpload} className="space-y-4">
+                  <div>
+                    <Label htmlFor="customerName">고객명</Label>
+                    <Input
+                      id="customerName"
+                      value={uploadForm.customerName}
+                      onChange={(e) => setUploadForm(prev => ({ ...prev, customerName: e.target.value }))}
+                      required
+                      placeholder="고객명을 입력하세요"
+                    />
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="customerPhone">연락처</Label>
+                    <Input
+                      id="customerPhone"
+                      value={uploadForm.customerPhone}
+                      onChange={(e) => setUploadForm(prev => ({ ...prev, customerPhone: e.target.value }))}
+                      required
+                      placeholder="연락처를 입력하세요"
+                    />
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="file">파일</Label>
+                    <Input
+                      id="file"
+                      type="file"
+                      accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+                      onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      PDF, 이미지, Word 문서만 업로드 가능 (최대 10MB) - 선택사항
+                    </p>
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="notes">메모 (선택사항)</Label>
+                    <Textarea
+                      id="notes"
+                      value={uploadForm.notes}
+                      onChange={(e) => setUploadForm(prev => ({ ...prev, notes: e.target.value }))}
+                      placeholder="추가 메모가 있다면 입력하세요"
+                      rows={3}
+                    />
+                  </div>
+                  
+                  <div className="flex justify-end space-x-2">
+                    <Button type="button" variant="outline" onClick={() => setUploadDialogOpen(false)}>
+                      취소
                     </Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>서류 업로드</DialogTitle>
-                    </DialogHeader>
-                    <form onSubmit={handleUpload} className="space-y-4">
-                      <div>
-                        <Label htmlFor="customerName">고객명</Label>
-                        <Input
-                          id="customerName"
-                          value={uploadForm.customerName}
-                          onChange={(e) => setUploadForm(prev => ({ ...prev, customerName: e.target.value }))}
-                          required
-                          placeholder="고객명을 입력하세요"
-                        />
-                      </div>
-                      
-                      <div>
-                        <Label htmlFor="customerPhone">연락처</Label>
-                        <Input
-                          id="customerPhone"
-                          value={uploadForm.customerPhone}
-                          onChange={(e) => setUploadForm(prev => ({ ...prev, customerPhone: e.target.value }))}
-                          required
-                          placeholder="연락처를 입력하세요"
-                        />
-                      </div>
-                      
-                      <div>
-                        <Label htmlFor="file">파일</Label>
-                        <Input
-                          id="file"
-                          type="file"
-                          accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
-                          onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
-                        />
-                        <p className="text-xs text-gray-500 mt-1">
-                          PDF, 이미지, Word 문서만 업로드 가능 (최대 10MB) - 선택사항
-                        </p>
-                      </div>
-                      
-                      <div>
-                        <Label htmlFor="notes">메모 (선택사항)</Label>
-                        <Textarea
-                          id="notes"
-                          value={uploadForm.notes}
-                          onChange={(e) => setUploadForm(prev => ({ ...prev, notes: e.target.value }))}
-                          placeholder="추가 메모가 있다면 입력하세요"
-                          rows={3}
-                        />
-                      </div>
-                      
-                      <div className="flex justify-end space-x-2">
-                        <Button type="button" variant="outline" onClick={() => setUploadDialogOpen(false)}>
-                          취소
-                        </Button>
-                        <Button type="submit" disabled={uploadMutation.isPending}>
-                          {uploadMutation.isPending ? '업로드 중...' : '업로드'}
-                        </Button>
-                      </div>
-                    </form>
-                  </DialogContent>
-                </Dialog>
-              )}
-            </div>
+                    <Button type="submit" disabled={uploadMutation.isPending}>
+                      {uploadMutation.isPending ? '업로드 중...' : '업로드'}
+                    </Button>
+                  </div>
+                </form>
+              </DialogContent>
+            </Dialog>
+          )}
+        </div>
 
         {/* Filters */}
         <Card>
@@ -1642,228 +1616,6 @@ export function Documents() {
             </form>
           </DialogContent>
         </Dialog>
-          </TabsContent>
-          
-          {/* 작업 탭 */}
-          <TabsContent value="work" className="space-y-6">
-            {/* 서류 목록 */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center justify-between">
-                  작업
-                  <div className="flex items-center space-x-2 text-sm">
-                    <span>상태:</span>
-                    <Select value={workStatusFilter} onValueChange={setWorkStatusFilter}>
-                      <SelectTrigger className="w-48">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="대기">대기</SelectItem>
-                        <SelectItem value="진행중">진행중</SelectItem>
-                        <SelectItem value="업무요청중">업무요청중</SelectItem>
-                        <SelectItem value="개통완료">개통완료</SelectItem>
-                        <SelectItem value="취소">취소</SelectItem>
-                        <SelectItem value="보완필요">보완필요</SelectItem>
-                        <SelectItem value="기타완료">기타완료</SelectItem>
-                        <SelectItem value="폐기">폐기</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <span className="text-gray-500">
-                      총 {documents?.length || 0}건
-                    </span>
-                  </div>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-0">
-                {isLoading ? (
-                  <div className="p-8 text-center">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-accent mx-auto"></div>
-                    <p className="mt-2 text-sm text-gray-500">로딩 중...</p>
-                  </div>
-                ) : documents && documents.length > 0 ? (
-                  <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
-                    <table className="w-full divide-y divide-gray-300 text-sm" style={{ minWidth: '1000px' }}>
-                      <colgroup>
-                        <col style={{ width: '100px' }} />
-                        <col style={{ width: '80px' }} />
-                        <col style={{ width: '100px' }} />
-                        <col style={{ width: '100px' }} />
-                        <col style={{ width: '60px' }} />
-                        <col style={{ width: '60px' }} />
-                        <col style={{ width: '60px' }} />
-                        <col style={{ width: '90px' }} />
-                        <col style={{ width: '90px' }} />
-                        <col style={{ width: '110px' }} />
-                        <col style={{ width: '100px' }} />
-                      </colgroup>
-                      <thead className="bg-gray-50">
-                        <tr>
-                          <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            접수일시
-                          </th>
-                          <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            고객명
-                          </th>
-                          <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            연락처
-                          </th>
-                          <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            판매점명
-                          </th>
-                          <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            통신사
-                          </th>
-                          <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            유형
-                          </th>
-                          <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            상태
-                          </th>
-                          <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            개통상태
-                          </th>
-                          <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            가입번호
-                          </th>
-                          <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            요금제
-                          </th>
-                          <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            작업
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody className="bg-white divide-y divide-gray-200">
-                        {documents.map((doc) => (
-                          <tr key={doc.id} className="hover:bg-gray-50">
-                            <td className="px-3 py-2 text-xs font-medium text-gray-900">
-                              <div className="leading-relaxed">
-                                {formatReceptionDateTime(doc.uploadedAt)}
-                              </div>
-                            </td>
-                            <td className="px-3 py-2 text-xs text-gray-900">
-                              <div className="leading-relaxed">
-                                {doc.customerName}
-                              </div>
-                            </td>
-                            <td className="px-3 py-2 text-xs text-gray-900">
-                              <div className="leading-relaxed">
-                                {doc.customerPhone}
-                              </div>
-                            </td>
-                            <td className="px-3 py-2 text-xs text-gray-900">
-                              <div className="leading-relaxed">
-                                {(doc as any).storeName || (doc as any).contactCode || '-'}
-                              </div>
-                            </td>
-                            <td className="px-3 py-2 text-xs text-gray-700">
-                              <div className="leading-relaxed">
-                                {(doc as any).carrier || '-'}
-                              </div>
-                            </td>
-                            <td className="px-3 py-2 text-xs">
-                              <Badge variant={
-                                (doc as any).customerType === 'port-in' ? 'destructive' : 'default'
-                              }>
-                                {(doc as any).customerType === 'port-in' ? '번호이동' : '신규'}
-                              </Badge>
-                            </td>
-                            <td className="px-3 py-2">
-                              {getStatusBadge(doc.status)}
-                            </td>
-                            <td className="px-3 py-2">
-                              <div className="space-y-2">
-                                {getActivationStatusBadge((doc as any).activationStatus || '대기')}
-                                
-                                {/* 보완 메모 표시 */}
-                                {(doc as any).supplementNotes && (
-                                  <div className="p-2 bg-orange-50 border-l-4 border-orange-400 rounded-r text-xs">
-                                    <div className="font-bold text-orange-800 mb-1">📝 보완 요청</div>
-                                    <div className="text-orange-700 leading-tight">
-                                      {(doc as any).supplementNotes.length > 80 
-                                        ? `${(doc as any).supplementNotes.substring(0, 80)}...` 
-                                        : (doc as any).supplementNotes
-                                      }
-                                    </div>
-                                  </div>
-                                )}
-
-                                {/* 판매점 전달 메모 표시 */}
-                                {(doc as any).dealerNotes && (
-                                  <div className="p-2 bg-green-50 border-l-4 border-green-400 rounded-r text-xs">
-                                    <div className="font-bold text-green-800 mb-1">💼 판매점 메모</div>
-                                    <div className="text-green-700 leading-tight">
-                                      {(doc as any).dealerNotes.length > 80 
-                                        ? `${(doc as any).dealerNotes.substring(0, 80)}...` 
-                                        : (doc as any).dealerNotes
-                                      }
-                                    </div>
-                                  </div>
-                                )}
-                              </div>
-                            </td>
-                            <td className="px-3 py-2 text-xs text-gray-700">
-                              <div className="leading-relaxed">
-                                {(doc as any).subscriptionNumber || '-'}
-                              </div>
-                            </td>
-                            <td className="px-3 py-2 text-xs text-gray-700">
-                              <div className="leading-relaxed">
-                                {(doc as any).servicePlanName || '-'}
-                              </div>
-                            </td>
-                            <td className="px-3 py-2">
-                              <div className="flex flex-col space-y-1">
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() => handleDownload(doc.id)}
-                                  className="h-7 text-xs"
-                                >
-                                  <Download className="mr-1 h-3 w-3" />
-                                  다운로드
-                                </Button>
-                                
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() => handleActivationStatusChange(doc)}
-                                  className="h-7 text-xs"
-                                >
-                                  <Settings className="mr-1 h-3 w-3" />
-                                  상태변경
-                                </Button>
-                                
-                                {(doc as any).activationStatus === '진행중' && (
-                                  <ChatDialog 
-                                    documentId={doc.id} 
-                                    customerName={doc.customerName}
-                                    onTrigger={(
-                                      <Button size="sm" variant="outline" className="h-7 text-xs">
-                                        <MessageCircle className="mr-1 h-3 w-3" />
-                                        채팅
-                                      </Button>
-                                    )}
-                                  />
-                                )}
-                              </div>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                ) : (
-                  <div className="p-8 text-center">
-                    <FileText className="mx-auto h-12 w-12 text-gray-400" />
-                    <h3 className="mt-2 text-sm font-medium text-gray-900">서류가 없습니다</h3>
-                    <p className="mt-1 text-sm text-gray-500">선택한 상태에 해당하는 서류가 없습니다.</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
       </div>
     </Layout>
   );
