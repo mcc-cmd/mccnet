@@ -638,10 +638,13 @@ export class DatabaseStorage implements IStorage {
     try {
       const [user] = await db.select().from(users).where(eq(users.username, username)).limit(1);
       if (user && await bcrypt.compare(password, user.password)) {
+        // role이 'worker'인 경우 userRole을 'dealer_worker'로 설정
+        const userRole = user.role === 'worker' ? 'dealer_worker' : undefined;
         return { 
           id: user.id, 
           name: user.name,
-          userType: user.role || 'user' 
+          userType: 'user',
+          userRole: userRole
         };
       }
     } catch (error) {
@@ -1216,6 +1219,7 @@ export class DatabaseStorage implements IStorage {
     endDate?: string;
     carrier?: string;
     dealerId?: number;
+    workerId?: number;
   }): Promise<any[]> {
     try {
       // 기본 쿼리로 모든 문서 조회 (orderBy 제거)
@@ -1250,6 +1254,10 @@ export class DatabaseStorage implements IStorage {
         
         if (filters.dealerId) {
           result = result.filter(doc => doc.dealerId === filters.dealerId);
+        }
+        
+        if (filters.workerId) {
+          result = result.filter(doc => doc.activatedBy === filters.workerId);
         }
         
         if (filters.startDate) {
@@ -1732,25 +1740,38 @@ export class DatabaseStorage implements IStorage {
     }
   }
   
-  async getTodayStats(): Promise<any> {
+  async getTodayStats(workerId?: number): Promise<any> {
     try {
       const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD 형식
-      console.log('Today stats for date:', today);
+      console.log('Today stats for date:', today, 'workerId:', workerId);
 
-      // 당일 접수 건수 - SQL의 date() 함수 사용
+      // 당일 접수 건수 - 전체 (근무자별 필터링 없음)
       const todaySubmissions = await db.select({ count: sql`count(*)` })
         .from(documents)
         .where(sql`date(uploaded_at) = ${today}`);
 
-      // 당일 개통 완료 건수 - SQL의 date() 함수 사용
-      const todayCompletions = await db.select({ count: sql`count(*)` })
-        .from(documents)
-        .where(
-          and(
-            sql`date(activated_at) = ${today}`,
-            eq(documents.activationStatus, '개통')
-          )
-        );
+      // 당일 개통 완료 건수 - 근무자별 필터링
+      let todayCompletions;
+      if (workerId) {
+        todayCompletions = await db.select({ count: sql`count(*)` })
+          .from(documents)
+          .where(
+            and(
+              sql`date(activated_at) = ${today}`,
+              eq(documents.activationStatus, '개통'),
+              eq(documents.activatedBy, workerId)
+            )
+          );
+      } else {
+        todayCompletions = await db.select({ count: sql`count(*)` })
+          .from(documents)
+          .where(
+            and(
+              sql`date(activated_at) = ${today}`,
+              eq(documents.activationStatus, '개통')
+            )
+          );
+      }
 
       // 기타완료 건수
       const todayOtherCompleted = await db.select({ count: sql`count(*)` })
@@ -1762,17 +1783,32 @@ export class DatabaseStorage implements IStorage {
           )
         );
 
-      // 당일 정산 금액 (수동 입력된 정산 금액 포함)
-      const todayRevenue = await db.select({
-        total: sql`sum(case when settlement_amount is not null then settlement_amount else 0 end)`
-      })
-        .from(documents)
-        .where(
-          and(
-            sql`date(activated_at) = ${today}`,
-            eq(documents.activationStatus, '개통')
-          )
-        );
+      // 당일 정산 금액 (근무자별 필터링)
+      let todayRevenue;
+      if (workerId) {
+        todayRevenue = await db.select({
+          total: sql`sum(case when settlement_amount is not null then settlement_amount else 0 end)`
+        })
+          .from(documents)
+          .where(
+            and(
+              sql`date(activated_at) = ${today}`,
+              eq(documents.activationStatus, '개통'),
+              eq(documents.activatedBy, workerId)
+            )
+          );
+      } else {
+        todayRevenue = await db.select({
+          total: sql`sum(case when settlement_amount is not null then settlement_amount else 0 end)`
+        })
+          .from(documents)
+          .where(
+            and(
+              sql`date(activated_at) = ${today}`,
+              eq(documents.activationStatus, '개통')
+            )
+          );
+      }
 
       const result = {
         todaySubmissions: parseInt(String(todaySubmissions[0]?.count || 0)),

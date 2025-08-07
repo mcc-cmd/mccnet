@@ -1128,7 +1128,9 @@ router.get('/api/dashboard/worker-stats', requireAuth, async (req: any, res) => 
 // 당일 통계 API
 router.get('/api/dashboard/today-stats', requireAuth, async (req: any, res) => {
   try {
-    const stats = await storage.getTodayStats();
+    // 근무자인 경우 해당 근무자의 ID를 전달
+    const workerId = req.session.userRole === 'dealer_worker' ? req.session.userId : undefined;
+    const stats = await storage.getTodayStats(workerId);
     
     // API 응답 형식을 프론트엔드 기대값에 맞춤
     const response = {
@@ -1156,14 +1158,21 @@ router.get('/api/documents', requireAuth, async (req: any, res) => {
       userRole: req.session.userRole 
     });
     
-    // 관리자와 근무자는 모든 문서를, 판매점은 해당 대리점 문서만 조회
+    // 관리자는 모든 문서를, 근무자는 자신이 처리한 문서만, 판매점은 해당 대리점 문서만 조회
     const isWorker = req.session.userRole === 'dealer_worker';
     const isAdmin = req.session.userType === 'admin';
     
-    // 관리자와 근무자는 모든 문서를 볼 수 있도록 dealerId를 undefined로 설정
     let dealerId = req.session.dealerId; // 기본값: 자신의 dealerId
-    if (isAdmin || isWorker) {
-      dealerId = undefined; // 모든 문서를 볼 수 있도록 설정
+    let workerId = undefined;
+    
+    if (isAdmin) {
+      dealerId = undefined; // 관리자는 모든 문서를 볼 수 있음
+    } else if (isWorker) {
+      dealerId = undefined; // 근무자도 모든 문서를 볼 수 있지만
+      // 당월 개통현황에서는 자신이 처리한 문서만 표시하기 위해 workerId 설정
+      if (decodedActivationStatus && decodedActivationStatus.includes('개통')) {
+        workerId = req.session.userId;
+      }
     }
     
     console.log('Final dealerId for query:', dealerId, 'isAdmin:', isAdmin, 'isWorker:', isWorker);
@@ -1185,7 +1194,8 @@ router.get('/api/documents', requireAuth, async (req: any, res) => {
       startDate: startDate as string,
       endDate: endDate as string,
       carrier: carrier as string,
-      dealerId: dealerId
+      dealerId: dealerId,
+      workerId: workerId
     });
     
     // 판매점명 정보 추가 (contactCode를 통해)
