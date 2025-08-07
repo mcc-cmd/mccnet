@@ -1323,7 +1323,7 @@ export function AdminPanel() {
 
   const { data: documents, isLoading: documentsLoading } = useQuery({
     queryKey: ['/api/documents'],
-    queryFn: () => apiRequest('/api/documents') as Promise<Array<Document & { dealerName: string; userName: string }>>,
+    queryFn: () => apiRequest('/api/documents?includeActivatedBy=true') as Promise<Array<Document & { dealerName: string; userName: string; activatedByName?: string }>>,
   });
 
 
@@ -4294,6 +4294,9 @@ export function AdminPanel() {
                             개통상태
                           </th>
                           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            개통처리자
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                             판매점 메모
                           </th>
                           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -4324,6 +4327,9 @@ export function AdminPanel() {
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap">
                               {getActivationStatusBadge((doc as any).activationStatus || '대기')}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                              {(doc as any).activatedByName || ((doc as any).activationStatus === '개통' ? '관리자' : '-')}
                             </td>
                             <td className="px-6 py-4 text-sm">
                               {(doc as any).dealerNotes ? (
