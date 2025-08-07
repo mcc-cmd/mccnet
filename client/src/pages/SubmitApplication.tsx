@@ -20,20 +20,40 @@ export function SubmitApplication() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   
-  const [formData, setFormData] = useState({
-    customerName: '',
-    customerPhone: '',
-    customerEmail: '',
-    contactCode: '',
-    storeName: '',
-    carrier: '',
-    previousCarrier: '',
-    bundleNumber: '',
-    bundleCarrier: '',
-    customerType: 'new', // 'new' 또는 'port-in'
-    desiredNumber: '',
-    notes: ''
+  // 초기 상태를 localStorage에서 복원하거나 기본값 사용
+  const [formData, setFormData] = useState(() => {
+    try {
+      const saved = localStorage.getItem('submitApplication_formData');
+      if (saved) {
+        return JSON.parse(saved);
+      }
+    } catch (error) {
+      console.warn('폼 데이터 복원 실패:', error);
+    }
+    return {
+      customerName: '',
+      customerPhone: '',
+      customerEmail: '',
+      contactCode: '',
+      storeName: '',
+      carrier: '',
+      previousCarrier: '',
+      bundleNumber: '',
+      bundleCarrier: '',
+      customerType: 'new', // 'new' 또는 'port-in'
+      desiredNumber: '',
+      notes: ''
+    };
   });
+
+  // 폼 데이터가 변경될 때마다 localStorage에 저장
+  useEffect(() => {
+    try {
+      localStorage.setItem('submitApplication_formData', JSON.stringify(formData));
+    } catch (error) {
+      console.warn('폼 데이터 저장 실패:', error);
+    }
+  }, [formData]);
 
   // 접점코드 변경 시 판매점명 자동 조회
   const handleContactCodeChange = async (contactCode: string) => {
@@ -53,15 +73,14 @@ export function SubmitApplication() {
         const response = await apiRequest(`/api/contact-codes/search/${contactCode}`);
         if (response?.dealerName) {
           setFormData(prev => ({ ...prev, storeName: response.dealerName }));
-        } else {
-          setFormData(prev => ({ ...prev, storeName: '' }));
         }
+        // 응답이 없어도 기존 데이터는 보존 - 초기화하지 않음
       } catch (error) {
-        setFormData(prev => ({ ...prev, storeName: '' }));
+        // 오류가 있어도 기존 데이터는 보존 - 초기화하지 않음
+        console.warn('접점코드 조회 실패:', error);
       }
-    } else if (!contactCode.trim() && !formData.carrier.includes('기타')) {
-      setFormData(prev => ({ ...prev, storeName: '' }));
     }
+    // 접점코드가 비어있어도 기존 데이터는 보존 - 초기화하지 않음
   };
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [dragActive, setDragActive] = useState(false);
@@ -73,8 +92,8 @@ export function SubmitApplication() {
   const { data: carriers = [], isLoading: carriersLoading } = useQuery<Carrier[]>({
     queryKey: ['/api/carriers'],
     queryFn: () => apiRequest('/api/carriers'),
-    staleTime: 0, // 항상 최신 데이터를 가져오도록 설정
-    refetchOnWindowFocus: true // 창 포커스 시 새로고침
+    staleTime: 5 * 60 * 1000, // 5분간 캐시 유지
+    refetchOnWindowFocus: false // 창 포커스 시 새로고침 비활성화 - 사용자 입력 보호
   });
   
   // 이전통신사 목록
@@ -170,6 +189,7 @@ export function SubmitApplication() {
       });
     },
     onSuccess: () => {
+      // 접수 성공 후에만 관련 쿼리 무효화
       queryClient.invalidateQueries({ queryKey: ['/api/documents'] });
       queryClient.invalidateQueries({ queryKey: ['/api/dashboard/stats'] });
       
@@ -178,8 +198,15 @@ export function SubmitApplication() {
         description: "서류가 성공적으로 접수되었습니다.",
       });
 
-      // 폼 초기화 제거 - 사용자 입력 보존
+      // 업로드된 파일만 초기화, 폼 데이터는 보존
       setSelectedFile(null);
+      
+      // 중복 확인 다이얼로그가 열려있다면 닫기
+      setDuplicateCheckDialog(false);
+      setDuplicateData([]);
+      
+      // 성공적으로 접수된 후에만 localStorage의 폼 데이터 초기화
+      localStorage.removeItem('submitApplication_formData');
     },
     onError: (error: Error) => {
       toast({
@@ -756,12 +783,16 @@ export function SubmitApplication() {
                   variant="outline"
                   onClick={() => {
                     if (window.confirm('정말로 모든 입력 내용을 초기화하시겠습니까?')) {
-                      setFormData({ 
+                      const initialData = { 
                         customerName: '', customerPhone: '', customerEmail: '', contactCode: '', storeName: '', 
                         carrier: '', previousCarrier: '', bundleNumber: '', bundleCarrier: '', 
                         customerType: 'new', desiredNumber: '', notes: '' 
-                      });
+                      };
+                      setFormData(initialData);
                       setSelectedFile(null);
+                      
+                      // localStorage에서도 제거
+                      localStorage.removeItem('submitApplication_formData');
                     }
                   }}
                 >
