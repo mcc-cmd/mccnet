@@ -63,7 +63,6 @@ export const salesManagers = sqliteTable("sales_managers", {
 export const contactCodes = sqliteTable("contact_codes", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   code: text("code").notNull(),
-  dealerName: text("dealer_name").notNull(),
   carrier: text("carrier").notNull(),
   salesManagerId: integer("sales_manager_id").references(() => salesManagers.id),
   salesManagerName: text("sales_manager_name"),
@@ -153,7 +152,6 @@ export const documents = sqliteTable("documents", {
   phoneNumber: text("phone_number"),
   dealerId: integer("dealer_id"),
   userId: integer("user_id"),
-  dealerName: text("dealer_name"),
   submittedById: integer("submitted_by_id"),
   submittedBy: text("submitted_by"),
   assignedTo: text("assigned_to"),
