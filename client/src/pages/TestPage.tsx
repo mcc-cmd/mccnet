@@ -107,17 +107,13 @@ export function TestPage() {
   };
 
   if (user?.userType !== 'admin') {
+    // 근무자는 자동으로 접수 관리 페이지로 리다이렉트
+    window.location.href = '/documents';
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <AlertCircle className="mx-auto h-12 w-12 text-red-400 mb-4" />
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">접근 권한이 없습니다</h2>
-          <p className="text-gray-600">관리자만 접근할 수 있는 페이지입니다.</p>
-          <div className="mt-4">
-            <Button onClick={() => window.location.href = '/documents'}>
-              접수 관리로 이동
-            </Button>
-          </div>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">접수 관리 페이지로 이동 중...</p>
         </div>
       </div>
     );

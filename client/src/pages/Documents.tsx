@@ -333,6 +333,10 @@ export function Documents() {
     setActivationDialogOpen(true);
   };
 
+  const canSetServicePlan = (document: any) => {
+    return document.activationStatus === '개통' || document.activationStatus === '개통완료';
+  };
+
   const handleActivationSubmit = () => {
     if (!selectedDocument) return;
     
