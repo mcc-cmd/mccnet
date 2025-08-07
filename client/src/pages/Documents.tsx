@@ -373,6 +373,8 @@ export function Documents() {
     return user?.userType === 'admin' || user?.userType === 'worker' || user?.role === 'worker' || user?.role === 'dealer_worker';
   };
 
+  // Helper functions for the new table
+
   const updateActivationMutation = useMutation({
     mutationFn: ({ id, data }: { id: number; data: any }) => {
       return apiRequest(`/api/documents/${id}/activation`, {
@@ -619,289 +621,7 @@ export function Documents() {
           )}
         </div>
 
-        {/* Filters */}
-        <Card>
-          <CardContent className="p-4 md:p-6">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div className="sm:col-span-2 lg:col-span-1">
-                <Label htmlFor="search">검색</Label>
-                <div className="relative">
-                  <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                  <Input
-                    id="search"
-                    placeholder="고객명 또는 접수번호 검색"
-                    value={filters.search}
-                    onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
-                    className="pl-10"
-                  />
-                </div>
-              </div>
-              
-              <div>
-                <Label htmlFor="status">상태</Label>
-                <Select value={filters.status} onValueChange={(value) => setFilters(prev => ({ ...prev, status: value }))}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="전체 상태" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">전체 상태</SelectItem>
-                    <SelectItem value="접수">접수</SelectItem>
-                    <SelectItem value="보완필요">보완필요</SelectItem>
-                    <SelectItem value="완료">완료</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div>
-                <Label htmlFor="startDate">시작일</Label>
-                <Input
-                  id="startDate"
-                  type="date"
-                  value={filters.startDate}
-                  onChange={(e) => setFilters(prev => ({ ...prev, startDate: e.target.value }))}
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="endDate">종료일</Label>
-                <Input
-                  id="endDate"
-                  type="date"
-                  value={filters.endDate}
-                  onChange={(e) => setFilters(prev => ({ ...prev, endDate: e.target.value }))}
-                />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
 
-        {/* Documents Table */}
-        <Card>
-          <CardContent className="p-0">
-            {isLoading ? (
-              <div className="p-8 text-center">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-accent mx-auto"></div>
-                <p className="mt-2 text-sm text-gray-500">로딩 중...</p>
-              </div>
-            ) : documents && documents.length > 0 ? (
-              <>
-                {/* Responsive Table View */}
-                <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
-                  <table className="w-full divide-y divide-gray-300 text-sm" style={{ minWidth: '1000px' }}>
-                    <colgroup>
-                      <col style={{ width: '100px' }} />
-                      <col style={{ width: '80px' }} />
-                      <col style={{ width: '100px' }} />
-                      <col style={{ width: '100px' }} />
-                      <col style={{ width: '60px' }} />
-                      <col style={{ width: '60px' }} />
-                      <col style={{ width: '60px' }} />
-                      <col style={{ width: '90px' }} />
-                      <col style={{ width: '90px' }} />
-                      <col style={{ width: '110px' }} />
-                      <col style={{ width: '100px' }} />
-                    </colgroup>
-                    <thead className="bg-gray-50">
-                      <tr>
-                        <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          접수일시
-                        </th>
-                        <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          고객명
-                        </th>
-                        <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          연락처
-                        </th>
-                        <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          판매점명
-                        </th>
-                        <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          통신사
-                        </th>
-                        <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          유형
-                        </th>
-                        <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          상태
-                        </th>
-                        <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          개통상태
-                        </th>
-                        <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          가입번호
-                        </th>
-                        <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          요금제
-                        </th>
-                        <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          작업
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
-                      {documents.map((doc) => (
-                        <tr key={doc.id} className="hover:bg-gray-50">
-                          <td className="px-3 py-2 text-xs font-medium text-gray-900">
-                            <div className="leading-relaxed">
-                              {formatReceptionDateTime(doc.uploadedAt)}
-                            </div>
-                          </td>
-                          <td className="px-3 py-2 text-xs text-gray-900">
-                            <div className="leading-relaxed">
-                              {doc.customerName}
-                            </div>
-                          </td>
-                          <td className="px-3 py-2 text-xs text-gray-900">
-                            <div className="leading-relaxed">
-                              {doc.customerPhone}
-                            </div>
-                          </td>
-                          <td className="px-3 py-2 text-xs text-gray-900">
-                            <div className="leading-relaxed">
-                              {(doc as any).storeName || (doc as any).contactCode || '-'}
-                            </div>
-                          </td>
-                          <td className="px-3 py-2 text-xs text-gray-700">
-                            <div className="leading-relaxed">
-                              {(doc as any).carrier || '-'}
-                            </div>
-                          </td>
-                          <td className="px-3 py-2 text-xs">
-                            <Badge variant={
-                              (doc as any).customerType === 'port-in' ? 'destructive' : 'default'
-                            }>
-                              {(doc as any).customerType === 'port-in' ? '번호이동' : '신규'}
-                            </Badge>
-                          </td>
-                          <td className="px-3 py-2">
-                            {getStatusBadge(doc.status)}
-                          </td>
-                          <td className="px-3 py-2">
-                            <div className="space-y-2">
-                              {getActivationStatusBadge((doc as any).activationStatus || '대기')}
-                              
-                              {/* 보완 메모 표시 - 모든 상태에서 표시 */}
-                              {(doc as any).supplementNotes && (
-                                <div className="p-2 bg-orange-50 border-l-4 border-orange-400 rounded-r text-xs">
-                                  <div className="font-bold text-orange-800 mb-1">📝 보완 요청</div>
-                                  <div className="text-orange-700 leading-tight">
-                                    {(doc as any).supplementNotes.length > 80 
-                                      ? `${(doc as any).supplementNotes.substring(0, 80)}...` 
-                                      : (doc as any).supplementNotes
-                                    }
-                                  </div>
-                                  {(doc as any).supplementRequiredAt && (
-                                    <div className="text-orange-600 mt-1 text-xs">
-                                      요청일: {format(new Date((doc as any).supplementRequiredAt || Date.now()), 'MM-dd HH:mm', { locale: ko })}
-                                    </div>
-                                  )}
-                                </div>
-                              )}
-
-                              {/* 판매점 전달 메모 표시 */}
-                              {(doc as any).dealerNotes && (
-                                <div className="p-2 bg-green-50 border-l-4 border-green-400 rounded-r text-xs">
-                                  <div className="font-bold text-green-800 mb-1">💼 판매점 메모</div>
-                                  <div className="text-green-700 leading-tight">
-                                    {(doc as any).dealerNotes.length > 80 
-                                      ? `${(doc as any).dealerNotes.substring(0, 80)}...` 
-                                      : (doc as any).dealerNotes
-                                    }
-                                  </div>
-                                </div>
-                              )}
-                            </div>
-                          </td>
-                          <td className="px-3 py-2 text-xs text-gray-900">
-                            <div className="leading-relaxed">
-                              {(doc as any).subscriptionNumber || '-'}
-                            </div>
-                          </td>
-                          <td className="px-3 py-2 text-xs text-gray-900">
-                            <div className="leading-relaxed">
-                              {servicePlans?.find(plan => plan.id.toString() === (doc as any).servicePlanId?.toString())?.planName || '-'}
-                            </div>
-                          </td>
-                          <td className="px-3 py-2">
-                            <div className="flex flex-wrap gap-1">
-                              {doc.filePath && (
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => handleDownload(doc.id)}
-                                  title="파일 다운로드"
-                                  className="h-5 w-5 p-0"
-                                >
-                                  <Download className="h-3 w-3" />
-                                </Button>
-                              )}
-                              {canManageActivationStatus() && (
-                                // 관리자는 모든 권한, 근무자는 작업 잠금 확인
-                                user?.userType === 'admin' || !(doc as any).assignedWorkerId || (doc as any).assignedWorkerId === user?.id || user?.role !== 'dealer_worker' ? (
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => handleActivationStatusChange(doc)}
-                                    title="개통상태 변경"
-                                    className="h-5 px-1 text-xs"
-                                  >
-                                    개통상태
-                                  </Button>
-                                ) : (
-                                  <Badge variant="outline" className="text-xs h-5 px-1">
-                                    다른 근무자 처리중
-                                  </Badge>
-                                )
-                              )}
-                              {(doc as any).activationStatus === '진행중' && (
-                                <ChatDialog 
-                                  documentId={doc.id}
-                                  dealerId={doc.dealerId}
-                                  trigger={
-                                    <Button
-                                      variant="outline"
-                                      size="sm"
-                                      title="채팅"
-                                      className="h-5 px-1 text-xs"
-                                    >
-                                      채팅
-                                    </Button>
-                                  }
-                                />
-                              )}
-                              {(doc as any).activationStatus === '개통' && canManageActivationStatus() && (
-                                // 관리자는 모든 문서에 접근, 근무자는 작업 잠금 확인
-                                user?.userType === 'admin' || !(doc as any).assignedWorkerId || (doc as any).assignedWorkerId === user?.id || user?.role !== 'dealer_worker' ? (
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => openServicePlanDialog(doc)}
-                                    title="요금제 선택"
-                                    className="h-5 px-1 text-xs"
-                                  >
-                                    요금제
-                                  </Button>
-                                ) : null
-                              )}
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </>
-            ) : (
-              <div className="text-center py-12">
-                <FileText className="mx-auto h-12 w-12 text-gray-400" />
-                <h3 className="mt-2 text-sm font-medium text-gray-900">서류가 없습니다</h3>
-                <p className="mt-1 text-sm text-gray-500">
-                  {!isAdmin ? '첫 번째 서류를 업로드해보세요.' : '업로드된 서류가 없습니다.'}
-                </p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
 
         {/* Activation Status Dialog */}
         <Dialog open={activationDialogOpen} onOpenChange={setActivationDialogOpen}>
@@ -1616,6 +1336,239 @@ export function Documents() {
             </form>
           </DialogContent>
         </Dialog>
+
+        {/* 서류 목록 */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardTitle>서류 목록</CardTitle>
+              <div className="flex items-center space-x-4">
+                <div className="flex items-center space-x-2">
+                  <span className="text-sm text-muted-foreground">검색:</span>
+                  <Input
+                    placeholder="고객명 또는 연락처 검색"
+                    value={filters.search}
+                    onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
+                    className="w-48"
+                  />
+                </div>
+                <div className="flex items-center space-x-2">
+                  <span className="text-sm text-muted-foreground">상태:</span>
+                  <Select value={filters.status} onValueChange={(value) => setFilters(prev => ({ ...prev, status: value }))}>
+                    <SelectTrigger className="w-32">
+                      <SelectValue placeholder="전체 상태" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">전체 상태</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <Badge variant="outline" className="text-sm">
+                  총 {documents?.length || 0}건
+                </Badge>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="p-0">
+            {isLoading ? (
+              <div className="p-8 text-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-accent mx-auto"></div>
+                <p className="mt-2 text-sm text-gray-500">로딩 중...</p>
+              </div>
+            ) : documents && documents.length > 0 ? (
+              <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
+                <table className="w-full divide-y divide-gray-300 text-sm" style={{ minWidth: '1000px' }}>
+                  <colgroup>
+                    <col style={{ width: '100px' }} />
+                    <col style={{ width: '80px' }} />
+                    <col style={{ width: '100px' }} />
+                    <col style={{ width: '100px' }} />
+                    <col style={{ width: '60px' }} />
+                    <col style={{ width: '60px' }} />
+                    <col style={{ width: '60px' }} />
+                    <col style={{ width: '90px' }} />
+                    <col style={{ width: '90px' }} />
+                    <col style={{ width: '110px' }} />
+                    <col style={{ width: '100px' }} />
+                  </colgroup>
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        접수일시
+                      </th>
+                      <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        고객명
+                      </th>
+                      <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        연락처
+                      </th>
+                      <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        판매점명
+                      </th>
+                      <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        통신사
+                      </th>
+                      <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        유형
+                      </th>
+                      <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        상태
+                      </th>
+                      <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        개통상태
+                      </th>
+                      <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        가입번호
+                      </th>
+                      <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        요금제
+                      </th>
+                      <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        작업
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {documents.map((doc) => (
+                      <tr key={doc.id} className="hover:bg-gray-50">
+                        <td className="px-3 py-2 text-xs font-medium text-gray-900">
+                          <div className="leading-relaxed">
+                            {formatReceptionDateTime(doc.uploadedAt)}
+                          </div>
+                        </td>
+                        <td className="px-3 py-2 text-xs text-gray-900">
+                          <div className="leading-relaxed">
+                            {doc.customerName}
+                          </div>
+                        </td>
+                        <td className="px-3 py-2 text-xs text-gray-900">
+                          <div className="leading-relaxed">
+                            {doc.customerPhone}
+                          </div>
+                        </td>
+                        <td className="px-3 py-2 text-xs text-gray-900">
+                          <div className="leading-relaxed">
+                            {(doc as any).storeName || (doc as any).contactCode || '-'}
+                          </div>
+                        </td>
+                        <td className="px-3 py-2 text-xs text-gray-700">
+                          <div className="leading-relaxed">
+                            {(doc as any).carrier || '-'}
+                          </div>
+                        </td>
+                        <td className="px-3 py-2 text-xs">
+                          <Badge variant={
+                            (doc as any).customerType === 'port-in' ? 'destructive' : 'default'
+                          }>
+                            {(doc as any).customerType === 'port-in' ? '번호이동' : '신규'}
+                          </Badge>
+                        </td>
+                        <td className="px-3 py-2">
+                          {getStatusBadge(doc.status)}
+                        </td>
+                        <td className="px-3 py-2">
+                          <div className="space-y-2">
+                            {getActivationStatusBadge((doc as any).activationStatus || '대기')}
+                            
+                            {/* 보완 메모 표시 */}
+                            {(doc as any).supplementNotes && (
+                              <div className="p-2 bg-orange-50 border-l-4 border-orange-400 rounded-r text-xs">
+                                <div className="font-bold text-orange-800 mb-1">📝 보완 요청</div>
+                                <div className="text-orange-700 leading-tight">
+                                  {(doc as any).supplementNotes.length > 80 
+                                    ? `${(doc as any).supplementNotes.substring(0, 80)}...` 
+                                    : (doc as any).supplementNotes
+                                  }
+                                </div>
+                              </div>
+                            )}
+
+                            {/* 판매점 전달 메모 표시 */}
+                            {(doc as any).dealerNotes && (
+                              <div className="p-2 bg-green-50 border-l-4 border-green-400 rounded-r text-xs">
+                                <div className="font-bold text-green-800 mb-1">💼 판매점 메모</div>
+                                <div className="text-green-700 leading-tight">
+                                  {(doc as any).dealerNotes.length > 80 
+                                    ? `${(doc as any).dealerNotes.substring(0, 80)}...` 
+                                    : (doc as any).dealerNotes
+                                  }
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </td>
+                        <td className="px-3 py-2 text-xs text-gray-700">
+                          <div className="leading-relaxed">
+                            {(doc as any).subscriptionNumber || '-'}
+                          </div>
+                        </td>
+                        <td className="px-3 py-2 text-xs text-gray-700">
+                          <div className="leading-relaxed">
+                            {(doc as any).servicePlanName || '-'}
+                          </div>
+                        </td>
+                        <td className="px-3 py-2">
+                          <div className="flex flex-col space-y-1">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleDownload(doc.id)}
+                              className="h-7 text-xs"
+                            >
+                              <Download className="mr-1 h-3 w-3" />
+                              다운로드
+                            </Button>
+                            
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleActivationStatusChange(doc)}
+                              className="h-7 text-xs"
+                            >
+                              <Settings className="mr-1 h-3 w-3" />
+                              상태변경
+                            </Button>
+                            
+                            {canSetServicePlan(doc) && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleServicePlanChange(doc)}
+                                className="h-7 text-xs"
+                              >
+                                <Calculator className="mr-1 h-3 w-3" />
+                                요금제
+                              </Button>
+                            )}
+
+                            {(doc as any).activationStatus === '진행중' && (
+                              <ChatDialog 
+                                documentId={doc.id} 
+                                customerName={doc.customerName}
+                                onTrigger={(
+                                  <Button size="sm" variant="outline" className="h-7 text-xs">
+                                    <MessageCircle className="mr-1 h-3 w-3" />
+                                    채팅
+                                  </Button>
+                                )}
+                              />
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div className="p-8 text-center">
+                <FileText className="mx-auto h-12 w-12 text-gray-400" />
+                <h3 className="mt-2 text-sm font-medium text-gray-900">서류가 없습니다</h3>
+                <p className="mt-1 text-sm text-gray-500">해당 조건에 맞는 서류가 없습니다.</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
     </Layout>
   );
