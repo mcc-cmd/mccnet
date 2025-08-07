@@ -640,6 +640,7 @@ export class DatabaseStorage implements IStorage {
       if (user && await bcrypt.compare(password, user.password)) {
         // role이 'worker'인 경우 userRole을 'dealer_worker'로 설정
         const userRole = user.role === 'worker' ? 'dealer_worker' : undefined;
+        console.log('User authentication successful - role:', user.role, 'userRole:', userRole);
         return { 
           id: user.id, 
           name: user.name,
