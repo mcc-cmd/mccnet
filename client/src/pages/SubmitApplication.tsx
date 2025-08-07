@@ -22,83 +22,23 @@ export function SubmitApplication() {
   const { toast } = useToast();
   const [location] = useLocation();
   
-  // 초기 상태를 sessionStorage에서 복원하거나 기본값 사용 (새로고침 시에만 복원)
-  const [formData, setFormData] = useState(() => {
-    try {
-      const saved = sessionStorage.getItem('submitApplication_formData');
-      if (saved) {
-        const parsedData = JSON.parse(saved);
-        // 한 번 복원한 후에는 즉시 삭제하여 중복 복원 방지
-        sessionStorage.removeItem('submitApplication_formData');
-        return parsedData;
-      }
-    } catch (error) {
-      console.warn('폼 데이터 복원 실패:', error);
-    }
-    return {
-      customerName: '',
-      customerPhone: '',
-      customerEmail: '',
-      contactCode: '',
-      storeName: '',
-      carrier: '',
-      previousCarrier: '',
-      bundleNumber: '',
-      bundleCarrier: '',
-      customerType: 'new', // 'new' 또는 'port-in'
-      desiredNumber: '',
-      notes: ''
-    };
+  // 폼 데이터 상태 - 기본값으로 초기화 (저장 기능 완전 제거)
+  const [formData, setFormData] = useState({
+    customerName: '',
+    customerPhone: '',
+    customerEmail: '',
+    contactCode: '',
+    storeName: '',
+    carrier: '',
+    previousCarrier: '',
+    bundleNumber: '',
+    bundleCarrier: '',
+    customerType: 'new' as 'new' | 'port-in',
+    desiredNumber: '',
+    notes: ''
   });
 
-  // 폼 데이터가 변경될 때마다 sessionStorage에 임시 저장 (새로고침 시에만 유지)
-  useEffect(() => {
-    try {
-      sessionStorage.setItem('submitApplication_formData', JSON.stringify(formData));
-    } catch (error) {
-      console.warn('폼 데이터 저장 실패:', error);
-    }
-  }, [formData]);
-
-  // 컴포넌트 언마운트 시 저장된 데이터 정리
-  useEffect(() => {
-    return () => {
-      try {
-        sessionStorage.removeItem('submitApplication_formData');
-      } catch (error) {
-        console.warn('폼 데이터 정리 실패:', error);
-      }
-    };
-  }, []);
-
-  // 페이지 이동 감지하여 저장된 데이터 정리
-  useEffect(() => {
-    const handleBeforeUnload = () => {
-      try {
-        sessionStorage.removeItem('submitApplication_formData');
-      } catch (error) {
-        console.warn('페이지 떠나기 전 데이터 정리 실패:', error);
-      }
-    };
-
-    // 브라우저 새로고침/닫기 시 정리
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    
-    return () => {
-      window.removeEventListener('beforeunload', handleBeforeUnload);
-    };
-  }, []);
-
-  // 라우트 변경 시 데이터 정리 (현재 페이지가 아닌 경우)
-  useEffect(() => {
-    if (location !== '/submit-application') {
-      try {
-        sessionStorage.removeItem('submitApplication_formData');
-      } catch (error) {
-        console.warn('라우트 변경 시 데이터 정리 실패:', error);
-      }
-    }
-  }, [location]);
+  // 저장 기능 완전 제거 - 사용자가 입력한 데이터는 페이지에 있는 동안만 유지
 
   // 접점코드 변경 시 판매점명 자동 조회
   const handleContactCodeChange = async (contactCode: string) => {
@@ -261,10 +201,7 @@ export function SubmitApplication() {
       setDuplicateCheckDialog(false);
       setDuplicateData([]);
       
-      // 성공적으로 접수된 후에만 sessionStorage의 폼 데이터 초기화
-      sessionStorage.removeItem('submitApplication_formData');
-      
-      // 접수 완료 후 폼도 초기화
+      // 접수 완료 후 폼 초기화
       setFormData({
         customerName: '',
         customerPhone: '',
@@ -898,9 +835,6 @@ export function SubmitApplication() {
                       };
                       setFormData(initialData);
                       setSelectedFile(null);
-                      
-                      // sessionStorage에서도 제거
-                      sessionStorage.removeItem('submitApplication_formData');
                     }
                   }}
                 >
