@@ -1162,6 +1162,16 @@ router.get('/api/documents', requireAuth, async (req: any, res) => {
     const isWorker = req.session.userRole === 'dealer_worker';
     const isAdmin = req.session.userType === 'admin';
     
+    // 한국어 디코딩 처리 먼저 수행
+    let decodedActivationStatus = activationStatus as string;
+    if (decodedActivationStatus) {
+      try {
+        decodedActivationStatus = decodeURIComponent(decodedActivationStatus);
+      } catch (e) {
+        console.log('Failed to decode activationStatus, using original:', decodedActivationStatus);
+      }
+    }
+    
     let dealerId = req.session.dealerId; // 기본값: 자신의 dealerId
     let workerId = undefined;
     
@@ -1176,16 +1186,6 @@ router.get('/api/documents', requireAuth, async (req: any, res) => {
     }
     
     console.log('Final dealerId for query:', dealerId, 'isAdmin:', isAdmin, 'isWorker:', isWorker);
-    
-    // 한국어 디코딩 처리
-    let decodedActivationStatus = activationStatus as string;
-    if (decodedActivationStatus) {
-      try {
-        decodedActivationStatus = decodeURIComponent(decodedActivationStatus);
-      } catch (e) {
-        console.log('Failed to decode activationStatus, using original:', decodedActivationStatus);
-      }
-    }
     
     const documents = await storage.getDocuments({
       status: status as string,
