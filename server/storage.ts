@@ -2216,6 +2216,25 @@ export class DatabaseStorage implements IStorage {
       const todayCount = parseInt(String(countResult[0]?.count || 0));
       const documentNumber = `${datePrefix}${(todayCount + 1).toString().padStart(4, '0')}`;
 
+      // contactCode가 있으면 해당하는 판매점명 조회
+      let storeName = data.storeName || null;
+      if (data.contactCode) {
+        try {
+          const contactCodeResult = await db.select({
+            dealerName: contactCodes.dealerName
+          })
+          .from(contactCodes)
+          .where(eq(contactCodes.code, data.contactCode))
+          .limit(1);
+          
+          if (contactCodeResult.length > 0) {
+            storeName = contactCodeResult[0].dealerName;
+          }
+        } catch (error) {
+          console.log('Contact code lookup error:', error);
+        }
+      }
+
       // 데이터베이스에 문서 삽입
       const [document] = await db.insert(documents).values({
         dealerId: data.dealerId || 1, // 기본 딜러 ID
@@ -2224,7 +2243,7 @@ export class DatabaseStorage implements IStorage {
         customerPhone: data.customerPhone,
         customerEmail: data.customerEmail || null,
         contactCode: data.contactCode || null,
-        storeName: data.storeName || null,
+        storeName: storeName,
         carrier: data.carrier,
         previousCarrier: data.previousCarrier || null,
         customerType: data.customerType || 'new',
