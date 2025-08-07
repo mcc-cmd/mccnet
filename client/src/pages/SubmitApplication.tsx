@@ -119,33 +119,11 @@ export function SubmitApplication() {
     portIn: carrierSettings?.allowPortIn !== false
   };
 
-  // 통신사가 지원하지 않는 고객 유형이 선택된 경우에만 변경 (초기 로드 시에만)
-  useEffect(() => {
-    if (carrierSettings && formData.carrier) {
-      // 통신사가 처음 선택되었을 때만 고객 유형 자동 조정
-      if (formData.customerType === 'new' && !availableCustomerTypes.new && availableCustomerTypes.portIn) {
-        setFormData(prev => ({ ...prev, customerType: 'port-in' }));
-      } else if (formData.customerType === 'port-in' && !availableCustomerTypes.portIn && availableCustomerTypes.new) {
-        setFormData(prev => ({ ...prev, customerType: 'new' }));
-      }
-    }
-  }, [formData.carrier]); // carrier 변경 시에만 실행
+  // 자동 초기화 로직 제거 - 사용자 입력 보존
 
-  // 고객 유형 변경 시 관련 필드 초기화 (수동 변경 시에만)
+  // 고객 유형 변경 (필드 초기화 없음)
   const handleCustomerTypeChange = (newType: 'new' | 'port-in') => {
-    setFormData(prev => {
-      const newData = { ...prev, customerType: newType };
-      
-      if (newType === 'new') {
-        // 신규 고객으로 변경 시 이전통신사만 초기화
-        newData.previousCarrier = '';
-      } else if (newType === 'port-in') {
-        // 번호이동으로 변경 시 희망번호만 초기화
-        newData.desiredNumber = '';
-      }
-      
-      return newData;
-    });
+    setFormData(prev => ({ ...prev, customerType: newType }));
   };
 
   // 중복 체크 함수
@@ -200,12 +178,7 @@ export function SubmitApplication() {
         description: "서류가 성공적으로 접수되었습니다.",
       });
 
-      // Reset form
-      setFormData({ 
-        customerName: '', customerPhone: '', customerEmail: '', contactCode: '', storeName: '', 
-        carrier: '', previousCarrier: '', bundleNumber: '', bundleCarrier: '', 
-        customerType: 'new', desiredNumber: '', notes: '' 
-      });
+      // 폼 초기화 제거 - 사용자 입력 보존
       setSelectedFile(null);
     },
     onError: (error: Error) => {
@@ -782,8 +755,14 @@ export function SubmitApplication() {
                   type="button"
                   variant="outline"
                   onClick={() => {
-                    setFormData({ customerName: '', customerPhone: '', storeName: user?.dealerName || '', notes: '' });
-                    setSelectedFile(null);
+                    if (window.confirm('정말로 모든 입력 내용을 초기화하시겠습니까?')) {
+                      setFormData({ 
+                        customerName: '', customerPhone: '', customerEmail: '', contactCode: '', storeName: '', 
+                        carrier: '', previousCarrier: '', bundleNumber: '', bundleCarrier: '', 
+                        customerType: 'new', desiredNumber: '', notes: '' 
+                      });
+                      setSelectedFile(null);
+                    }
                   }}
                 >
                   초기화
