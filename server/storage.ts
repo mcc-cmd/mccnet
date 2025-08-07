@@ -2216,25 +2216,26 @@ export class DatabaseStorage implements IStorage {
       const todayCount = parseInt(String(countResult[0]?.count || 0));
       const documentNumber = `${datePrefix}${(todayCount + 1).toString().padStart(4, '0')}`;
 
-      // 데이터베이스에 문서 삽입 - 실제 존재하는 컬럼만 사용
+      // 데이터베이스에 문서 삽입
       const [document] = await db.insert(documents).values({
         dealerId: data.dealerId || null,
         userId: data.userId,
         customerName: data.customerName,
         customerPhone: data.customerPhone,
-        customerType: data.customerType || 'new',
+        customerEmail: data.customerEmail || null,
+        contactCode: data.contactCode || null,
+        storeName: data.storeName || null,
         carrier: data.carrier,
-        activationStatus: '대기',
-        filePath: data.filePath || null,
+        previousCarrier: data.previousCarrier || null,
+        customerType: data.customerType || 'new',
+        desiredNumber: data.desiredNumber || null,
+        bundleNumber: data.bundleNumber || null,
+        bundleCarrier: data.bundleCarrier || null,
         notes: data.notes || null,
-        supplementNotes: data.supplementNotes || null,
-        dealerNotes: data.dealerNotes || null,
-        deviceModel: data.deviceModel || null,
-        simNumber: data.simNumber || null,
-        subscriptionNumber: data.subscriptionNumber || null,
-        servicePlanId: data.servicePlanId || null,
-        additionalServiceIds: data.additionalServiceIds || null,
-        settlementAmount: data.settlementAmount || 0,
+        filePath: data.filePath || null,
+        fileName: data.fileName || null,
+        fileSize: data.fileSize || null,
+        activationStatus: '대기',
         uploadedAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
       }).returning();
