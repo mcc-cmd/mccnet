@@ -78,19 +78,6 @@ export function Dashboard() {
     queryFn: () => apiRequest('/api/dashboard/monthly-activation-stats') as Promise<Array<{ carrier: string; count: number }>>,
   });
   const { data: carrierStats, isLoading: carrierStatsLoading } = useQuery({
-    queryKey: ['/api/dashboard/carrier-stats'],
-    queryFn: () => apiRequest('/api/dashboard/carrier-stats') as Promise<any[]>,
-    enabled: user?.userType === 'admin',
-  });
-
-  const { data: workerStats, isLoading: workerStatsLoading } = useQuery({
-    queryKey: ['/api/dashboard/worker-stats'],
-    queryFn: () => apiRequest('/api/dashboard/worker-stats') as Promise<any[]>,
-    enabled: user?.userType === 'admin',
-  });
-
-  // 기간별 분석용 별도 통계 (날짜 필터 적용)
-  const { data: carrierAnalytics, isLoading: carrierAnalyticsLoading } = useQuery({
     queryKey: ['/api/dashboard/carrier-stats', carrierStartDate, carrierEndDate],
     queryFn: () => {
       const params = new URLSearchParams();
@@ -99,10 +86,10 @@ export function Dashboard() {
       const url = `/api/dashboard/carrier-stats${params.toString() ? '?' + params.toString() : ''}`;
       return apiRequest(url) as Promise<any[]>;
     },
-    enabled: user?.userType === 'admin' && !!(carrierStartDate || carrierEndDate),
+    enabled: user?.userType === 'admin',
   });
 
-  const { data: workerAnalytics, isLoading: workerAnalyticsLoading } = useQuery({
+  const { data: workerStats, isLoading: workerStatsLoading } = useQuery({
     queryKey: ['/api/dashboard/worker-stats', workerStartDate, workerEndDate],
     queryFn: () => {
       const params = new URLSearchParams();
@@ -111,8 +98,10 @@ export function Dashboard() {
       const url = `/api/dashboard/worker-stats${params.toString() ? '?' + params.toString() : ''}`;
       return apiRequest(url) as Promise<any[]>;
     },
-    enabled: user?.userType === 'admin' && !!(workerStartDate || workerEndDate),
+    enabled: user?.userType === 'admin',
   });
+
+
 
   // 당일 통계 조회
   const { data: todayStats, isLoading: todayStatsLoading } = useQuery({
@@ -507,8 +496,8 @@ export function Dashboard() {
                           <Skeleton key={i} className="h-8 w-full" />
                         ))}
                       </div>
-                    ) : (
-                      (Array.isArray(carrierStats) ? carrierStats : []).map((carrier: any, index: number) => (
+                    ) : carrierStats && carrierStats.length > 0 ? (
+                      carrierStats.map((carrier: any, index: number) => (
                         <div key={index} className="flex justify-between items-center p-2 bg-gray-50 rounded text-sm">
                           <button 
                             onClick={() => handleCarrierClick(carrier.carrier)}
@@ -519,6 +508,10 @@ export function Dashboard() {
                           <Badge variant="secondary" className="text-xs">{carrier.count}건</Badge>
                         </div>
                       ))
+                    ) : (
+                      <div className="text-center py-4 text-gray-500 text-sm">
+                        통신사별 개통 데이터가 없습니다.
+                      </div>
                     )}
                   </div>
                 </div>
@@ -565,8 +558,8 @@ export function Dashboard() {
                           <Skeleton key={i} className="h-8 w-full" />
                         ))}
                       </div>
-                    ) : (
-                      (Array.isArray(workerStats) ? workerStats : []).map((worker: any, index: number) => (
+                    ) : workerStats && workerStats.length > 0 ? (
+                      workerStats.map((worker: any, index: number) => (
                         <div key={index} className="flex justify-between items-center p-2 bg-gray-50 rounded text-sm">
                           <button 
                             onClick={() => handleWorkerClick({ id: worker.workerId, name: worker.workerName })}
@@ -577,6 +570,10 @@ export function Dashboard() {
                           <Badge variant="secondary" className="text-xs">{worker.count}건</Badge>
                         </div>
                       ))
+                    ) : (
+                      <div className="text-center py-4 text-gray-500 text-sm">
+                        근무자별 개통 데이터가 없습니다.
+                      </div>
                     )}
                   </div>
                 </div>

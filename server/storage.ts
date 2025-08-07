@@ -1,6 +1,6 @@
 import bcrypt from 'bcrypt';
 import { nanoid } from 'nanoid';
-import { eq, and, desc, sql, or, like, gte, lte, lt, inArray, count, isNull, ne } from 'drizzle-orm';
+import { eq, and, desc, sql, or, like, gte, lte, lt, inArray, count, isNull, isNotNull, ne } from 'drizzle-orm';
 import { db } from './db';
 import { 
   admins, salesTeams, salesManagers, contactCodeMappings, contactCodes,
@@ -1900,8 +1900,56 @@ export class DatabaseStorage implements IStorage {
     }
   }
   
-  async getWorkerStats(): Promise<any[]> {
-    return [];
+  async getWorkerStats(startDate?: string, endDate?: string): Promise<any[]> {
+    try {
+      console.log('Get worker stats with dates:', startDate, endDate);
+      
+      let whereConditions = [
+        eq(documents.activationStatus, '개통'),
+        isNotNull(documents.activatedBy)
+      ];
+      
+      if (startDate && endDate) {
+        whereConditions.push(
+          and(
+            sql`date(activated_at) >= ${startDate}`,
+            sql`date(activated_at) <= ${endDate}`
+          )
+        );
+      } else if (startDate) {
+        whereConditions.push(sql`date(activated_at) >= ${startDate}`);
+      } else if (endDate) {
+        whereConditions.push(sql`date(activated_at) <= ${endDate}`);
+      }
+
+      const workerStats = await db.select({
+        workerId: documents.activatedBy,
+        count: sql`count(*)`
+      })
+        .from(documents)
+        .where(and(...whereConditions))
+        .groupBy(documents.activatedBy)
+        .orderBy(sql`count(*) DESC`);
+
+      // 근무자 이름 조회를 위해 각 workerId에 대해 이름 가져오기
+      const result = [];
+      for (const stat of workerStats) {
+        if (stat.workerId) {
+          const user = await this.getUserById(stat.workerId);
+          result.push({
+            workerId: stat.workerId,
+            workerName: user?.name || `사용자 ${stat.workerId}`,
+            count: parseInt(String(stat.count || 0))
+          });
+        }
+      }
+
+      console.log('Worker stats result:', result);
+      return result;
+    } catch (error) {
+      console.error('Get worker stats error:', error);
+      return [];
+    }
   }
 
   // 당월 개통현황 조회 (근무자별)
@@ -1963,8 +2011,45 @@ export class DatabaseStorage implements IStorage {
     }
   }
   
-  async getCarrierStats(): Promise<any[]> {
-    return [];
+  async getCarrierStats(startDate?: string, endDate?: string): Promise<any[]> {
+    try {
+      console.log('Get carrier stats with dates:', startDate, endDate);
+      
+      let whereConditions = [eq(documents.activationStatus, '개통')];
+      
+      if (startDate && endDate) {
+        whereConditions.push(
+          and(
+            sql`date(activated_at) >= ${startDate}`,
+            sql`date(activated_at) <= ${endDate}`
+          )
+        );
+      } else if (startDate) {
+        whereConditions.push(sql`date(activated_at) >= ${startDate}`);
+      } else if (endDate) {
+        whereConditions.push(sql`date(activated_at) <= ${endDate}`);
+      }
+
+      const carrierStats = await db.select({
+        carrier: documents.carrier,
+        count: sql`count(*)`
+      })
+        .from(documents)
+        .where(and(...whereConditions))
+        .groupBy(documents.carrier)
+        .orderBy(sql`count(*) DESC`);
+
+      const result = carrierStats.map(stat => ({
+        carrier: stat.carrier || '미분류',
+        count: parseInt(String(stat.count || 0))
+      }));
+
+      console.log('Carrier stats result:', result);
+      return result;
+    } catch (error) {
+      console.error('Get carrier stats error:', error);
+      return [];
+    }
   }
   
   async getActivePricingTables(): Promise<any[]> {
