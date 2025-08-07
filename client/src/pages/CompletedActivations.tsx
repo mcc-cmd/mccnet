@@ -299,7 +299,8 @@ export function CompletedActivations() {
                           </td>
                           <td className="px-3 py-2 text-sm text-gray-900">
                             <div className="leading-tight break-words max-w-full">
-                              {(doc as any).activatedByName || '관리자'}
+                              {(doc as any).activatedByName || 
+                               ((doc as any).activatedBy && (doc as any).activatedBy !== 2 ? '개통처리자' : '관리자')}
                             </div>
                           </td>
                           <td className="px-3 py-2 text-sm text-gray-900">
