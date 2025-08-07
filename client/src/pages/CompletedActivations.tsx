@@ -299,8 +299,24 @@ export function CompletedActivations() {
                           </td>
                           <td className="px-3 py-2 text-sm text-gray-900">
                             <div className="leading-tight break-words max-w-full">
-                              {(doc as any).activatedByName || 
-                               ((doc as any).activatedBy && (doc as any).activatedBy !== 2 ? '개통처리자' : '관리자')}
+                              {(() => {
+                                console.log('Document:', doc.id, 'activatedBy:', (doc as any).activatedBy, 'type:', typeof (doc as any).activatedBy);
+                                
+                                if ((doc as any).activatedByName) {
+                                  return (doc as any).activatedByName;
+                                }
+                                
+                                const activatedById = Number((doc as any).activatedBy);
+                                if (activatedById === 3) {
+                                  return '개통처리자';
+                                } else if (activatedById === 2) {
+                                  return '관리자';
+                                } else if (activatedById > 0) {
+                                  return '개통처리자';
+                                } else {
+                                  return '관리자';
+                                }
+                              })()}
                             </div>
                           </td>
                           <td className="px-3 py-2 text-sm text-gray-900">
