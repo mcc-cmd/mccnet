@@ -1235,11 +1235,17 @@ router.get('/api/documents', requireAuth, async (req: any, res) => {
         }
       }
       
-      return {
+      const result = {
         ...doc,
-        storeName: storeName || doc.contactCode || '-',
-        ...(activatedByName && { activatedByName })
+        storeName: storeName || doc.contactCode || '-'
       };
+      
+      if (activatedByName) {
+        result.activatedByName = activatedByName;
+        console.log('Added activatedByName to document:', doc.id, 'name:', activatedByName);
+      }
+      
+      return result;
     }));
     
     console.log('Documents found:', documentsWithStoreNames.length);
