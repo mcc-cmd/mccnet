@@ -1149,8 +1149,8 @@ router.get('/api/dashboard/today-stats', requireAuth, async (req: any, res) => {
 
 router.get('/api/documents', requireAuth, async (req: any, res) => {
   try {
-    const { status, activationStatus, search, startDate, endDate, carrier } = req.query;
-    console.log('Documents API request:', { status, activationStatus, search, startDate, endDate, carrier });
+    const { status, activationStatus, search, startDate, endDate, carrier, allWorkers } = req.query;
+    console.log('Documents API request:', { status, activationStatus, search, startDate, endDate, carrier, allWorkers });
     console.log('Session data:', { 
       userId: req.session.userId, 
       dealerId: req.session.dealerId, 
@@ -1178,14 +1178,19 @@ router.get('/api/documents', requireAuth, async (req: any, res) => {
     if (isAdmin) {
       dealerId = undefined; // 관리자는 모든 문서를 볼 수 있음
     } else if (isWorker) {
-      dealerId = undefined; // 근무자도 모든 문서를 볼 수 있지만
-      // 당월 개통현황에서는 자신이 처리한 문서만 표시하기 위해 workerId 설정
-      if (decodedActivationStatus && decodedActivationStatus.includes('개통')) {
-        workerId = req.session.userId;
+      // allWorkers=true인 경우 (접수 관리에서 호출) 모든 서류를 볼 수 있도록 함
+      if (allWorkers === 'true') {
+        dealerId = undefined; // 모든 서류 조회 가능
+      } else {
+        dealerId = undefined; // 근무자도 모든 문서를 볼 수 있지만
+        // 당월 개통현황에서는 자신이 처리한 문서만 표시하기 위해 workerId 설정
+        if (decodedActivationStatus && decodedActivationStatus.includes('개통')) {
+          workerId = req.session.userId;
+        }
       }
     }
     
-    console.log('Final dealerId for query:', dealerId, 'isAdmin:', isAdmin, 'isWorker:', isWorker);
+    console.log('Final dealerId for query:', dealerId, 'isAdmin:', isAdmin, 'isWorker:', isWorker, 'allWorkers:', allWorkers);
     
     const documents = await storage.getDocuments({
       status: status as string,
