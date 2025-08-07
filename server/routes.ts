@@ -1220,6 +1220,8 @@ router.get('/api/documents', requireAuth, async (req: any, res) => {
       }
       
       let activatedByName = null;
+      console.log('Document:', doc.id, 'activatedBy:', doc.activatedBy, 'includeActivatedBy:', includeActivatedBy);
+      
       // includeActivatedBy가 true이고 activatedBy가 있는 경우 개통처리자 이름 조회
       if (includeActivatedBy === 'true' && doc.activatedBy) {
         try {
@@ -1233,6 +1235,8 @@ router.get('/api/documents', requireAuth, async (req: any, res) => {
         } catch (e) {
           console.error('User lookup failed for activatedBy:', doc.activatedBy, e);
         }
+      } else {
+        console.log('Skipping user lookup - includeActivatedBy:', includeActivatedBy, 'activatedBy:', doc.activatedBy);
       }
       
       const result = {
