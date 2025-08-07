@@ -213,15 +213,15 @@ export function Dashboard() {
                       ) : (
                         <>
                           <div className="text-2xl font-bold text-blue-600">
-                            {stats?.todaySubmissions || 0}
+                            {(stats as any)?.todaySubmissions || 0}
                           </div>
                           <div className="text-sm text-blue-600 mt-1">건</div>
                           
                           {/* 폐기/취소 세부사항 */}
-                          {stats?.todayDiscarded > 0 && (
+                          {(stats as any)?.todayDiscarded > 0 && (
                             <div className="mt-3 p-2 rounded bg-red-100 border border-red-200">
                               <div className="text-sm font-medium text-red-700">
-                                폐기/취소: {stats.todayDiscarded}건
+                                폐기/취소: {(stats as any).todayDiscarded}건
                               </div>
                               <div className="text-xs text-red-600 mt-1">
                                 당일 접수 후 처리된 건수
@@ -248,7 +248,7 @@ export function Dashboard() {
                       ) : (
                         <>
                           <div className="text-2xl font-bold text-green-600">
-                            {stats?.todayCompletions?.total || 0}
+                            {(stats as any)?.todayCompletions?.total || 0}
                           </div>
                           <div className="text-sm text-green-600 mt-1">건</div>
                           
@@ -256,12 +256,12 @@ export function Dashboard() {
                           <div className="mt-3 grid grid-cols-2 gap-2">
                             <div className="p-2 rounded bg-green-100 border border-green-200">
                               <div className="text-sm font-medium text-green-700">
-                                신규: {stats?.todayCompletions?.new || 0}건
+                                신규: {(stats as any)?.todayCompletions?.new || 0}건
                               </div>
                             </div>
                             <div className="p-2 rounded bg-blue-100 border border-blue-200">
                               <div className="text-sm font-medium text-blue-700">
-                                번호이동: {stats?.todayCompletions?.portIn || 0}건
+                                번호이동: {(stats as any)?.todayCompletions?.portIn || 0}건
                               </div>
                             </div>
                           </div>
@@ -290,14 +290,20 @@ export function Dashboard() {
               </div>
 
               {/* 당월 통신사별 개통 현황 */}
-              {monthlyActivationStats && monthlyActivationStats.length > 0 && (
-                <div className="mt-6">
-                  <h4 className="text-sm font-medium text-gray-900 mb-3">
-                    당월 개통현황 ({format(new Date(), 'MM월', { locale: ko })})
-                    {user?.userRole === 'dealer_worker' && (
-                      <span className="text-xs text-blue-600 ml-2">(내가 처리한 건만)</span>
-                    )}
-                  </h4>
+              <div className="mt-6">
+                <h4 className="text-sm font-medium text-gray-900 mb-3">
+                  당월 개통현황 ({format(new Date(), 'MM월', { locale: ko })})
+                  {user?.role === 'dealer_worker' && (
+                    <span className="text-xs text-blue-600 ml-2">(내가 처리한 건만)</span>
+                  )}
+                </h4>
+                {monthlyStatsLoading ? (
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 xl:grid-cols-7 gap-3">
+                    {[1, 2, 3, 4, 5].map((i) => (
+                      <Skeleton key={i} className="h-16 w-full" />
+                    ))}
+                  </div>
+                ) : monthlyActivationStats && monthlyActivationStats.length > 0 ? (
                   <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 xl:grid-cols-7 gap-3">
                     {monthlyActivationStats.map((stat, index) => (
                       <div 
@@ -311,8 +317,12 @@ export function Dashboard() {
                       </div>
                     ))}
                   </div>
-                </div>
-              )}
+                ) : (
+                  <div className="text-center py-8 text-gray-500">
+                    <p>이번 달 개통 실적이 없습니다.</p>
+                  </div>
+                )}
+              </div>
 
               {/* 통신사별 개통 현황 (기존 당일 현황은 숨김 처리) */}
               {/* 당일 개통 현황은 위의 "당일 개통건"에서 이미 표시되므로 별도 섹션 제거 */}
