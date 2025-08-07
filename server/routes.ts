@@ -1147,6 +1147,20 @@ router.get('/api/dashboard/today-stats', requireAuth, async (req: any, res) => {
   }
 });
 
+// 당월 개통현황 API
+router.get('/api/dashboard/monthly-activation-stats', requireAuth, async (req: any, res) => {
+  try {
+    // 근무자인 경우 해당 근무자의 ID를 전달
+    const workerId = req.session.userRole === 'dealer_worker' ? req.session.userId : undefined;
+    const stats = await storage.getMonthlyActivationStats(workerId);
+    
+    res.json(stats);
+  } catch (error: any) {
+    console.error('Monthly activation stats error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 router.get('/api/documents', requireAuth, async (req: any, res) => {
   try {
     const { status, activationStatus, search, startDate, endDate, carrier, allWorkers, includeActivatedBy } = req.query;

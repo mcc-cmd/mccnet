@@ -72,7 +72,11 @@ export function Dashboard() {
     },
   });
 
-  // 당월 개통 현황 통계 (자동으로 현재 월 데이터 조회)
+  // 당월 개통 현황 통계 (자동으로 현재 월 데이터 조회, 근무자는 자신이 처리한 건만)
+  const { data: monthlyActivationStats, isLoading: monthlyStatsLoading } = useQuery({
+    queryKey: ['/api/dashboard/monthly-activation-stats'],
+    queryFn: () => apiRequest('/api/dashboard/monthly-activation-stats') as Promise<Array<{ carrier: string; count: number }>>,
+  });
   const { data: carrierStats, isLoading: carrierStatsLoading } = useQuery({
     queryKey: ['/api/dashboard/carrier-stats'],
     queryFn: () => apiRequest('/api/dashboard/carrier-stats') as Promise<any[]>,
@@ -285,12 +289,17 @@ export function Dashboard() {
                 </div>
               </div>
 
-              {/* 통신사별 개통 현황 */}
-              {todayStats?.carrierStats && todayStats.carrierStats.length > 0 && (
+              {/* 당월 통신사별 개통 현황 */}
+              {monthlyActivationStats && monthlyActivationStats.length > 0 && (
                 <div className="mt-6">
-                  <h4 className="text-sm font-medium text-gray-900 mb-3">당일 통신사별 개통 현황</h4>
-                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 xl:grid-cols-8 gap-3">
-                    {todayStats.carrierStats.map((stat, index) => (
+                  <h4 className="text-sm font-medium text-gray-900 mb-3">
+                    당월 개통현황 ({format(new Date(), 'MM월', { locale: ko })})
+                    {user?.userRole === 'dealer_worker' && (
+                      <span className="text-xs text-blue-600 ml-2">(내가 처리한 건만)</span>
+                    )}
+                  </h4>
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 xl:grid-cols-7 gap-3">
+                    {monthlyActivationStats.map((stat, index) => (
                       <div 
                         key={stat.carrier} 
                         className="bg-white border rounded-lg p-3 text-center hover:shadow-sm transition-shadow"
@@ -304,6 +313,9 @@ export function Dashboard() {
                   </div>
                 </div>
               )}
+
+              {/* 통신사별 개통 현황 (기존 당일 현황은 숨김 처리) */}
+              {/* 당일 개통 현황은 위의 "당일 개통건"에서 이미 표시되므로 별도 섹션 제거 */}
 
               {/* 추가 정보 */}
               <div className="mt-6 p-4 bg-gray-50 rounded-lg border">

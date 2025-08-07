@@ -1802,12 +1802,12 @@ export class DatabaseStorage implements IStorage {
       const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD 형식
       console.log('Today stats for date:', today, 'workerId:', workerId);
 
-      // 당일 접수 건수 - 전체 (근무자별 필터링 없음)
+      // 당일 접수 건수 - 항상 전체 수량 표시 (근무자별 필터링 없음)
       const todaySubmissions = await db.select({ count: sql`count(*)` })
         .from(documents)
         .where(sql`date(uploaded_at) = ${today}`);
 
-      // 당일 개통 완료 건수 - 근무자별 필터링
+      // 당일 개통 완료 건수 - 근무자는 자신이 처리한 건만, 관리자는 전체
       let todayCompletions;
       if (workerId) {
         todayCompletions = await db.select({ count: sql`count(*)` })
@@ -1830,15 +1830,28 @@ export class DatabaseStorage implements IStorage {
           );
       }
 
-      // 기타완료 건수
-      const todayOtherCompleted = await db.select({ count: sql`count(*)` })
-        .from(documents)
-        .where(
-          and(
-            sql`date(activated_at) = ${today}`,
-            eq(documents.activationStatus, '기타완료')
-          )
-        );
+      // 기타완료 건수 - 근무자는 자신이 처리한 건만, 관리자는 전체
+      let todayOtherCompleted;
+      if (workerId) {
+        todayOtherCompleted = await db.select({ count: sql`count(*)` })
+          .from(documents)
+          .where(
+            and(
+              sql`date(activated_at) = ${today}`,
+              eq(documents.activationStatus, '기타완료'),
+              eq(documents.activatedBy, workerId)
+            )
+          );
+      } else {
+        todayOtherCompleted = await db.select({ count: sql`count(*)` })
+          .from(documents)
+          .where(
+            and(
+              sql`date(activated_at) = ${today}`,
+              eq(documents.activationStatus, '기타완료')
+            )
+          );
+      }
 
       // 당일 정산 금액 (근무자별 필터링)
       let todayRevenue;
@@ -1889,6 +1902,65 @@ export class DatabaseStorage implements IStorage {
   
   async getWorkerStats(): Promise<any[]> {
     return [];
+  }
+
+  // 당월 개통현황 조회 (근무자별)
+  async getMonthlyActivationStats(workerId?: number): Promise<any> {
+    try {
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = now.getMonth() + 1;
+      const monthStart = `${year}-${month.toString().padStart(2, '0')}-01`;
+      
+      console.log('Monthly activation stats for:', monthStart, 'workerId:', workerId);
+
+      // 월별 통신사별 개통 현황
+      let carrierStats;
+      if (workerId) {
+        // 근무자: 자신이 처리한 건만 조회
+        carrierStats = await db.select({
+          carrier: documents.carrier,
+          count: sql`count(*)`
+        })
+          .from(documents)
+          .where(
+            and(
+              sql`date(activated_at) >= ${monthStart}`,
+              sql`date(activated_at) < date(${monthStart}, '+1 month')`,
+              eq(documents.activationStatus, '개통'),
+              eq(documents.activatedBy, workerId)
+            )
+          )
+          .groupBy(documents.carrier);
+      } else {
+        // 관리자: 전체 조회
+        carrierStats = await db.select({
+          carrier: documents.carrier,
+          count: sql`count(*)`
+        })
+          .from(documents)
+          .where(
+            and(
+              sql`date(activated_at) >= ${monthStart}`,
+              sql`date(activated_at) < date(${monthStart}, '+1 month')`,
+              eq(documents.activationStatus, '개통')
+            )
+          )
+          .groupBy(documents.carrier);
+      }
+
+      // 결과를 배열로 변환하고 카운트를 숫자로 변환
+      const result = carrierStats.map(stat => ({
+        carrier: stat.carrier || '미분류',
+        count: parseInt(String(stat.count || 0))
+      }));
+
+      console.log('Monthly activation stats result:', result);
+      return result;
+    } catch (error) {
+      console.error('Get monthly activation stats error:', error);
+      return [];
+    }
   }
   
   async getCarrierStats(): Promise<any[]> {
