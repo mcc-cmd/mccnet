@@ -119,7 +119,6 @@ const CARRIERS = [
 function CarrierManagement() {
   const [carrierDialogOpen, setCarrierDialogOpen] = useState(false);
   const [editingCarrier, setEditingCarrier] = useState<Carrier | null>(null);
-  const [formKey, setFormKey] = useState(0);
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
@@ -292,6 +291,7 @@ function CarrierManagement() {
   };
 
   const handleEditCarrier = (carrier: Carrier) => {
+    console.log('Editing carrier:', carrier); // 디버깅용
     setEditingCarrier(carrier);
     
     // 폼을 기존 값으로 리셋 (정수 값을 Boolean으로 변환)
@@ -317,8 +317,15 @@ function CarrierManagement() {
       requireDesiredNumber: Boolean(carrier.requireDesiredNumber)
     };
     
-    carrierForm.reset(editValues);
-    setFormKey(prev => prev + 1); // 폼 컴포넌트 재렌더링 강제
+    console.log('Setting form values:', editValues); // 디버깅용
+    
+    // 각 필드에 직접 값 설정
+    setTimeout(() => {
+      Object.entries(editValues).forEach(([key, value]) => {
+        carrierForm.setValue(key as any, value);
+      });
+    }, 100);
+    
     setCarrierDialogOpen(true);
   };
 
@@ -342,11 +349,13 @@ function CarrierManagement() {
       requirePreviousCarrier: false,
       requireDocumentUpload: false,
       requireBundleNumber: false,
-      requireBundleCarrier: false
+      requireBundleCarrier: false,
+      allowNewCustomer: true,
+      allowPortIn: true,
+      requireDesiredNumber: false
     };
     
     carrierForm.reset(defaultValues);
-    setFormKey(prev => prev + 1); // 폼 컴포넌트 재렌더링 강제
     setCarrierDialogOpen(true);
   };
 
@@ -514,12 +523,8 @@ function CarrierManagement() {
     }
   };
 
-  // 대화상자가 닫힐 때 상태 정리
-  React.useEffect(() => {
-    if (!carrierDialogOpen) {
-      setEditingCarrier(null);
-    }
-  }, [carrierDialogOpen]);
+  // 대화상자가 닫힐 때 상태 정리 - 자동 초기화 제거
+  // React.useEffect가 폼 데이터를 자동으로 초기화하는 문제를 방지하기 위해 제거
 
   return (
     <Card>
@@ -612,7 +617,7 @@ function CarrierManagement() {
                 {editingCarrier ? '통신사 수정' : '새 통신사 추가'}
               </DialogTitle>
             </DialogHeader>
-            <Form {...carrierForm} key={`carrier-form-${formKey}`}>
+            <Form {...carrierForm}>
               <form onSubmit={carrierForm.handleSubmit(handleCreateOrUpdate)} className="space-y-4">
                 <FormField
                   control={carrierForm.control}
@@ -637,8 +642,12 @@ function CarrierManagement() {
                         <Input
                           type="number"
                           placeholder="정렬 순서를 입력하세요"
+                          {...field}
                           value={field.value?.toString() || ''}
-                          onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                          onChange={(e) => {
+                            const value = e.target.value;
+                            field.onChange(value === '' ? 0 : parseInt(value) || 0);
+                          }}
                         />
                       </FormControl>
                       <FormMessage />
