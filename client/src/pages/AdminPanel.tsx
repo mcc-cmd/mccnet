@@ -127,12 +127,12 @@ function CarrierManagement() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
-  // 통신사 목록 조회
+  // 통신사 목록 조회 (활성화/비활성화 모두 표시 - 관리 목적)
   const { data: carriers = [], isLoading: carriersLoading } = useQuery({
     queryKey: ['/api/carriers'],
     queryFn: () => apiRequest('/api/carriers'),
-    staleTime: 0, // 항상 최신 데이터를 가져오도록 설정
-    refetchOnWindowFocus: true // 창 포커스 시 새로고침
+    staleTime: 1 * 60 * 1000, // 1분간 캐시 유지
+    refetchOnWindowFocus: false // 창 포커스 시 새로고침 비활성화
   });
 
   // 통신사 생성/수정 폼 - 동적 기본값 설정
@@ -203,7 +203,8 @@ function CarrierManagement() {
       
       setCarrierDialogOpen(false);
       setEditingCarrier(null);
-      carrierForm.reset();
+      // 폼 리셋시 기본값으로 리셋 (활성화 설정 유지)
+      carrierForm.reset(getDefaultValues());
       toast({
         title: "통신사 추가",
         description: "새 통신사가 성공적으로 추가되었습니다."
@@ -235,7 +236,8 @@ function CarrierManagement() {
       if (carrierDialogOpen) {
         setCarrierDialogOpen(false);
         setEditingCarrier(null);
-        carrierForm.reset();
+        // 폼 리셋시 기본값으로 리셋 (활성화 설정 유지)
+        carrierForm.reset(getDefaultValues());
         toast({
           title: "통신사 수정",
           description: "통신사가 성공적으로 수정되었습니다."

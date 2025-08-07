@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
-import { Upload, Loader2, FileText, Phone, User, AlertTriangle } from 'lucide-react';
+import { Upload, Loader2, FileText, Phone, User, AlertTriangle, Search, ChevronDown } from 'lucide-react';
 import { Carrier } from '@shared/schema';
 
 export function SubmitApplication() {
@@ -88,20 +88,31 @@ export function SubmitApplication() {
   const [duplicateData, setDuplicateData] = useState<any[]>([]);
   const [isCheckingDuplicate, setIsCheckingDuplicate] = useState(false);
   
-  // 통신사 목록을 데이터베이스에서 가져오기
-  const { data: carriers = [], isLoading: carriersLoading } = useQuery<Carrier[]>({
+  // 활성화된 통신사 목록만 가져오기
+  const { data: allCarriers = [], isLoading: carriersLoading } = useQuery<Carrier[]>({
     queryKey: ['/api/carriers'],
     queryFn: () => apiRequest('/api/carriers'),
     staleTime: 5 * 60 * 1000, // 5분간 캐시 유지
     refetchOnWindowFocus: false // 창 포커스 시 새로고침 비활성화 - 사용자 입력 보호
   });
+
+  // 활성화된 통신사만 필터링
+  const carriers = allCarriers.filter(carrier => carrier.isActive);
+
+  // 통신사 검색 상태
+  const [carrierSearchTerm, setCarrierSearchTerm] = useState('');
+  
+  // 검색된 통신사 목록
+  const filteredCarriers = carriers.filter(carrier => 
+    carrier.name.toLowerCase().includes(carrierSearchTerm.toLowerCase())
+  );
   
   // 이전통신사 목록
   const previousCarriers = [
     'SK', 'KT', 'LG', 'SK알뜰', 'KT알뜰', 'LG알뜰'
   ];
   
-  // 선택된 통신사의 정보 가져오기 (Boolean 값 변환)
+  // 선택된 통신사의 정보 가져오기 (Boolean 값 변환) - 활성화된 통신사에서만 검색
   const selectedCarrier = carriers.find(c => c.name === formData.carrier);
   const carrierSettings = selectedCarrier ? {
     ...selectedCarrier,
@@ -445,38 +456,74 @@ export function SubmitApplication() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="carrier">통신사 *</Label>
-                    <Select value={formData.carrier} onValueChange={(value) => {
-                      setFormData(prev => {
-                        const newData = { ...prev, carrier: value };
-                        // 기타 통신사 선택 시 접점코드를 판매점명으로 설정
-                        if (value.includes('기타') && newData.contactCode.trim()) {
-                          newData.storeName = newData.contactCode;
-                        } else if (!value.includes('기타')) {
-                          // 기타가 아닌 통신사 선택 시 기존 로직대로 처리
-                          if (newData.contactCode.trim()) {
-                            // 접점코드가 있으면 자동 조회 시도
-                            handleContactCodeChange(newData.contactCode);
-                          }
-                        }
-                        return newData;
-                      });
-                    }}>
-                      <SelectTrigger className="mt-1">
-                        <SelectValue placeholder="통신사를 선택하세요" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {carriersLoading ? (
-                          <SelectItem value="loading" disabled>로딩 중...</SelectItem>
-                        ) : (
-                          carriers.map((carrier) => (
-                            <SelectItem key={carrier.id} value={carrier.name}>
-                              {carrier.name}
-                              {Boolean(carrier.requireDocumentUpload) && " (서류 필수)"}
+                    <div className="relative mt-1">
+                      <Select 
+                        value={formData.carrier} 
+                        onValueChange={(value) => {
+                          setFormData(prev => {
+                            const newData = { ...prev, carrier: value };
+                            // 기타 통신사 선택 시 접점코드를 판매점명으로 설정
+                            if (value.includes('기타') && newData.contactCode.trim()) {
+                              newData.storeName = newData.contactCode;
+                            } else if (!value.includes('기타')) {
+                              // 기타가 아닌 통신사 선택 시 기존 로직대로 처리
+                              if (newData.contactCode.trim()) {
+                                // 접점코드가 있으면 자동 조회 시도
+                                handleContactCodeChange(newData.contactCode);
+                              }
+                            }
+                            return newData;
+                          });
+                          setCarrierSearchTerm(''); // 선택 후 검색어 초기화
+                        }}
+                      >
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="통신사를 선택하세요" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {/* 검색 입력 필드 */}
+                          <div className="flex items-center px-3 py-2 border-b">
+                            <Search className="h-4 w-4 text-gray-400 mr-2" />
+                            <Input
+                              placeholder="통신사 검색..."
+                              value={carrierSearchTerm}
+                              onChange={(e) => setCarrierSearchTerm(e.target.value)}
+                              className="border-0 focus:ring-0 p-0 h-auto"
+                              onClick={(e) => e.stopPropagation()}
+                            />
+                          </div>
+                          
+                          {carriersLoading ? (
+                            <SelectItem value="loading" disabled>
+                              <div className="flex items-center">
+                                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                                로딩 중...
+                              </div>
                             </SelectItem>
-                          ))
-                        )}
-                      </SelectContent>
-                    </Select>
+                          ) : filteredCarriers.length > 0 ? (
+                            filteredCarriers.map((carrier) => (
+                              <SelectItem key={carrier.id} value={carrier.name}>
+                                <div className="flex items-center justify-between w-full">
+                                  <span>{carrier.name}</span>
+                                  <div className="flex items-center space-x-1 text-xs text-gray-500">
+                                    {Boolean(carrier.requireDocumentUpload) && (
+                                      <span className="px-1 py-0.5 bg-red-100 text-red-600 rounded">서류필수</span>
+                                    )}
+                                    {Boolean(carrier.isWired) && (
+                                      <span className="px-1 py-0.5 bg-blue-100 text-blue-600 rounded">유선</span>
+                                    )}
+                                  </div>
+                                </div>
+                              </SelectItem>
+                            ))
+                          ) : (
+                            <div className="px-3 py-2 text-sm text-gray-500">
+                              {carrierSearchTerm ? '검색 결과가 없습니다.' : '활성화된 통신사가 없습니다.'}
+                            </div>
+                          )}
+                        </SelectContent>
+                      </Select>
+                    </div>
                     {carrierSettings?.requireDocumentUpload && (
                       <Alert className="mt-2">
                         <AlertDescription>
