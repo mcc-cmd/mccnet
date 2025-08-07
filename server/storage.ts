@@ -1359,6 +1359,9 @@ export class DatabaseStorage implements IStorage {
         deviceModel: doc.deviceModel,
         simNumber: doc.simNumber,
         settlementAmount: doc.settlementAmount,
+        activatedBy: doc.activatedBy,
+        cancelledBy: doc.cancelledBy,
+        assignedAt: doc.assignedAt,
         dealerName: '미확인',
         servicePlanName: null
       }));
