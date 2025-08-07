@@ -54,7 +54,10 @@ CREATE TABLE IF NOT EXISTS admins (
     password TEXT NOT NULL,
     userType TEXT NOT NULL DEFAULT 'admin',
     role TEXT DEFAULT 'admin',
-    created_at TEXT DEFAULT CURRENT_TIMESTAMP
+    is_active INTEGER DEFAULT 1,
+    can_change_password INTEGER DEFAULT 1,
+    created_at TEXT DEFAULT (datetime('now')),
+    updated_at TEXT DEFAULT (datetime('now'))
 );
 
 -- 사용자 테이블
@@ -66,7 +69,10 @@ CREATE TABLE IF NOT EXISTS users (
     userType TEXT NOT NULL DEFAULT 'user',
     role TEXT DEFAULT 'worker',
     team TEXT,
-    created_at TEXT DEFAULT CURRENT_TIMESTAMP
+    is_active INTEGER DEFAULT 1,
+    can_change_password INTEGER DEFAULT 1,
+    created_at TEXT DEFAULT (datetime('now')),
+    updated_at TEXT DEFAULT (datetime('now'))
 );
 
 -- 딜러 테이블
