@@ -50,6 +50,13 @@ export function CompletedActivations() {
     },
   });
 
+  // 사용자 목록 조회 (개통처리자 이름 표시용)
+  const { data: users = [] } = useQuery({
+    queryKey: ['/api/admin/users'],
+    queryFn: () => apiRequest('/api/admin/users'),
+    staleTime: 5 * 60 * 1000, // 5분간 캐시
+  });
+
   // 개통취소 mutation
   const cancelActivationMutation = useMutation({
     mutationFn: (documentId: number) => {
@@ -299,10 +306,19 @@ export function CompletedActivations() {
                           </td>
                           <td className="px-3 py-2 text-sm text-gray-900">
                             <div className="leading-tight break-words max-w-full">
-                              {(doc as any).activatedByName || 
-                               ((doc as any).activatedBy === 3 ? '개통처리자' : 
-                                (doc as any).activatedBy === 2 ? '관리자' : 
-                                (doc as any).activatedBy ? '개통처리자' : '관리자')}
+                              {(() => {
+                                const activatedBy = (doc as any).activatedBy;
+                                if ((doc as any).activatedByName) {
+                                  return (doc as any).activatedByName;
+                                }
+                                if (activatedBy && users.length > 0) {
+                                  const userWhoActivated = users.find((u: any) => u.id === activatedBy);
+                                  if (userWhoActivated) {
+                                    return userWhoActivated.name || userWhoActivated.username;
+                                  }
+                                }
+                                return activatedBy ? '개통처리자' : '관리자';
+                              })()}
                             </div>
                           </td>
                           <td className="px-3 py-2 text-sm text-gray-900">
