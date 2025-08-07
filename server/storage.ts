@@ -2223,6 +2223,7 @@ export class DatabaseStorage implements IStorage {
         documentNumber: documentNumber,
         customerName: data.customerName,
         customerPhone: data.customerPhone,
+        phoneNumber: data.customerPhone, // 두 컬럼 모두 설정
         customerEmail: data.customerEmail || null,
         contactCode: data.contactCode || null,
         storeName: data.storeName || null,
