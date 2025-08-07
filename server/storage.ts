@@ -488,6 +488,42 @@ export class DatabaseStorage implements IStorage {
     sessionStore.delete(sessionId);
   }
 
+  // 사용자 정보 조회 메서드 (개통처리자 이름 조회용)
+  async getUserById(userId: number): Promise<{ id: number; name: string; username: string; userType: string } | null> {
+    try {
+      // 먼저 관리자 테이블에서 조회
+      const [admin] = await db.select({
+        id: admins.id,
+        name: admins.name,
+        username: admins.username,
+        userType: sql<string>`'admin'`.as('userType')
+      })
+      .from(admins)
+      .where(eq(admins.id, userId))
+      .limit(1);
+
+      if (admin) {
+        return admin;
+      }
+
+      // 일반 사용자 테이블에서 조회
+      const [user] = await db.select({
+        id: users.id,
+        name: users.name,
+        username: users.username,
+        userType: sql<string>`'user'`.as('userType')
+      })
+      .from(users)
+      .where(eq(users.id, userId))
+      .limit(1);
+
+      return user || null;
+    } catch (error) {
+      console.error('getUserById error:', error);
+      return null;
+    }
+  }
+
   // 비밀번호 변경 메서드들
   async updateAdminPassword(adminId: number, newPassword: string): Promise<void> {
     const hashedPassword = await bcrypt.hash(newPassword, 10);
