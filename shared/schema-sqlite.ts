@@ -129,7 +129,7 @@ export const carriers = sqliteTable("carriers", {
 // 문서 테이블 - 실제 데이터베이스 구조에 맞춤
 export const documents = sqliteTable("documents", {
   id: integer("id").primaryKey({ autoIncrement: true }),
-  dealerId: integer("dealer_id"),
+  dealerId: integer("dealer_id").notNull(),
   customerName: text("customer_name").notNull(),
   customerType: text("customer_type").notNull(),
   customerPhone: text("customer_phone").notNull(),

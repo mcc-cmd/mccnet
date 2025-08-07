@@ -2218,7 +2218,7 @@ export class DatabaseStorage implements IStorage {
 
       // 데이터베이스에 문서 삽입
       const [document] = await db.insert(documents).values({
-        dealerId: data.dealerId || null,
+        dealerId: data.dealerId || 1, // 기본 딜러 ID
         userId: data.userId,
         customerName: data.customerName,
         customerPhone: data.customerPhone,
