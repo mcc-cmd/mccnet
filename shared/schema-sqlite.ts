@@ -293,3 +293,15 @@ export type ServicePlan = typeof servicePlans.$inferSelect;
 export type AdditionalService = typeof additionalServices.$inferSelect;
 export type SettlementUnitPrice = typeof settlementUnitPrices.$inferSelect;
 export type ContactCode = typeof contactCodes.$inferSelect;
+
+// 인증 세션 인터페이스
+export interface AuthSession {
+  id: string;
+  userId: number;
+  userType: 'admin' | 'user' | 'sales_manager';
+  userRole?: string;
+  dealerId?: number;
+  managerId?: number;
+  teamId?: number;
+  expiresAt: Date;
+}

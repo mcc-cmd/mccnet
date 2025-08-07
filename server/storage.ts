@@ -453,7 +453,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   // 세션 관리 메서드
-  async createSession(userId: number, userType: 'admin' | 'sales_manager', managerId?: number, teamId?: number): Promise<string> {
+  async createSession(userId: number, userType: 'admin' | 'sales_manager' | 'user', managerId?: number, teamId?: number, userRole?: string): Promise<string> {
     const sessionId = nanoid();
     const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24시간 후 만료
     
@@ -461,6 +461,7 @@ export class DatabaseStorage implements IStorage {
       id: sessionId,
       userId,
       userType,
+      userRole,
       managerId,
       teamId,
       expiresAt
@@ -651,7 +652,12 @@ export class DatabaseStorage implements IStorage {
     const workers = Array.from(workerStore.values());
     const worker = workers.find(w => w.username === username);
     if (worker && await bcrypt.compare(password, worker.password)) {
-      return { id: worker.id, userType: 'worker' };
+      return { 
+        id: worker.id, 
+        userType: 'user',
+        userRole: 'dealer_worker',
+        name: worker.name
+      };
     }
 
     return null;

@@ -252,8 +252,14 @@ router.post('/api/auth/login', async (req, res) => {
     console.log('User auth result:', userResult ? 'success' : 'failed');
     
     if (userResult) {
-      const sessionId = await storage.createSession(userResult.id, userResult.userType || 'user');
-      console.log('User session created:', sessionId, 'Type:', userResult.userType);
+      const sessionId = await storage.createSession(
+        userResult.id, 
+        userResult.userType || 'user',
+        undefined,
+        undefined,
+        userResult.userRole
+      );
+      console.log('User session created:', sessionId, 'Type:', userResult.userType, 'Role:', userResult.userRole);
       
       const response: AuthResponse = {
         success: true,
