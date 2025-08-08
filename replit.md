@@ -4,6 +4,14 @@
 This project is a document management system for MCC네트월드 telecommunications dealers. Its main purpose is to streamline the handling of customer reception documents, offering capabilities such as role-based authentication, secure file uploads, comprehensive document tracking, and administrative functionalities. The system aims to enhance efficiency in managing customer activations and related processes.
 
 ## Recent Changes (January 2025)
+- **2025-01-08**: Successfully fixed critical dashboard statistics display and data attribution issues
+  - RESOLVED: Database ID conflicts where same ID (3) existed across admins, users, and sales_managers tables
+  - FIXED: Data attribution corrections - updated activated_by_name fields from incorrect "이다엘" to correct "L)수정"
+  - ENHANCED: Modified getWorkerStats function to prioritize activated_by_name field over ID lookups
+  - COMPLETED: Backend API improvements for today-stats to return proper carrier statistics
+  - VERIFIED: Frontend Dashboard component now correctly displays carrier quantities (신규: 7건, 번호이동: 6건)
+  - FIXED: Changed carrier.count to carrier.total in Dashboard.tsx for proper statistics display
+  - CONFIRMED: All statistics sections now show accurate real-time data with proper role-based filtering
 - **2025-01-08**: Successfully fixed critical role-based data access control for sales managers
   - RESOLVED: Sales manager authentication and session management fully working
   - FIXED: Password hash for jsw_manager account (password: 123456)
