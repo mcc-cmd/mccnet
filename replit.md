@@ -4,6 +4,14 @@
 This project is a document management system for MCC네트월드 telecommunications dealers. Its main purpose is to streamline the handling of customer reception documents, offering capabilities such as role-based authentication, secure file uploads, comprehensive document tracking, and administrative functionalities. The system aims to enhance efficiency in managing customer activations and related processes.
 
 ## Recent Changes (January 2025)
+- **2025-01-08**: Integrated Real Sales POS (실판매POS) field across contact code management system
+  - Added realSalesPOS column to contact_codes table in SQLite database
+  - Enhanced AdminPanel contact code management interface with realSalesPOS input/display fields
+  - Updated Excel upload functionality to recognize and process realSalesPOS column data
+  - Added realSalesPOS display column to settlements page for better tracking
+  - Modified backend API routes to handle realSalesPOS field in contact code creation and updates
+  - Fixed settlement unit price effective date issue causing 2만원 pricing to not display correctly
+  - Confirmed proper settlement amount calculations with updated effective dates
 - **2025-01-08**: Fixed admin dashboard statistics display issues
   - Implemented getCarrierStats and getWorkerStats functions with real database queries
   - Added date filtering functionality for carrier and worker statistics
