@@ -3387,7 +3387,7 @@ router.post('/api/contact-codes/upload-excel', contactCodeUpload.single('file'),
           continue;
         }
 
-        // 영업과장 정보 매핑
+        // 영업과장 정보 매핑 (선택사항)
         let salesManagerId = null;
         if (salesManagerName && String(salesManagerName).trim()) {
           const managerName = String(salesManagerName).trim();
@@ -3396,9 +3396,8 @@ router.post('/api/contact-codes/upload-excel', contactCodeUpload.single('file'),
             salesManagerId = salesManager.id;
             console.log(`Found sales manager: ${managerName} (ID: ${salesManagerId})`);
           } else {
-            const errorMsg = `${i + 2}행: 영업과장 '${managerName}'을 찾을 수 없습니다.`;
-            console.log(errorMsg);
-            errors.push(errorMsg);
+            // 영업과장을 찾을 수 없어도 접점코드는 등록 진행 (warning으로 변경)
+            console.log(`Warning: ${i + 2}행 - 영업과장 '${managerName}'을 찾을 수 없습니다. 접점코드는 등록됩니다.`);
           }
         }
 
