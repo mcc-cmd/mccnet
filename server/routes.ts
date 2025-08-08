@@ -1103,12 +1103,14 @@ router.patch('/api/documents/:id/service-plan', requireAuth, async (req: any, re
 router.get('/api/dashboard/stats', requireAuth, async (req: any, res) => {
   try {
     const userType = req.session.userType === 'admin' ? 'admin' : 
+                    req.session.userType === 'sales_manager' ? 'sales_manager' :
                     req.session.userRole === 'dealer_worker' ? 'dealer_worker' : 'dealer_store';
     const dealerId = req.session.dealerId;
     const userId = req.session.userId;
+    const salesManagerId = req.session.userType === 'sales_manager' ? req.session.userId : null;
     const { startDate, endDate } = req.query;
     
-    const stats = await storage.getDashboardStats(dealerId, userId, userType, startDate, endDate);
+    const stats = await storage.getDashboardStats(dealerId, userId, userType, startDate, endDate, salesManagerId);
     res.json(stats);
   } catch (error: any) {
     res.status(500).json({ error: error.message });
@@ -1118,12 +1120,13 @@ router.get('/api/dashboard/stats', requireAuth, async (req: any, res) => {
 // Separate endpoints for carrier and worker stats
 router.get('/api/dashboard/carrier-stats', requireAuth, async (req: any, res) => {
   try {
-    if (req.session.userType !== 'admin') {
-      return res.status(403).json({ error: '관리자 권한이 필요합니다.' });
+    if (req.session.userType !== 'admin' && req.session.userType !== 'sales_manager') {
+      return res.status(403).json({ error: '관리자 또는 영업과장 권한이 필요합니다.' });
     }
     
     const { startDate, endDate } = req.query;
-    const stats = await storage.getCarrierStats(startDate, endDate);
+    const salesManagerId = req.session.userType === 'sales_manager' ? req.session.userId : null;
+    const stats = await storage.getCarrierStats(startDate, endDate, salesManagerId);
     res.json(stats);
   } catch (error: any) {
     res.status(500).json({ error: error.message });
@@ -1147,10 +1150,11 @@ router.get('/api/dashboard/worker-stats', requireAuth, async (req: any, res) => 
 // 당일 통계 API
 router.get('/api/dashboard/today-stats', requireAuth, async (req: any, res) => {
   try {
-    // 근무자(user)인 경우 해당 근무자의 ID를 전달, 관리자는 전체 데이터 조회
+    // 근무자(user)인 경우 해당 근무자의 ID를 전달, 관리자는 전체 데이터 조회, 영업과장은 자신 소속팀 데이터만
     const workerId = req.session.userType === 'user' ? req.session.userId : undefined;
-    console.log('Today stats request - userType:', req.session.userType, 'userId:', req.session.userId, 'workerId:', workerId);
-    const stats = await storage.getTodayStats(workerId);
+    const salesManagerId = req.session.userType === 'sales_manager' ? req.session.userId : undefined;
+    console.log('Today stats request - userType:', req.session.userType, 'userId:', req.session.userId, 'workerId:', workerId, 'salesManagerId:', salesManagerId);
+    const stats = await storage.getTodayStats(workerId, salesManagerId);
     
     // API 응답 형식을 프론트엔드 기대값에 맞춤
     const response = {
@@ -1170,10 +1174,11 @@ router.get('/api/dashboard/today-stats', requireAuth, async (req: any, res) => {
 // 당월 개통현황 API
 router.get('/api/dashboard/monthly-activation-stats', requireAuth, async (req: any, res) => {
   try {
-    // 근무자(user)인 경우 해당 근무자의 ID를 전달, 관리자는 전체 데이터 조회
+    // 근무자(user)인 경우 해당 근무자의 ID를 전달, 관리자는 전체 데이터 조회, 영업과장은 자신 소속팀 데이터만
     const workerId = req.session.userType === 'user' ? req.session.userId : undefined;
-    console.log('Monthly activation stats request - userType:', req.session.userType, 'userId:', req.session.userId, 'workerId:', workerId);
-    const stats = await storage.getMonthlyActivationStats(workerId);
+    const salesManagerId = req.session.userType === 'sales_manager' ? req.session.userId : undefined;
+    console.log('Monthly activation stats request - userType:', req.session.userType, 'userId:', req.session.userId, 'workerId:', workerId, 'salesManagerId:', salesManagerId);
+    const stats = await storage.getMonthlyActivationStats(workerId, salesManagerId);
     
     res.json(stats);
   } catch (error: any) {
@@ -1185,10 +1190,11 @@ router.get('/api/dashboard/monthly-activation-stats', requireAuth, async (req: a
 // 당월 상태별 통계 API (근무자별 필터링)
 router.get('/api/dashboard/monthly-status-stats', requireAuth, async (req: any, res) => {
   try {
-    // 근무자(user)인 경우 해당 근무자의 ID를 전달, 관리자는 전체 데이터 조회
+    // 근무자(user)인 경우 해당 근무자의 ID를 전달, 관리자는 전체 데이터 조회, 영업과장은 자신 소속팀 데이터만
     const workerId = req.session.userType === 'user' ? req.session.userId : undefined;
-    console.log('Monthly status stats request - userType:', req.session.userType, 'userId:', req.session.userId, 'workerId:', workerId);
-    const stats = await storage.getMonthlyStatusStats(workerId);
+    const salesManagerId = req.session.userType === 'sales_manager' ? req.session.userId : undefined;
+    console.log('Monthly status stats request - userType:', req.session.userType, 'userId:', req.session.userId, 'workerId:', workerId, 'salesManagerId:', salesManagerId);
+    const stats = await storage.getMonthlyStatusStats(workerId, salesManagerId);
     
     res.json(stats);
   } catch (error: any) {

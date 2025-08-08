@@ -1841,8 +1841,24 @@ export class DatabaseStorage implements IStorage {
     }
   }
   
+  // 영업과장 소속 판매점 조회 유틸리티 메서드
+  async getSalesManagerDealerCodes(salesManagerId: number): Promise<string[]> {
+    try {
+      // SQLite 직접 쿼리 사용
+      const result = await db.all(
+        sql`SELECT code FROM contact_codes WHERE sales_manager_id = ${salesManagerId}`
+      );
+      
+      console.log('Found contact codes for manager', salesManagerId, ':', result.map((r: any) => r.code));
+      return result.map((r: any) => r.code);
+    } catch (error) {
+      console.error('Get sales manager dealer codes error:', error);
+      return [];
+    }
+  }
+
   // 대시보드 통계 메서드들
-  async getDashboardStats(): Promise<any> {
+  async getDashboardStats(dealerId?: number, userId?: number, userType?: string, startDate?: string, endDate?: string, salesManagerId?: number): Promise<any> {
     try {
       const today = new Date();
       const todayStart = today.getFullYear() + '-' + 
@@ -1941,60 +1957,101 @@ export class DatabaseStorage implements IStorage {
     }
   }
   
-  async getTodayStats(workerId?: number): Promise<any> {
+  async getTodayStats(workerId?: number, salesManagerId?: number): Promise<any> {
     try {
       const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD 형식
-      console.log('Today stats for date:', today, 'workerId:', workerId);
+      console.log('Today stats for date:', today, 'workerId:', workerId, 'salesManagerId:', salesManagerId);
 
-      // 당일 접수 건수 - 항상 전체 수량 표시 (근무자별 필터링 없음)
-      const todaySubmissions = await db.select({ count: sql`count(*)` })
-        .from(documents)
-        .where(sql`date(uploaded_at) = ${today}`);
-
-      // 당일 개통 완료 건수 - 근무자는 자신이 처리한 건만, 관리자는 전체
-      let todayCompletions;
-      if (workerId) {
-        todayCompletions = await db.select({ count: sql`count(*)` })
-          .from(documents)
-          .where(
-            and(
-              sql`date(activated_at) = ${today}`,
-              eq(documents.activationStatus, '개통'),
-              eq(documents.activatedBy, workerId)
-            )
-          );
-      } else {
-        todayCompletions = await db.select({ count: sql`count(*)` })
-          .from(documents)
-          .where(
-            and(
-              sql`date(activated_at) = ${today}`,
-              eq(documents.activationStatus, '개통')
-            )
-          );
+      // 영업과장의 판매점 코드 조회 (필터링용)
+      let dealerCodes: string[] = [];
+      if (salesManagerId) {
+        dealerCodes = await this.getSalesManagerDealerCodes(salesManagerId);
+        console.log('Sales manager dealer codes:', dealerCodes);
       }
 
-      // 기타완료 건수 - 근무자는 자신이 처리한 건만, 관리자는 전체
+      // 당일 접수 건수 - 영업과장인 경우 해당 판매점만, 근무자/관리자는 기존 로직
+      let todaySubmissions;
+      if (salesManagerId && dealerCodes.length > 0) {
+        // 영업과장은 자신이 담당하는 판매점 접점코드에 해당하는 문서만 조회
+        const todaySubmissionsQuery = await db.select({ count: sql`count(*)` })
+          .from(documents)
+          .where(and(
+            sql`date(uploaded_at) = ${today}`,
+            sql`contact_code IN (${sql.join(dealerCodes.map(code => sql`${code}`), sql`, `)})`
+          ));
+        todaySubmissions = {rows: todaySubmissionsQuery};
+      } else if (salesManagerId && dealerCodes.length === 0) {
+        // 접점코드가 없는 영업과장은 아무 데이터도 조회할 수 없음
+        todaySubmissions = {rows: [{count: 0}]};
+      } else {
+        const result = await db.select({ count: sql`count(*)` })
+          .from(documents)
+          .where(sql`date(uploaded_at) = ${today}`);
+        todaySubmissions = {rows: result};
+      }
+
+      // 당일 개통 완료 건수 - 근무자는 자신이 처리한 건만, 영업과장은 해당 판매점만, 관리자는 전체
+      let todayCompletions;
+      if (workerId) {
+        const result = await db.select({ count: sql`count(*)` })
+          .from(documents)
+          .where(and(
+            sql`date(activated_at) = ${today}`,
+            eq(documents.activationStatus, '개통'),
+            eq(documents.activatedBy, workerId)
+          ));
+        todayCompletions = {rows: result};
+      } else if (salesManagerId && dealerCodes.length > 0) {
+        const todayCompletionsQuery = await db.select({ count: sql`count(*)` })
+          .from(documents)
+          .where(and(
+            sql`date(activated_at) = ${today}`,
+            eq(documents.activationStatus, '개통'),
+            sql`contact_code IN (${sql.join(dealerCodes.map(code => sql`${code}`), sql`, `)})`
+          ));
+        todayCompletions = {rows: todayCompletionsQuery};
+      } else if (salesManagerId && dealerCodes.length === 0) {
+        todayCompletions = {rows: [{count: 0}]};
+      } else {
+        const result = await db.select({ count: sql`count(*)` })
+          .from(documents)
+          .where(and(
+            sql`date(activated_at) = ${today}`,
+            eq(documents.activationStatus, '개통')
+          ));
+        todayCompletions = {rows: result};
+      }
+
+      // 기타완료 건수 - 근무자는 자신이 처리한 건만, 영업과장은 해당 판매점만, 관리자는 전체
       let todayOtherCompleted;
       if (workerId) {
-        todayOtherCompleted = await db.select({ count: sql`count(*)` })
+        const result = await db.select({ count: sql`count(*)` })
           .from(documents)
-          .where(
-            and(
-              sql`date(activated_at) = ${today}`,
-              eq(documents.activationStatus, '기타완료'),
-              eq(documents.activatedBy, workerId)
-            )
-          );
+          .where(and(
+            sql`date(activated_at) = ${today}`,
+            eq(documents.activationStatus, '기타완료'),
+            eq(documents.activatedBy, workerId)
+          ));
+        todayOtherCompleted = {rows: result};
+      } else if (salesManagerId && dealerCodes.length > 0) {
+        const todayOtherCompletedQuery = await db.select({ count: sql`count(*)` })
+          .from(documents)
+          .where(and(
+            sql`date(activated_at) = ${today}`,
+            eq(documents.activationStatus, '기타완료'),
+            sql`contact_code IN (${sql.join(dealerCodes.map(code => sql`${code}`), sql`, `)})`
+          ));
+        todayOtherCompleted = {rows: todayOtherCompletedQuery};
+      } else if (salesManagerId && dealerCodes.length === 0) {
+        todayOtherCompleted = {rows: [{count: 0}]};
       } else {
-        todayOtherCompleted = await db.select({ count: sql`count(*)` })
+        const result = await db.select({ count: sql`count(*)` })
           .from(documents)
-          .where(
-            and(
-              sql`date(activated_at) = ${today}`,
-              eq(documents.activationStatus, '기타완료')
-            )
-          );
+          .where(and(
+            sql`date(activated_at) = ${today}`,
+            eq(documents.activationStatus, '기타완료')
+          ));
+        todayOtherCompleted = {rows: result};
       }
 
       // 당일 정산 금액 (근무자별 필터링)
@@ -2025,9 +2082,9 @@ export class DatabaseStorage implements IStorage {
       }
 
       const result = {
-        todaySubmissions: parseInt(String(todaySubmissions[0]?.count || 0)),
-        todayCompletions: parseInt(String(todayCompletions[0]?.count || 0)),
-        todayOtherCompleted: parseInt(String(todayOtherCompleted[0]?.count || 0)),
+        todaySubmissions: parseInt(String(todaySubmissions.rows?.[0]?.count || 0)),
+        todayCompletions: parseInt(String(todayCompletions.rows?.[0]?.count || 0)),
+        todayOtherCompleted: parseInt(String(todayOtherCompleted.rows?.[0]?.count || 0)),
         todayRevenue: parseInt(String(todayRevenue[0]?.total || 0))
       };
 
@@ -2097,49 +2154,44 @@ export class DatabaseStorage implements IStorage {
   }
 
   // 당월 개통현황 조회 (근무자별)
-  async getMonthlyActivationStats(workerId?: number): Promise<any> {
+  async getMonthlyActivationStats(workerId?: number, salesManagerId?: number): Promise<any> {
     try {
       const now = new Date();
       const year = now.getFullYear();
       const month = now.getMonth() + 1;
       const monthStart = `${year}-${month.toString().padStart(2, '0')}-01`;
       
-      console.log('Monthly activation stats for:', monthStart, 'workerId:', workerId);
+      console.log('Monthly activation stats for:', monthStart, 'workerId:', workerId, 'salesManagerId:', salesManagerId);
+
+      // 영업과장의 판매점 코드 조회 (필터링용)
+      let dealerCodes: string[] = [];
+      if (salesManagerId) {
+        dealerCodes = await this.getSalesManagerDealerCodes(salesManagerId);
+        console.log('Sales manager dealer codes for monthly activation stats:', dealerCodes);
+      }
 
       // 월별 통신사별 개통 현황
-      let carrierStats;
+      let conditions = [
+        sql`date(activated_at) >= ${monthStart}`,
+        sql`date(activated_at) < date(${monthStart}, '+1 month')`,
+        eq(documents.activationStatus, '개통')
+      ];
+
       if (workerId) {
         // 근무자: 자신이 처리한 건만 조회
-        carrierStats = await db.select({
-          carrier: documents.carrier,
-          count: sql`count(*)`
-        })
-          .from(documents)
-          .where(
-            and(
-              sql`date(activated_at) >= ${monthStart}`,
-              sql`date(activated_at) < date(${monthStart}, '+1 month')`,
-              eq(documents.activationStatus, '개통'),
-              eq(documents.activatedBy, workerId)
-            )
-          )
-          .groupBy(documents.carrier);
-      } else {
-        // 관리자: 전체 조회
-        carrierStats = await db.select({
-          carrier: documents.carrier,
-          count: sql`count(*)`
-        })
-          .from(documents)
-          .where(
-            and(
-              sql`date(activated_at) >= ${monthStart}`,
-              sql`date(activated_at) < date(${monthStart}, '+1 month')`,
-              eq(documents.activationStatus, '개통')
-            )
-          )
-          .groupBy(documents.carrier);
+        conditions.push(eq(documents.activatedBy, workerId));
+      } else if (salesManagerId && dealerCodes.length > 0) {
+        // 영업과장: 해당 판매점만 조회
+        conditions.push(inArray(documents.dealerCode, dealerCodes));
       }
+
+      const carrierStats = await db.select({
+        carrier: documents.carrier,
+        count: sql`count(*)`
+      })
+        .from(documents)
+        .where(and(...conditions))
+        .groupBy(documents.carrier);
 
       // 결과를 배열로 변환하고 카운트를 숫자로 변환
       const result = carrierStats.map(stat => ({
@@ -2155,14 +2207,21 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async getMonthlyStatusStats(workerId?: number): Promise<any> {
+  async getMonthlyStatusStats(workerId?: number, salesManagerId?: number): Promise<any> {
     try {
       const now = new Date();
       const year = now.getFullYear();
       const month = now.getMonth() + 1;
       const monthStart = `${year}-${month.toString().padStart(2, '0')}-01`;
       
-      console.log('Monthly status stats for:', monthStart, 'workerId:', workerId);
+      console.log('Monthly status stats for:', monthStart, 'workerId:', workerId, 'salesManagerId:', salesManagerId);
+
+      // 영업과장의 판매점 코드 조회 (필터링용)
+      let dealerCodes: string[] = [];
+      if (salesManagerId) {
+        dealerCodes = await this.getSalesManagerDealerCodes(salesManagerId);
+        console.log('Sales manager dealer codes for monthly status stats:', dealerCodes);
+      }
 
       let conditions = [
         sql`date(uploaded_at) >= ${monthStart}`,
@@ -2182,6 +2241,9 @@ export class DatabaseStorage implements IStorage {
             )
           )
         );
+      } else if (salesManagerId && dealerCodes.length > 0) {
+        // 영업과장인 경우 해당 판매점만 조회
+        conditions.push(inArray(documents.dealerCode, dealerCodes));
       }
 
       const monthlyStats = await db.select({
@@ -2228,33 +2290,68 @@ export class DatabaseStorage implements IStorage {
     }
   }
   
-  async getCarrierStats(startDate?: string, endDate?: string): Promise<any[]> {
+  async getCarrierStats(startDate?: string, endDate?: string, salesManagerId?: number): Promise<any[]> {
     try {
-      console.log('Get carrier stats with dates:', startDate, endDate);
+      console.log('Get carrier stats with dates:', startDate, endDate, 'salesManagerId:', salesManagerId);
       
-      let whereConditions = [eq(documents.activationStatus, '개통')];
-      
-      if (startDate && endDate) {
-        whereConditions.push(
-          and(
-            sql`date(activated_at) >= ${startDate}`,
-            sql`date(activated_at) <= ${endDate}`
-          )
-        );
-      } else if (startDate) {
-        whereConditions.push(sql`date(activated_at) >= ${startDate}`);
-      } else if (endDate) {
-        whereConditions.push(sql`date(activated_at) <= ${endDate}`);
+      // 영업과장의 판매점 코드 조회 (필터링용)
+      let dealerCodes: string[] = [];
+      if (salesManagerId) {
+        dealerCodes = await this.getSalesManagerDealerCodes(salesManagerId);
+        console.log('Sales manager dealer codes for carrier stats:', dealerCodes);
       }
+      
+      let carrierStats;
+      
+      if (salesManagerId && dealerCodes.length > 0) {
+        // 영업과장인 경우: 담당 판매점의 개통 완료 문서만 조회
+        let query = `
+          SELECT carrier, count(*) as count 
+          FROM documents 
+          WHERE activation_status = '개통'
+            AND contact_code IN (${dealerCodes.map(code => `'${code.replace(/'/g, "''")}'`).join(',')})
+        `;
+        
+        if (startDate && endDate) {
+          query += ` AND date(activated_at) >= '${startDate}' AND date(activated_at) <= '${endDate}'`;
+        } else if (startDate) {
+          query += ` AND date(activated_at) >= '${startDate}'`;
+        } else if (endDate) {
+          query += ` AND date(activated_at) <= '${endDate}'`;
+        }
+        
+        query += ` GROUP BY carrier ORDER BY count(*) DESC`;
+        
+        carrierStats = await db.all(sql.raw(query));
+      } else if (salesManagerId && dealerCodes.length === 0) {
+        // 영업과장인데 담당 판매점이 없는 경우
+        carrierStats = [];
+      } else {
+        // 관리자나 근무자인 경우: 전체 개통 완료 문서 조회
+        let whereConditions = [eq(documents.activationStatus, '개통')];
+        
+        if (startDate && endDate) {
+          whereConditions.push(
+            and(
+              sql`date(activated_at) >= ${startDate}`,
+              sql`date(activated_at) <= ${endDate}`
+            )
+          );
+        } else if (startDate) {
+          whereConditions.push(sql`date(activated_at) >= ${startDate}`);
+        } else if (endDate) {
+          whereConditions.push(sql`date(activated_at) <= ${endDate}`);
+        }
 
-      const carrierStats = await db.select({
-        carrier: documents.carrier,
-        count: sql`count(*)`
-      })
-        .from(documents)
-        .where(and(...whereConditions))
-        .groupBy(documents.carrier)
-        .orderBy(sql`count(*) DESC`);
+        carrierStats = await db.select({
+          carrier: documents.carrier,
+          count: sql`count(*)`
+        })
+          .from(documents)
+          .where(and(...whereConditions))
+          .groupBy(documents.carrier)
+          .orderBy(sql`count(*) DESC`);
+      }
 
       const result = carrierStats.map(stat => ({
         carrier: stat.carrier || '미분류',

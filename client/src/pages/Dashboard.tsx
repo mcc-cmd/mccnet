@@ -92,7 +92,7 @@ export function Dashboard() {
       const url = `/api/dashboard/carrier-stats${params.toString() ? '?' + params.toString() : ''}`;
       return apiRequest(url) as Promise<any[]>;
     },
-    enabled: user?.userType === 'admin',
+    enabled: user?.userType === 'admin' || user?.userType === 'sales_manager',
   });
 
   const { data: workerStats, isLoading: workerStatsLoading } = useQuery({
@@ -456,17 +456,21 @@ export function Dashboard() {
         )}
 
         {/* Role-based additional stats for admin and workers - 전체 너비로 가로 배치 */}
-        {user?.userType === 'admin' && (
+        {(user?.userType === 'admin' || user?.userType === 'sales_manager') && (
           <Card>
             <CardHeader>
-              <CardTitle className="text-lg font-semibold">통신사별 · 근무자별 개통 수량</CardTitle>
+              <CardTitle className="text-lg font-semibold">
+                {user?.userType === 'sales_manager' ? '나의 실적 - 통신사별 개통 수량' : '통신사별 · 근무자별 개통 수량'}
+              </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              <div className={`grid grid-cols-1 ${user?.userType === 'admin' ? 'lg:grid-cols-2' : ''} gap-8`}>
                 {/* 통신사별 개통 수량 */}
                 <div>
                   <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-base font-medium">통신사별 개통 수량</h3>
+                    <h3 className="text-base font-medium">
+                      {user?.userType === 'sales_manager' ? '담당 판매점 통신사별 개통 수량' : '통신사별 개통 수량'}
+                    </h3>
                     <div className="flex items-center space-x-2">
                       <Input
                         type="date"
@@ -525,7 +529,8 @@ export function Dashboard() {
                   </div>
                 </div>
 
-                {/* 근무자별 개통 수량 */}
+                {/* 근무자별 개통 수량 - 관리자만 표시 */}
+                {user?.userType === 'admin' && (
                 <div>
                   <div className="flex items-center justify-between mb-4">
                     <h3 className="text-base font-medium">근무자별 개통 수량</h3>
@@ -586,6 +591,7 @@ export function Dashboard() {
                     )}
                   </div>
                 </div>
+                )}
               </div>
             </CardContent>
           </Card>
