@@ -516,7 +516,7 @@ export function Dashboard() {
                           >
                             {carrier.carrier}
                           </button>
-                          <Badge variant="secondary" className="text-xs">{carrier.count}건</Badge>
+                          <Badge variant="secondary" className="text-xs">{carrier.total}건</Badge>
                         </div>
                       ))
                     ) : (
