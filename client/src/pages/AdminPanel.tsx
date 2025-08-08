@@ -584,6 +584,23 @@ function CarrierManagement() {
                   엑셀 파일을 업로드하여 통신사 정보를 일괄 등록할 수 있습니다.
                 </DialogDescription>
               </DialogHeader>
+              
+              {/* 엑셀 업로드 사용법 안내 */}
+              <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <h4 className="font-semibold text-blue-800 mb-2">엑셀 업로드 사용법</h4>
+                <ol className="space-y-1 text-sm text-blue-700">
+                  <li>1. 위의 "양식 다운로드" 버튼을 클릭하여 템플릿을 다운로드하세요.</li>
+                  <li>2. 다운로드한 파일에 통신사 데이터를 입력하세요:</li>
+                  <ul className="ml-4 mt-1 space-y-1">
+                    <li>• <span className="font-medium">통신사명</span>: 통신사 전체 코드 (예: SK텔링크)</li>
+                    <li>• <span className="font-medium">번들번호</span>: 번들별 이름</li>
+                    <li>• <span className="font-medium">실판매POS</span>: 실제 판매 POS (선택항목)</li>
+                    <li>• <span className="font-medium">담당영업자</span>: 담당 영업자명</li>
+                  </ul>
+                  <li>3. 작성이 완료되면 "엑셀 업로드" 버튼을 클릭하여 파일을 업로드하세요.</li>
+                </ol>
+              </div>
+              
               <div className="space-y-4">
                 <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
                   <input
@@ -1060,9 +1077,9 @@ function ContactCodeManagement({ dealer }: { dealer: Dealer }) {
       setTempContactCodes(dealerContactCodes);
     } else {
       // 기본값: 모든 통신사에 빈 접점 코드
-      const defaultCodes = CARRIERS.map((carrier, index) => ({
-        carrierId: typeof carrier === 'string' ? `carrier-${index}` : (carrier.id || `carrier-${index}`),
-        carrierName: typeof carrier === 'string' ? carrier : (carrier.name || carrier),
+      const defaultCodes = CARRIERS.map((carrier) => ({
+        carrierId: carrier.id,
+        carrierName: carrier.name,
         contactCode: ''
       }));
       setContactCodes(defaultCodes);
@@ -1342,7 +1359,7 @@ export function AdminPanel() {
       createdAt: manager.createdAt
     })),
     {
-      id: user?.userId,
+      id: user?.id || 0,
       accountType: 'admin',
       userType: 'admin',
       username: 'admin',
@@ -4922,7 +4939,7 @@ export function AdminPanel() {
                                         {plan.dataAllowance}
                                       </td>
                                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                        {Math.floor(parseFloat(plan.monthlyFee)).toLocaleString()}원
+                                        {typeof plan.monthlyFee === 'number' ? plan.monthlyFee.toLocaleString() : parseFloat(plan.monthlyFee || '0').toLocaleString()}원
                                       </td>
                                       <td className="px-6 py-4 whitespace-nowrap">
                                         <Badge variant={plan.isActive ? "default" : "secondary"}>
@@ -5479,6 +5496,21 @@ export function AdminPanel() {
                 </div>
               </CardHeader>
               <CardContent>
+                {/* 엑셀 업로드 사용법 안내 */}
+                <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                  <h3 className="text-lg font-semibold text-blue-800 mb-3">엑셀 업로드 사용법</h3>
+                  <ol className="space-y-2 text-sm text-blue-700">
+                    <li>1. 위의 "엑셀 템플릿 다운로드" 버튼을 클릭하여 템플릿을 다운로드하세요.</li>
+                    <li>2. 다운로드한 파일에 정산단가 데이터를 입력하세요:</li>
+                    <ul className="ml-4 mt-1 space-y-1">
+                      <li>• <span className="font-medium">통신사</span>: 통신사 전체 코드 (예: SK텔링크)</li>
+                      <li>• <span className="font-medium">요금제명</span>: 요금제 이름</li>
+                      <li>• <span className="font-medium">정산단가</span>: 실제 정산 단가 (원화금액)</li>
+                    </ul>
+                    <li>3. 작성이 완료되면 "엑셀 업로드" 버튼을 클릭하여 파일을 업로드하세요.</li>
+                  </ol>
+                </div>
+                
                 {servicePlansLoading ? (
                   <div className="text-center py-8">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
