@@ -1350,8 +1350,12 @@ router.get('/api/documents', requireAuth, async (req: any, res) => {
       let activatedByName = null;
       console.log('Document:', doc.id, 'activatedBy:', doc.activatedBy, 'includeActivatedBy:', includeActivatedBy);
       
-      // includeActivatedBy가 true이고 activatedBy가 있는 경우 개통처리자 이름 조회
-      if (includeActivatedBy === 'true' && doc.activatedBy) {
+      // 데이터베이스에 저장된 activatedByName을 우선적으로 사용
+      if (doc.activatedByName) {
+        activatedByName = doc.activatedByName;
+        console.log('Using stored activatedByName:', activatedByName);
+      } else if (includeActivatedBy === 'true' && doc.activatedBy) {
+        // 저장된 이름이 없는 경우에만 사용자 조회
         try {
           console.log('Looking up user for activatedBy:', doc.activatedBy);
           const user = await storage.getUserById(doc.activatedBy);
@@ -1363,8 +1367,6 @@ router.get('/api/documents', requireAuth, async (req: any, res) => {
         } catch (e) {
           console.error('User lookup failed for activatedBy:', doc.activatedBy, e);
         }
-      } else {
-        console.log('Skipping user lookup - includeActivatedBy:', includeActivatedBy, 'activatedBy:', doc.activatedBy);
       }
       
       // 정산금액 계산 (수동 설정값이 있으면 우선 사용)
