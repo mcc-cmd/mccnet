@@ -5315,6 +5315,227 @@ export function AdminPanel() {
               </Card>
             </div>
           </TabsContent>
+
+          {/* Settlement Unit Prices Tab */}
+          <TabsContent value="pricing">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <div>
+                  <CardTitle>정산단가 관리</CardTitle>
+                  <CardDescription>
+                    요금제별 정산 단가를 설정하고 관리할 수 있습니다.
+                  </CardDescription>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Dialog open={settlementPriceDialogOpen} onOpenChange={setSettlementPriceDialogOpen}>
+                    <DialogTrigger asChild>
+                      <Button>
+                        <Plus className="mr-2 h-4 w-4" />
+                        정산단가 설정
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>정산단가 설정</DialogTitle>
+                        <DialogDescription>
+                          요금제별 정산 단가를 설정합니다.
+                        </DialogDescription>
+                      </DialogHeader>
+                      <Form {...settlementPriceForm}>
+                        <form onSubmit={settlementPriceForm.handleSubmit(onSubmitSettlementPrice)} className="space-y-4">
+                          <FormField
+                            control={settlementPriceForm.control}
+                            name="servicePlanId"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>요금제</FormLabel>
+                                <Select 
+                                  onValueChange={(value) => {
+                                    const planId = parseInt(value);
+                                    field.onChange(planId);
+                                    const plan = servicePlans?.find(p => p.id === planId);
+                                    setSelectedServicePlan(plan || null);
+                                    
+                                    // 기존 단가가 있으면 폼에 설정
+                                    const existingPrice = settlementPrices?.find(p => p.servicePlanId === planId);
+                                    if (existingPrice) {
+                                      settlementPriceForm.setValue('newCustomerPrice', existingPrice.newCustomerPrice);
+                                      settlementPriceForm.setValue('portInPrice', existingPrice.portInPrice);
+                                      settlementPriceForm.setValue('memo', existingPrice.memo || '');
+                                    }
+                                  }} 
+                                  value={field.value ? field.value.toString() : ''}
+                                >
+                                  <FormControl>
+                                    <SelectTrigger>
+                                      <SelectValue placeholder="요금제를 선택하세요" />
+                                    </SelectTrigger>
+                                  </FormControl>
+                                  <SelectContent>
+                                    {servicePlans?.map((plan) => (
+                                      <SelectItem key={plan.id} value={plan.id.toString()}>
+                                        {plan.name} ({plan.carrier})
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={settlementPriceForm.control}
+                            name="newCustomerPrice"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>신규 고객 정산단가 (원)</FormLabel>
+                                <FormControl>
+                                  <Input 
+                                    type="number" 
+                                    placeholder="신규 고객 정산단가를 입력하세요"
+                                    {...field}
+                                    onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                                  />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={settlementPriceForm.control}
+                            name="portInPrice"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>번호이동 정산단가 (원)</FormLabel>
+                                <FormControl>
+                                  <Input 
+                                    type="number" 
+                                    placeholder="번호이동 정산단가를 입력하세요"
+                                    {...field}
+                                    onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                                  />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={settlementPriceForm.control}
+                            name="memo"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>메모</FormLabel>
+                                <FormControl>
+                                  <Input placeholder="메모를 입력하세요 (선택사항)" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <div className="flex justify-end space-x-2">
+                            <Button type="button" variant="outline" onClick={() => setSettlementPriceDialogOpen(false)}>
+                              취소
+                            </Button>
+                            <Button type="submit" disabled={createSettlementPriceMutation.isPending || updateSettlementPriceMutation.isPending}>
+                              {(createSettlementPriceMutation.isPending || updateSettlementPriceMutation.isPending) ? '저장 중...' : '저장'}
+                            </Button>
+                          </div>
+                        </form>
+                      </Form>
+                    </DialogContent>
+                  </Dialog>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {settlementPricesLoading ? (
+                  <div className="text-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
+                    <p className="mt-2 text-sm text-gray-500">정산단가를 불러오는 중...</p>
+                  </div>
+                ) : settlementPrices && settlementPrices.length > 0 ? (
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full divide-y divide-gray-200">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            요금제
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            통신사
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            신규 고객
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            번호이동
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            메모
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            적용일
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            관리
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody className="bg-white divide-y divide-gray-200">
+                        {settlementPrices.map((price) => {
+                          const plan = servicePlans?.find(p => p.id === price.servicePlanId);
+                          return (
+                            <tr key={price.id}>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                {plan?.name || `요금제 ${price.servicePlanId}`}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                {plan?.carrier || '-'}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                {price.newCustomerPrice?.toLocaleString() || 0}원
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                {price.portInPrice?.toLocaleString() || 0}원
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                {price.memo || '-'}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                {price.effectiveFrom ? format(new Date(price.effectiveFrom), 'yyyy-MM-dd', { locale: ko }) : '-'}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => {
+                                    const plan = servicePlans?.find(p => p.id === price.servicePlanId);
+                                    setSelectedServicePlan(plan || null);
+                                    settlementPriceForm.setValue('servicePlanId', price.servicePlanId);
+                                    settlementPriceForm.setValue('newCustomerPrice', price.newCustomerPrice);
+                                    settlementPriceForm.setValue('portInPrice', price.portInPrice);
+                                    settlementPriceForm.setValue('memo', price.memo || '');
+                                    setSettlementPriceDialogOpen(true);
+                                  }}
+                                >
+                                  편집
+                                </Button>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <Settings className="mx-auto h-12 w-12 text-gray-400" />
+                    <h3 className="mt-2 text-sm font-medium text-gray-900">정산단가가 없습니다</h3>
+                    <p className="mt-1 text-sm text-gray-500">첫 번째 정산단가를 설정해보세요.</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
         </Tabs>
 
         {/* Edit User Dialog */}
