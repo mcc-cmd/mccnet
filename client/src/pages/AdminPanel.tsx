@@ -2660,11 +2660,11 @@ export function AdminPanel() {
     createContactCodeMutation.mutate({
       code: newContactCode,
       dealerName: newDealerName,
-      realSalesPOS: newRealSalesPOS,
       carrier: newCarrier,
       salesManagerId: newSalesManagerId,
       salesManagerName: selectedSalesManager?.managerName || null,
-    }, {
+      realSalesPOS: newRealSalesPOS,
+    } as any, {
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: ['/api/contact-codes'] });
         // 폼 초기화
@@ -2696,7 +2696,7 @@ export function AdminPanel() {
   const handleSelectAllContactCodes = (checked: boolean) => {
     setSelectAllContactCodes(checked);
     if (checked) {
-      const allIds = filteredContactCodes?.map(code => code.id).filter(Boolean) || [];
+      const allIds = filteredContactCodes?.map(code => code.id).filter((id): id is number => id !== undefined) || [];
       setSelectedContactCodes(allIds);
     } else {
       setSelectedContactCodes([]);
@@ -2736,9 +2736,9 @@ export function AdminPanel() {
   // 접점코드 필터링
   const filteredContactCodes = contactCodes?.filter(code => {
     const matchesSearch = !contactCodeSearch || 
-      code.code.toLowerCase().includes(contactCodeSearch.toLowerCase()) ||
-      code.dealerName.toLowerCase().includes(contactCodeSearch.toLowerCase()) ||
-      (code.salesManagerName && code.salesManagerName.toLowerCase().includes(contactCodeSearch.toLowerCase()));
+      (code.code && code.code.toLowerCase().includes(contactCodeSearch.toLowerCase())) ||
+      (code.dealerName && code.dealerName.toLowerCase().includes(contactCodeSearch.toLowerCase())) ||
+      ((code as any).salesManagerName && (code as any).salesManagerName.toLowerCase().includes(contactCodeSearch.toLowerCase()));
     
     const matchesCarrier = !contactCodeCarrierFilter || contactCodeCarrierFilter === 'all' || code.carrier === contactCodeCarrierFilter;
     
@@ -3458,8 +3458,8 @@ export function AdminPanel() {
                           <div className="absolute top-2 left-2">
                             <input
                               type="checkbox"
-                              checked={selectedContactCodes.includes(code.id)}
-                              onChange={(e) => handleSelectContactCode(code.id, e.target.checked)}
+                              checked={selectedContactCodes.includes(code.id || 0)}
+                              onChange={(e) => handleSelectContactCode(code.id || 0, e.target.checked)}
                               className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                             />
                           </div>
@@ -3474,9 +3474,9 @@ export function AdminPanel() {
                                     실판매POS: {(code as any).realSalesPOS}
                                   </p>
                                 )}
-                                {code.salesManagerName && (
+                                {(code as any).salesManagerName && (
                                   <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">
-                                    담당: {code.salesManagerName}
+                                    담당: {(code as any).salesManagerName}
                                   </p>
                                 )}
                               </div>
@@ -3816,27 +3816,13 @@ export function AdminPanel() {
                                     e.preventDefault();
                                     e.stopPropagation();
                                     
+                                    console.log('Edit button clicked for user:', user);
                                     // 영업과장인 경우 영업과장 편집 다이얼로그 열기
                                     if ((user as any).accountType === 'sales_manager') {
                                       handleEditSalesManager(user);
                                     } else {
-                                      // 일반 사용자 편집
-                                      setEditingUser(user);
-                                      
-                                      // 현재 역할 설정
-                                      const currentRole = (user as any).accountType === 'admin' ? 'admin' : 
-                                                        (user as any).accountType === 'sales_manager' ? 'sales_manager' : 'worker';
-                                      
-                                      // Form 리셋
-                                      editUserForm.reset({
-                                        username: user.username,
-                                        name: (user as any).displayName || user.name,
-                                        password: '',
-                                        role: currentRole
-                                      });
-                                      
-                                      // 다이얼로그 열기
-                                      setEditUserDialogOpen(true);
+                                      // 일반 사용자 편집 - openEditUserDialog 함수 사용
+                                      openEditUserDialog(user);
                                     }
                                   }}
                                   className="inline-flex items-center px-2 py-1 border border-gray-300 rounded text-sm bg-white text-blue-600 hover:bg-blue-50 hover:border-blue-300"
