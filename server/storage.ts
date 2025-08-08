@@ -572,6 +572,28 @@ export class DatabaseStorage implements IStorage {
         };
       }
 
+      // 영업과장 테이블에서 조회
+      const salesManagerResults = await db.select({
+        id: salesManagers.id,
+        name: salesManagers.managerName,
+        username: salesManagers.username
+      })
+      .from(salesManagers)
+      .where(eq(salesManagers.id, userId))
+      .limit(1);
+
+      console.log('Sales Manager query results:', salesManagerResults);
+      
+      if (salesManagerResults.length > 0) {
+        const manager = salesManagerResults[0];
+        return {
+          id: manager.id,
+          name: manager.name,
+          username: manager.username,
+          userType: 'sales_manager'
+        };
+      }
+
       // 일반 사용자 테이블에서 조회
       const userResults = await db.select({
         id: users.id,
