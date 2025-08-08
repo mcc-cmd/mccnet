@@ -983,9 +983,21 @@ export class DatabaseStorage implements IStorage {
   
   async getServicePlansByCarrier(carrier: string): Promise<ServicePlan[]> {
     try {
-      // 우선 빈 배열 반환하여 오류 방지
       console.log('Service plans query for carrier:', carrier);
-      return [];
+      const result = await db.select().from(servicePlans)
+        .where(and(
+          eq(servicePlans.carrier, carrier),
+          eq(servicePlans.isActive, true)
+        ))
+        .orderBy(servicePlans.name);
+      
+      console.log(`Found ${result.length} service plans for carrier: ${carrier}`);
+      
+      // DB의 name 필드를 planName으로 매핑
+      return result.map(plan => ({
+        ...plan,
+        planName: plan.name
+      })) as ServicePlan[];
     } catch (error) {
       console.error('Get service plans by carrier error:', error);
       return [];
