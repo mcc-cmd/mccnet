@@ -3404,20 +3404,32 @@ router.post('/api/contact-codes/upload-excel', contactCodeUpload.single('file'),
         // 기존 접점코드 확인
         const existingCode = await storage.findContactCodeByCode(String(code).trim());
         if (existingCode) {
-          // 통신사가 다르면 업데이트, 같으면 중복으로 처리
+          // 데이터가 변경된 경우에만 업데이트
           const newCarrier = String(carrier).trim();
-          if (existingCode.carrier !== newCarrier) {
-            console.log(`Updating contact code ${code}: ${existingCode.carrier} -> ${newCarrier}`);
+          const newDealerName = String(dealerName).trim();
+          const newRealSalesPOS = realSalesPOS ? String(realSalesPOS).trim() : null;
+          
+          const hasChanges = (
+            existingCode.carrier !== newCarrier ||
+            existingCode.dealerName !== newDealerName ||
+            existingCode.realSalesPOS !== newRealSalesPOS ||
+            (salesManagerId && existingCode.salesManagerId !== salesManagerId)
+          );
+          
+          if (hasChanges) {
+            console.log(`Updating contact code ${code}: changes detected`);
             await storage.updateContactCode(existingCode.id, {
               carrier: newCarrier,
-              dealerName: String(dealerName).trim(),
-              realSalesPOS: realSalesPOS ? String(realSalesPOS).trim() : null
+              dealerName: newDealerName,
+              realSalesPOS: newRealSalesPOS,
+              salesManagerId: salesManagerId,
+              salesManagerName: salesManagerName ? String(salesManagerName).trim() : null
             });
             addedCodes++;
             console.log(`Successfully updated contact code: ${code}`);
           } else {
             duplicatesSkipped++;
-            console.log(`Skipping duplicate contact code: ${code} (${existingCode.carrier})`);
+            console.log(`Skipping duplicate contact code: ${code} (no changes)`);
           }
           continue;
         }
