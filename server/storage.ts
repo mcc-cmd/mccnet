@@ -1695,11 +1695,11 @@ export class DatabaseStorage implements IStorage {
   // 해당 요금제의 개통완료 문서들의 정산금액을 새로운 단가로 업데이트
   async updateSettlementAmountsForServicePlan(servicePlanId: number, newCustomerPrice: number, portInPrice: number): Promise<void> {
     try {
-      // 해당 요금제의 개통완료 문서들 조회
+      // 해당 요금제의 개통완료 문서들 조회 (LIKE 사용하여 부동소수점 문제 해결)
       const result = await db.all(sql`
-        SELECT id, previous_carrier, carrier
+        SELECT id, previous_carrier, carrier, customer_name
         FROM documents 
-        WHERE service_plan_id = ${servicePlanId.toString()} 
+        WHERE (service_plan_id = ${servicePlanId.toString()} OR service_plan_id LIKE ${servicePlanId + '.%'})
         AND activation_status = '개통'
       `);
 
@@ -1718,7 +1718,7 @@ export class DatabaseStorage implements IStorage {
           WHERE id = ${doc.id}
         `);
 
-        console.log(`Updated settlement amount for document ${doc.id}: ${settlementAmount}`);
+        console.log(`Updated settlement amount for document ${doc.id} (${doc.customer_name}): ${settlementAmount}`);
       }
     } catch (error) {
       console.error('Error updating settlement amounts for service plan:', error);
