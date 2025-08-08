@@ -174,6 +174,7 @@ export const documents = sqliteTable("documents", {
   assignedWorkerId: integer("assigned_worker_id"),
   assignedAt: text("assigned_at"),
   activatedBy: integer("activated_by"),
+  activatedByName: text("activated_by_name"),
   cancelledBy: integer("cancelled_by"),
   discardReason: text("discard_reason"),
   uploadedAt: text("uploaded_at").default(sql`CURRENT_TIMESTAMP`),

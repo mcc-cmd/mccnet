@@ -919,6 +919,12 @@ router.put('/api/documents/:id/activation-status', requireAuth, async (req: any,
     
     // For cancellation, use session user ID regardless of whether they're admin or worker
     const workerId = (data.activationStatus === '취소' || isWorker) ? req.session.userId : undefined;
+    
+    // 개통완료 시 처리자명 설정
+    if (data.activationStatus === '개통') {
+      data.activatedByName = req.session.name || req.session.displayName || 'Unknown';
+    }
+    
     const updatedDocument = await storage.updateDocumentActivationStatus(id, data, workerId);
     res.json(updatedDocument);
   } catch (error: any) {
@@ -958,9 +964,10 @@ router.patch('/api/documents/:id/activation', requireAuth, async (req: any, res)
       }
     }
     
-    // 개통완료 시 처리자 ID 추가 (관리자 포함)
+    // 개통완료 시 처리자 ID와 이름 추가 (관리자 포함)
     if (data.activationStatus === '개통') {
       data.activatedBy = req.session.userId;
+      data.activatedByName = req.session.name || req.session.displayName || 'Unknown';
     }
     
     // 기타완료 시 근무자 ID 추가 (관리자 제외)

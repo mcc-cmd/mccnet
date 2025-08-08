@@ -1395,6 +1395,7 @@ export class DatabaseStorage implements IStorage {
             simNumber: doc.simNumber,
             settlementAmount: doc.settlementAmount,
             activatedBy: doc.activatedBy,
+            activatedByName: doc.activatedByName,
             cancelledBy: doc.cancelledBy,
             assignedAt: doc.assignedAt,
             dealerName: '미확인',
@@ -1496,6 +1497,7 @@ export class DatabaseStorage implements IStorage {
       if (data.activationStatus === '개통') {
         updateData.activatedAt = new Date().toISOString();
         updateData.activatedBy = workerId || data.activatedBy;
+        updateData.activatedByName = data.activatedByName;
         updateData.servicePlanId = data.servicePlanId;
         updateData.servicePlanName = data.servicePlanName;
         updateData.additionalServiceIds = data.additionalServiceIds ? JSON.stringify(data.additionalServiceIds) : null;
