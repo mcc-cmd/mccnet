@@ -3136,7 +3136,7 @@ export function AdminPanel() {
 
         {/* Admin Tabs */}
         <Tabs defaultValue="users" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-9">
+          <TabsList className="grid w-full grid-cols-8">
             <TabsTrigger value="contact-codes" className="flex items-center space-x-2">
               <Settings className="h-4 w-4" />
               <span>접점코드</span>
@@ -3147,11 +3147,7 @@ export function AdminPanel() {
             </TabsTrigger>
             <TabsTrigger value="users" className="flex items-center space-x-2">
               <Users className="h-4 w-4" />
-              <span>사용자</span>
-            </TabsTrigger>
-            <TabsTrigger value="accounts" className="flex items-center space-x-2">
-              <Plus className="h-4 w-4" />
-              <span>계정 생성</span>
+              <span>사용자 관리</span>
             </TabsTrigger>
             <TabsTrigger value="documents" className="flex items-center space-x-2">
               <FileText className="h-4 w-4" />
@@ -3461,16 +3457,269 @@ export function AdminPanel() {
 
           {/* Users Tab */}
           <TabsContent value="users">
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle>사용자 관리</CardTitle>
-                <Dialog open={userDialogOpen} onOpenChange={setUserDialogOpen}>
-                  <DialogTrigger asChild>
-                    <Button>
-                      <Plus className="mr-2 h-4 w-4" />
-                      사용자 추가
-                    </Button>
-                  </DialogTrigger>
+            <div className="space-y-6">
+              {/* Account Creation Section */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg">관리자 계정 생성</CardTitle>
+                    <CardDescription>
+                      새로운 관리자 계정을 생성합니다. 관리자는 모든 시스템 권한을 가집니다.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <Dialog open={adminDialogOpen} onOpenChange={setAdminDialogOpen}>
+                      <DialogTrigger asChild>
+                        <Button className="w-full">
+                          <Plus className="mr-2 h-4 w-4" />
+                          관리자 계정 생성
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent>
+                        <DialogHeader>
+                          <DialogTitle>새 관리자 계정 생성</DialogTitle>
+                        </DialogHeader>
+                        <Form {...adminForm}>
+                          <form onSubmit={adminForm.handleSubmit(handleCreateAdmin)} className="space-y-4">
+                            <FormField
+                              control={adminForm.control}
+                              name="name"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>이름</FormLabel>
+                                  <FormControl>
+                                    <Input placeholder="이름을 입력하세요" {...field} />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            <FormField
+                              control={adminForm.control}
+                              name="username"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>아이디</FormLabel>
+                                  <FormControl>
+                                    <Input type="text" placeholder="아이디를 입력하세요" autoComplete="off" {...field} />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            <FormField
+                              control={adminForm.control}
+                              name="password"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>비밀번호</FormLabel>
+                                  <FormControl>
+                                    <Input type="password" placeholder="비밀번호를 입력하세요" {...field} />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            <div className="flex justify-end space-x-2">
+                              <Button type="button" variant="outline" onClick={() => setAdminDialogOpen(false)}>
+                                취소
+                              </Button>
+                              <Button type="submit" disabled={createAdminMutation.isPending}>
+                                {createAdminMutation.isPending ? '생성 중...' : '생성'}
+                              </Button>
+                            </div>
+                          </form>
+                        </Form>
+                      </DialogContent>
+                    </Dialog>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg">근무자 계정 생성</CardTitle>
+                    <CardDescription>
+                      새로운 근무자 계정을 생성합니다. 근무자는 모든 판매점 데이터를 볼 수 있습니다.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <Dialog open={workerDialogOpen} onOpenChange={setWorkerDialogOpen}>
+                      <DialogTrigger asChild>
+                        <Button className="w-full">
+                          <Plus className="mr-2 h-4 w-4" />
+                          근무자 계정 생성
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent>
+                        <DialogHeader>
+                          <DialogTitle>새 근무자 계정 생성</DialogTitle>
+                        </DialogHeader>
+                        <Form {...workerForm}>
+                          <form onSubmit={workerForm.handleSubmit(handleCreateWorker)} className="space-y-4">
+                            <FormField
+                              control={workerForm.control}
+                              name="name"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>이름</FormLabel>
+                                  <FormControl>
+                                    <Input placeholder="이름을 입력하세요" {...field} />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            <FormField
+                              control={workerForm.control}
+                              name="username"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>아이디</FormLabel>
+                                  <FormControl>
+                                    <Input type="text" placeholder="아이디를 입력하세요" autoComplete="off" {...field} />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            <FormField
+                              control={workerForm.control}
+                              name="password"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>비밀번호</FormLabel>
+                                  <FormControl>
+                                    <Input type="password" placeholder="비밀번호를 입력하세요" {...field} />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            <div className="flex justify-end space-x-2">
+                              <Button type="button" variant="outline" onClick={() => setWorkerDialogOpen(false)}>
+                                취소
+                              </Button>
+                              <Button type="submit" disabled={createWorkerMutation.isPending}>
+                                {createWorkerMutation.isPending ? '생성 중...' : '생성'}
+                              </Button>
+                            </div>
+                          </form>
+                        </Form>
+                      </DialogContent>
+                    </Dialog>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg">영업과장 계정 생성</CardTitle>
+                    <CardDescription>
+                      새로운 영업과장 계정을 생성합니다. 영업과장은 팀 설정을 할 수 있습니다.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <Dialog open={salesManagerDialogOpen} onOpenChange={setSalesManagerDialogOpen}>
+                      <DialogTrigger asChild>
+                        <Button className="w-full">
+                          <Plus className="mr-2 h-4 w-4" />
+                          영업과장 계정 생성
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent>
+                        <DialogHeader>
+                          <DialogTitle>새 영업과장 계정 생성</DialogTitle>
+                        </DialogHeader>
+                        <Form {...salesManagerForm}>
+                          <form onSubmit={salesManagerForm.handleSubmit(handleCreateSalesManager)} className="space-y-4">
+                            <FormField
+                              control={salesManagerForm.control}
+                              name="name"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>이름</FormLabel>
+                                  <FormControl>
+                                    <Input placeholder="김민준" {...field} />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            <FormField
+                              control={salesManagerForm.control}
+                              name="username"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>아이디</FormLabel>
+                                  <FormControl>
+                                    <Input type="text" placeholder="kmj_manager" autoComplete="off" {...field} />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            <FormField
+                              control={salesManagerForm.control}
+                              name="password"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>비밀번호</FormLabel>
+                                  <FormControl>
+                                    <Input type="password" placeholder="••••••••" {...field} />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            <FormField
+                              control={salesManagerForm.control}
+                              name="team"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>소속 팀</FormLabel>
+                                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                    <FormControl>
+                                      <SelectTrigger>
+                                        <SelectValue placeholder="팀을 선택하세요" />
+                                      </SelectTrigger>
+                                    </FormControl>
+                                    <SelectContent>
+                                      <SelectItem value="DX 1팀">DX 1팀</SelectItem>
+                                      <SelectItem value="DX 2팀">DX 2팀</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            <div className="flex justify-end space-x-2">
+                              <Button type="button" variant="outline" onClick={() => {
+                                setSalesManagerDialogOpen(false);
+                              }}>
+                                취소
+                              </Button>
+                              <Button type="submit" disabled={createSalesManagerMutation.isPending}>
+                                {createSalesManagerMutation.isPending ? '생성 중...' : '생성'}
+                              </Button>
+                            </div>
+                          </form>
+                        </Form>
+                      </DialogContent>
+                    </Dialog>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* User Management Section */}
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between">
+                  <CardTitle>전체 사용자 목록</CardTitle>
+                  <Dialog open={userDialogOpen} onOpenChange={setUserDialogOpen}>
+                    <DialogTrigger asChild>
+                      <Button>
+                        <Plus className="mr-2 h-4 w-4" />
+                        사용자 추가
+                      </Button>
+                    </DialogTrigger>
                   <DialogContent>
                     <DialogHeader>
                       <DialogTitle>새 사용자 추가</DialogTitle>
@@ -3668,11 +3917,11 @@ export function AdminPanel() {
                     <Users className="mx-auto h-12 w-12 text-gray-400" />
                     <h3 className="mt-2 text-sm font-medium text-gray-900">사용자가 없습니다</h3>
                     <p className="mt-1 text-sm text-gray-500">첫 번째 사용자를 추가해보세요.</p>
-
                   </div>
                 )}
               </CardContent>
             </Card>
+            </div>
           </TabsContent>
 
           {/* Worker Stats Tab */}
@@ -3743,612 +3992,6 @@ export function AdminPanel() {
                 )}
               </CardContent>
             </Card>
-          </TabsContent>
-
-          {/* Account Creation Tab */}
-          <TabsContent value="accounts">
-            <div className="space-y-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>관리자 계정 생성</CardTitle>
-                  <CardDescription>
-                    새로운 관리자 계정을 생성합니다. 관리자는 모든 시스템 권한을 가집니다.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex justify-end">
-                    <Dialog open={adminDialogOpen} onOpenChange={setAdminDialogOpen}>
-                      <DialogTrigger asChild>
-                        <Button>
-                          <Plus className="mr-2 h-4 w-4" />
-                          관리자 계정 생성
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent>
-                        <DialogHeader>
-                          <DialogTitle>새 관리자 계정 생성</DialogTitle>
-                        </DialogHeader>
-                        <Form {...adminForm}>
-                          <form onSubmit={adminForm.handleSubmit(handleCreateAdmin)} className="space-y-4">
-                            <FormField
-                              control={adminForm.control}
-                              name="name"
-                              render={({ field }) => (
-                                <FormItem>
-                                  <FormLabel>이름</FormLabel>
-                                  <FormControl>
-                                    <Input placeholder="이름을 입력하세요" {...field} />
-                                  </FormControl>
-                                  <FormMessage />
-                                </FormItem>
-                              )}
-                            />
-                            <FormField
-                              control={adminForm.control}
-                              name="username"
-                              render={({ field }) => (
-                                <FormItem>
-                                  <FormLabel>아이디</FormLabel>
-                                  <FormControl>
-                                    <Input type="text" placeholder="아이디를 입력하세요" autoComplete="off" {...field} />
-                                  </FormControl>
-                                  <FormMessage />
-                                </FormItem>
-                              )}
-                            />
-                            <FormField
-                              control={adminForm.control}
-                              name="password"
-                              render={({ field }) => (
-                                <FormItem>
-                                  <FormLabel>비밀번호</FormLabel>
-                                  <FormControl>
-                                    <Input type="password" placeholder="비밀번호를 입력하세요" {...field} />
-                                  </FormControl>
-                                  <FormMessage />
-                                </FormItem>
-                              )}
-                            />
-                            <div className="flex justify-end space-x-2">
-                              <Button type="button" variant="outline" onClick={() => setAdminDialogOpen(false)}>
-                                취소
-                              </Button>
-                              <Button type="submit" disabled={createAdminMutation.isPending}>
-                                {createAdminMutation.isPending ? '생성 중...' : '생성'}
-                              </Button>
-                            </div>
-                          </form>
-                        </Form>
-                      </DialogContent>
-                    </Dialog>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle>근무자 계정 생성</CardTitle>
-                  <CardDescription>
-                    새로운 근무자 계정을 생성합니다. 근무자는 모든 판매점 데이터를 볼 수 있습니다.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex justify-end">
-                    <Dialog open={workerDialogOpen} onOpenChange={setWorkerDialogOpen}>
-                      <DialogTrigger asChild>
-                        <Button>
-                          <Plus className="mr-2 h-4 w-4" />
-                          근무자 계정 생성
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent>
-                        <DialogHeader>
-                          <DialogTitle>새 근무자 계정 생성</DialogTitle>
-                        </DialogHeader>
-                        <Form {...workerForm}>
-                          <form onSubmit={workerForm.handleSubmit(handleCreateWorker)} className="space-y-4">
-                            <FormField
-                              control={workerForm.control}
-                              name="name"
-                              render={({ field }) => (
-                                <FormItem>
-                                  <FormLabel>이름</FormLabel>
-                                  <FormControl>
-                                    <Input placeholder="이름을 입력하세요" {...field} />
-                                  </FormControl>
-                                  <FormMessage />
-                                </FormItem>
-                              )}
-                            />
-                            <FormField
-                              control={workerForm.control}
-                              name="username"
-                              render={({ field }) => (
-                                <FormItem>
-                                  <FormLabel>아이디</FormLabel>
-                                  <FormControl>
-                                    <Input type="text" placeholder="아이디를 입력하세요" autoComplete="off" {...field} />
-                                  </FormControl>
-                                  <FormMessage />
-                                </FormItem>
-                              )}
-                            />
-                            <FormField
-                              control={workerForm.control}
-                              name="password"
-                              render={({ field }) => (
-                                <FormItem>
-                                  <FormLabel>비밀번호</FormLabel>
-                                  <FormControl>
-                                    <Input type="password" placeholder="비밀번호를 입력하세요" {...field} />
-                                  </FormControl>
-                                  <FormMessage />
-                                </FormItem>
-                              )}
-                            />
-                            <div className="flex justify-end space-x-2">
-                              <Button type="button" variant="outline" onClick={() => setWorkerDialogOpen(false)}>
-                                취소
-                              </Button>
-                              <Button type="submit" disabled={createWorkerMutation.isPending}>
-                                {createWorkerMutation.isPending ? '생성 중...' : '생성'}
-                              </Button>
-                            </div>
-                          </form>
-                        </Form>
-                      </DialogContent>
-                    </Dialog>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle>영업과장 계정 생성</CardTitle>
-                  <CardDescription>
-                    새로운 영업과장 계정을 생성합니다. 영업과장은 팀 실적을 관리할 수 있습니다.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex justify-end">
-                    <Dialog open={salesManagerDialogOpen} onOpenChange={setSalesManagerDialogOpen}>
-                      <DialogTrigger asChild>
-                        <Button>
-                          <Plus className="mr-2 h-4 w-4" />
-                          영업과장 계정 생성
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent>
-                        <DialogHeader>
-                          <DialogTitle>새 영업과장 계정 생성</DialogTitle>
-                        </DialogHeader>
-                        <Form {...salesManagerForm}>
-                          <form onSubmit={salesManagerForm.handleSubmit(handleCreateSalesManager)} className="space-y-4">
-                            <FormField
-                              control={salesManagerForm.control}
-                              name="name"
-                              render={({ field }) => (
-                                <FormItem>
-                                  <FormLabel>이름</FormLabel>
-                                  <FormControl>
-                                    <Input placeholder="이름을 입력하세요" {...field} />
-                                  </FormControl>
-                                  <FormMessage />
-                                </FormItem>
-                              )}
-                            />
-                            <FormField
-                              control={salesManagerForm.control}
-                              name="username"
-                              render={({ field }) => (
-                                <FormItem>
-                                  <FormLabel>아이디</FormLabel>
-                                  <FormControl>
-                                    <Input type="text" placeholder="아이디를 입력하세요" autoComplete="off" {...field} />
-                                  </FormControl>
-                                  <FormMessage />
-                                </FormItem>
-                              )}
-                            />
-                            <FormField
-                              control={salesManagerForm.control}
-                              name="password"
-                              render={({ field }) => (
-                                <FormItem>
-                                  <FormLabel>비밀번호</FormLabel>
-                                  <FormControl>
-                                    <Input type="password" placeholder="비밀번호를 입력하세요" {...field} />
-                                  </FormControl>
-                                  <FormMessage />
-                                </FormItem>
-                              )}
-                            />
-                            <FormField
-                              control={salesManagerForm.control}
-                              name="team"
-                              render={({ field }) => (
-                                <FormItem>
-                                  <FormLabel>소속 팀</FormLabel>
-                                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                    <FormControl>
-                                      <SelectTrigger>
-                                        <SelectValue placeholder="팀을 선택하세요" />
-                                      </SelectTrigger>
-                                    </FormControl>
-                                    <SelectContent>
-                                      <SelectItem value="DX 1팀">DX 1팀</SelectItem>
-                                      <SelectItem value="DX 2팀">DX 2팀</SelectItem>
-                                    </SelectContent>
-                                  </Select>
-                                  <FormMessage />
-                                </FormItem>
-                              )}
-                            />
-                            <div className="flex justify-end space-x-2">
-                              <Button type="button" variant="outline" onClick={() => setSalesManagerDialogOpen(false)}>
-                                취소
-                              </Button>
-                              <Button type="submit" disabled={createSalesManagerMutation.isPending}>
-                                {createSalesManagerMutation.isPending ? '생성 중...' : '생성'}
-                              </Button>
-                            </div>
-                          </form>
-                        </Form>
-                      </DialogContent>
-                    </Dialog>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Existing Users List */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>기존 계정 관리</CardTitle>
-                  <CardDescription>
-                    기존 사용자 계정을 조회하고 수정할 수 있습니다.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  {allUsers && allUsers.length > 0 ? (
-                    <div className="overflow-x-auto">
-                      <table className="min-w-full divide-y divide-gray-200">
-                        <thead className="bg-gray-50">
-                          <tr>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                              이름
-                            </th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                              아이디
-                            </th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                              계정 유형
-                            </th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                              소속/팀
-                            </th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                              생성일
-                            </th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                              작업
-                            </th>
-                          </tr>
-                        </thead>
-                        <tbody className="bg-white divide-y divide-gray-200">
-                          {allUsers.map((userItem, index) => (
-                            <tr key={`${userItem.accountType}-${userItem.id || index}`}>
-                              <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                {userItem.displayName}
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                {userItem.username}
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                <Badge variant={
-                                  userItem.userType === 'admin' ? 'default' : 
-                                  userItem.userType === 'sales_manager' ? 'outline' : 'secondary'
-                                }>
-                                  {userItem.userType === 'admin' ? '시스템 관리자' : 
-                                   userItem.userType === 'sales_manager' ? '영업과장' :
-                                   userItem.userType === 'dealer_worker' ? '근무자' : 
-                                   userItem.userType === 'dealer_store' ? '판매점' : userItem.userType}
-                                </Badge>
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                {userItem.teamName}
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                {userItem.createdAt ? format(new Date(userItem.createdAt), 'yyyy-MM-dd', { locale: ko }) : '-'}
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                <div className="flex space-x-2">
-                                  {user?.userType === 'admin' && (
-                                    <>
-                                      <Button
-                                        variant="outline"
-                                        size="sm"
-                                        onClick={() => handleEditUser(userItem)}
-                                        title="사용자 정보 수정"
-                                      >
-                                        <Edit className="h-4 w-4" />
-                                      </Button>
-                                      <Button
-                                        variant="outline"
-                                        size="sm"
-                                        onClick={() => handleChangePassword(userItem)}
-                                        title="비밀번호 변경"
-                                      >
-                                        <Edit2 className="h-4 w-4" />
-                                      </Button>
-                                      {userItem.userType !== 'admin' && (
-                                        <Button
-                                          variant="outline"
-                                          size="sm"
-                                          onClick={() => handleDeleteUser(userItem)}
-                                          className="text-red-600 hover:text-red-700"
-                                          title="계정 삭제"
-                                        >
-                                          <Trash2 className="h-4 w-4" />
-                                        </Button>
-                                      )}
-                                    </>
-                                  )}
-                                  {user?.userType !== 'admin' && userItem.userType !== 'admin' && (
-                                    <Button
-                                      variant="outline"
-                                      size="sm"
-                                      onClick={() => handleChangePassword(userItem)}
-                                      title="비밀번호 변경"
-                                    >
-                                      <Edit2 className="h-4 w-4" />
-                                    </Button>
-                                  )}
-                                </div>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  ) : (
-                    <div className="text-center py-8">
-                      <Users className="mx-auto h-12 w-12 text-gray-400" />
-                      <h3 className="mt-2 text-sm font-medium text-gray-900">사용자가 없습니다</h3>
-                      <p className="mt-1 text-sm text-gray-500">첫 번째 사용자를 추가해보세요.</p>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-
-              {/* Change Password Dialog */}
-              <Dialog open={changePasswordDialogOpen} onOpenChange={setChangePasswordDialogOpen}>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>비밀번호 변경</DialogTitle>
-                    <DialogDescription>
-                      {selectedUser?.displayName} ({selectedUser?.username})의 비밀번호를 변경합니다.
-                    </DialogDescription>
-                  </DialogHeader>
-                  <Form {...changePasswordForm}>
-                    <form onSubmit={changePasswordForm.handleSubmit((data) => {
-                      if (data.newPassword !== data.confirmPassword) {
-                        toast({
-                          title: '오류',
-                          description: '새 비밀번호와 확인 비밀번호가 일치하지 않습니다.',
-                          variant: 'destructive',
-                        });
-                        return;
-                      }
-                      // 계정 타입 결정: userType이 worker면 worker, 아니면 accountType 사용
-                      const accountType = selectedUser.userType === 'worker' ? 'worker' : selectedUser.accountType;
-                      changePasswordMutation.mutate({
-                        userId: selectedUser.id,
-                        accountType: accountType,
-                        newPassword: data.newPassword
-                      });
-                    })} className="space-y-4">
-                      <FormField
-                        control={changePasswordForm.control}
-                        name="newPassword"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>새 비밀번호</FormLabel>
-                            <FormControl>
-                              <Input type="password" placeholder="새 비밀번호를 입력하세요" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={changePasswordForm.control}
-                        name="confirmPassword"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>비밀번호 확인</FormLabel>
-                            <FormControl>
-                              <Input type="password" placeholder="비밀번호를 다시 입력하세요" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <div className="flex justify-end space-x-2">
-                        <Button type="button" variant="outline" onClick={() => setChangePasswordDialogOpen(false)}>
-                          취소
-                        </Button>
-                        <Button type="submit" disabled={changePasswordMutation.isPending}>
-                          {changePasswordMutation.isPending ? '변경 중...' : '변경'}
-                        </Button>
-                      </div>
-                    </form>
-                  </Form>
-                </DialogContent>
-              </Dialog>
-
-              {/* Edit User Dialog */}
-              {console.log('Rendering edit dialog, open state:', editUserDialogOpen, 'editing user:', editingUser)}
-              <Dialog 
-                open={editUserDialogOpen && editingUser !== null} 
-                onOpenChange={(open) => {
-                  console.log('=== DIALOG OPEN CHANGE ===');
-                  console.log('New open state:', open);
-                  console.log('Current open state:', editUserDialogOpen);
-                  console.log('editingUser:', editingUser);
-                  
-                  if (!open || !editingUser) {
-                    console.log('Dialog closing or no editing user, clearing state');
-                    setEditingUser(null);
-                    editUserForm.reset();
-                    setEditUserDialogOpen(false);
-                  } else {
-                    setEditUserDialogOpen(open);
-                  }
-                  console.log('Set editUserDialogOpen to:', open);
-                }}
-              >
-                <DialogContent className="max-w-md" aria-describedby="edit-user-description">
-                  <DialogHeader>
-                    <DialogTitle>사용자 정보 수정</DialogTitle>
-                    <DialogDescription id="edit-user-description">
-                      {editingUser ? 
-                        `${(editingUser as any).displayName || editingUser.name} (${editingUser.username}) 사용자의 정보를 수정합니다.` :
-                        '사용자를 선택하여 정보를 수정하세요.'
-                      }
-                    </DialogDescription>
-                  </DialogHeader>
-                  <Form {...editUserForm}>
-                    <form onSubmit={editUserForm.handleSubmit((data) => {
-                      console.log('=== FORM SUBMIT ===');
-                      console.log('Form data:', data);
-                      console.log('editingUser:', editingUser);
-                      
-                      if (!editingUser) {
-                        console.error('No editing user set!');
-                        toast({
-                          title: '오류',
-                          description: '편집할 사용자가 선택되지 않았습니다.',
-                          variant: 'destructive'
-                        });
-                        return;
-                      }
-                      
-                      // 역할이 변경되었는지 확인
-                      const currentRole = (editingUser as any).accountType === 'admin' ? 'admin' : 
-                                        (editingUser as any).accountType === 'sales_manager' ? 'sales_manager' : 'worker';
-                      
-                      console.log('Current role:', currentRole, 'New role:', data.role);
-                      
-                      if (data.role !== currentRole) {
-                        console.log('Role changed, calling changeUserRoleMutation');
-                        // 역할 변경
-                        changeUserRoleMutation.mutate({
-                          userId: editingUser.id,
-                          accountType: data.role as 'admin' | 'sales_manager' | 'worker'
-                        });
-                      } else {
-                        console.log('Role not changed, updating basic info');
-                        // 기본 정보 변경
-                        const updateData: any = {};
-                        if (data.name !== editingUser.name) updateData.name = data.name;
-                        if (data.username !== editingUser.username) updateData.username = data.username;
-                        if (data.password) updateData.password = data.password;
-                        
-                        if (Object.keys(updateData).length > 0) {
-                          updateUserMutation.mutate({ id: editingUser.id, data: updateData });
-                        } else {
-                          setEditUserDialogOpen(false);
-                        }
-                      }
-                    })} className="space-y-4">
-                      <FormField
-                        control={editUserForm.control}
-                        name="name"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>이름</FormLabel>
-                            <FormControl>
-                              <Input placeholder="이름을 입력하세요" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={editUserForm.control}
-                        name="username"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>아이디</FormLabel>
-                            <FormControl>
-                              <Input type="text" placeholder="아이디를 입력하세요" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={editUserForm.control}
-                        name="password"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>새 비밀번호</FormLabel>
-                            <FormControl>
-                              <Input type="password" placeholder="변경할 경우에만 입력하세요" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={editUserForm.control}
-                        name="role"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>계정 유형</FormLabel>
-                            <Select value={field.value} onValueChange={(value) => {
-                              console.log('Role changed to:', value);
-                              field.onChange(value);
-                            }}>
-                              <FormControl>
-                                <SelectTrigger>
-                                  <SelectValue placeholder="계정 유형을 선택하세요" />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                <SelectItem value="admin">시스템 관리자</SelectItem>
-                                <SelectItem value="sales_manager">영업과장</SelectItem>
-                                <SelectItem value="worker">근무자</SelectItem>
-                              </SelectContent>
-                            </Select>
-                            <FormMessage />
-                            <div className="text-xs text-gray-500 mt-1">
-                              현재 값: {field.value}
-                            </div>
-                          </FormItem>
-                        )}
-                      />
-                      <div className="flex justify-end space-x-2">
-                        <Button type="button" variant="outline" onClick={() => setEditUserDialogOpen(false)}>
-                          취소
-                        </Button>
-                        <Button 
-                          type="submit" 
-                          disabled={updateUserMutation.isPending || changeUserRoleMutation.isPending}
-                          onClick={() => {
-                            console.log('Submit button clicked');
-                            console.log('Current editingUser:', editingUser);
-                            console.log('Form values:', editUserForm.getValues());
-                          }}
-                        >
-                          {(updateUserMutation.isPending || changeUserRoleMutation.isPending) ? '수정 중...' : '수정'}
-                        </Button>
-                      </div>
-                    </form>
-                  </Form>
-                </DialogContent>
-              </Dialog>
-            </div>
           </TabsContent>
 
           {/* Documents Tab */}
@@ -5704,860 +5347,8 @@ export function AdminPanel() {
               </Card>
             </div>
           </TabsContent>
-
-          {/* Workers Statistics Tab */}
-          <TabsContent value="workers" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>근무자 통계</CardTitle>
-                <CardDescription>근무자별 성과 및 활동 통계를 확인할 수 있습니다.</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center py-8">
-                  <TrendingUp className="mx-auto h-12 w-12 text-gray-400" />
-                  <h3 className="mt-2 text-sm font-medium text-gray-900">근무자 통계</h3>
-                  <p className="mt-1 text-sm text-gray-500">통계 기능이 준비 중입니다.</p>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* Templates Tab */}
-          <TabsContent value="templates" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>서식지 관리</CardTitle>
-                <CardDescription>서류 템플릿을 업로드하고 관리할 수 있습니다.</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center py-8">
-                  <Upload className="mx-auto h-12 w-12 text-gray-400" />
-                  <h3 className="mt-2 text-sm font-medium text-gray-900">서식지 관리</h3>
-                  <p className="mt-1 text-sm text-gray-500">서식지 업로드 기능이 준비 중입니다.</p>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* Settlement Unit Pricing Tab */}
-          <TabsContent value="pricing" className="space-y-6">
-            {/* 접수 방법 가이드 */}
-            <Card className="border-blue-200 bg-blue-50">
-              <CardHeader className="pb-3">
-                <CardTitle className="flex items-center space-x-2 text-blue-700">
-                  <Info className="h-5 w-5" />
-                  <span>정산단가 관리 가이드</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3 text-sm text-blue-600">
-                <div className="grid md:grid-cols-2 gap-4">
-                  <div>
-                    <h4 className="font-medium mb-2">📋 개별 입력 방법</h4>
-                    <ol className="list-decimal list-inside space-y-1 text-xs">
-                      <li>요금제 목록에서 '설정' 또는 '수정' 버튼 클릭</li>
-                      <li>정산단가 입력 후 '저장' 클릭</li>
-                      <li>기존 단가 수정 시 신규 정산건부터 적용</li>
-                    </ol>
-                  </div>
-                  <div>
-                    <h4 className="font-medium mb-2">📊 엑셀 일괄 업로드</h4>
-                    <ol className="list-decimal list-inside space-y-1 text-xs">
-                      <li>'양식 다운로드'로 템플릿 파일 받기</li>
-                      <li>통신사, 요금제명, 정산단가 입력</li>
-                      <li>'엑셀 업로드'로 파일 업로드</li>
-                    </ol>
-                  </div>
-                </div>
-                <div className="bg-yellow-100 border border-yellow-300 rounded p-2 mt-3">
-                  <p className="text-yellow-700 text-xs">
-                    ⚠️ <strong>주의사항:</strong> 정산단가 변경 시 기존 정산건은 기존 금액 유지, 신규 정산건부터 새 단가 적용
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between">
-                <div>
-                  <CardTitle>정산단가 설정</CardTitle>
-                  <CardDescription>요금제별 정산 단가를 설정하고 관리할 수 있습니다. 단가 변경 시 기존 정산금액은 유지됩니다.</CardDescription>
-                </div>
-                <div className="space-x-2">
-                  <input
-                    ref={settlementPricingExcelInputRef}
-                    type="file"
-                    accept=".xlsx,.xls,.csv"
-                    onChange={handleSettlementPricingExcelUpload}
-                    className="hidden"
-                  />
-                  <Button
-                    variant="outline"
-                    onClick={handleDownloadSettlementPricingTemplate}
-                  >
-                    <Download className="mr-2 h-4 w-4" />
-                    양식 다운로드
-                  </Button>
-                  <Button
-                    variant="outline"
-                    onClick={() => settlementPricingExcelInputRef.current?.click()}
-                    disabled={settlementPricingExcelUploadMutation.isPending}
-                  >
-                    <Upload className="mr-2 h-4 w-4" />
-                    {settlementPricingExcelUploadMutation.isPending ? '업로드 중...' : '엑셀 업로드'}
-                  </Button>
-                </div>
-              </CardHeader>
-              <CardContent>
-                {settlementPricesLoading ? (
-                  <div className="text-center py-8">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
-                    <p className="mt-2 text-sm text-gray-500">정산단가를 불러오는 중...</p>
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    {/* 검색 및 필터 */}
-                    <div className="flex flex-col sm:flex-row gap-4 mb-6">
-                      <div className="flex-1 relative">
-                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                        <Input
-                          placeholder="통신사 또는 요금제명으로 검색..."
-                          value={settlementSearchTerm}
-                          onChange={(e) => setSettlementSearchTerm(e.target.value)}
-                          className="w-full pl-10"
-                        />
-                      </div>
-                      <div className="min-w-[200px]">
-                        <Select
-                          value={settlementCarrierFilter}
-                          onValueChange={setSettlementCarrierFilter}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="통신사 선택" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="all">전체 통신사</SelectItem>
-                            {Array.from(new Set(servicePlans?.map(plan => plan.carrier) || [])).map((carrier) => (
-                              <SelectItem key={carrier} value={carrier}>
-                                {carrier}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-
-                    {/* Service Plans with Unit Pricing */}
-                    <div className="grid gap-4">
-                      {servicePlans?.filter((plan) => {
-                        const matchesSearch = plan.planName.toLowerCase().includes(settlementSearchTerm.toLowerCase()) ||
-                                            plan.carrier.toLowerCase().includes(settlementSearchTerm.toLowerCase());
-                        const matchesCarrier = settlementCarrierFilter === 'all' || plan.carrier === settlementCarrierFilter;
-                        return matchesSearch && matchesCarrier;
-                      }).map((plan) => {
-                        const currentPrice = settlementPrices?.find(p => p.servicePlanId === plan.id);
-                        return (
-                          <div key={plan.id} className="flex items-center justify-between p-4 border rounded-lg bg-gray-50">
-                            <div className="flex-1">
-                              <div className="flex items-center space-x-3">
-                                <div>
-                                  <h4 className="font-medium text-gray-900">{plan.planName}</h4>
-                                  <p className="text-sm text-gray-500">{plan.carrier} • {plan.planType} • {plan.dataAllowance}</p>
-                                </div>
-                                {plan.isActive ? (
-                                  <Badge variant="secondary">활성</Badge>
-                                ) : (
-                                  <Badge variant="outline">비활성</Badge>
-                                )}
-                              </div>
-                            </div>
-                            <div className="flex items-center space-x-3">
-                              {currentPrice ? (
-                                <div className="text-right">
-                                  <p className="font-medium text-gray-900">
-                                    신규: {currentPrice.newCustomerPrice.toLocaleString()}원
-                                  </p>
-                                  <p className="font-medium text-gray-900">
-                                    번호이동: {currentPrice.portInPrice.toLocaleString()}원
-                                  </p>
-                                  <p className="text-xs text-gray-500">
-                                    {format(currentPrice.effectiveFrom, 'yyyy-MM-dd')}부터 적용
-                                  </p>
-                                </div>
-                              ) : (
-                                <p className="text-sm text-gray-500">단가 미설정</p>
-                              )}
-                              <Button
-                                size="sm"
-                                variant={currentPrice ? "outline" : "default"}
-                                onClick={() => {
-                                  setSelectedServicePlan(plan);
-                                  settlementPriceForm.reset({
-                                    servicePlanId: plan.id,
-                                    newCustomerPrice: currentPrice?.newCustomerPrice || 0,
-                                    portInPrice: currentPrice?.portInPrice || 0
-                                  });
-                                  setSettlementPriceDialogOpen(true);
-                                }}
-                              >
-                                {currentPrice ? '수정' : '설정'}
-                              </Button>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-
-                    {/* 검색 결과가 없을 때 */}
-                    {servicePlans?.filter((plan) => {
-                      const matchesSearch = plan.planName.toLowerCase().includes(settlementSearchTerm.toLowerCase()) ||
-                                          plan.carrier.toLowerCase().includes(settlementSearchTerm.toLowerCase());
-                      const matchesCarrier = settlementCarrierFilter === 'all' || plan.carrier === settlementCarrierFilter;
-                      return matchesSearch && matchesCarrier;
-                    }).length === 0 && servicePlans?.length > 0 && (
-                      <div className="text-center py-8">
-                        <Search className="mx-auto h-12 w-12 text-gray-400" />
-                        <h3 className="mt-2 text-sm font-medium text-gray-900">검색 결과가 없습니다</h3>
-                        <p className="mt-1 text-sm text-gray-500">다른 검색어나 필터를 시도해보세요.</p>
-                      </div>
-                    )}
-
-                    {servicePlans?.length === 0 && (
-                      <div className="text-center py-8">
-                        <Calculator className="mx-auto h-12 w-12 text-gray-400" />
-                        <h3 className="mt-2 text-sm font-medium text-gray-900">등록된 요금제가 없습니다</h3>
-                        <p className="mt-1 text-sm text-gray-500">먼저 요금제 관리에서 요금제를 등록해주세요.</p>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Additional Service Deduction Management Card */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <DollarSign className="h-5 w-5" />
-                  부가서비스 차감 정책 관리
-                </CardTitle>
-                <CardDescription>
-                  부가서비스별 차감 금액을 설정하여 정산 시 자동으로 차감할 수 있습니다.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <AdditionalServiceDeductionManagement />
-              </CardContent>
-            </Card>
-
-            {/* Settlement Unit Price Dialog */}
-            <Dialog open={settlementPriceDialogOpen} onOpenChange={setSettlementPriceDialogOpen}>
-              <DialogContent className="max-w-md">
-                <DialogHeader>
-                  <DialogTitle>
-                    {selectedServicePlan ? `${selectedServicePlan.planName} 정산단가 ${settlementPrices?.find(p => p.servicePlanId === selectedServicePlan.id) ? '수정' : '설정'}` : '정산단가 설정'}
-                  </DialogTitle>
-                  <DialogDescription>
-                    정산단가를 설정하면 해당 요금제의 정산금액이 자동으로 계산됩니다.
-                    {settlementPrices?.find(p => p.servicePlanId === selectedServicePlan?.id) && (
-                      <span className="block mt-2 text-orange-600 font-medium">
-                        ※ 단가 변경 시 기존 정산건은 기존 금액이 유지되고, 신규 정산건부터 새 단가가 적용됩니다.
-                      </span>
-                    )}
-                  </DialogDescription>
-                </DialogHeader>
-                <Form {...settlementPriceForm}>
-                  <form onSubmit={settlementPriceForm.handleSubmit(
-                    (data) => {
-                      console.log('Form validation passed, calling onSubmitSettlementPrice');
-                      onSubmitSettlementPrice(data);
-                    },
-                    (errors) => {
-                      console.log('Form validation errors:', errors);
-                    }
-                  )} className="space-y-4">
-                    <FormField
-                      control={settlementPriceForm.control}
-                      name="servicePlanId"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormControl>
-                            <Input
-                              type="hidden"
-                              {...field}
-                              value={selectedServicePlan?.id || 0}
-                            />
-                          </FormControl>
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={settlementPriceForm.control}
-                      name="newCustomerPrice"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>신규 정산단가 (원)</FormLabel>
-                          <FormControl>
-                            <Input
-                              type="number"
-                              placeholder="신규 정산단가를 입력하세요"
-                              {...field}
-                              onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                            />
-                          </FormControl>
-                          <FormDescription>
-                            신규 고객 정산 시 적용될 단위 금액을 입력하세요.
-                          </FormDescription>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={settlementPriceForm.control}
-                      name="portInPrice"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>번호이동 정산단가 (원)</FormLabel>
-                          <FormControl>
-                            <Input
-                              type="number"
-                              placeholder="번호이동 정산단가를 입력하세요"
-                              {...field}
-                              onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                            />
-                          </FormControl>
-                          <FormDescription>
-                            번호이동 고객 정산 시 적용될 단위 금액을 입력하세요.
-                          </FormDescription>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={settlementPriceForm.control}
-                      name="memo"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>메모</FormLabel>
-                          <FormControl>
-                            <Input
-                              type="text"
-                              placeholder="몇차 단가인지 등 메모를 입력하세요 (선택사항)"
-                              {...field}
-                            />
-                          </FormControl>
-                          <FormDescription>
-                            정산단가 변경 이력을 관리하기 위한 메모입니다.
-                          </FormDescription>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <div className="flex justify-end space-x-2">
-                      <Button type="button" variant="outline" onClick={() => setSettlementPriceDialogOpen(false)}>
-                        취소
-                      </Button>
-                      <Button type="submit" disabled={createSettlementPriceMutation.isPending || updateSettlementPriceMutation.isPending}>
-                        {createSettlementPriceMutation.isPending || updateSettlementPriceMutation.isPending ? '처리 중...' : '저장'}
-                      </Button>
-                    </div>
-                  </form>
-                </Form>
-              </DialogContent>
-            </Dialog>
-          </TabsContent>
         </Tabs>
-
-        {/* Worker Details Dialog */}
-        <Dialog open={workerDetailsOpen} onOpenChange={setWorkerDetailsOpen}>
-          <DialogContent className="max-w-md">
-            <DialogHeader>
-              <DialogTitle>{selectedWorker?.name} 통신사별 개통 현황</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-3">
-              {workerCarrierDetails.length > 0 ? (
-                workerCarrierDetails.map((detail, index) => (
-                  <div key={index} className="flex justify-between items-center p-3 bg-gray-50 rounded">
-                    <span className="font-medium">{detail.carrier}</span>
-                    <Badge variant="secondary">{detail.count}건</Badge>
-                  </div>
-                ))
-              ) : (
-                <div className="text-center py-4 text-gray-500">
-                  개통 내역이 없습니다.
-                </div>
-              )}
-            </div>
-          </DialogContent>
-        </Dialog>
-
-        {/* Carrier Details Dialog */}
-        <Dialog open={carrierDetailsOpen} onOpenChange={setCarrierDetailsOpen}>
-          <DialogContent className="max-w-md">
-            <DialogHeader>
-              <DialogTitle>{selectedCarrier} 판매점별 개통 현황</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-3">
-              {carrierDealerDetails.length > 0 ? (
-                carrierDealerDetails.map((detail, index) => (
-                  <div key={index} className="flex justify-between items-center p-3 bg-gray-50 rounded">
-                    <span className="font-medium">{detail.dealerName}</span>
-                    <Badge variant="secondary">{detail.count}건</Badge>
-                  </div>
-                ))
-              ) : (
-                <div className="text-center py-4 text-gray-500">
-                  개통 내역이 없습니다.
-                </div>
-              )}
-            </div>
-          </DialogContent>
-        </Dialog>
       </div>
     </Layout>
-  );
-}
-
-// Additional Service Deduction Management Component
-function AdditionalServiceDeductionManagement() {
-  const [deductionDialogOpen, setDeductionDialogOpen] = useState(false);
-  const [editingDeduction, setEditingDeduction] = useState<AdditionalServiceDeduction | null>(null);
-  const apiRequest = useApiRequest();
-  const queryClient = useQueryClient();
-  const { toast } = useToast();
-
-  // Additional service deductions query
-  const { data: deductions = [], isLoading: deductionsLoading } = useQuery({
-    queryKey: ['/api/additional-service-deductions'],
-    queryFn: () => apiRequest('/api/additional-service-deductions')
-  });
-
-  // Additional services query for dropdown
-  const { data: additionalServices = [] } = useQuery({
-    queryKey: ['/api/additional-services'],
-    queryFn: () => apiRequest('/api/additional-services')
-  });
-
-  // Create deduction form
-  const deductionForm = useForm<CreateAdditionalServiceDeductionForm>({
-    resolver: zodResolver(createAdditionalServiceDeductionSchema),
-    defaultValues: {
-      additionalServiceId: 0,
-      deductionAmount: 0,
-      effectiveFrom: new Date()
-    }
-  });
-
-  // Create mutation
-  const createDeductionMutation = useMutation({
-    mutationFn: (data: CreateAdditionalServiceDeductionForm) => 
-      apiRequest('/api/additional-service-deductions', {
-        method: 'POST',
-        body: JSON.stringify(data),
-      }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/additional-service-deductions'] });
-      setDeductionDialogOpen(false);
-      deductionForm.reset();
-      toast({
-        title: '성공',
-        description: '부가서비스 차감 정책이 성공적으로 생성되었습니다.',
-      });
-    },
-    onError: (error: Error) => {
-      toast({
-        title: '오류',
-        description: error.message,
-        variant: 'destructive',
-      });
-    },
-  });
-
-  // Update mutation
-  const updateDeductionMutation = useMutation({
-    mutationFn: ({ additionalServiceId, data }: { additionalServiceId: number; data: UpdateAdditionalServiceDeductionForm }) => 
-      apiRequest(`/api/additional-service-deductions/${additionalServiceId}`, {
-        method: 'PUT',
-        body: JSON.stringify(data),
-      }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/additional-service-deductions'] });
-      setDeductionDialogOpen(false);
-      setEditingDeduction(null);
-      deductionForm.reset();
-      toast({
-        title: '성공',
-        description: '부가서비스 차감 정책이 성공적으로 수정되었습니다.',
-      });
-    },
-    onError: (error: Error) => {
-      toast({
-        title: '오류',
-        description: error.message,
-        variant: 'destructive',
-      });
-    },
-  });
-
-  // Delete mutation
-  const deleteDeductionMutation = useMutation({
-    mutationFn: (additionalServiceId: number) => 
-      apiRequest(`/api/additional-service-deductions/${additionalServiceId}`, {
-        method: 'DELETE',
-      }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/additional-service-deductions'] });
-      toast({
-        title: '성공',
-        description: '부가서비스 차감 정책이 성공적으로 삭제되었습니다.',
-      });
-    },
-    onError: (error: Error) => {
-      toast({
-        title: '오류',
-        description: error.message,
-        variant: 'destructive',
-      });
-    },
-  });
-
-  const handleCreateDeduction = (data: CreateAdditionalServiceDeductionForm) => {
-    createDeductionMutation.mutate(data);
-  };
-
-  const handleUpdateDeduction = (data: UpdateAdditionalServiceDeductionForm) => {
-    if (editingDeduction) {
-      updateDeductionMutation.mutate({ 
-        additionalServiceId: editingDeduction.additionalServiceId, 
-        data 
-      });
-    }
-  };
-
-  const openEditDialog = (deduction: AdditionalServiceDeduction) => {
-    setEditingDeduction(deduction);
-    deductionForm.reset({
-      additionalServiceId: deduction.additionalServiceId,
-      deductionAmount: deduction.deductionAmount,
-      effectiveFrom: new Date(deduction.effectiveFrom)
-    });
-    setDeductionDialogOpen(true);
-  };
-
-  const openCreateDialog = () => {
-    setEditingDeduction(null);
-    deductionForm.reset({
-      additionalServiceId: 0,
-      deductionAmount: 0,
-      effectiveFrom: new Date()
-    });
-    setDeductionDialogOpen(true);
-  };
-
-  return (
-    <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <div>
-          <h3 className="text-lg font-semibold">부가서비스 차감 정책</h3>
-          <p className="text-sm text-gray-500">부가서비스별로 정산 시 차감할 금액을 설정합니다.</p>
-        </div>
-        <Dialog open={deductionDialogOpen} onOpenChange={setDeductionDialogOpen}>
-          <DialogTrigger asChild>
-            <Button onClick={openCreateDialog}>
-              <Plus className="mr-2 h-4 w-4" />
-              차감 정책 추가
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>
-                {editingDeduction ? '차감 정책 수정' : '새 차감 정책 추가'}
-              </DialogTitle>
-              <DialogDescription>
-                부가서비스별로 정산 시 차감할 금액을 설정할 수 있습니다.
-              </DialogDescription>
-            </DialogHeader>
-            <Form {...deductionForm}>
-              <form 
-                onSubmit={deductionForm.handleSubmit(editingDeduction ? handleUpdateDeduction : handleCreateDeduction)} 
-                className="space-y-4"
-              >
-                <FormField
-                  control={deductionForm.control}
-                  name="additionalServiceId"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>부가서비스</FormLabel>
-                      <Select 
-                        onValueChange={(value) => field.onChange(parseInt(value))} 
-                        value={field.value.toString()}
-                        disabled={!!editingDeduction}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="부가서비스를 선택하세요" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {additionalServices.map((service: AdditionalService) => (
-                            <SelectItem key={service.id} value={service.id.toString()}>
-                              {service.serviceName}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={deductionForm.control}
-                  name="deductionAmount"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>차감 금액 (원)</FormLabel>
-                      <FormControl>
-                        <Input 
-                          type="number" 
-                          placeholder="차감할 금액을 입력하세요" 
-                          {...field} 
-                          onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
-                        />
-                      </FormControl>
-                      <FormDescription>
-                        해당 부가서비스가 포함된 정산 건에서 자동으로 차감될 금액입니다.
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={deductionForm.control}
-                  name="effectiveFrom"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>적용 시작일</FormLabel>
-                      <FormControl>
-                        <Input 
-                          type="date" 
-                          value={field.value instanceof Date ? field.value.toISOString().split('T')[0] : field.value}
-                          onChange={(e) => field.onChange(new Date(e.target.value))}
-                        />
-                      </FormControl>
-                      <FormDescription>
-                        해당 날짜부터 차감 정책이 적용됩니다.
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <div className="flex justify-end space-x-2">
-                  <Button type="button" variant="outline" onClick={() => setDeductionDialogOpen(false)}>
-                    취소
-                  </Button>
-                  <Button 
-                    type="submit" 
-                    disabled={createDeductionMutation.isPending || updateDeductionMutation.isPending}
-                  >
-                    {createDeductionMutation.isPending || updateDeductionMutation.isPending 
-                      ? '처리 중...' 
-                      : editingDeduction ? '수정' : '추가'
-                    }
-                  </Button>
-                </div>
-              </form>
-            </Form>
-          </DialogContent>
-        </Dialog>
-      </div>
-
-      {deductionsLoading ? (
-        <div className="flex items-center justify-center py-8">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-        </div>
-      ) : deductions.length > 0 ? (
-        <div className="space-y-4">
-          {deductions.map((deduction: AdditionalServiceDeduction) => (
-            <Card key={deduction.id}>
-              <CardContent className="pt-6">
-                <div className="flex items-center justify-between">
-                  <div className="space-y-1">
-                    <h4 className="font-medium">{deduction.additionalServiceName}</h4>
-                    <div className="flex items-center space-x-4 text-sm text-gray-500">
-                      <span>차감금액: {deduction.deductionAmount.toLocaleString()}원</span>
-                      <span>시작일: {format(deduction.effectiveFrom, 'yyyy-MM-dd')}</span>
-                      <Badge variant={deduction.isActive ? 'default' : 'secondary'}>
-                        {deduction.isActive ? '활성' : '비활성'}
-                      </Badge>
-                    </div>
-                  </div>
-                  <div className="flex space-x-2">
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => openEditDialog(deduction)}
-                    >
-                      <Edit2 className="h-4 w-4" />
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => {
-                        if (confirm('정말로 이 차감 정책을 삭제하시겠습니까?')) {
-                          deleteDeductionMutation.mutate(deduction.additionalServiceId);
-                        }
-                      }}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      ) : (
-        <div className="text-center py-8">
-          <DollarSign className="mx-auto h-12 w-12 text-gray-400" />
-          <h3 className="mt-2 text-sm font-medium text-gray-900">차감 정책이 없습니다</h3>
-          <p className="mt-1 text-sm text-gray-500">첫 번째 차감 정책을 추가해보세요.</p>
-        </div>
-      )}
-
-      {/* Edit Sales Manager Dialog */}
-      <Dialog open={editSalesManagerDialogOpen} onOpenChange={setEditSalesManagerDialogOpen}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>영업과장 정보 수정</DialogTitle>
-          </DialogHeader>
-          <Form {...editSalesManagerForm}>
-            <form onSubmit={editSalesManagerForm.handleSubmit(handleUpdateSalesManager)} className="space-y-4">
-              <FormField
-                control={editSalesManagerForm.control}
-                name="teamId"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>팀</FormLabel>
-                    <Select onValueChange={(value) => field.onChange(parseInt(value))} value={field.value?.toString()}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="팀을 선택하세요" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {salesTeams.map((team: any) => (
-                          <SelectItem key={team.id} value={team.id.toString()}>
-                            {team.teamName}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={editSalesManagerForm.control}
-                name="managerName"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>이름</FormLabel>
-                    <FormControl>
-                      <Input placeholder="이름을 입력하세요" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={editSalesManagerForm.control}
-                name="managerCode"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>관리자 코드</FormLabel>
-                    <FormControl>
-                      <Input placeholder="관리자 코드를 입력하세요" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={editSalesManagerForm.control}
-                name="username"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>사용자명</FormLabel>
-                    <FormControl>
-                      <Input placeholder="사용자명을 입력하세요" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={editSalesManagerForm.control}
-                name="password"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>비밀번호 (변경시에만 입력)</FormLabel>
-                    <FormControl>
-                      <Input type="password" placeholder="새 비밀번호" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={editSalesManagerForm.control}
-                name="position"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>직급</FormLabel>
-                    <FormControl>
-                      <Input placeholder="직급을 입력하세요" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={editSalesManagerForm.control}
-                name="contactPhone"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>연락처</FormLabel>
-                    <FormControl>
-                      <Input placeholder="연락처를 입력하세요" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={editSalesManagerForm.control}
-                name="email"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>이메일</FormLabel>
-                    <FormControl>
-                      <Input type="email" placeholder="이메일을 입력하세요" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <div className="flex justify-end space-x-2">
-                <Button type="button" variant="outline" onClick={() => setEditSalesManagerDialogOpen(false)}>
-                  취소
-                </Button>
-                <Button type="submit" disabled={updateSalesManagerMutation.isPending}>
-                  {updateSalesManagerMutation.isPending ? '수정 중...' : '수정'}
-                </Button>
-              </div>
-            </form>
-          </Form>
-        </DialogContent>
-      </Dialog>
-    </div>
-  );
+  )
 }
