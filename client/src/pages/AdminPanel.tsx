@@ -3457,24 +3457,23 @@ export function AdminPanel() {
 
           {/* Users Tab */}
           <TabsContent value="users">
-            <div className="space-y-6">
-              {/* Account Creation Section */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-lg">관리자 계정 생성</CardTitle>
-                    <CardDescription>
-                      새로운 관리자 계정을 생성합니다. 관리자는 모든 시스템 권한을 가집니다.
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <Dialog open={adminDialogOpen} onOpenChange={setAdminDialogOpen}>
-                      <DialogTrigger asChild>
-                        <Button className="w-full">
-                          <Plus className="mr-2 h-4 w-4" />
-                          관리자 계정 생성
-                        </Button>
-                      </DialogTrigger>
+            {/* User Management Section */}
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <div>
+                  <CardTitle>사용자 관리</CardTitle>
+                  <CardDescription>
+                    시스템의 모든 사용자를 관리하고 새로운 계정을 생성할 수 있습니다.
+                  </CardDescription>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Dialog open={adminDialogOpen} onOpenChange={setAdminDialogOpen}>
+                    <DialogTrigger asChild>
+                      <Button variant="outline">
+                        <Plus className="mr-2 h-4 w-4" />
+                        관리자 생성
+                      </Button>
+                    </DialogTrigger>
                       <DialogContent>
                         <DialogHeader>
                           <DialogTitle>새 관리자 계정 생성</DialogTitle>
@@ -3532,24 +3531,13 @@ export function AdminPanel() {
                         </Form>
                       </DialogContent>
                     </Dialog>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-lg">근무자 계정 생성</CardTitle>
-                    <CardDescription>
-                      새로운 근무자 계정을 생성합니다. 근무자는 모든 판매점 데이터를 볼 수 있습니다.
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <Dialog open={workerDialogOpen} onOpenChange={setWorkerDialogOpen}>
-                      <DialogTrigger asChild>
-                        <Button className="w-full">
-                          <Plus className="mr-2 h-4 w-4" />
-                          근무자 계정 생성
-                        </Button>
-                      </DialogTrigger>
+                  <Dialog open={workerDialogOpen} onOpenChange={setWorkerDialogOpen}>
+                    <DialogTrigger asChild>
+                      <Button variant="outline">
+                        <Plus className="mr-2 h-4 w-4" />
+                        근무자 생성
+                      </Button>
+                    </DialogTrigger>
                       <DialogContent>
                         <DialogHeader>
                           <DialogTitle>새 근무자 계정 생성</DialogTitle>
@@ -3607,22 +3595,11 @@ export function AdminPanel() {
                         </Form>
                       </DialogContent>
                     </Dialog>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-lg">영업과장 계정 생성</CardTitle>
-                    <CardDescription>
-                      새로운 영업과장 계정을 생성합니다. 영업과장은 팀 설정을 할 수 있습니다.
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <Dialog open={salesManagerDialogOpen} onOpenChange={setSalesManagerDialogOpen}>
-                      <DialogTrigger asChild>
-                        <Button className="w-full">
-                          <Plus className="mr-2 h-4 w-4" />
-                          영업과장 계정 생성
+                  <Dialog open={salesManagerDialogOpen} onOpenChange={setSalesManagerDialogOpen}>
+                    <DialogTrigger asChild>
+                      <Button variant="outline">
+                        <Plus className="mr-2 h-4 w-4" />
+                        영업과장 생성
                         </Button>
                       </DialogTrigger>
                       <DialogContent>
@@ -3705,103 +3682,7 @@ export function AdminPanel() {
                         </Form>
                       </DialogContent>
                     </Dialog>
-                  </CardContent>
-                </Card>
-              </div>
-
-              {/* User Management Section */}
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between">
-                  <CardTitle>전체 사용자 목록</CardTitle>
-                  <Dialog open={userDialogOpen} onOpenChange={setUserDialogOpen}>
-                    <DialogTrigger asChild>
-                      <Button>
-                        <Plus className="mr-2 h-4 w-4" />
-                        사용자 추가
-                      </Button>
-                    </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>새 사용자 추가</DialogTitle>
-                    </DialogHeader>
-                    <Form {...userForm}>
-                      <form onSubmit={userForm.handleSubmit(handleCreateUser)} className="space-y-4">
-                        <FormField
-                          control={userForm.control}
-                          name="name"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>이름</FormLabel>
-                              <FormControl>
-                                <Input placeholder="이름을 입력하세요" {...field} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        <FormField
-                          control={userForm.control}
-                          name="username"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>아이디</FormLabel>
-                              <FormControl>
-                                <Input type="text" placeholder="아이디를 입력하세요" {...field} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        <FormField
-                          control={userForm.control}
-                          name="password"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>비밀번호</FormLabel>
-                              <FormControl>
-                                <Input type="password" placeholder="비밀번호를 입력하세요" {...field} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        <FormField
-                          control={userForm.control}
-                          name="role"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>역할</FormLabel>
-                              <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                <FormControl>
-                                  <SelectTrigger>
-                                    <SelectValue placeholder="계정 유형을 선택하세요" />
-                                  </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                  <SelectItem value="admin">관리자 (시스템 관리)</SelectItem>
-                                  <SelectItem value="worker" disabled>근무자 (개통업무) - 시스템에서 관리됨</SelectItem>
-                                  <SelectItem value="dealer" disabled>판매점 (접수) - 시스템에서 관리됨</SelectItem>
-                                </SelectContent>
-                              </Select>
-                              <FormMessage />
-                              <p className="text-sm text-gray-600 mt-1">
-                                근무자와 판매점 계정은 시스템에서 자동으로 관리됩니다.
-                              </p>
-                            </FormItem>
-                          )}
-                        />
-                        <div className="flex justify-end space-x-2">
-                          <Button type="button" variant="outline" onClick={() => setUserDialogOpen(false)}>
-                            취소
-                          </Button>
-                          <Button type="submit" disabled={createUserMutation.isPending}>
-                            {createUserMutation.isPending ? '생성 중...' : '생성'}
-                          </Button>
-                        </div>
-                      </form>
-                    </Form>
-                  </DialogContent>
-                </Dialog>
+                </div>
               </CardHeader>
               <CardContent>
                 {usersLoading ? (
@@ -3921,7 +3802,6 @@ export function AdminPanel() {
                 )}
               </CardContent>
             </Card>
-            </div>
           </TabsContent>
 
           {/* Worker Stats Tab */}
