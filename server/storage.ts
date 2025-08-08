@@ -1316,41 +1316,89 @@ export class DatabaseStorage implements IStorage {
       // 날짜순 정렬 (최신순)
       result = result.sort((a, b) => new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime());
       
-      // 결과 포맷팅
-      return result.map(doc => ({
-        id: doc.id,
-        documentNumber: doc.documentNumber,
-        customerName: doc.customerName,
-        customerPhone: doc.customerPhone || '',
-        contactCode: doc.contactCode,
-        carrier: doc.carrier,
-        previousCarrier: doc.previousCarrier,
-        customerType: doc.customerType,
-        desiredNumber: doc.desiredNumber,
-        status: doc.status,
-        activationStatus: doc.activationStatus,
-        uploadedAt: doc.uploadedAt,
-        updatedAt: doc.updatedAt,
-        activatedAt: doc.activatedAt,
-        notes: doc.notes,
-        dealerId: doc.dealerId,
-        userId: doc.userId,
-        assignedWorkerId: doc.assignedWorkerId,
-        filePath: doc.filePath,
-        fileName: doc.fileName,
-        fileSize: doc.fileSize,
-        dealerNotes: doc.dealerNotes,
-        subscriptionNumber: doc.subscriptionNumber,
-        servicePlanId: doc.servicePlanId,
-        deviceModel: doc.deviceModel,
-        simNumber: doc.simNumber,
-        settlementAmount: doc.settlementAmount,
-        activatedBy: doc.activatedBy,
-        cancelledBy: doc.cancelledBy,
-        assignedAt: doc.assignedAt,
-        dealerName: '미확인',
-        servicePlanName: null
-      }));
+      // 각 문서에 대해 서비스 플랜명과 판매점명 조회
+      const documentsWithDetails = await Promise.all(
+        result.map(async (doc) => {
+          let servicePlanName = null;
+          let storeName = '미확인';
+          
+          // servicePlanId가 있으면 서비스 플랜명 조회
+          if (doc.servicePlanId) {
+            try {
+              // 문자열 ID를 숫자로 변환
+              const planId = typeof doc.servicePlanId === 'string' 
+                ? parseFloat(doc.servicePlanId) 
+                : doc.servicePlanId;
+              
+              if (!isNaN(planId)) {
+                const [servicePlan] = await db.select().from(servicePlans)
+                  .where(eq(servicePlans.id, Math.floor(planId)))
+                  .limit(1);
+                
+                if (servicePlan) {
+                  servicePlanName = servicePlan.name;
+                }
+              }
+            } catch (error) {
+              console.error('Error fetching service plan name for doc', doc.id, ':', error);
+            }
+          }
+          
+          // contactCode가 있으면 판매점명 조회
+          if (doc.contactCode) {
+            try {
+              const [contactCodeResult] = await db.select()
+                .from(contactCodes)
+                .where(eq(contactCodes.code, doc.contactCode))
+                .limit(1);
+              
+              if (contactCodeResult) {
+                storeName = contactCodeResult.dealerName;
+              }
+            } catch (error) {
+              console.error('Error fetching store name for doc', doc.id, ':', error);
+            }
+          }
+          
+          return {
+            id: doc.id,
+            documentNumber: doc.documentNumber,
+            customerName: doc.customerName,
+            customerPhone: doc.customerPhone || '',
+            contactCode: doc.contactCode,
+            carrier: doc.carrier,
+            previousCarrier: doc.previousCarrier,
+            customerType: doc.customerType,
+            desiredNumber: doc.desiredNumber,
+            status: doc.status,
+            activationStatus: doc.activationStatus,
+            uploadedAt: doc.uploadedAt,
+            updatedAt: doc.updatedAt,
+            activatedAt: doc.activatedAt,
+            notes: doc.notes,
+            dealerId: doc.dealerId,
+            userId: doc.userId,
+            assignedWorkerId: doc.assignedWorkerId,
+            filePath: doc.filePath,
+            fileName: doc.fileName,
+            fileSize: doc.fileSize,
+            dealerNotes: doc.dealerNotes,
+            subscriptionNumber: doc.subscriptionNumber,
+            servicePlanId: doc.servicePlanId,
+            deviceModel: doc.deviceModel,
+            simNumber: doc.simNumber,
+            settlementAmount: doc.settlementAmount,
+            activatedBy: doc.activatedBy,
+            cancelledBy: doc.cancelledBy,
+            assignedAt: doc.assignedAt,
+            dealerName: '미확인',
+            servicePlanName: servicePlanName,
+            storeName: storeName
+          };
+        })
+      );
+      
+      return documentsWithDetails;
     } catch (error) {
       console.error('Error fetching documents:', error);
       throw new Error('문서 조회에 실패했습니다.');
