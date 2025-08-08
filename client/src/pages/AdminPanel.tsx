@@ -2186,7 +2186,7 @@ export function AdminPanel() {
     setEditingManager(manager);
     editSalesManagerForm.reset({
       teamId: manager.teamId || 1,
-      managerName: manager.managerName || '',
+      managerName: manager.displayName || manager.name || '',
       managerCode: manager.managerCode || '',
       username: manager.username || '',
       password: '',
@@ -3734,6 +3734,7 @@ export function AdminPanel() {
                                       </SelectTrigger>
                                     </FormControl>
                                     <SelectContent>
+                                      <SelectItem value="본사">본사</SelectItem>
                                       <SelectItem value="DX 1팀">DX 1팀</SelectItem>
                                       <SelectItem value="DX 2팀">DX 2팀</SelectItem>
                                     </SelectContent>
@@ -3772,7 +3773,7 @@ export function AdminPanel() {
                                 <FormItem>
                                   <FormLabel>이름</FormLabel>
                                   <FormControl>
-                                    <Input placeholder="김민준" {...field} />
+                                    <Input placeholder="이름을 입력하세요" {...field} />
                                   </FormControl>
                                   <FormMessage />
                                 </FormItem>
@@ -3853,11 +3854,9 @@ export function AdminPanel() {
                                       </SelectTrigger>
                                     </FormControl>
                                     <SelectContent>
-                                      {salesTeams?.map((team: any) => (
-                                        <SelectItem key={team.id} value={team.id.toString()}>
-                                          {team.name}
-                                        </SelectItem>
-                                      ))}
+                                      <SelectItem value="1">본사</SelectItem>
+                                      <SelectItem value="2">DX 1팀</SelectItem>
+                                      <SelectItem value="3">DX 2팀</SelectItem>
                                     </SelectContent>
                                   </Select>
                                   <FormMessage />
