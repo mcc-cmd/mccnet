@@ -704,6 +704,37 @@ export class DatabaseStorage implements IStorage {
   
   // 호환성을 위한 기존 사용자 인증 메서드 (임시)
   async authenticateUser(username: string, password: string): Promise<any> {
+    // 영업과장 인증 먼저 시도
+    console.log('Starting sales manager authentication for:', username);
+    try {
+      console.log('Querying sales_managers table...');
+      const managers = await db.select().from(salesManagers).where(eq(salesManagers.username, username)).limit(1);
+      console.log('Sales manager query result:', managers);
+      
+      if (managers.length > 0) {
+        const manager = managers[0];
+        console.log('Manager found, checking password...');
+        const passwordMatch = await bcrypt.compare(password, manager.password);
+        console.log('Password match:', passwordMatch);
+        
+        if (passwordMatch) {
+          console.log('Sales manager authentication successful - id:', manager.id, 'name:', manager.managerName);
+          return { 
+            id: manager.id, 
+            name: manager.managerName,
+            userType: 'sales_manager',
+            teamId: manager.teamId
+          };
+        } else {
+          console.log('Password does not match for sales manager');
+        }
+      } else {
+        console.log('No sales manager found with username:', username);
+      }
+    } catch (error) {
+      console.error('Sales manager authentication error:', error);
+    }
+
     // 일반 사용자 인증 (users 테이블에서)
     try {
       const [user] = await db.select().from(users).where(eq(users.username, username)).limit(1);
