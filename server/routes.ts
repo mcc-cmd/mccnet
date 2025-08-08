@@ -280,6 +280,65 @@ router.post('/api/auth/login', async (req, res) => {
   }
 });
 
+// 현재 사용자 정보 조회 API
+router.get('/api/auth/me', requireAuth, async (req: any, res) => {
+  try {
+    console.log('Auth me request - session:', req.session);
+    
+    const userId = req.session.userId;
+    const userType = req.session.userType;
+    console.log('Auth me - userId:', userId, 'userType:', userType);
+    
+    if (userType === 'admin') {
+      const admin = await storage.getAdminById(userId);
+      if (admin) {
+        const response: AuthResponse = {
+          success: true,
+          user: {
+            id: admin.id,
+            name: admin.name,
+            username: admin.username,
+            userType: 'admin'
+          }
+        };
+        return res.json(response);
+      }
+    } else if (userType === 'sales_manager') {
+      const manager = await storage.getSalesManagerById(userId);
+      if (manager) {
+        const response: AuthResponse = {
+          success: true,
+          user: {
+            id: manager.id,
+            name: manager.managerName,
+            userType: 'sales_manager'
+          }
+        };
+        return res.json(response);
+      }
+    } else {
+      const user = await storage.getUserById(userId);
+      if (user) {
+        const response: AuthResponse = {
+          success: true,
+          user: {
+            id: user.id,
+            name: user.name,
+            username: user.username,
+            userType: user.userType || 'user'
+          }
+        };
+        return res.json(response);
+      }
+    }
+    
+    res.status(401).json({ success: false, error: '사용자를 찾을 수 없습니다.' });
+  } catch (error: any) {
+    console.error('Auth me error:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 // 영업과장 로그인 API 
 router.post('/api/auth/manager-login', async (req, res) => {
   try {
@@ -292,7 +351,7 @@ router.post('/api/auth/manager-login', async (req, res) => {
     console.log('Manager auth result:', manager ? 'success' : 'failed');
     
     if (manager) {
-      const sessionId = await storage.createSession(manager.id, 'sales_manager');
+      const sessionId = await storage.createSession(manager.id, 'sales_manager', manager.id, manager.teamId);
       console.log('Manager session created:', sessionId);
       
       const response: AuthResponse = {
@@ -300,7 +359,6 @@ router.post('/api/auth/manager-login', async (req, res) => {
         user: {
           id: manager.id,
           name: manager.managerName,
-          type: 'sales_manager',
           userType: 'sales_manager'
         },
         sessionId
