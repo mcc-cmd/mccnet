@@ -2446,8 +2446,8 @@ export class DatabaseStorage implements IStorage {
         eq(documents.customerName, customerName),
         eq(documents.customerPhone, customerPhone),
         eq(documents.carrier, carrier),
-        gte(documents.uploadedAt, new Date(monthStart)),
-        lte(documents.uploadedAt, new Date(monthEnd))
+        gte(documents.uploadedAt, monthStart),
+        lte(documents.uploadedAt, monthEnd)
       ];
       
       // 판매점명 조건 추가 (storeName 또는 contactCode 중 하나라도 있으면)

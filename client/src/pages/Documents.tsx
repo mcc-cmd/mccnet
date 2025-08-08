@@ -81,12 +81,19 @@ export function Documents() {
   });
 
   const { data: documents, isLoading } = useQuery({
-    queryKey: ['/api/documents', filters],
+    queryKey: ['/api/documents', filters, user?.id],
     queryFn: () => {
       const params = new URLSearchParams();
-      // 접수 관리는 모든 근무자가 볼 수 있도록 설정 (대기/진행중 상태만 표시)
+      // 접수 관리는 대기/진행중 상태만 표시
       params.append('activationStatus', '대기,진행중');
-      params.append('allWorkers', 'true'); // 모든 근무자가 볼 수 있도록 설정
+      
+      // 근무자는 자신이 접수한 문서만 조회, 관리자는 모든 문서 조회
+      if (user?.userType === 'dealer_worker') {
+        params.append('workerFilter', 'my'); // 자신이 접수한 문서만
+      } else {
+        params.append('allWorkers', 'true'); // 관리자는 모든 문서
+      }
+      
       Object.entries(filters).forEach(([key, value]) => {
         if (value && value !== 'all' && key !== 'activationStatus') params.append(key, value);
       });

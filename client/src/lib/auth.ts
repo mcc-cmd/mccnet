@@ -132,13 +132,16 @@ export const useAuth = create<AuthState>()(
             console.log('Auth check failed:', response.status);
           }
           
-          // 인증 실패 시에만 세션 정보 삭제
+          // 401 오류(인증 실패)만 로그아웃 처리, 다른 오류는 세션 유지
           if (response.status === 401) {
+            console.log('Auth failed - clearing session');
             set({
               user: null,
               sessionId: null,
               isAuthenticated: false,
             });
+          } else {
+            console.log('Auth check failed but keeping session for retry:', response.status);
           }
           return false;
         } catch (error) {
@@ -150,6 +153,11 @@ export const useAuth = create<AuthState>()(
     }),
     {
       name: 'auth-storage',
+      partialize: (state) => ({
+        user: state.user,
+        sessionId: state.sessionId,
+        isAuthenticated: state.isAuthenticated,
+      }),
     }
   )
 );

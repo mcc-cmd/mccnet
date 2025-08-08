@@ -39,13 +39,15 @@ function AppRoutes() {
 
   useEffect(() => {
     const initAuth = async () => {
-      if (sessionId) {
+      // 새로고침 시 기존 세션이 있으면 인증 확인
+      if (sessionId && !isAuthenticated) {
+        console.log('App init: Checking existing session');
         await checkAuth();
       }
       setIsLoading(false);
     };
     initAuth();
-  }, [sessionId]); // checkAuth 의존성 제거하여 무한 루프 방지
+  }, []); // 빈 배열로 변경하여 마운트 시에만 실행
 
   if (isLoading) {
     return (
