@@ -1543,6 +1543,7 @@ export function AdminPanel() {
     resolver: zodResolver(createAdditionalServiceSchema),
     defaultValues: {
       serviceName: '',
+      carrier: '',
       serviceType: '',
       monthlyFee: 0,
       description: '',
@@ -1554,6 +1555,7 @@ export function AdminPanel() {
     resolver: zodResolver(createAdditionalServiceSchema),
     defaultValues: {
       serviceName: '',
+      carrier: '',
       serviceType: '',
       monthlyFee: 0,
       description: '',
@@ -5009,6 +5011,30 @@ export function AdminPanel() {
                           />
                           <FormField
                             control={additionalServiceForm.control}
+                            name="carrier"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>통신사</FormLabel>
+                                <Select onValueChange={field.onChange} value={field.value}>
+                                  <FormControl>
+                                    <SelectTrigger>
+                                      <SelectValue placeholder="통신사를 선택하세요" />
+                                    </SelectTrigger>
+                                  </FormControl>
+                                  <SelectContent>
+                                    {carriersData?.map((carrier: any) => (
+                                      <SelectItem key={carrier.id} value={carrier.name}>
+                                        {carrier.name}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={additionalServiceForm.control}
                             name="serviceType"
                             render={({ field }) => (
                               <FormItem>
@@ -5090,6 +5116,30 @@ export function AdminPanel() {
                                 <FormControl>
                                   <Input placeholder="서비스명을 입력하세요" {...field} />
                                 </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={editAdditionalServiceForm.control}
+                            name="carrier"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>통신사</FormLabel>
+                                <Select onValueChange={field.onChange} value={field.value}>
+                                  <FormControl>
+                                    <SelectTrigger>
+                                      <SelectValue placeholder="통신사를 선택하세요" />
+                                    </SelectTrigger>
+                                  </FormControl>
+                                  <SelectContent>
+                                    {carriersData?.map((carrier: any) => (
+                                      <SelectItem key={carrier.id} value={carrier.name}>
+                                        {carrier.name}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
                                 <FormMessage />
                               </FormItem>
                             )}

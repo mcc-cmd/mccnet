@@ -694,6 +694,7 @@ export const createServicePlanSchema = z.object({
 
 export const createAdditionalServiceSchema = z.object({
   serviceName: z.string().min(1, "서비스명을 입력해주세요"),
+  carrier: z.string().min(1, "통신사를 선택해주세요"),
   serviceType: z.string().min(1, "서비스 유형을 선택해주세요"),
   monthlyFee: z.number().min(0, "월 요금을 입력해주세요"),
   description: z.string().optional(),
