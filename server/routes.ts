@@ -255,11 +255,11 @@ router.post('/api/auth/login', async (req, res) => {
       const sessionId = await storage.createSession(
         userResult.id, 
         userResult.userType || 'user',
-        undefined,
-        undefined,
+        userResult.userType === 'sales_manager' ? userResult.id : undefined, // sales_manager인 경우 managerId 설정
+        userResult.teamId, // teamId 추가
         userResult.userRole
       );
-      console.log('User session created:', sessionId, 'Type:', userResult.userType, 'Role:', userResult.userRole);
+      console.log('User session created:', sessionId, 'Type:', userResult.userType, 'Role:', userResult.userRole, 'ManagerId:', userResult.userType === 'sales_manager' ? userResult.id : undefined, 'TeamId:', userResult.teamId);
       
       const response: AuthResponse = {
         success: true,
