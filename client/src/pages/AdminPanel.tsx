@@ -5336,53 +5336,60 @@ export function AdminPanel() {
                     </DialogTrigger>
                     <DialogContent>
                       <DialogHeader>
-                        <DialogTitle>정산단가 설정</DialogTitle>
+                        <DialogTitle>
+                          {selectedServicePlan ? `정산단가 설정: ${selectedServicePlan.planName}` : '정산단가 설정'}
+                        </DialogTitle>
                         <DialogDescription>
-                          요금제별 정산 단가를 설정합니다.
+                          {selectedServicePlan 
+                            ? `${selectedServicePlan.planName} (${selectedServicePlan.carrier})의 정산 단가를 설정합니다.`
+                            : '요금제별 정산 단가를 설정합니다.'
+                          }
                         </DialogDescription>
                       </DialogHeader>
                       <Form {...settlementPriceForm}>
                         <form onSubmit={settlementPriceForm.handleSubmit(onSubmitSettlementPrice)} className="space-y-4">
-                          <FormField
-                            control={settlementPriceForm.control}
-                            name="servicePlanId"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>요금제</FormLabel>
-                                <Select 
-                                  onValueChange={(value) => {
-                                    const planId = parseInt(value);
-                                    field.onChange(planId);
-                                    const plan = servicePlans?.find(p => p.id === planId);
-                                    setSelectedServicePlan(plan || null);
-                                    
-                                    // 기존 단가가 있으면 폼에 설정
-                                    const existingPrice = settlementPrices?.find(p => p.servicePlanId === planId);
-                                    if (existingPrice) {
-                                      settlementPriceForm.setValue('newCustomerPrice', existingPrice.newCustomerPrice);
-                                      settlementPriceForm.setValue('portInPrice', existingPrice.portInPrice);
-                                      settlementPriceForm.setValue('memo', existingPrice.memo || '');
-                                    }
-                                  }} 
-                                  value={field.value ? field.value.toString() : ''}
-                                >
-                                  <FormControl>
-                                    <SelectTrigger>
-                                      <SelectValue placeholder="요금제를 선택하세요" />
-                                    </SelectTrigger>
-                                  </FormControl>
-                                  <SelectContent>
-                                    {servicePlans?.map((plan) => (
-                                      <SelectItem key={plan.id} value={plan.id.toString()}>
-                                        {plan.planName} ({plan.carrier})
-                                      </SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
+                          {!selectedServicePlan && (
+                            <FormField
+                              control={settlementPriceForm.control}
+                              name="servicePlanId"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>요금제</FormLabel>
+                                  <Select 
+                                    onValueChange={(value) => {
+                                      const planId = parseInt(value);
+                                      field.onChange(planId);
+                                      const plan = servicePlans?.find(p => p.id === planId);
+                                      setSelectedServicePlan(plan || null);
+                                      
+                                      // 기존 단가가 있으면 폼에 설정
+                                      const existingPrice = settlementPrices?.find(p => p.servicePlanId === planId);
+                                      if (existingPrice) {
+                                        settlementPriceForm.setValue('newCustomerPrice', existingPrice.newCustomerPrice);
+                                        settlementPriceForm.setValue('portInPrice', existingPrice.portInPrice);
+                                        settlementPriceForm.setValue('memo', existingPrice.memo || '');
+                                      }
+                                    }} 
+                                    value={field.value ? field.value.toString() : ''}
+                                  >
+                                    <FormControl>
+                                      <SelectTrigger>
+                                        <SelectValue placeholder="요금제를 선택하세요" />
+                                      </SelectTrigger>
+                                    </FormControl>
+                                    <SelectContent>
+                                      {servicePlans?.map((plan) => (
+                                        <SelectItem key={plan.id} value={plan.id.toString()}>
+                                          {plan.planName} ({plan.carrier})
+                                        </SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                          )}
                           <FormField
                             control={settlementPriceForm.control}
                             name="newCustomerPrice"
@@ -5433,7 +5440,11 @@ export function AdminPanel() {
                             )}
                           />
                           <div className="flex justify-end space-x-2">
-                            <Button type="button" variant="outline" onClick={() => setSettlementPriceDialogOpen(false)}>
+                            <Button type="button" variant="outline" onClick={() => {
+                              setSettlementPriceDialogOpen(false);
+                              setSelectedServicePlan(null);
+                              settlementPriceForm.reset();
+                            }}>
                               취소
                             </Button>
                             <Button type="submit" disabled={createSettlementPriceMutation.isPending || updateSettlementPriceMutation.isPending}>
@@ -5447,12 +5458,12 @@ export function AdminPanel() {
                 </div>
               </CardHeader>
               <CardContent>
-                {settlementPricesLoading ? (
+                {servicePlansLoading ? (
                   <div className="text-center py-8">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
-                    <p className="mt-2 text-sm text-gray-500">정산단가를 불러오는 중...</p>
+                    <p className="mt-2 text-sm text-gray-500">요금제를 불러오는 중...</p>
                   </div>
-                ) : settlementPrices && settlementPrices.length > 0 ? (
+                ) : servicePlans && servicePlans.length > 0 ? (
                   <div className="overflow-x-auto">
                     <table className="min-w-full divide-y divide-gray-200">
                       <thead className="bg-gray-50">
@@ -5481,39 +5492,38 @@ export function AdminPanel() {
                         </tr>
                       </thead>
                       <tbody className="bg-white divide-y divide-gray-200">
-                        {settlementPrices.map((price) => {
-                          const plan = servicePlans?.find(p => p.id === price.servicePlanId);
+                        {servicePlans.map((plan) => {
+                          const settlementPrice = settlementPrices?.find(price => price.servicePlanId === plan.id);
                           return (
-                            <tr key={price.id}>
+                            <tr key={plan.id}>
                               <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                {price.servicePlanName || plan?.planName || `요금제 ${price.servicePlanId}`}
+                                {plan.planName}
                               </td>
                               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                {price.carrier || plan?.carrier || '-'}
+                                {plan.carrier}
                               </td>
                               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                {price.newCustomerPrice?.toLocaleString() || 0}원
+                                {settlementPrice?.newCustomerPrice?.toLocaleString() || '0'}원
                               </td>
                               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                {price.portInPrice?.toLocaleString() || 0}원
+                                {settlementPrice?.portInPrice?.toLocaleString() || '0'}원
                               </td>
                               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                {price.memo || '-'}
+                                {settlementPrice?.memo || '-'}
                               </td>
                               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                {price.effectiveFrom ? format(new Date(price.effectiveFrom), 'yyyy-MM-dd', { locale: ko }) : '-'}
+                                {settlementPrice?.effectiveFrom ? format(new Date(settlementPrice.effectiveFrom), 'yyyy-MM-dd', { locale: ko }) : '-'}
                               </td>
                               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                 <Button
                                   variant="outline"
                                   size="sm"
                                   onClick={() => {
-                                    const plan = servicePlans?.find(p => p.id === price.servicePlanId);
-                                    setSelectedServicePlan(plan || null);
-                                    settlementPriceForm.setValue('servicePlanId', price.servicePlanId);
-                                    settlementPriceForm.setValue('newCustomerPrice', price.newCustomerPrice);
-                                    settlementPriceForm.setValue('portInPrice', price.portInPrice);
-                                    settlementPriceForm.setValue('memo', price.memo || '');
+                                    setSelectedServicePlan(plan);
+                                    settlementPriceForm.setValue('servicePlanId', plan.id);
+                                    settlementPriceForm.setValue('newCustomerPrice', settlementPrice?.newCustomerPrice || 0);
+                                    settlementPriceForm.setValue('portInPrice', settlementPrice?.portInPrice || 0);
+                                    settlementPriceForm.setValue('memo', settlementPrice?.memo || '');
                                     setSettlementPriceDialogOpen(true);
                                   }}
                                 >
@@ -5529,8 +5539,8 @@ export function AdminPanel() {
                 ) : (
                   <div className="text-center py-8">
                     <Settings className="mx-auto h-12 w-12 text-gray-400" />
-                    <h3 className="mt-2 text-sm font-medium text-gray-900">정산단가가 없습니다</h3>
-                    <p className="mt-1 text-sm text-gray-500">첫 번째 정산단가를 설정해보세요.</p>
+                    <h3 className="mt-2 text-sm font-medium text-gray-900">등록된 서비스 플랜이 없습니다</h3>
+                    <p className="mt-1 text-sm text-gray-500">서비스 플랜을 먼저 등록해주세요.</p>
                   </div>
                 )}
               </CardContent>
