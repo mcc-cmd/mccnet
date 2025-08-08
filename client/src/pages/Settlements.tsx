@@ -475,10 +475,20 @@ export function Settlements() {
     completedDocuments.forEach(doc => {
       // 백엔드에서 계산한 정산금액을 우선 사용
       let amount = 0;
-      if ((doc as any).calculatedSettlementAmount !== undefined) {
-        amount = (doc as any).calculatedSettlementAmount;
-        console.log(`Document ${doc.id}: Using backend calculated amount ${amount}`);
-      } else if ((doc as any).settlementAmount) {
+      const backendAmount = (doc as any).calculatedSettlementAmount;
+      const manualAmount = (doc as any).settlementAmount;
+      
+      console.log(`Document ${doc.id}: backendAmount=${backendAmount}, manualAmount=${manualAmount}, type of backendAmount: ${typeof backendAmount}`);
+      
+      if (backendAmount !== undefined && backendAmount !== null) {
+        amount = typeof backendAmount === 'number' ? backendAmount : parseFloat(backendAmount);
+        if (!isNaN(amount)) {
+          console.log(`Document ${doc.id}: Using backend calculated amount ${amount}`);
+        } else {
+          amount = 0;
+          console.log(`Document ${doc.id}: Backend amount is NaN, using 0`);
+        }
+      } else if (manualAmount) {
         const parsedAmount = parseFloat((doc as any).settlementAmount);
         if (!isNaN(parsedAmount)) {
           amount = parsedAmount;
@@ -1283,14 +1293,22 @@ export function Settlements() {
                             className="text-sm font-medium text-blue-600 hover:text-blue-800 hover:underline cursor-pointer transition-colors"
                             title="클릭하여 정산 금액 수정"
                           >
-                            {(doc as any).calculatedSettlementAmount !== undefined ? 
-                              `${(doc as any).calculatedSettlementAmount.toLocaleString()}원` :
-                              (doc as any).settlementAmount ? 
-                                `${parseInt((doc as any).settlementAmount).toLocaleString()}원` :
-                                settlementPrices ? 
-                                  `${calculateSettlementAmount(doc, settlementPrices, deductionPolicies).toLocaleString()}원` :
-                                  '0원'
-                            }
+                            {(() => {
+                              const backendAmount = (doc as any).calculatedSettlementAmount;
+                              const manualAmount = (doc as any).settlementAmount;
+                              
+                              if (backendAmount !== undefined && backendAmount !== null) {
+                                const amount = typeof backendAmount === 'number' ? backendAmount : parseFloat(backendAmount);
+                                return !isNaN(amount) ? `${amount.toLocaleString()}원` : '0원';
+                              } else if (manualAmount) {
+                                const amount = parseInt(manualAmount);
+                                return !isNaN(amount) ? `${amount.toLocaleString()}원` : '0원';
+                              } else if (settlementPrices) {
+                                return `${calculateSettlementAmount(doc, settlementPrices, deductionPolicies).toLocaleString()}원`;
+                              } else {
+                                return '0원';
+                              }
+                            })()}
                           </button>
                         </TableCell>
                         <TableCell className="whitespace-nowrap">
@@ -1357,14 +1375,22 @@ export function Settlements() {
                               className="font-medium text-xs text-blue-600 hover:text-blue-800 hover:underline cursor-pointer transition-colors ml-1"
                               title="클릭하여 정산 금액 수정"
                             >
-                              {(doc as any).calculatedSettlementAmount !== undefined ? 
-                                `${(doc as any).calculatedSettlementAmount.toLocaleString()}원` :
-                                (doc as any).settlementAmount ? 
-                                  `${parseInt((doc as any).settlementAmount).toLocaleString()}원` :
-                                  settlementPrices ? 
-                                    `${calculateSettlementAmount(doc, settlementPrices, deductionPolicies).toLocaleString()}원` :
-                                    '0원'
-                              }
+                              {(() => {
+                                const backendAmount = (doc as any).calculatedSettlementAmount;
+                                const manualAmount = (doc as any).settlementAmount;
+                                
+                                if (backendAmount !== undefined && backendAmount !== null) {
+                                  const amount = typeof backendAmount === 'number' ? backendAmount : parseFloat(backendAmount);
+                                  return !isNaN(amount) ? `${amount.toLocaleString()}원` : '0원';
+                                } else if (manualAmount) {
+                                  const amount = parseInt(manualAmount);
+                                  return !isNaN(amount) ? `${amount.toLocaleString()}원` : '0원';
+                                } else if (settlementPrices) {
+                                  return `${calculateSettlementAmount(doc, settlementPrices, deductionPolicies).toLocaleString()}원`;
+                                } else {
+                                  return '0원';
+                                }
+                              })()}
                             </button>
                           </div>
                           <div>
