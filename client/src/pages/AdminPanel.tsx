@@ -2776,6 +2776,7 @@ export function AdminPanel() {
   const handleContactCodeExcelUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      console.log('🚀 Starting upload with forceUpdate:', forceUpdateContactCodes);
       contactCodeExcelUploadMutation.mutate({ file, forceUpdate: forceUpdateContactCodes });
     }
   };
