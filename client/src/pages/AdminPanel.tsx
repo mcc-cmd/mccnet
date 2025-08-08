@@ -2182,6 +2182,7 @@ export function AdminPanel() {
   };
 
   const handleEditSalesManager = (manager: any) => {
+    console.log('handleEditSalesManager called with:', manager);
     setEditingManager(manager);
     editSalesManagerForm.reset({
       teamId: manager.teamId || 1,
@@ -2193,6 +2194,7 @@ export function AdminPanel() {
       contactPhone: manager.contactPhone || '',
       email: manager.email || '',
     });
+    console.log('Setting editSalesManagerDialogOpen to true');
     setEditSalesManagerDialogOpen(true);
   };
 
@@ -3748,6 +3750,152 @@ export function AdminPanel() {
                               </Button>
                               <Button type="submit" disabled={createSalesManagerMutation.isPending}>
                                 {createSalesManagerMutation.isPending ? '생성 중...' : '생성'}
+                              </Button>
+                            </div>
+                          </form>
+                        </Form>
+                      </DialogContent>
+                    </Dialog>
+
+                    {/* Edit Sales Manager Dialog */}
+                    <Dialog open={editSalesManagerDialogOpen} onOpenChange={setEditSalesManagerDialogOpen}>
+                      <DialogContent>
+                        <DialogHeader>
+                          <DialogTitle>영업과장 정보 수정</DialogTitle>
+                        </DialogHeader>
+                        <Form {...editSalesManagerForm}>
+                          <form onSubmit={editSalesManagerForm.handleSubmit(handleUpdateSalesManager)} className="space-y-4">
+                            <FormField
+                              control={editSalesManagerForm.control}
+                              name="managerName"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>이름</FormLabel>
+                                  <FormControl>
+                                    <Input placeholder="김민준" {...field} />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            <FormField
+                              control={editSalesManagerForm.control}
+                              name="username"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>아이디</FormLabel>
+                                  <FormControl>
+                                    <Input type="text" placeholder="kmj_manager" autoComplete="off" {...field} />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            <FormField
+                              control={editSalesManagerForm.control}
+                              name="password"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>새 비밀번호 (변경시에만 입력)</FormLabel>
+                                  <FormControl>
+                                    <Input type="password" placeholder="••••••••" {...field} />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            <FormField
+                              control={editSalesManagerForm.control}
+                              name="managerCode"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>영업과장 코드</FormLabel>
+                                  <FormControl>
+                                    <Input placeholder="MGR001" {...field} />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            <FormField
+                              control={editSalesManagerForm.control}
+                              name="position"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>직급</FormLabel>
+                                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                    <FormControl>
+                                      <SelectTrigger>
+                                        <SelectValue placeholder="직급 선택" />
+                                      </SelectTrigger>
+                                    </FormControl>
+                                    <SelectContent>
+                                      <SelectItem value="과장">과장</SelectItem>
+                                      <SelectItem value="차장">차장</SelectItem>
+                                      <SelectItem value="부장">부장</SelectItem>
+                                      <SelectItem value="팀장">팀장</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            <FormField
+                              control={editSalesManagerForm.control}
+                              name="teamId"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>소속팀</FormLabel>
+                                  <Select onValueChange={(value) => field.onChange(Number(value))} value={field.value?.toString()}>
+                                    <FormControl>
+                                      <SelectTrigger>
+                                        <SelectValue placeholder="팀 선택" />
+                                      </SelectTrigger>
+                                    </FormControl>
+                                    <SelectContent>
+                                      {salesTeams?.map((team: any) => (
+                                        <SelectItem key={team.id} value={team.id.toString()}>
+                                          {team.name}
+                                        </SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            <FormField
+                              control={editSalesManagerForm.control}
+                              name="contactPhone"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>연락처</FormLabel>
+                                  <FormControl>
+                                    <Input type="tel" placeholder="010-1234-5678" {...field} />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            <FormField
+                              control={editSalesManagerForm.control}
+                              name="email"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>이메일</FormLabel>
+                                  <FormControl>
+                                    <Input type="email" placeholder="manager@example.com" {...field} />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            <div className="flex gap-2">
+                              <Button type="submit" disabled={updateSalesManagerMutation.isPending}>
+                                {updateSalesManagerMutation.isPending ? '수정 중...' : '수정'}
+                              </Button>
+                              <Button type="button" variant="outline" onClick={() => setEditSalesManagerDialogOpen(false)}>
+                                취소
                               </Button>
                             </div>
                           </form>
