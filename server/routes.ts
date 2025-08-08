@@ -1234,8 +1234,90 @@ router.get('/api/documents', requireAuth, async (req: any, res) => {
       workerId: workerId
     });
     
+    // 정산 관련 요청인 경우 정산금액 계산 추가
+    let processedDocuments = documents;
+    if (decodedActivationStatus === '개통') {
+      try {
+        // 정산단가 정보 조회
+        const settlementPrices = await storage.getActiveSettlementUnitPrices();
+        
+        // 부가서비스 차감 정책 조회
+        const deductionPolicies = await storage.getAdditionalServiceDeductions();
+        
+        // 정산금액 계산 함수
+        const calculateSettlementAmount = (doc: any) => {
+          if (!doc.servicePlanId) return 0;
+          
+          console.log(`Document ${doc.id} settlement calculation:`, {
+            servicePlanId: doc.servicePlanId,
+            activatedAt: doc.activatedAt,
+            settlementAmount: doc.settlementAmount,
+            customerType: doc.customerType,
+            previousCarrier: doc.previousCarrier
+          });
+          
+          // 0. 문서에 저장된 정산금액이 있으면 우선 사용
+          if (doc.settlementAmount !== undefined && doc.settlementAmount !== null && doc.settlementAmount > 0) {
+            console.log(`Document ${doc.id}: Using stored amount ${doc.settlementAmount}`);
+            return doc.settlementAmount;
+          }
+          
+          // 1. 저장된 단가가 없는 경우 개통일시 기준으로 정산단가 찾기
+          if (!doc.activatedAt) return 0;
+          
+          const activatedDate = new Date(doc.activatedAt);
+          console.log(`Document ${doc.id}: Looking for prices for servicePlanId ${doc.servicePlanId}, activated at ${activatedDate.toISOString()}`);
+          
+          const applicablePrices = settlementPrices.filter(p => {
+            const servicePlanIdMatch = p.servicePlanId == doc.servicePlanId || 
+                                       p.servicePlanId == parseFloat(doc.servicePlanId);
+            const effectiveFromDate = new Date(p.effectiveFrom);
+            const effectiveUntilDate = p.effectiveUntil ? new Date(p.effectiveUntil) : null;
+            
+            const isApplicable = servicePlanIdMatch && 
+                                effectiveFromDate <= activatedDate &&
+                                (!effectiveUntilDate || effectiveUntilDate > activatedDate);
+            
+            console.log(`Document ${doc.id}: Checking price ${p.id} - servicePlan: ${p.servicePlanId}, effectiveFrom: ${effectiveFromDate.toISOString()}, applicable: ${isApplicable}`);
+            
+            return isApplicable;
+          });
+          
+          // 가장 최근 유효한 단가 선택
+          const priceInfo = applicablePrices.sort((a, b) => 
+            new Date(b.effectiveFrom).getTime() - new Date(a.effectiveFrom).getTime()
+          )[0];
+          
+          if (!priceInfo) {
+            console.log(`Document ${doc.id}: No applicable price found`);
+            return 0;
+          }
+          
+          let baseAmount = 0;
+          if (doc.previousCarrier && doc.previousCarrier !== doc.carrier) {
+            baseAmount = priceInfo.portInPrice || 0;
+          } else {
+            baseAmount = priceInfo.newCustomerPrice || 0;
+          }
+          
+          console.log(`Document ${doc.id}: Using price - base amount: ${baseAmount}`);
+          return baseAmount;
+        };
+        
+        // 각 문서에 정산금액 추가
+        processedDocuments = documents.map(doc => ({
+          ...doc,
+          calculatedSettlementAmount: calculateSettlementAmount(doc)
+        }));
+      } catch (error) {
+        console.error('Settlement calculation error:', error);
+        // 에러 발생 시 원본 documents 반환
+        processedDocuments = documents;
+      }
+    }
+    
     // 판매점명 정보 추가 (contactCode를 통해)
-    const documentsWithStoreNames = await Promise.all(documents.map(async (doc: any) => {
+    const documentsWithStoreNames = await Promise.all(processedDocuments.map(async (doc: any) => {
       let storeName = doc.storeName;
       
       // storeName이 없고 contactCode가 있으면 contactCode를 통해 판매점명 조회
