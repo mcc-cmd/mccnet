@@ -1617,7 +1617,7 @@ export class DatabaseStorage implements IStorage {
       await db.update(settlementUnitPrices)
         .set({ 
           isActive: 0, // SQLite에서는 boolean을 0/1로 처리
-          effectiveUntil: new Date()
+          effectiveUntil: new Date().toISOString()
         })
         .where(and(
           eq(settlementUnitPrices.servicePlanId, data.servicePlanId),
@@ -1630,7 +1630,7 @@ export class DatabaseStorage implements IStorage {
           servicePlanId: data.servicePlanId,
           newCustomerPrice: data.newCustomerPrice,
           portInPrice: data.portInPrice,
-          effectiveFrom: data.effectiveFrom || new Date(),
+          effectiveFrom: data.effectiveFrom ? data.effectiveFrom.toISOString() : new Date().toISOString(),
           memo: data.memo || '',
           createdBy: data.createdBy,
           isActive: 1 // SQLite에서는 boolean을 0/1로 처리
