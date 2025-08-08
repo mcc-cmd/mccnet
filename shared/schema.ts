@@ -940,7 +940,9 @@ export const createSalesManagerSchema = z.object({
   email: z.string().email("올바른 이메일을 입력해주세요").optional().or(z.literal("")),
 });
 
-export const updateSalesManagerSchema = createSalesManagerSchema.partial().omit({ password: true });
+export const updateSalesManagerSchema = createSalesManagerSchema.partial().extend({
+  password: z.string().optional() // 비밀번호는 선택적으로 업데이트 가능
+});
 
 // 팀에 영업과장을 배정하는 스키마 (기존 계정을 선택하는 방식)
 export const assignSalesManagerToTeamSchema = z.object({

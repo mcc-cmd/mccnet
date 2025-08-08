@@ -351,6 +351,8 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateSalesManager(id: number, data: UpdateSalesManagerForm): Promise<SalesManager> {
+    console.log('updateSalesManager called with:', { id, data });
+    
     // 중복 체크: username (자기 자신 제외)
     if (data.username) {
       const [existingByUsername] = await db.select().from(salesManagers).where(
@@ -388,10 +390,14 @@ export class DatabaseStorage implements IStorage {
       delete updateData.password;
     }
 
+    console.log('Final updateData:', updateData);
+
     const [result] = await db.update(salesManagers)
       .set(updateData)
       .where(eq(salesManagers.id, id))
       .returning();
+    
+    console.log('Update result:', result);
     return result;
   }
 

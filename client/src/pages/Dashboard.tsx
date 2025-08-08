@@ -339,17 +339,18 @@ export function Dashboard() {
           </Card>
         </div>
 
-        {/* 당월 개통 현황 */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center">
-              <Calculator className="mr-2 h-5 w-5" />
-              당월 개통 현황
-              {user?.userType === 'user' && (
-                <span className="text-xs text-blue-600 ml-2">(내가 처리한 건만)</span>
-              )}
-            </CardTitle>
-          </CardHeader>
+        {/* 당월 개통 현황 - 영업과장은 접근 불가 */}
+        {user?.userType !== 'sales_manager' && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <Calculator className="mr-2 h-5 w-5" />
+                당월 개통 현황
+                {user?.userType === 'user' && (
+                  <span className="text-xs text-blue-600 ml-2">(내가 처리한 건만)</span>
+                )}
+              </CardTitle>
+            </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-7">
               <div className="text-center p-4 bg-blue-50 rounded-lg">
@@ -431,7 +432,8 @@ export function Dashboard() {
               </div>
             </div>
           </CardContent>
-        </Card>
+          </Card>
+        )}
 
         {/* Worker personal stats */}
         {user?.role === 'dealer_worker' && (
@@ -455,22 +457,18 @@ export function Dashboard() {
           </Card>
         )}
 
-        {/* Role-based additional stats for admin and workers - 전체 너비로 가로 배치 */}
-        {(user?.userType === 'admin' || user?.userType === 'sales_manager') && (
+        {/* Role-based additional stats for admin only - 영업과장은 접근 불가 */}
+        {user?.userType === 'admin' && (
           <Card>
             <CardHeader>
-              <CardTitle className="text-lg font-semibold">
-                {user?.userType === 'sales_manager' ? '나의 실적 - 통신사별 개통 수량' : '통신사별 · 근무자별 개통 수량'}
-              </CardTitle>
+              <CardTitle className="text-lg font-semibold">통신사별 · 근무자별 개통 수량</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className={`grid grid-cols-1 ${user?.userType === 'admin' ? 'lg:grid-cols-2' : ''} gap-8`}>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 {/* 통신사별 개통 수량 */}
                 <div>
                   <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-base font-medium">
-                      {user?.userType === 'sales_manager' ? '담당 판매점 통신사별 개통 수량' : '통신사별 개통 수량'}
-                    </h3>
+                    <h3 className="text-base font-medium">통신사별 개통 수량</h3>
                     <div className="flex items-center space-x-2">
                       <Input
                         type="date"
