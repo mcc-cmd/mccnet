@@ -3295,7 +3295,8 @@ router.post('/api/contact-codes/upload-excel', contactCodeUpload.single('file'),
     }
 
     const forceUpdate = req.body.forceUpdate === 'true';
-    console.log('Force update mode:', forceUpdate);
+    console.log('💪 Force update mode:', forceUpdate);
+    console.log('📋 Request body forceUpdate value:', req.body.forceUpdate);
 
     filePath = req.file.path;
     console.log('Processing file:', filePath);
