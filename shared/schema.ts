@@ -528,6 +528,17 @@ export const createUserSchema = z.object({
   role: z.enum(['dealer_store', 'dealer_worker']),
 });
 
+export type CreateUserForm = z.infer<typeof createUserSchema>;
+
+export const editUserSchema = z.object({
+  username: z.string().min(3, "아이디는 최소 3자 이상이어야 합니다"),
+  password: z.string().optional(),
+  name: z.string().min(1, "이름을 입력하세요"),
+  role: z.enum(['admin', 'sales_manager', 'worker']),
+});
+
+export type EditUserForm = z.infer<typeof editUserSchema>;
+
 export const uploadDocumentSchema = z.object({
   customerName: z.string().min(1, "고객명을 입력하세요"),
   customerPhone: z.string().optional(), // 통신사별로 필수 여부가 달라질 수 있음

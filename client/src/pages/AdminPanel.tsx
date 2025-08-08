@@ -15,7 +15,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
 import { Switch } from '@/components/ui/switch';
-import { createDealerSchema, createUserSchema, createAdminSchema, createWorkerSchema, updateDocumentStatusSchema, createServicePlanSchema, createAdditionalServiceSchema, createCarrierSchema, updateCarrierSchema, createSettlementUnitPriceSchema, updateSettlementUnitPriceSchema, createAdditionalServiceDeductionSchema, updateAdditionalServiceDeductionSchema } from '../../../shared/schema';
+import { createDealerSchema, createUserSchema, createAdminSchema, createWorkerSchema, updateDocumentStatusSchema, createServicePlanSchema, createAdditionalServiceSchema, createCarrierSchema, updateCarrierSchema, createSettlementUnitPriceSchema, updateSettlementUnitPriceSchema, createAdditionalServiceDeductionSchema, updateAdditionalServiceDeductionSchema, editUserSchema } from '../../../shared/schema';
 import type { Dealer, User, Document, ServicePlan, AdditionalService, Carrier, SettlementUnitPrice, CreateSettlementUnitPriceForm, UpdateSettlementUnitPriceForm, AdditionalServiceDeduction, CreateAdditionalServiceDeductionForm, UpdateAdditionalServiceDeductionForm } from '../../../shared/schema';
 import { 
   Building2, 
@@ -90,6 +90,13 @@ type UpdateSalesManagerForm = {
 type ChangeUserRoleForm = {
   userId: number;
   accountType: 'admin' | 'sales_manager' | 'worker';
+};
+
+type EditUserForm = {
+  username: string;
+  password: string;
+  name: string;
+  role: 'admin' | 'sales_manager' | 'worker';
 };
 
 type UpdateDocumentStatusForm = {
@@ -1475,7 +1482,8 @@ export function AdminPanel() {
     },
   });
 
-  const editUserForm = useForm({
+  const editUserForm = useForm<EditUserForm>({
+    resolver: zodResolver(editUserSchema),
     defaultValues: {
       username: '',
       password: '',
