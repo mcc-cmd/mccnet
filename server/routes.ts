@@ -1976,8 +1976,17 @@ router.get('/api/settlements/export', requireAuth, async (req: any, res) => {
     const calculateSettlementAmount = (doc: any) => {
       if (!doc.servicePlanId) return 0;
       
+      console.log(`Document ${doc.id} settlement calculation:`, {
+        servicePlanId: doc.servicePlanId,
+        activatedAt: doc.activatedAt,
+        settlementAmount: doc.settlementAmount,
+        customerType: doc.customerType,
+        previousCarrier: doc.previousCarrier
+      });
+      
       // 0. 문서에 저장된 정산금액이 있으면 우선 사용 (가장 높은 우선순위)
       if (doc.settlementAmount !== undefined && doc.settlementAmount !== null && doc.settlementAmount > 0) {
+        console.log(`Document ${doc.id}: Using stored amount ${doc.settlementAmount}`);
         return doc.settlementAmount;
       }
       
@@ -2018,15 +2027,21 @@ router.get('/api/settlements/export', requireAuth, async (req: any, res) => {
       
       // 개통일시 기준으로 해당 시점에 유효한 정산단가 찾기
       const activatedDate = new Date(doc.activatedAt);
+      console.log(`Document ${doc.id}: Looking for prices for servicePlanId ${doc.servicePlanId}, activated at ${activatedDate.toISOString()}`);
+      
       const applicablePrices = settlementPrices.filter(p => {
         const servicePlanIdMatch = p.servicePlanId == doc.servicePlanId || 
                                    p.servicePlanId == parseFloat(doc.servicePlanId);
         const effectiveFromDate = new Date(p.effectiveFrom);
         const effectiveUntilDate = p.effectiveUntil ? new Date(p.effectiveUntil) : null;
         
-        return servicePlanIdMatch && 
-               effectiveFromDate <= activatedDate &&
-               (!effectiveUntilDate || effectiveUntilDate > activatedDate);
+        const isApplicable = servicePlanIdMatch && 
+                            effectiveFromDate <= activatedDate &&
+                            (!effectiveUntilDate || effectiveUntilDate > activatedDate);
+        
+        console.log(`Document ${doc.id}: Checking price ${p.id} - servicePlan: ${p.servicePlanId}, effectiveFrom: ${effectiveFromDate.toISOString()}, applicable: ${isApplicable}`);
+        
+        return isApplicable;
       });
       
       // 가장 최근 유효한 단가 선택 (effective_from 기준 내림차순)
