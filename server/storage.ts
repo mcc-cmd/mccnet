@@ -1111,15 +1111,17 @@ export class DatabaseStorage implements IStorage {
       // 관리자 목록 조회
       const adminList = await db.select().from(admins).where(eq(admins.isActive, 1));
       
-      // 영업과장 목록 조회
+      // 영업과장 목록 조회 (sales_teams와 JOIN하여 팀 이름 가져오기)
       const salesManagerList = await db.select({
         id: salesManagers.id,
         username: salesManagers.username,
         name: salesManagers.managerName,
         createdAt: salesManagers.createdAt,
         teamId: salesManagers.teamId,
+        teamName: salesTeams.teamName,
         isActive: salesManagers.isActive
       }).from(salesManagers)
+        .leftJoin(salesTeams, eq(salesManagers.teamId, salesTeams.id))
         .where(eq(salesManagers.isActive, 1));
 
       // 근무자 목록 조회 (데이터베이스에서)
@@ -1142,7 +1144,7 @@ export class DatabaseStorage implements IStorage {
           displayName: manager.name,
           userType: 'sales_manager' as const,
           accountType: 'sales_manager' as const,
-          affiliation: manager.teamId === 1 ? 'DX 1팀' : manager.teamId === 2 ? 'DX 2팀' : '기타',
+          affiliation: manager.teamName || '기타',
           createdAt: manager.createdAt
         })),
         ...workersList.map(worker => ({
@@ -1155,6 +1157,8 @@ export class DatabaseStorage implements IStorage {
           createdAt: worker.createdAt
         }))
       ];
+
+      console.log('getUsers - Sales Manager List:', salesManagerList);
 
       return allUsers;
     } catch (error) {
