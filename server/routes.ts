@@ -3438,7 +3438,8 @@ router.post('/api/contact-codes/upload-excel', contactCodeUpload.single('file'),
               dealerName: newDealerName,
               realSalesPOS: newRealSalesPOS,
               salesManagerId: salesManagerId,
-              salesManagerName: salesManagerName ? String(salesManagerName).trim() : null
+              salesManagerName: salesManagerName ? String(salesManagerName).trim() : null,
+              isActive: true // 중요: 업데이트 시에도 활성 상태 유지
             });
             addedCodes++;
             console.log(`✅ Successfully updated contact code: ${code}`);
