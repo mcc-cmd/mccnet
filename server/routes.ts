@@ -1128,8 +1128,9 @@ router.get('/api/dashboard/worker-stats', requireAuth, async (req: any, res) => 
 // 당일 통계 API
 router.get('/api/dashboard/today-stats', requireAuth, async (req: any, res) => {
   try {
-    // 근무자인 경우 해당 근무자의 ID를 전달
-    const workerId = req.session.userRole === 'dealer_worker' ? req.session.userId : undefined;
+    // 근무자(user)인 경우 해당 근무자의 ID를 전달, 관리자는 전체 데이터 조회
+    const workerId = req.session.userType === 'user' ? req.session.userId : undefined;
+    console.log('Today stats request - userType:', req.session.userType, 'userId:', req.session.userId, 'workerId:', workerId);
     const stats = await storage.getTodayStats(workerId);
     
     // API 응답 형식을 프론트엔드 기대값에 맞춤
@@ -1150,13 +1151,29 @@ router.get('/api/dashboard/today-stats', requireAuth, async (req: any, res) => {
 // 당월 개통현황 API
 router.get('/api/dashboard/monthly-activation-stats', requireAuth, async (req: any, res) => {
   try {
-    // 근무자인 경우 해당 근무자의 ID를 전달
-    const workerId = req.session.userRole === 'dealer_worker' ? req.session.userId : undefined;
+    // 근무자(user)인 경우 해당 근무자의 ID를 전달, 관리자는 전체 데이터 조회
+    const workerId = req.session.userType === 'user' ? req.session.userId : undefined;
+    console.log('Monthly activation stats request - userType:', req.session.userType, 'userId:', req.session.userId, 'workerId:', workerId);
     const stats = await storage.getMonthlyActivationStats(workerId);
     
     res.json(stats);
   } catch (error: any) {
     console.error('Monthly activation stats error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// 당월 상태별 통계 API (근무자별 필터링)
+router.get('/api/dashboard/monthly-status-stats', requireAuth, async (req: any, res) => {
+  try {
+    // 근무자(user)인 경우 해당 근무자의 ID를 전달, 관리자는 전체 데이터 조회
+    const workerId = req.session.userType === 'user' ? req.session.userId : undefined;
+    console.log('Monthly status stats request - userType:', req.session.userType, 'userId:', req.session.userId, 'workerId:', workerId);
+    const stats = await storage.getMonthlyStatusStats(workerId);
+    
+    res.json(stats);
+  } catch (error: any) {
+    console.error('Monthly status stats error:', error);
     res.status(500).json({ error: error.message });
   }
 });

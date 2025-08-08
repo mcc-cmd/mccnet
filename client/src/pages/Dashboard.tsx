@@ -77,6 +77,12 @@ export function Dashboard() {
     queryKey: ['/api/dashboard/monthly-activation-stats'],
     queryFn: () => apiRequest('/api/dashboard/monthly-activation-stats') as Promise<Array<{ carrier: string; count: number }>>,
   });
+
+  // 당월 상태별 통계 (근무자는 자신이 처리한 건만)
+  const { data: monthlyStatusStats, isLoading: monthlyStatusStatsLoading } = useQuery({
+    queryKey: ['/api/dashboard/monthly-status-stats'],
+    queryFn: () => apiRequest('/api/dashboard/monthly-status-stats') as Promise<DashboardStats>,
+  });
   const { data: carrierStats, isLoading: carrierStatsLoading } = useQuery({
     queryKey: ['/api/dashboard/carrier-stats', carrierStartDate, carrierEndDate],
     queryFn: () => {
@@ -282,7 +288,7 @@ export function Dashboard() {
               <div className="mt-6">
                 <h4 className="text-sm font-medium text-gray-900 mb-3">
                   당월 개통현황 ({format(new Date(), 'MM월', { locale: ko })})
-                  {user?.role === 'dealer_worker' && (
+                  {user?.userType === 'user' && (
                     <span className="text-xs text-blue-600 ml-2">(내가 처리한 건만)</span>
                   )}
                 </h4>
@@ -339,16 +345,19 @@ export function Dashboard() {
             <CardTitle className="flex items-center">
               <Calculator className="mr-2 h-5 w-5" />
               당월 개통 현황
+              {user?.userType === 'user' && (
+                <span className="text-xs text-blue-600 ml-2">(내가 처리한 건만)</span>
+              )}
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-7">
               <div className="text-center p-4 bg-blue-50 rounded-lg">
                 <div className="text-2xl font-bold text-blue-600">
-                  {statsLoading ? (
+                  {monthlyStatusStatsLoading ? (
                     <Skeleton className="h-8 w-12 mx-auto" />
                   ) : (
-                    stats?.totalDocuments || 0
+                    monthlyStatusStats?.totalDocuments || 0
                   )}
                 </div>
                 <div className="text-sm text-blue-800 mt-1">총 서류</div>
@@ -356,22 +365,22 @@ export function Dashboard() {
               
               <div className="text-center p-4 bg-yellow-50 rounded-lg">
                 <div className="text-2xl font-bold text-yellow-600">
-                  {statsLoading ? (
+                  {monthlyStatusStatsLoading ? (
                     <Skeleton className="h-8 w-12 mx-auto" />
                   ) : (
-                    stats?.pendingActivations || 0
+                    monthlyStatusStats?.pendingActivations || 0
                   )}
                 </div>
-                <div className="text-sm text-yellow-800 mt-1">접수 대기</div>
+                <div className="text-sm text-yellow-800 mt-1">업무 대기</div>
                 <div className="text-xs text-yellow-700 mt-1">(대기 상태 문서)</div>
               </div>
               
               <div className="text-center p-4 bg-orange-50 rounded-lg">
                 <div className="text-2xl font-bold text-orange-600">
-                  {statsLoading ? (
+                  {monthlyStatusStatsLoading ? (
                     <Skeleton className="h-8 w-12 mx-auto" />
                   ) : (
-                    stats?.inProgressCount || 0
+                    monthlyStatusStats?.inProgressCount || 0
                   )}
                 </div>
                 <div className="text-sm text-orange-800 mt-1">진행중</div>
@@ -379,10 +388,10 @@ export function Dashboard() {
               
               <div className="text-center p-4 bg-green-50 rounded-lg">
                 <div className="text-2xl font-bold text-green-600">
-                  {statsLoading ? (
+                  {monthlyStatusStatsLoading ? (
                     <Skeleton className="h-8 w-12 mx-auto" />
                   ) : (
-                    stats?.activatedCount || 0
+                    monthlyStatusStats?.activatedCount || 0
                   )}
                 </div>
                 <div className="text-sm text-green-800 mt-1">개통완료</div>
@@ -390,10 +399,10 @@ export function Dashboard() {
               
               <div className="text-center p-4 bg-purple-50 rounded-lg">
                 <div className="text-2xl font-bold text-purple-600">
-                  {statsLoading ? (
+                  {monthlyStatusStatsLoading ? (
                     <Skeleton className="h-8 w-12 mx-auto" />
                   ) : (
-                    (stats as any)?.otherCompletedCount || 0
+                    monthlyStatusStats?.otherCompletedCount || 0
                   )}
                 </div>
                 <div className="text-sm text-purple-800 mt-1">기타완료</div>
@@ -401,10 +410,10 @@ export function Dashboard() {
               
               <div className="text-center p-4 bg-red-50 rounded-lg">
                 <div className="text-2xl font-bold text-red-600">
-                  {statsLoading ? (
+                  {monthlyStatusStatsLoading ? (
                     <Skeleton className="h-8 w-12 mx-auto" />
                   ) : (
-                    stats?.canceledCount || 0
+                    monthlyStatusStats?.canceledCount || 0
                   )}
                 </div>
                 <div className="text-sm text-red-800 mt-1">취소</div>
@@ -412,10 +421,10 @@ export function Dashboard() {
               
               <div className="text-center p-4 bg-gray-50 rounded-lg">
                 <div className="text-2xl font-bold text-gray-600">
-                  {statsLoading ? (
+                  {monthlyStatusStatsLoading ? (
                     <Skeleton className="h-8 w-12 mx-auto" />
                   ) : (
-                    (stats as any)?.discardedCount || 0
+                    monthlyStatusStats?.discardedCount || 0
                   )}
                 </div>
                 <div className="text-sm text-gray-800 mt-1">폐기</div>

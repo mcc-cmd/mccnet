@@ -2047,6 +2047,79 @@ export class DatabaseStorage implements IStorage {
       return [];
     }
   }
+
+  async getMonthlyStatusStats(workerId?: number): Promise<any> {
+    try {
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = now.getMonth() + 1;
+      const monthStart = `${year}-${month.toString().padStart(2, '0')}-01`;
+      
+      console.log('Monthly status stats for:', monthStart, 'workerId:', workerId);
+
+      let conditions = [
+        sql`date(uploaded_at) >= ${monthStart}`,
+        sql`date(uploaded_at) < date(${monthStart}, '+1 month')`
+      ];
+
+      // 근무자인 경우 자신이 처리한 건만 조회 (완료된 건들은 activatedBy로 필터링)
+      if (workerId) {
+        conditions.push(
+          or(
+            // 완료되지 않은 상태 (모든 근무자가 볼 수 있음)
+            inArray(documents.activationStatus, ['대기', '진행중', '업무요청중', '보완필요']),
+            // 완료된 상태는 자신이 처리한 건만
+            and(
+              inArray(documents.activationStatus, ['개통', '취소', '기타완료', '폐기']),
+              eq(documents.activatedBy, workerId)
+            )
+          )
+        );
+      }
+
+      const monthlyStats = await db.select({
+        total: sql`count(*)`,
+        pending: sql`count(case when activation_status = '대기' then 1 end)`,
+        inProgress: sql`count(case when activation_status = '진행중' then 1 end)`,
+        workRequest: sql`count(case when activation_status = '업무요청중' then 1 end)`,
+        activated: sql`count(case when activation_status = '개통' then 1 end)`,
+        cancelled: sql`count(case when activation_status = '취소' then 1 end)`,
+        needsReview: sql`count(case when activation_status = '보완필요' then 1 end)`,
+        otherCompleted: sql`count(case when activation_status = '기타완료' then 1 end)`,
+        discarded: sql`count(case when activation_status = '폐기' then 1 end)`
+      })
+      .from(documents)
+      .where(and(...conditions));
+
+      const result = {
+        totalDocuments: parseInt(String(monthlyStats[0]?.total || 0)),
+        pendingActivations: parseInt(String(monthlyStats[0]?.pending || 0)),
+        inProgressCount: parseInt(String(monthlyStats[0]?.inProgress || 0)),
+        workRequestCount: parseInt(String(monthlyStats[0]?.workRequest || 0)),
+        activatedCount: parseInt(String(monthlyStats[0]?.activated || 0)),
+        canceledCount: parseInt(String(monthlyStats[0]?.cancelled || 0)),
+        needsReviewCount: parseInt(String(monthlyStats[0]?.needsReview || 0)),
+        otherCompletedCount: parseInt(String(monthlyStats[0]?.otherCompleted || 0)),
+        discardedCount: parseInt(String(monthlyStats[0]?.discarded || 0))
+      };
+
+      console.log('Monthly status stats result:', result);
+      return result;
+    } catch (error) {
+      console.error('Get monthly status stats error:', error);
+      return {
+        totalDocuments: 0,
+        pendingActivations: 0,
+        inProgressCount: 0,
+        workRequestCount: 0,
+        activatedCount: 0,
+        canceledCount: 0,
+        needsReviewCount: 0,
+        otherCompletedCount: 0,
+        discardedCount: 0
+      };
+    }
+  }
   
   async getCarrierStats(startDate?: string, endDate?: string): Promise<any[]> {
     try {
