@@ -814,18 +814,31 @@ export class DatabaseStorage implements IStorage {
   // 통신사 관련 메서드
   async getCarriers(): Promise<Carrier[]> {
     try {
-      const result = await db.select().from(carriers).orderBy(carriers.displayOrder, carriers.name);
+      const result = await db.select().from(carriers)
+        .where(eq(carriers.isActive, true))
+        .orderBy(carriers.displayOrder, carriers.name);
       
-      // DB 스네이크케이스 필드를 카멜케이스로 변환
+      // Boolean 값들을 JavaScript Boolean으로 변환하여 반환
       return result.map(carrier => ({
         ...carrier,
-        allowNewCustomer: carrier.allow_new_customer,
-        allowPortIn: carrier.allow_port_in,
-        requireDesiredNumber: carrier.require_desired_number,
-        allow_new_customer: undefined,
-        allow_port_in: undefined,
-        require_desired_number: undefined
-      } as any)) as Carrier[];
+        supportNewCustomers: Boolean(carrier.supportNewCustomers),
+        supportPortIn: Boolean(carrier.supportPortIn),
+        isActive: Boolean(carrier.isActive),
+        isWired: Boolean(carrier.isWired),
+        documentRequired: Boolean(carrier.documentRequired),
+        requireCustomerName: Boolean(carrier.requireCustomerName),
+        requireCustomerPhone: Boolean(carrier.requireCustomerPhone),
+        requireCustomerEmail: Boolean(carrier.requireCustomerEmail),
+        requireContactCode: Boolean(carrier.requireContactCode),
+        requireCarrier: Boolean(carrier.requireCarrier),
+        requirePreviousCarrier: Boolean(carrier.requirePreviousCarrier),
+        requireDocumentUpload: Boolean(carrier.requireDocumentUpload),
+        requireBundleNumber: Boolean(carrier.requireBundleNumber),
+        requireBundleCarrier: Boolean(carrier.requireBundleCarrier),
+        allowNewCustomer: Boolean(carrier.allowNewCustomer),
+        allowPortIn: Boolean(carrier.allowPortIn),
+        requireDesiredNumber: Boolean(carrier.requireDesiredNumber)
+      })) as Carrier[];
     } catch (error) {
       console.error('Get carriers error:', error);
       return [];
@@ -867,46 +880,7 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async updateCarrier(id: number, data: any): Promise<Carrier> {
-    try {
-      // 카멜케이스를 스네이크케이스로 변환
-      const dbData = {
-        ...data,
-        allow_new_customer: data.allowNewCustomer,
-        allow_port_in: data.allowPortIn,
-        require_desired_number: data.requireDesiredNumber,
-        updatedAt: new Date(),
-      };
-      
-      // 카멜케이스 필드 제거
-      delete dbData.allowNewCustomer;
-      delete dbData.allowPortIn;
-      delete dbData.requireDesiredNumber;
-      
-      const [result] = await db.update(carriers)
-        .set(dbData)
-        .where(eq(carriers.id, id))
-        .returning();
-      
-      if (!result) {
-        throw new Error('통신사를 찾을 수 없습니다.');
-      }
-      
-      // 응답에서 스네이크케이스를 카멜케이스로 변환
-      return {
-        ...result,
-        allowNewCustomer: result.allow_new_customer,
-        allowPortIn: result.allow_port_in,
-        requireDesiredNumber: result.require_desired_number,
-        allow_new_customer: undefined,
-        allow_port_in: undefined,
-        require_desired_number: undefined
-      } as any as Carrier;
-    } catch (error) {
-      console.error('Update carrier error:', error);
-      throw new Error('통신사 수정에 실패했습니다.');
-    }
-  }
+
 
   async deleteCarrier(id: number): Promise<void> {
     try {
@@ -2072,49 +2046,7 @@ export class DatabaseStorage implements IStorage {
   // 통신사 설정을 메모리에 저장
   private carrierSettings: Map<number, any> = new Map();
 
-  async getCarriers(): Promise<any[]> {
-    try {
-      const result = await db.select().from(carriers).where(eq(carriers.isActive, true));
-      
-      // 실제 테이블 구조 + 저장된 설정 병합
-      return result.map(carrier => {
-        const savedSettings = this.carrierFieldSettings.get(carrier.id) || {};
-        return {
-          id: carrier.id,
-          name: carrier.name,
-          code: carrier.code,
-          color: carrier.color,
-          supportNewCustomers: carrier.supportNewCustomers,
-          supportPortIn: carrier.supportPortIn,
-          isActive: carrier.isActive,
-          createdAt: carrier.createdAt,
-          updatedAt: carrier.updatedAt,
-          // 저장된 설정이 있으면 사용, 없으면 기본값
-          displayOrder: savedSettings.displayOrder || 0,
-          isWired: savedSettings.isWired || false,
-          bundleNumber: savedSettings.bundleNumber || '',
-          bundleCarrier: savedSettings.bundleCarrier || '',
-          documentRequired: savedSettings.documentRequired || false,
-          requireCustomerName: savedSettings.requireCustomerName !== undefined ? savedSettings.requireCustomerName : true,
-          requireCustomerPhone: savedSettings.requireCustomerPhone || false,
-          requireCustomerEmail: savedSettings.requireCustomerEmail || false,
-          requireContactCode: savedSettings.requireContactCode !== undefined ? savedSettings.requireContactCode : true,
-          requireCarrier: savedSettings.requireCarrier !== undefined ? savedSettings.requireCarrier : true,
-          requirePreviousCarrier: savedSettings.requirePreviousCarrier !== undefined ? savedSettings.requirePreviousCarrier : true,
-          requireDocumentUpload: savedSettings.requireDocumentUpload || false,
-          requireBundleNumber: savedSettings.requireBundleNumber || false,
-          requireBundleCarrier: savedSettings.requireBundleCarrier || false,
-          allowNewCustomer: carrier.supportNewCustomers,
-          allowPortIn: carrier.supportPortIn,
-          requireDesiredNumber: savedSettings.requireDesiredNumber || false
-        };
-      });
-    } catch (error) {
-      console.error('Error getting carriers from DB:', error);
-      // 데이터베이스 연결 실패 시 메모리 기본값 반환
-      return this.carriers.filter(carrier => carrier.isActive);
-    }
-  }
+
 
   async getCarrierById(id: number): Promise<any> {
     try {
@@ -2125,36 +2057,27 @@ export class DatabaseStorage implements IStorage {
       }
       
       const carrier = result[0];
-      const savedSettings = this.carrierFieldSettings.get(carrier.id) || {};
       
       return {
-        id: carrier.id,
-        name: carrier.name,
-        code: carrier.code,
-        color: carrier.color,
-        supportNewCustomers: carrier.supportNewCustomers,
-        supportPortIn: carrier.supportPortIn,
-        isActive: carrier.isActive,
-        createdAt: carrier.createdAt,
-        updatedAt: carrier.updatedAt,
-        // 저장된 설정이 있으면 사용, 없으면 기본값
-        displayOrder: savedSettings.displayOrder || 0,
-        isWired: savedSettings.isWired || false,
-        bundleNumber: savedSettings.bundleNumber || '',
-        bundleCarrier: savedSettings.bundleCarrier || '',
-        documentRequired: savedSettings.documentRequired || false,
-        requireCustomerName: savedSettings.requireCustomerName !== undefined ? savedSettings.requireCustomerName : true,
-        requireCustomerPhone: savedSettings.requireCustomerPhone || false,
-        requireCustomerEmail: savedSettings.requireCustomerEmail || false,
-        requireContactCode: savedSettings.requireContactCode !== undefined ? savedSettings.requireContactCode : true,
-        requireCarrier: savedSettings.requireCarrier !== undefined ? savedSettings.requireCarrier : true,
-        requirePreviousCarrier: savedSettings.requirePreviousCarrier !== undefined ? savedSettings.requirePreviousCarrier : true,
-        requireDocumentUpload: savedSettings.requireDocumentUpload || false,
-        requireBundleNumber: savedSettings.requireBundleNumber || false,
-        requireBundleCarrier: savedSettings.requireBundleCarrier || false,
-        allowNewCustomer: carrier.supportNewCustomers,
-        allowPortIn: carrier.supportPortIn,
-        requireDesiredNumber: savedSettings.requireDesiredNumber || false
+        ...carrier,
+        // Boolean 값들을 JavaScript Boolean으로 변환하여 반환
+        supportNewCustomers: Boolean(carrier.supportNewCustomers),
+        supportPortIn: Boolean(carrier.supportPortIn),
+        isActive: Boolean(carrier.isActive),
+        isWired: Boolean(carrier.isWired),
+        documentRequired: Boolean(carrier.documentRequired),
+        requireCustomerName: Boolean(carrier.requireCustomerName),
+        requireCustomerPhone: Boolean(carrier.requireCustomerPhone),
+        requireCustomerEmail: Boolean(carrier.requireCustomerEmail),
+        requireContactCode: Boolean(carrier.requireContactCode),
+        requireCarrier: Boolean(carrier.requireCarrier),
+        requirePreviousCarrier: Boolean(carrier.requirePreviousCarrier),
+        requireDocumentUpload: Boolean(carrier.requireDocumentUpload),
+        requireBundleNumber: Boolean(carrier.requireBundleNumber),
+        requireBundleCarrier: Boolean(carrier.requireBundleCarrier),
+        allowNewCustomer: Boolean(carrier.allowNewCustomer),
+        allowPortIn: Boolean(carrier.allowPortIn),
+        requireDesiredNumber: Boolean(carrier.requireDesiredNumber)
       };
     } catch (error) {
       console.error('Error getting carrier by ID:', error);
@@ -2200,7 +2123,7 @@ export class DatabaseStorage implements IStorage {
     console.log('Updating carrier:', id, carrierData);
     
     try {
-      // 실제 테이블에 존재하는 필드들만 업데이트 
+      // 모든 필드를 데이터베이스에 직접 저장
       const updateData: any = {
         name: carrierData.name,
         code: carrierData.code || carrierData.name?.replace(/[^a-zA-Z0-9가-힣]/g, ''),
@@ -2208,6 +2131,23 @@ export class DatabaseStorage implements IStorage {
         supportNewCustomers: carrierData.supportNewCustomers ? 1 : 0,
         supportPortIn: carrierData.supportPortIn ? 1 : 0,
         isActive: carrierData.isActive !== undefined ? (carrierData.isActive ? 1 : 0) : 1,
+        displayOrder: carrierData.displayOrder || 0,
+        isWired: carrierData.isWired ? 1 : 0,
+        bundleNumber: carrierData.bundleNumber || '',
+        bundleCarrier: carrierData.bundleCarrier || '',
+        documentRequired: carrierData.documentRequired ? 1 : 0,
+        requireCustomerName: carrierData.requireCustomerName !== undefined ? (carrierData.requireCustomerName ? 1 : 0) : 1,
+        requireCustomerPhone: carrierData.requireCustomerPhone ? 1 : 0,
+        requireCustomerEmail: carrierData.requireCustomerEmail ? 1 : 0,
+        requireContactCode: carrierData.requireContactCode !== undefined ? (carrierData.requireContactCode ? 1 : 0) : 1,
+        requireCarrier: carrierData.requireCarrier !== undefined ? (carrierData.requireCarrier ? 1 : 0) : 1,
+        requirePreviousCarrier: carrierData.requirePreviousCarrier !== undefined ? (carrierData.requirePreviousCarrier ? 1 : 0) : 1,
+        requireDocumentUpload: carrierData.requireDocumentUpload ? 1 : 0,
+        requireBundleNumber: carrierData.requireBundleNumber ? 1 : 0,
+        requireBundleCarrier: carrierData.requireBundleCarrier ? 1 : 0,
+        allowNewCustomer: carrierData.allowNewCustomer ? 1 : 0,
+        allowPortIn: carrierData.allowPortIn ? 1 : 0,
+        requireDesiredNumber: carrierData.requireDesiredNumber ? 1 : 0,
         updatedAt: new Date().toISOString()
       };
       
@@ -2220,32 +2160,27 @@ export class DatabaseStorage implements IStorage {
         throw new Error('통신사를 찾을 수 없습니다.');
       }
       
-      // 추가 설정 정보를 메모리에 저장
-      const additionalSettings = {
-        displayOrder: carrierData.displayOrder || 0,
-        isWired: carrierData.isWired || false,
-        bundleNumber: carrierData.bundleNumber || '',
-        bundleCarrier: carrierData.bundleCarrier || '',
-        documentRequired: carrierData.documentRequired || false,
-        requireCustomerName: carrierData.requireCustomerName !== undefined ? carrierData.requireCustomerName : true,
-        requireCustomerPhone: carrierData.requireCustomerPhone || false,
-        requireCustomerEmail: carrierData.requireCustomerEmail || false,
-        requireContactCode: carrierData.requireContactCode !== undefined ? carrierData.requireContactCode : true,
-        requireCarrier: carrierData.requireCarrier !== undefined ? carrierData.requireCarrier : true,
-        requirePreviousCarrier: carrierData.requirePreviousCarrier !== undefined ? carrierData.requirePreviousCarrier : true,
-        requireDocumentUpload: carrierData.requireDocumentUpload || false,
-        requireBundleNumber: carrierData.requireBundleNumber || false,
-        requireBundleCarrier: carrierData.requireBundleCarrier || false,
-        requireDesiredNumber: carrierData.requireDesiredNumber || false
-      };
-      
-      this.carrierFieldSettings.set(id, additionalSettings);
-      
+      // 메모리 맵은 더 이상 사용하지 않고 데이터베이스에서 직접 조회
       return {
         ...updatedCarrier,
-        ...additionalSettings,
-        allowNewCustomer: updatedCarrier.supportNewCustomers,
-        allowPortIn: updatedCarrier.supportPortIn
+        // Boolean 값들을 다시 Boolean으로 변환
+        supportNewCustomers: Boolean(updatedCarrier.supportNewCustomers),
+        supportPortIn: Boolean(updatedCarrier.supportPortIn),
+        isActive: Boolean(updatedCarrier.isActive),
+        isWired: Boolean(updatedCarrier.isWired),
+        documentRequired: Boolean(updatedCarrier.documentRequired),
+        requireCustomerName: Boolean(updatedCarrier.requireCustomerName),
+        requireCustomerPhone: Boolean(updatedCarrier.requireCustomerPhone),
+        requireCustomerEmail: Boolean(updatedCarrier.requireCustomerEmail),
+        requireContactCode: Boolean(updatedCarrier.requireContactCode),
+        requireCarrier: Boolean(updatedCarrier.requireCarrier),
+        requirePreviousCarrier: Boolean(updatedCarrier.requirePreviousCarrier),
+        requireDocumentUpload: Boolean(updatedCarrier.requireDocumentUpload),
+        requireBundleNumber: Boolean(updatedCarrier.requireBundleNumber),
+        requireBundleCarrier: Boolean(updatedCarrier.requireBundleCarrier),
+        allowNewCustomer: Boolean(updatedCarrier.allowNewCustomer),
+        allowPortIn: Boolean(updatedCarrier.allowPortIn),
+        requireDesiredNumber: Boolean(updatedCarrier.requireDesiredNumber)
       };
 
     } catch (error) {
