@@ -1986,17 +1986,18 @@ export class DatabaseStorage implements IStorage {
         const todaySubmissionsQuery = await db.select({ count: sql`count(*)` })
           .from(documents)
           .where(and(
-            sql`date(uploaded_at) = ${today}`,
-            sql`contact_code IN (${sql.join(dealerCodes.map(code => sql`${code}`), sql`, `)})`
+            sql`date(uploaded_at) = date('now')`,
+            sql`contact_code IN (${sql.join(dealerCodes.map(code => sql`'${code}'`), sql`, `)})`
           ));
         todaySubmissions = {rows: todaySubmissionsQuery};
+        console.log('Sales manager today submissions query result:', todaySubmissionsQuery);
       } else if (salesManagerId && dealerCodes.length === 0) {
         // 접점코드가 없는 영업과장은 아무 데이터도 조회할 수 없음
         todaySubmissions = {rows: [{count: 0}]};
       } else {
         const result = await db.select({ count: sql`count(*)` })
           .from(documents)
-          .where(sql`date(uploaded_at) = ${today}`);
+          .where(sql`date(uploaded_at) = date('now')`);
         todaySubmissions = {rows: result};
       }
 
@@ -2006,7 +2007,7 @@ export class DatabaseStorage implements IStorage {
         const result = await db.select({ count: sql`count(*)` })
           .from(documents)
           .where(and(
-            sql`date(activated_at) = ${today}`,
+            sql`date(activated_at) = date('now')`,
             eq(documents.activationStatus, '개통'),
             eq(documents.activatedBy, workerId)
           ));
@@ -2015,18 +2016,19 @@ export class DatabaseStorage implements IStorage {
         const todayCompletionsQuery = await db.select({ count: sql`count(*)` })
           .from(documents)
           .where(and(
-            sql`date(activated_at) = ${today}`,
+            sql`date(activated_at) = date('now')`,
             eq(documents.activationStatus, '개통'),
-            sql`contact_code IN (${sql.join(dealerCodes.map(code => sql`${code}`), sql`, `)})`
+            sql`contact_code IN (${sql.join(dealerCodes.map(code => sql`'${code}'`), sql`, `)})`
           ));
         todayCompletions = {rows: todayCompletionsQuery};
+        console.log('Sales manager today completions query result:', todayCompletionsQuery);
       } else if (salesManagerId && dealerCodes.length === 0) {
         todayCompletions = {rows: [{count: 0}]};
       } else {
         const result = await db.select({ count: sql`count(*)` })
           .from(documents)
           .where(and(
-            sql`date(activated_at) = ${today}`,
+            sql`date(activated_at) = date('now')`,
             eq(documents.activationStatus, '개통')
           ));
         todayCompletions = {rows: result};
@@ -2038,7 +2040,7 @@ export class DatabaseStorage implements IStorage {
         const result = await db.select({ count: sql`count(*)` })
           .from(documents)
           .where(and(
-            sql`date(activated_at) = ${today}`,
+            sql`date(activated_at) = date('now')`,
             eq(documents.activationStatus, '기타완료'),
             eq(documents.activatedBy, workerId)
           ));
@@ -2047,18 +2049,19 @@ export class DatabaseStorage implements IStorage {
         const todayOtherCompletedQuery = await db.select({ count: sql`count(*)` })
           .from(documents)
           .where(and(
-            sql`date(activated_at) = ${today}`,
+            sql`date(activated_at) = date('now')`,
             eq(documents.activationStatus, '기타완료'),
-            sql`contact_code IN (${sql.join(dealerCodes.map(code => sql`${code}`), sql`, `)})`
+            sql`contact_code IN (${sql.join(dealerCodes.map(code => sql`'${code}'`), sql`, `)})`
           ));
         todayOtherCompleted = {rows: todayOtherCompletedQuery};
+        console.log('Sales manager today other completed query result:', todayOtherCompletedQuery);
       } else if (salesManagerId && dealerCodes.length === 0) {
         todayOtherCompleted = {rows: [{count: 0}]};
       } else {
         const result = await db.select({ count: sql`count(*)` })
           .from(documents)
           .where(and(
-            sql`date(activated_at) = ${today}`,
+            sql`date(activated_at) = date('now')`,
             eq(documents.activationStatus, '기타완료')
           ));
         todayOtherCompleted = {rows: result};
@@ -2073,7 +2076,7 @@ export class DatabaseStorage implements IStorage {
           .from(documents)
           .where(
             and(
-              sql`date(activated_at) = ${today}`,
+              sql`date(activated_at) = date('now')`,
               eq(documents.activationStatus, '개통'),
               eq(documents.activatedBy, workerId)
             )
@@ -2085,7 +2088,7 @@ export class DatabaseStorage implements IStorage {
           .from(documents)
           .where(
             and(
-              sql`date(activated_at) = ${today}`,
+              sql`date(activated_at) = date('now')`,
               eq(documents.activationStatus, '개통')
             )
           );
