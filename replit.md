@@ -4,6 +4,12 @@
 This project is a document management system for MCC네트월드 telecommunications dealers. Its main purpose is to streamline the handling of customer reception documents, offering capabilities such as role-based authentication, secure file uploads, comprehensive document tracking, and administrative functionalities. The system aims to enhance efficiency in managing customer activations and related processes.
 
 ## Recent Changes (January 2025)
+- **2025-01-08**: Fixed critical SQL parameter binding issues and completed role-based data access control
+  - Resolved SQL "too many parameters" errors by transitioning from Drizzle ORM to db.prepare().all() approach
+  - Fixed sales manager authentication - updated password hash for jsw_manager account
+  - Confirmed working APIs: dashboard stats, carrier stats with proper sales manager filtering
+  - Verified role-based access control: worker stats restricted to admin users only
+  - Sales manager data filtering working correctly (담당 판매점별 데이터만 조회)
 - **2025-01-08**: Successfully implemented and debugged contact code force update functionality and activation processor display
   - Added "기존 접점코드 강제 업데이트" checkbox in AdminPanel contact code upload dialog
   - Enhanced backend API to process forceUpdate parameter with detailed logging
