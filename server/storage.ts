@@ -2694,7 +2694,10 @@ export class DatabaseStorage implements IStorage {
   async updateDocumentSettlementAmount(id: number, settlementAmount: number): Promise<void> {
     try {
       await db.update(documents)
-        .set({ settlementAmount, updatedAt: new Date() })
+        .set({ 
+          settlementAmount: settlementAmount.toString(),  // Convert to string for SQLite
+          updatedAt: new Date().toISOString()             // Convert to string for SQLite
+        })
         .where(eq(documents.id, id));
     } catch (error) {
       console.error('Document settlement amount update error:', error);

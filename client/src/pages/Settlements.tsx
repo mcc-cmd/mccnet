@@ -1305,25 +1305,15 @@ export function Settlements() {
                               const backendAmount = (doc as any).calculatedSettlementAmount;
                               const manualAmount = (doc as any).settlementAmount;
                               
-                              console.log(`Table render - Document ${doc.id}: backendAmount=${backendAmount}, manualAmount=${manualAmount}, type=${typeof backendAmount}`);
-                              
                               if (backendAmount !== undefined && backendAmount !== null) {
                                 const amount = typeof backendAmount === 'number' ? backendAmount : parseFloat(backendAmount);
-                                const result = !isNaN(amount) ? `${amount.toLocaleString()}원` : '0원';
-                                console.log(`Table render - Document ${doc.id}: Using backend amount ${amount}, result=${result}`);
-                                return result;
+                                return !isNaN(amount) ? `${amount.toLocaleString()}원` : '0원';
                               } else if (manualAmount) {
                                 const amount = parseInt(manualAmount);
-                                const result = !isNaN(amount) ? `${amount.toLocaleString()}원` : '0원';
-                                console.log(`Table render - Document ${doc.id}: Using manual amount ${amount}, result=${result}`);
-                                return result;
+                                return !isNaN(amount) ? `${amount.toLocaleString()}원` : '0원';
                               } else if (settlementPrices) {
-                                const amount = calculateSettlementAmount(doc, settlementPrices, deductionPolicies);
-                                const result = `${amount.toLocaleString()}원`;
-                                console.log(`Table render - Document ${doc.id}: Using calculated amount ${amount}, result=${result}`);
-                                return result;
+                                return `${calculateSettlementAmount(doc, settlementPrices, deductionPolicies).toLocaleString()}원`;
                               } else {
-                                console.log(`Table render - Document ${doc.id}: No amount found, using 0원`);
                                 return '0원';
                               }
                             })()}
