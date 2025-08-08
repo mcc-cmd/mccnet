@@ -116,7 +116,7 @@ export function Dashboard() {
       todayReception: number;
       todayActivation: number;
       todayOtherCompleted: number;
-      carrierStats: Array<{ carrier: string; count: number }>;
+      carrierStats: Array<{ carrier: string; new: number; portIn: number; total: number }>;
     }>,
   });
 
@@ -251,12 +251,12 @@ export function Dashboard() {
                           <div className="mt-3 grid grid-cols-2 gap-2">
                             <div className="p-2 rounded bg-green-100 border border-green-200">
                               <div className="text-sm font-medium text-green-700">
-                                신규: {(stats as any)?.todayCompletions?.new || 0}건
+                                신규: {todayStats?.carrierStats?.reduce((sum, carrier) => sum + carrier.new, 0) || 0}건
                               </div>
                             </div>
                             <div className="p-2 rounded bg-blue-100 border border-blue-200">
                               <div className="text-sm font-medium text-blue-700">
-                                번호이동: {(stats as any)?.todayCompletions?.portIn || 0}건
+                                번호이동: {todayStats?.carrierStats?.reduce((sum, carrier) => sum + carrier.portIn, 0) || 0}건
                               </div>
                             </div>
                           </div>

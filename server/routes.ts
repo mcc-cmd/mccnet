@@ -1236,13 +1236,23 @@ router.get('/api/dashboard/today-stats', requireAuth, async (req: any, res) => {
     
     const stats = await storage.getTodayStats(workerId, salesManagerId);
     console.log('Today stats result:', stats);
+
+    // 당일 통신사별 데이터도 함께 조회
+    const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD 형식
+    const carrierStats = await storage.getCarrierStats(today, today, salesManagerId);
+    console.log('Today carrier stats:', carrierStats);
     
     // API 응답 형식을 프론트엔드 기대값에 맞춤
     const response = {
       todayReception: stats.todaySubmissions,
       todayActivation: stats.todayCompletions,
       todayOtherCompleted: stats.todayOtherCompleted || 0,
-      carrierStats: []
+      carrierStats: carrierStats.map(carrier => ({
+        carrier: carrier.carrier,
+        new: carrier.newCustomer,
+        portIn: carrier.portIn,
+        total: carrier.total
+      }))
     };
     
     console.log('Today stats response:', response);
