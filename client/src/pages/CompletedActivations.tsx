@@ -37,10 +37,7 @@ export function CompletedActivations() {
     queryFn: () => {
       const params = new URLSearchParams();
       params.append('activationStatus', '개통');
-      // 근무자는 자신이 개통한 건만 조회
-      if (user?.userType === 'dealer_worker') {
-        params.append('workerFilter', 'my');
-      }
+      // 개통완료 관리는 전체 개통 문서를 보여줌 (작업자 필터링 제거)
       // 개통 처리자 이름을 포함하도록 요청
       params.append('includeActivatedBy', 'true');
       Object.entries(filters).forEach(([key, value]) => {

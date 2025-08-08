@@ -473,9 +473,12 @@ export function Settlements() {
     let totalAmount = 0;
     
     completedDocuments.forEach(doc => {
-      // 수동 입력된 정산 금액이 있으면 그것을 사용, 없으면 자동 계산
+      // 백엔드에서 계산한 정산금액을 우선 사용
       let amount = 0;
-      if ((doc as any).settlementAmount) {
+      if ((doc as any).calculatedSettlementAmount !== undefined) {
+        amount = (doc as any).calculatedSettlementAmount;
+        console.log(`Document ${doc.id}: Using backend calculated amount ${amount}`);
+      } else if ((doc as any).settlementAmount) {
         const parsedAmount = parseFloat((doc as any).settlementAmount);
         if (!isNaN(parsedAmount)) {
           amount = parsedAmount;
@@ -483,7 +486,7 @@ export function Settlements() {
         }
       } else if (settlementPrices && settlementPrices.length > 0) {
         amount = calculateSettlementAmount(doc, settlementPrices, deductionPolicies);
-        console.log(`Document ${doc.id}: Using calculated amount ${amount}`);
+        console.log(`Document ${doc.id}: Using frontend calculated amount ${amount}`);
       }
       totalAmount += amount;
       
@@ -539,12 +542,17 @@ export function Settlements() {
   // 정산 금액 수정 핸들러
   const handleEditAmount = (doc: CompletedDocument) => {
     setSelectedDocumentForEdit(doc);
-    // 기존에 수정된 금액이 있으면 그 값을, 없으면 자동 계산된 값을 표시
-    const currentAmount = (doc as any).settlementAmount ? 
-      (doc as any).settlementAmount.toString() :
-      settlementPrices ? 
-        calculateSettlementAmount(doc, settlementPrices, deductionPolicies).toString() : 
-        '0';
+    // 현재 표시되는 정산금액 (백엔드 계산값 우선, 수동값, 프론트엔드 계산값 순)
+    let currentAmount = '';
+    if ((doc as any).calculatedSettlementAmount !== undefined) {
+      currentAmount = (doc as any).calculatedSettlementAmount.toString();
+    } else if ((doc as any).settlementAmount) {
+      currentAmount = (doc as any).settlementAmount.toString();
+    } else if (settlementPrices) {
+      currentAmount = calculateSettlementAmount(doc, settlementPrices, deductionPolicies).toString();
+    } else {
+      currentAmount = '0';
+    }
     setEditAmount(currentAmount);
     setEditAmountDialogOpen(true);
   };
@@ -1117,9 +1125,11 @@ export function Settlements() {
                       {completedDocuments ? 
                         completedDocuments
                           .reduce((sum, doc) => {
-                            // 수동 입력된 정산 금액이 있으면 그것을 사용, 없으면 자동 계산
+                            // 백엔드에서 계산한 정산금액을 우선 사용
                             let amount = 0;
-                            if ((doc as any).settlementAmount) {
+                            if ((doc as any).calculatedSettlementAmount !== undefined) {
+                              amount = (doc as any).calculatedSettlementAmount;
+                            } else if ((doc as any).settlementAmount) {
                               const parsedAmount = parseFloat((doc as any).settlementAmount);
                               if (!isNaN(parsedAmount)) {
                                 amount = parsedAmount;
@@ -1273,11 +1283,13 @@ export function Settlements() {
                             className="text-sm font-medium text-blue-600 hover:text-blue-800 hover:underline cursor-pointer transition-colors"
                             title="클릭하여 정산 금액 수정"
                           >
-                            {(doc as any).settlementAmount ? 
-                              `${parseInt((doc as any).settlementAmount).toLocaleString()}원` :
-                              settlementPrices ? 
-                                `${calculateSettlementAmount(doc, settlementPrices, deductionPolicies).toLocaleString()}원` :
-                                '0원'
+                            {(doc as any).calculatedSettlementAmount !== undefined ? 
+                              `${(doc as any).calculatedSettlementAmount.toLocaleString()}원` :
+                              (doc as any).settlementAmount ? 
+                                `${parseInt((doc as any).settlementAmount).toLocaleString()}원` :
+                                settlementPrices ? 
+                                  `${calculateSettlementAmount(doc, settlementPrices, deductionPolicies).toLocaleString()}원` :
+                                  '0원'
                             }
                           </button>
                         </TableCell>
@@ -1345,11 +1357,13 @@ export function Settlements() {
                               className="font-medium text-xs text-blue-600 hover:text-blue-800 hover:underline cursor-pointer transition-colors ml-1"
                               title="클릭하여 정산 금액 수정"
                             >
-                              {(doc as any).settlementAmount ? 
-                                `${parseInt((doc as any).settlementAmount).toLocaleString()}원` :
-                                settlementPrices ? 
-                                  `${calculateSettlementAmount(doc, settlementPrices, deductionPolicies).toLocaleString()}원` :
-                                  '0원'
+                              {(doc as any).calculatedSettlementAmount !== undefined ? 
+                                `${(doc as any).calculatedSettlementAmount.toLocaleString()}원` :
+                                (doc as any).settlementAmount ? 
+                                  `${parseInt((doc as any).settlementAmount).toLocaleString()}원` :
+                                  settlementPrices ? 
+                                    `${calculateSettlementAmount(doc, settlementPrices, deductionPolicies).toLocaleString()}원` :
+                                    '0원'
                               }
                             </button>
                           </div>
