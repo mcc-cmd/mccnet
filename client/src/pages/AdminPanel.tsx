@@ -1215,6 +1215,7 @@ export function AdminPanel() {
   // 접점코드 관리 상태
   const [newContactCode, setNewContactCode] = useState('');
   const [newDealerName, setNewDealerName] = useState('');
+  const [newRealSalesPOS, setNewRealSalesPOS] = useState('');
   const [newCarrier, setNewCarrier] = useState('');
   const [newSalesManagerId, setNewSalesManagerId] = useState<number | null>(null);
   
@@ -2514,12 +2515,20 @@ export function AdminPanel() {
     createContactCodeMutation.mutate({
       code: newContactCode,
       dealerName: newDealerName,
+      realSalesPOS: newRealSalesPOS,
       carrier: newCarrier,
       salesManagerId: newSalesManagerId,
       salesManagerName: selectedSalesManager?.managerName || null,
     }, {
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: ['/api/contact-codes'] });
+        // 폼 초기화
+        setNewContactCode('');
+        setNewDealerName('');
+        setNewRealSalesPOS('');
+        setNewCarrier('');
+        setNewSalesManagerId(null);
+        setContactCodeDialogOpen(false);
       }
     });
   };
@@ -2737,12 +2746,14 @@ export function AdminPanel() {
       {
         '접점코드': 'LDI672346',
         '판매점명': '샘플판매점',
+        '실판매POS': '실POS명1',
         '통신사': 'LG미디어로그',
         '담당영업과장': '황병준'
       },
       {
         '접점코드': 'SKT123456',
         '판매점명': '테스트판매점',
+        '실판매POS': '',
         '통신사': 'SK텔링크',
         '담당영업과장': '김영수'
       }
@@ -2750,9 +2761,9 @@ export function AdminPanel() {
 
     // CSV 형태로 다운로드
     const csvContent = '\uFEFF' + // BOM for Excel UTF-8 recognition
-      '접점코드,판매점명,통신사,담당영업과장\n' +
-      'LDI672346,샘플판매점,LG미디어로그,황병준\n' +
-      'SKT123456,테스트판매점,SK텔링크,김영수\n';
+      '접점코드,판매점명,실판매POS,통신사,담당영업과장\n' +
+      'LDI672346,샘플판매점,실POS명1,LG미디어로그,황병준\n' +
+      'SKT123456,테스트판매점,,SK텔링크,김영수\n';
 
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
@@ -3146,6 +3157,15 @@ export function AdminPanel() {
                           />
                         </div>
                         <div>
+                          <Label htmlFor="realSalesPOS">실판매POS</Label>
+                          <Input
+                            id="realSalesPOS"
+                            value={newRealSalesPOS}
+                            onChange={(e) => setNewRealSalesPOS(e.target.value)}
+                            placeholder="실판매POS를 입력하세요"
+                          />
+                        </div>
+                        <div>
                           <Label htmlFor="carrier">통신사</Label>
                           <Select value={newCarrier} onValueChange={setNewCarrier}>
                             <SelectTrigger>
@@ -3244,11 +3264,12 @@ export function AdminPanel() {
                   <div className="text-sm text-blue-700 dark:text-blue-300">
                     <p className="mb-2">1. 위의 "양식 다운로드" 버튼을 클릭하여 템플릿을 다운로드하세요.</p>
                     <p className="mb-2">2. 다운로드한 파일에 접점코드 데이터를 입력하세요:</p>
-                    <ul className="list-disc list-inside ml-4 mb-2">
-                      <li><strong>접점코드</strong>: 개통방명 시 사용할 코드</li>
-                      <li><strong>판매점명</strong>: 자동으로 설정될 판매점 이름</li>
-                      <li><strong>통신사</strong>: 해당 통신사명</li>
-                      <li><strong>담당영업과장</strong>: 영업과장 이름 (선택사항)</li>
+                    <ul className="list-disc list-inside ml-4 space-y-1 mb-2">
+                      <li><strong>접점코드</strong>: 고유한 접점 코드 (예: 구)이다글로벌)</li>
+                      <li><strong>판매점명</strong>: 판매점 이름</li>
+                      <li><strong>실판매POS</strong>: 실제 판매 POS명 (선택사항)</li>
+                      <li><strong>통신사</strong>: 통신사명 (예: 후불)중고KT)</li>
+                      <li><strong>담당영업과장</strong>: 담당 영업과장명</li>
                     </ul>
                     <p>3. 작성이 완료되면 "엑셀 업로드" 버튼을 클릭하여 파일을 업로드하세요.</p>
                   </div>
@@ -3294,6 +3315,11 @@ export function AdminPanel() {
                               <div>
                                 <h4 className="font-medium text-gray-900 dark:text-gray-100">{code.code}</h4>
                                 <p className="text-sm text-gray-500 dark:text-gray-400">{code.dealerName}</p>
+                                {(code as any).realSalesPOS && (
+                                  <p className="text-xs text-purple-600 dark:text-purple-400 mt-1">
+                                    실판매POS: {(code as any).realSalesPOS}
+                                  </p>
+                                )}
                                 {code.salesManagerName && (
                                   <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">
                                     담당: {code.salesManagerName}

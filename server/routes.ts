@@ -3233,10 +3233,11 @@ router.get('/api/contact-codes/search/:code', requireAuth, async (req: any, res)
 
 router.post('/api/contact-codes', requireAuth, async (req: any, res) => {
   try {
-    const { code, dealerName, carrier, isActive, salesManagerId, salesManagerName } = req.body;
+    const { code, dealerName, realSalesPOS, carrier, isActive, salesManagerId, salesManagerName } = req.body;
     const contactCode = await storage.createContactCode({
       code,
       dealerName,
+      realSalesPOS: realSalesPOS || null,
       carrier,
       isActive: isActive !== undefined ? isActive : true,
       salesManagerId: salesManagerId || null,
@@ -3252,10 +3253,11 @@ router.post('/api/contact-codes', requireAuth, async (req: any, res) => {
 router.put('/api/contact-codes/:id', requireAuth, async (req: any, res) => {
   try {
     const id = parseInt(req.params.id);
-    const { code, dealerName, carrier, isActive } = req.body;
+    const { code, dealerName, realSalesPOS, carrier, isActive } = req.body;
     const contactCode = await storage.updateContactCode(id, {
       code,
       dealerName,
+      realSalesPOS: realSalesPOS || null,
       carrier,
       isActive
     });
@@ -3342,7 +3344,7 @@ router.post('/api/contact-codes/upload-excel', contactCodeUpload.single('file'),
     const dataRows = rawData.slice(headerIndex + 1);
 
     // 컬럼 인덱스 찾기
-    let codeIndex = -1, dealerNameIndex = -1, carrierIndex = -1, salesManagerIndex = -1;
+    let codeIndex = -1, dealerNameIndex = -1, realSalesPOSIndex = -1, carrierIndex = -1, salesManagerIndex = -1;
     
     for (let i = 0; i < headers.length; i++) {
       const header = String(headers[i]).trim();
@@ -3350,6 +3352,8 @@ router.post('/api/contact-codes/upload-excel', contactCodeUpload.single('file'),
         codeIndex = i;
       } else if (header.includes('판매점명') || header.toLowerCase().includes('dealer')) {
         dealerNameIndex = i;
+      } else if (header.includes('실판매POS') || header.includes('실판매pos') || header.toLowerCase().includes('realsalespos')) {
+        realSalesPOSIndex = i;
       } else if (header.includes('통신사') || header.toLowerCase().includes('carrier')) {
         carrierIndex = i;
       } else if (header.includes('담당영업과장') || header.includes('영업과장') || header.toLowerCase().includes('manager')) {
@@ -3370,10 +3374,11 @@ router.post('/api/contact-codes/upload-excel', contactCodeUpload.single('file'),
       try {
         const code = row[codeIndex];
         const dealerName = row[dealerNameIndex];
+        const realSalesPOS = realSalesPOSIndex >= 0 ? row[realSalesPOSIndex] : null;
         const carrier = row[carrierIndex];
         const salesManagerName = salesManagerIndex >= 0 ? row[salesManagerIndex] : null;
         
-        console.log(`Row ${i + 2}: code=${code}, dealer=${dealerName}, carrier=${carrier}, salesManager=${salesManagerName}`);
+        console.log(`Row ${i + 2}: code=${code}, dealer=${dealerName}, realSalesPOS=${realSalesPOS}, carrier=${carrier}, salesManager=${salesManagerName}`);
         
         if (!code || !dealerName || !carrier) {
           const errorMsg = `${i + 2}행: 필수 정보가 누락되었습니다 (접점코드: ${code || 'X'}, 판매점명: ${dealerName || 'X'}, 통신사: ${carrier || 'X'})`;
@@ -3406,7 +3411,8 @@ router.post('/api/contact-codes/upload-excel', contactCodeUpload.single('file'),
             console.log(`Updating contact code ${code}: ${existingCode.carrier} -> ${newCarrier}`);
             await storage.updateContactCode(existingCode.id, {
               carrier: newCarrier,
-              dealerName: String(dealerName).trim()
+              dealerName: String(dealerName).trim(),
+              realSalesPOS: realSalesPOS ? String(realSalesPOS).trim() : null
             });
             addedCodes++;
             console.log(`Successfully updated contact code: ${code}`);
@@ -3421,6 +3427,7 @@ router.post('/api/contact-codes/upload-excel', contactCodeUpload.single('file'),
         const newContactCode = {
           code: String(code).trim(),
           dealerName: String(dealerName).trim(),
+          realSalesPOS: realSalesPOS ? String(realSalesPOS).trim() : null,
           carrier: String(carrier).trim(),
           isActive: true,
           salesManagerId: salesManagerId,

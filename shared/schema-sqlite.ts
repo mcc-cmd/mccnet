@@ -64,6 +64,7 @@ export const contactCodes = sqliteTable("contact_codes", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   code: text("code").notNull(),
   dealerName: text("dealer_name").notNull(),
+  realSalesPOS: text("real_sales_pos"), // 실판매POS 필드 추가
   carrier: text("carrier").notNull(),
   salesManagerId: integer("sales_manager_id").references(() => salesManagers.id),
   salesManagerName: text("sales_manager_name"),
@@ -268,6 +269,14 @@ export type UpdateSalesManagerForm = z.infer<typeof updateSalesManagerSchema>;
 export type SalesManager = typeof salesManagers.$inferSelect;
 
 // 접점 코드 스키마
+export const createContactCodeSchema = createInsertSchema(contactCodes).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const updateContactCodeSchema = createContactCodeSchema.partial();
+
 export const createContactCodeMappingSchema = createInsertSchema(contactCodeMappings).omit({
   id: true,
   createdAt: true,
@@ -275,6 +284,9 @@ export const createContactCodeMappingSchema = createInsertSchema(contactCodeMapp
 });
 
 export const updateContactCodeMappingSchema = createContactCodeMappingSchema.partial();
+
+export type CreateContactCodeForm = z.infer<typeof createContactCodeSchema>;
+export type UpdateContactCodeForm = z.infer<typeof updateContactCodeSchema>;
 
 export type CreateContactCodeMappingForm = z.infer<typeof createContactCodeMappingSchema>;
 export type UpdateContactCodeMappingForm = z.infer<typeof updateContactCodeMappingSchema>;

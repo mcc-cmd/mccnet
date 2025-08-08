@@ -1225,6 +1225,7 @@ export function Settlements() {
                           <TableHead className="min-w-[80px] text-xs font-medium">고객명</TableHead>
                           <TableHead className="min-w-[120px] text-xs font-medium">연락처</TableHead>
                           <TableHead className="min-w-[120px] text-xs font-medium">판매점명</TableHead>
+                          <TableHead className="min-w-[120px] text-xs font-medium">실판매POS</TableHead>
                           <TableHead className="min-w-[80px] text-xs font-medium">통신사</TableHead>
                           <TableHead className="min-w-[60px] text-xs font-medium">유형</TableHead>
                           <TableHead className="min-w-[140px] text-xs font-medium">요금제</TableHead>
@@ -1251,6 +1252,9 @@ export function Settlements() {
                         <TableCell className="whitespace-nowrap text-sm">{doc.customerName}</TableCell>
                         <TableCell className="whitespace-nowrap text-sm">{doc.customerPhone}</TableCell>
                         <TableCell className="whitespace-nowrap text-sm max-w-[120px] truncate">{doc.storeName || doc.dealerName}</TableCell>
+                        <TableCell className="whitespace-nowrap text-sm max-w-[120px] truncate">
+                          {(doc as any).realSalesPOS || '-'}
+                        </TableCell>
                         <TableCell className="whitespace-nowrap">
                           <Badge variant="outline" className="text-xs">{doc.carrier}</Badge>
                         </TableCell>
@@ -1378,6 +1382,12 @@ export function Settlements() {
                             <span className="text-muted-foreground">판매점:</span>
                             <p className="font-medium text-xs truncate">{doc.storeName || doc.dealerName}</p>
                           </div>
+                          {(doc as any).realSalesPOS && (
+                            <div>
+                              <span className="text-muted-foreground">실판매POS:</span>
+                              <p className="font-medium text-xs truncate">{(doc as any).realSalesPOS}</p>
+                            </div>
+                          )}
                           <div>
                             <span className="text-muted-foreground">유형:</span>
                             <Badge variant={
