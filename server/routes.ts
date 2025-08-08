@@ -2018,11 +2018,16 @@ router.get('/api/settlements/export', requireAuth, async (req: any, res) => {
       
       // 개통일시 기준으로 해당 시점에 유효한 정산단가 찾기
       const activatedDate = new Date(doc.activatedAt);
-      const applicablePrices = settlementPrices.filter(p => 
-        p.servicePlanId === doc.servicePlanId && 
-        new Date(p.effectiveFrom) <= activatedDate &&
-        (!p.effectiveUntil || new Date(p.effectiveUntil) > activatedDate)
-      );
+      const applicablePrices = settlementPrices.filter(p => {
+        const servicePlanIdMatch = p.servicePlanId == doc.servicePlanId || 
+                                   p.servicePlanId == parseFloat(doc.servicePlanId);
+        const effectiveFromDate = new Date(p.effectiveFrom);
+        const effectiveUntilDate = p.effectiveUntil ? new Date(p.effectiveUntil) : null;
+        
+        return servicePlanIdMatch && 
+               effectiveFromDate <= activatedDate &&
+               (!effectiveUntilDate || effectiveUntilDate > activatedDate);
+      });
       
       // 가장 최근 유효한 단가 선택 (effective_from 기준 내림차순)
       const priceInfo = applicablePrices.sort((a, b) => 
@@ -2030,9 +2035,13 @@ router.get('/api/settlements/export', requireAuth, async (req: any, res) => {
       )[0];
       
       if (!priceInfo) {
-        // Fallback: 가장 최근 단가 사용
+        // Fallback: 개통일 이전에 설정된 가장 최근 단가 사용
         const fallbackPrice = settlementPrices
-          .filter(p => p.servicePlanId === doc.servicePlanId)
+          .filter(p => {
+            const servicePlanIdMatch = p.servicePlanId == doc.servicePlanId || 
+                                       p.servicePlanId == parseFloat(doc.servicePlanId);
+            return servicePlanIdMatch && new Date(p.effectiveFrom) <= activatedDate;
+          })
           .sort((a, b) => new Date(b.effectiveFrom).getTime() - new Date(a.effectiveFrom).getTime())[0];
         
         if (!fallbackPrice) return 0;

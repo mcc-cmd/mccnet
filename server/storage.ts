@@ -1640,8 +1640,7 @@ export class DatabaseStorage implements IStorage {
       // Add carrier and servicePlanName by joining
       const [servicePlan] = await db.select().from(servicePlans).where(eq(servicePlans.id, data.servicePlanId));
       
-      // 해당 요금제의 개통완료 문서들의 정산금액 재계산 및 업데이트
-      await this.updateSettlementAmountsForServicePlan(data.servicePlanId, data.newCustomerPrice, data.portInPrice);
+      // 정산단가 생성 시에는 기존 문서를 업데이트하지 않음 (새로운 단가는 향후 개통건부터 적용)
       
       return {
         id: created.id,
@@ -1666,8 +1665,32 @@ export class DatabaseStorage implements IStorage {
 
   async getActiveSettlementUnitPrices(): Promise<any[]> {
     try {
-      // 간단한 반환으로 수정 - 실제 settlement_unit_prices 테이블이 없어서 오류 발생
-      return [];
+      const result = await db.all(sql`
+        SELECT 
+          sup.id,
+          sup.service_plan_id as "servicePlanId",
+          sup.new_customer_price as "newCustomerPrice",
+          sup.port_in_price as "portInPrice", 
+          sup.is_active as "isActive",
+          sup.effective_from as "effectiveFrom",
+          sup.effective_until as "effectiveUntil",
+          sup.memo,
+          sup.created_at as "createdAt",
+          sup.updated_at as "updatedAt",
+          sup.created_by as "createdBy",
+          sp.carrier,
+          sp.name as "servicePlanName"
+        FROM settlement_unit_prices sup
+        LEFT JOIN service_plans sp ON sup.service_plan_id = sp.id
+        WHERE sup.is_active = 1
+        ORDER BY sup.created_at DESC
+      `);
+
+      return result.map((row: any) => ({
+        ...row,
+        newCustomerPrice: Number(row.newCustomerPrice),
+        portInPrice: Number(row.portInPrice)
+      }));
     } catch (error) {
       console.error('Get active settlement unit prices error:', error);
       return [];
