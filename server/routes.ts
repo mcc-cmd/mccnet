@@ -1285,25 +1285,42 @@ router.get('/api/documents', requireAuth, async (req: any, res) => {
           const activatedDate = new Date(doc.activatedAt);
           console.log(`Document ${doc.id}: Looking for prices for servicePlanId ${doc.servicePlanId}, activated at ${activatedDate.toISOString()}`);
           
-          const applicablePrices = settlementPrices.filter(p => {
+          // 먼저 서비스 플랜 ID가 일치하는 활성화된 정산단가를 찾기
+          const matchingPrices = settlementPrices.filter(p => {
             const servicePlanIdMatch = p.servicePlanId == doc.servicePlanId || 
                                        p.servicePlanId == parseFloat(doc.servicePlanId);
-            const effectiveFromDate = new Date(p.effectiveFrom);
-            const effectiveUntilDate = p.effectiveUntil ? new Date(p.effectiveUntil) : null;
-            
-            const isApplicable = servicePlanIdMatch && 
-                                effectiveFromDate <= activatedDate &&
-                                (!effectiveUntilDate || effectiveUntilDate > activatedDate);
-            
-            console.log(`Document ${doc.id}: Checking price ${p.id} - servicePlan: ${p.servicePlanId}, effectiveFrom: ${effectiveFromDate.toISOString()}, applicable: ${isApplicable}`);
-            
-            return isApplicable;
+            return servicePlanIdMatch && p.isActive;
           });
           
-          // 가장 최근 유효한 단가 선택
-          const priceInfo = applicablePrices.sort((a, b) => 
-            new Date(b.effectiveFrom).getTime() - new Date(a.effectiveFrom).getTime()
-          )[0];
+          let priceInfo = null;
+          
+          if (matchingPrices.length > 0) {
+            // 활성화된 정산단가가 있으면 가장 최근 것 사용
+            priceInfo = matchingPrices.sort((a, b) => 
+              new Date(b.effectiveFrom).getTime() - new Date(a.effectiveFrom).getTime()
+            )[0];
+            console.log(`Document ${doc.id}: Using active price ${priceInfo.id} for servicePlan ${priceInfo.servicePlanId}`);
+          } else {
+            // 활성화된 정산단가가 없으면 기존 로직 사용 (개통일 기준 매칭)
+            const applicablePrices = settlementPrices.filter(p => {
+              const servicePlanIdMatch = p.servicePlanId == doc.servicePlanId || 
+                                         p.servicePlanId == parseFloat(doc.servicePlanId);
+              const effectiveFromDate = new Date(p.effectiveFrom);
+              const effectiveUntilDate = p.effectiveUntil ? new Date(p.effectiveUntil) : null;
+              
+              const isApplicable = servicePlanIdMatch && 
+                                  effectiveFromDate <= activatedDate &&
+                                  (!effectiveUntilDate || effectiveUntilDate > activatedDate);
+              
+              console.log(`Document ${doc.id}: Checking price ${p.id} - servicePlan: ${p.servicePlanId}, effectiveFrom: ${effectiveFromDate.toISOString()}, applicable: ${isApplicable}`);
+              
+              return isApplicable;
+            });
+            
+            priceInfo = applicablePrices.sort((a, b) => 
+              new Date(b.effectiveFrom).getTime() - new Date(a.effectiveFrom).getTime()
+            )[0];
+          }
           
           if (!priceInfo) {
             console.log(`Document ${doc.id}: No applicable price found`);
