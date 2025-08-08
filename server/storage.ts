@@ -919,15 +919,14 @@ export class DatabaseStorage implements IStorage {
         dataAllowance: data.dataAllowance || '',
         monthlyFee: data.monthlyFee || 0,
         isActive: data.isActive !== false,
-        createdAt: new Date(),
-        updatedAt: new Date(),
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
       }).returning();
       
       // DB의 name 필드를 planName으로 매핑하여 반환
       return {
         ...result,
-        planName: result.name,
-        name: undefined // name 필드 제거
+        planName: result.name
       } as ServicePlan;
     } catch (error) {
       console.error('Create service plan error:', error);
@@ -939,10 +938,13 @@ export class DatabaseStorage implements IStorage {
     try {
       // planName을 name으로 변환하여 DB에 저장
       const updateData = {
-        ...data,
         name: data.planName || data.name,
-        planName: undefined, // planName 필드 제거
-        updatedAt: new Date(),
+        carrier: data.carrier,
+        planType: data.planType,
+        dataAllowance: data.dataAllowance,
+        monthlyFee: data.monthlyFee,
+        isActive: data.isActive,
+        updatedAt: new Date().toISOString(),
       };
       
       const [result] = await db.update(servicePlans)
@@ -957,8 +959,7 @@ export class DatabaseStorage implements IStorage {
       // DB의 name 필드를 planName으로 매핑하여 반환
       return {
         ...result,
-        planName: result.name,
-        name: undefined // name 필드 제거
+        planName: result.name
       } as ServicePlan;
     } catch (error) {
       console.error('Update service plan error:', error);
@@ -971,7 +972,7 @@ export class DatabaseStorage implements IStorage {
       await db.update(servicePlans)
         .set({
           isActive: false,
-          updatedAt: new Date(),
+          updatedAt: new Date().toISOString(),
         })
         .where(eq(servicePlans.id, id));
     } catch (error) {
@@ -1004,8 +1005,7 @@ export class DatabaseStorage implements IStorage {
         // DB의 name 필드를 planName으로 매핑
         return {
           ...result,
-          planName: result.name,
-          name: undefined // name 필드 제거
+          planName: result.name
         } as ServicePlan;
       }
       return undefined;

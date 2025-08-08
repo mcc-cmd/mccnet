@@ -197,10 +197,10 @@ export const documents = sqliteTable("documents", {
 // 서비스 요금제 테이블
 export const servicePlans = sqliteTable("service_plans", {
   id: integer("id").primaryKey({ autoIncrement: true }),
-  carrierId: integer("carrier_id").references(() => carriers.id).notNull(),
-  planName: text("plan_name").notNull(),
+  name: text("name").notNull(), // 요금제명
+  carrier: text("carrier").notNull(), // 통신사명
   planType: text("plan_type").notNull(),
-  dataAmount: text("data_amount"),
+  dataAllowance: text("data_allowance"), // dataAmount 대신 dataAllowance 사용
   monthlyFee: real("monthly_fee").notNull(),
   discountType: text("discount_type"),
   discountAmount: real("discount_amount").default(0),
@@ -213,7 +213,7 @@ export const servicePlans = sqliteTable("service_plans", {
 // 추가 서비스 테이블
 export const additionalServices = sqliteTable("additional_services", {
   id: integer("id").primaryKey({ autoIncrement: true }),
-  carrierId: integer("carrier_id").references(() => carriers.id).notNull(),
+  carrier: text("carrier").notNull(), // 통신사명
   serviceName: text("service_name").notNull(),
   serviceType: text("service_type").notNull(),
   monthlyFee: real("monthly_fee").notNull(),
