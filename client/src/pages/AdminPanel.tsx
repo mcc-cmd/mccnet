@@ -5374,7 +5374,7 @@ export function AdminPanel() {
                                   <SelectContent>
                                     {servicePlans?.map((plan) => (
                                       <SelectItem key={plan.id} value={plan.id.toString()}>
-                                        {plan.name} ({plan.carrier})
+                                        {plan.planName} ({plan.carrier})
                                       </SelectItem>
                                     ))}
                                   </SelectContent>
@@ -5486,10 +5486,10 @@ export function AdminPanel() {
                           return (
                             <tr key={price.id}>
                               <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                {plan?.name || `요금제 ${price.servicePlanId}`}
+                                {price.servicePlanName || plan?.planName || `요금제 ${price.servicePlanId}`}
                               </td>
                               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                {plan?.carrier || '-'}
+                                {price.carrier || plan?.carrier || '-'}
                               </td>
                               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                 {price.newCustomerPrice?.toLocaleString() || 0}원
