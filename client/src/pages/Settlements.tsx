@@ -554,10 +554,14 @@ export function Settlements() {
     setSelectedDocumentForEdit(doc);
     // 현재 표시되는 정산금액 (백엔드 계산값 우선, 수동값, 프론트엔드 계산값 순)
     let currentAmount = '';
-    if ((doc as any).calculatedSettlementAmount !== undefined) {
-      currentAmount = (doc as any).calculatedSettlementAmount.toString();
-    } else if ((doc as any).settlementAmount) {
-      currentAmount = (doc as any).settlementAmount.toString();
+    const backendAmount = (doc as any).calculatedSettlementAmount;
+    const manualAmount = (doc as any).settlementAmount;
+    
+    if (backendAmount !== undefined && backendAmount !== null) {
+      const amount = typeof backendAmount === 'number' ? backendAmount : parseFloat(backendAmount);
+      currentAmount = !isNaN(amount) ? amount.toString() : '0';
+    } else if (manualAmount) {
+      currentAmount = manualAmount.toString();
     } else if (settlementPrices) {
       currentAmount = calculateSettlementAmount(doc, settlementPrices, deductionPolicies).toString();
     } else {
@@ -1137,10 +1141,14 @@ export function Settlements() {
                           .reduce((sum, doc) => {
                             // 백엔드에서 계산한 정산금액을 우선 사용
                             let amount = 0;
-                            if ((doc as any).calculatedSettlementAmount !== undefined) {
-                              amount = (doc as any).calculatedSettlementAmount;
-                            } else if ((doc as any).settlementAmount) {
-                              const parsedAmount = parseFloat((doc as any).settlementAmount);
+                            const backendAmount = (doc as any).calculatedSettlementAmount;
+                            const manualAmount = (doc as any).settlementAmount;
+                            
+                            if (backendAmount !== undefined && backendAmount !== null) {
+                              amount = typeof backendAmount === 'number' ? backendAmount : parseFloat(backendAmount);
+                              if (isNaN(amount)) amount = 0;
+                            } else if (manualAmount) {
+                              const parsedAmount = parseFloat(manualAmount);
                               if (!isNaN(parsedAmount)) {
                                 amount = parsedAmount;
                               }
