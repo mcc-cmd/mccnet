@@ -1976,6 +1976,11 @@ router.get('/api/settlements/export', requireAuth, async (req: any, res) => {
     const calculateSettlementAmount = (doc: any) => {
       if (!doc.servicePlanId) return 0;
       
+      // 0. 문서에 저장된 정산금액이 있으면 우선 사용 (가장 높은 우선순위)
+      if (doc.settlementAmount !== undefined && doc.settlementAmount !== null && doc.settlementAmount > 0) {
+        return doc.settlementAmount;
+      }
+      
       // 1. 우선적으로 저장된 정산단가 사용 (개통 완료 시점에 저장된 단가)
       if (doc.settlementNewCustomerPrice !== undefined && doc.settlementPortInPrice !== undefined) {
         let baseAmount = 0;
