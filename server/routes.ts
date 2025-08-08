@@ -3426,9 +3426,11 @@ router.post('/api/contact-codes/upload-excel', contactCodeUpload.single('file'),
           );
           
           if (hasChanges) {
-            console.log(`Updating contact code ${code}: changes detected`);
-            console.log(`  Old: carrier=${existingCode.carrier}, dealer=${existingCode.dealerName}, realSalesPOS=${existingCode.realSalesPOS}, salesManagerId=${existingCode.salesManagerId}`);
-            console.log(`  New: carrier=${newCarrier}, dealer=${newDealerName}, realSalesPOS=${newRealSalesPOS}, salesManagerId=${salesManagerId}`);
+            console.log(`🔄 ${forceUpdate ? 'FORCE UPDATE' : 'UPDATE'}: ${code}`);
+            console.log(`  📊 Changes - carrier: ${existingCode.carrier} → ${newCarrier}`);
+            console.log(`  🏪 Changes - dealer: ${existingCode.dealerName} → ${newDealerName}`);
+            console.log(`  📱 Changes - realSalesPOS: ${existingCode.realSalesPOS} → ${newRealSalesPOS}`);
+            console.log(`  👤 Changes - salesManagerId: ${existingCode.salesManagerId} → ${salesManagerId}`);
             
             await storage.updateContactCode(existingCode.id, {
               carrier: newCarrier,
@@ -3438,12 +3440,13 @@ router.post('/api/contact-codes/upload-excel', contactCodeUpload.single('file'),
               salesManagerName: salesManagerName ? String(salesManagerName).trim() : null
             });
             addedCodes++;
-            console.log(`Successfully updated contact code: ${code}`);
+            console.log(`✅ Successfully updated contact code: ${code}`);
           } else {
             duplicatesSkipped++;
-            console.log(`Skipping duplicate contact code: ${code} (no changes)`);
-            console.log(`  Current: carrier=${existingCode.carrier}, dealer=${existingCode.dealerName}, realSalesPOS=${existingCode.realSalesPOS}, salesManagerId=${existingCode.salesManagerId}`);
-            console.log(`  Excel:   carrier=${newCarrier}, dealer=${newDealerName}, realSalesPOS=${newRealSalesPOS}, salesManagerId=${salesManagerId}`);
+            console.log(`⏭️  Skipping contact code: ${code} (no changes detected)`);
+            if (!forceUpdate) {
+              console.log(`💡 Tip: Enable force update to update all codes regardless of changes`);
+            }
           }
           continue;
         }
