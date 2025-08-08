@@ -328,6 +328,22 @@ export type AdditionalService = typeof additionalServices.$inferSelect;
 export type SettlementUnitPrice = typeof settlementUnitPrices.$inferSelect;
 export type ContactCode = typeof contactCodes.$inferSelect;
 
+// 인증 세션 테이블 (데이터베이스 기반 세션 저장소)
+export const authSessions = sqliteTable("auth_sessions", {
+  id: text("id").primaryKey(),
+  userId: integer("user_id").notNull(),
+  userType: text("user_type").notNull(),
+  userRole: text("user_role"),
+  managerId: integer("manager_id"),
+  teamId: integer("team_id"),
+  expiresAt: text("expires_at").notNull(),
+  createdAt: text("created_at").default(sql`CURRENT_TIMESTAMP`),
+  updatedAt: text("updated_at").default(sql`CURRENT_TIMESTAMP`)
+}, (table) => ({
+  expiresAtIdx: index("auth_session_expires_idx").on(table.expiresAt),
+  userIdx: index("auth_session_user_idx").on(table.userId, table.userType),
+}));
+
 // 인증 세션 인터페이스
 export interface AuthSession {
   id: string;
@@ -339,3 +355,6 @@ export interface AuthSession {
   teamId?: number;
   expiresAt: Date;
 }
+
+// 인증 세션 타입
+export type AuthSessionRecord = typeof authSessions.$inferSelect;

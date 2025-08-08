@@ -4,7 +4,8 @@ import { eq, and, desc, sql, or, like, gte, lte, lt, inArray, count, isNull, isN
 import { db } from './db';
 import { 
   admins, salesTeams, salesManagers, contactCodeMappings, contactCodes,
-  carriers, servicePlans, additionalServices, documents, users, settlementUnitPrices
+  carriers, servicePlans, additionalServices, documents, users, settlementUnitPrices,
+  authSessions
 } from '../shared/schema-sqlite';
 import type {
   Admin,
@@ -27,7 +28,7 @@ import type {
 } from '../shared/schema-sqlite';
 
 // 인메모리 세션 저장소 (임시)
-const sessionStore: Map<string, AuthSession> = new Map();
+// 메모리 기반 세션 저장소 제거 - 데이터베이스 기반으로 교체
 
 // 인메모리 근무자 저장소 (임시)
 const workerStore: Map<number, any> = new Map();
@@ -469,40 +470,81 @@ export class DatabaseStorage implements IStorage {
       .where(eq(contactCodeMappings.id, id));
   }
 
-  // 세션 관리 메서드
+  // 세션 관리 메서드 (데이터베이스 기반)
   async createSession(userId: number, userType: 'admin' | 'sales_manager' | 'user', managerId?: number, teamId?: number, userRole?: string): Promise<string> {
     const sessionId = nanoid();
     const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24시간 후 만료
     
-    const session: AuthSession = {
-      id: sessionId,
-      userId,
-      userType,
-      userRole,
-      managerId,
-      teamId,
-      expiresAt
-    };
+    console.log('Creating database session:', { sessionId: sessionId.substring(0, 8) + '...', userId, userType, managerId, teamId });
     
-    sessionStore.set(sessionId, session);
-    return sessionId;
+    try {
+      await db.insert(authSessions).values({
+        id: sessionId,
+        userId,
+        userType,
+        userRole,
+        managerId,
+        teamId,
+        expiresAt: expiresAt.toISOString()
+      });
+      
+      console.log('Database session created successfully');
+      return sessionId;
+    } catch (error) {
+      console.error('Failed to create database session:', error);
+      throw error;
+    }
   }
 
   async getSession(sessionId: string): Promise<AuthSession | undefined> {
-    const session = sessionStore.get(sessionId);
-    if (!session) return undefined;
+    console.log('Getting database session:', sessionId?.substring(0, 8) + '...');
     
-    // 세션 만료 체크
-    if (session.expiresAt < new Date()) {
-      sessionStore.delete(sessionId);
+    try {
+      const [sessionRecord] = await db.select()
+        .from(authSessions)
+        .where(eq(authSessions.id, sessionId))
+        .limit(1);
+      
+      if (!sessionRecord) {
+        console.log('Database session not found');
+        return undefined;
+      }
+      
+      const session: AuthSession = {
+        id: sessionRecord.id,
+        userId: sessionRecord.userId,
+        userType: sessionRecord.userType as 'admin' | 'user' | 'sales_manager',
+        userRole: sessionRecord.userRole || undefined,
+        managerId: sessionRecord.managerId || undefined,
+        teamId: sessionRecord.teamId || undefined,
+        expiresAt: new Date(sessionRecord.expiresAt)
+      };
+      
+      // 세션 만료 체크
+      if (session.expiresAt < new Date()) {
+        console.log('Database session expired, deleting');
+        await this.deleteSession(sessionId);
+        return undefined;
+      }
+      
+      console.log('Database session found:', { userId: session.userId, userType: session.userType });
+      return session;
+    } catch (error) {
+      console.error('Failed to get database session:', error);
       return undefined;
     }
-    
-    return session;
   }
 
   async deleteSession(sessionId: string): Promise<void> {
-    sessionStore.delete(sessionId);
+    console.log('Deleting database session:', sessionId?.substring(0, 8) + '...');
+    
+    try {
+      await db.delete(authSessions)
+        .where(eq(authSessions.id, sessionId));
+      console.log('Database session deleted successfully');
+    } catch (error) {
+      console.error('Failed to delete database session:', error);
+    }
   }
 
   // 사용자 정보 조회 메서드 (개통처리자 이름 조회용)
