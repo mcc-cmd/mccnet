@@ -238,12 +238,12 @@ export function Dashboard() {
                       <CheckCircle className="h-8 w-8 text-green-600" />
                     </div>
                     <div className="mt-3">
-                      {statsLoading ? (
+                      {todayStatsLoading ? (
                         <Skeleton className="h-10 w-16" />
                       ) : (
                         <>
                           <div className="text-2xl font-bold text-green-600">
-                            {(stats as any)?.todayCompletions?.total || 0}
+                            {todayStats?.todayActivation || 0}
                           </div>
                           <div className="text-sm text-green-600 mt-1">건</div>
                           
