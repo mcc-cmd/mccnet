@@ -300,7 +300,8 @@ router.post('/api/auth/manager-login', async (req, res) => {
         user: {
           id: manager.id,
           name: manager.managerName,
-          type: 'sales_manager'
+          type: 'sales_manager',
+          userType: 'sales_manager'
         },
         sessionId
       };
