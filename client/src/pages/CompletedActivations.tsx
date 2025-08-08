@@ -335,7 +335,7 @@ export function CompletedActivations() {
                             <div className="space-y-1">
                               {/* 요금제 정보 */}
                               {(doc as any).servicePlanName ? (
-                                <div className="font-medium text-blue-600 text-xs leading-tight break-words">
+                                <div className="font-medium text-blue-600 text-xs leading-tight break-words min-h-[2.5rem] flex items-center">
                                   {(doc as any).servicePlanName}
                                 </div>
                               ) : (

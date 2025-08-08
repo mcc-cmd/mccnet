@@ -1199,7 +1199,7 @@ export function Settlements() {
                           <TableHead className="min-w-[120px] text-xs font-medium">판매점명</TableHead>
                           <TableHead className="min-w-[80px] text-xs font-medium">통신사</TableHead>
                           <TableHead className="min-w-[60px] text-xs font-medium">유형</TableHead>
-                          <TableHead className="min-w-[100px] text-xs font-medium">요금제</TableHead>
+                          <TableHead className="min-w-[140px] text-xs font-medium">요금제</TableHead>
                           <TableHead className="min-w-[80px] text-xs font-medium">부가서비스</TableHead>
                           <TableHead className="min-w-[80px] text-xs font-medium">결합여부</TableHead>
                           <TableHead className="min-w-[100px] text-xs font-medium">정산금액</TableHead>
@@ -1233,7 +1233,11 @@ export function Settlements() {
                             {(doc as any).customerType === 'port-in' ? '번호이동' : '신규'}
                           </Badge>
                         </TableCell>
-                        <TableCell className="whitespace-nowrap text-sm max-w-[140px] truncate">{doc.servicePlanName || '-'}</TableCell>
+                        <TableCell className="text-sm max-w-[140px] break-words leading-tight">
+                          <div className="min-h-[2.5rem] flex items-center">
+                            {doc.servicePlanName || '-'}
+                          </div>
+                        </TableCell>
                         <TableCell className="whitespace-nowrap">
                           {doc.additionalServices ? (
                             <div className="flex gap-1">
@@ -1351,7 +1355,7 @@ export function Settlements() {
                           </div>
                           <div>
                             <span className="text-muted-foreground">요금제:</span>
-                            <p className="font-medium text-xs truncate">{doc.servicePlanName || '-'}</p>
+                            <p className="font-medium text-xs break-words leading-tight min-h-[2.5rem] flex items-center">{doc.servicePlanName || '-'}</p>
                           </div>
                           <div>
                             <span className="text-muted-foreground">결합여부:</span>

@@ -4,7 +4,7 @@ import { eq, and, desc, sql, or, like, gte, lte, lt, inArray, count, isNull, isN
 import { db } from './db';
 import { 
   admins, salesTeams, salesManagers, contactCodeMappings, contactCodes,
-  carriers, servicePlans, additionalServices, documents, users
+  carriers, servicePlans, additionalServices, documents, users, settlementUnitPrices
 } from '../shared/schema-sqlite';
 import type {
   Admin,
@@ -22,7 +22,8 @@ import type {
   UpdateSalesTeamForm,
   UpdateSalesManagerForm,
   UpdateContactCodeMappingForm,
-  CreateWorkerForm
+  CreateWorkerForm,
+  SettlementUnitPrice
 } from '../shared/schema-sqlite';
 
 // 인메모리 세션 저장소 (임시)
@@ -1613,41 +1614,43 @@ export class DatabaseStorage implements IStorage {
   }): Promise<SettlementUnitPrice> {
     try {
       // 기존 활성 단가 비활성화
-      await db.execute(sql`
-        UPDATE settlement_unit_prices 
-        SET is_active = false, effective_until = NOW()
-        WHERE service_plan_id = ${data.servicePlanId} AND is_active = true
-      `);
+      await db.update(settlementUnitPrices)
+        .set({ 
+          isActive: false, 
+          effectiveUntil: new Date()
+        })
+        .where(and(
+          eq(settlementUnitPrices.servicePlanId, data.servicePlanId),
+          eq(settlementUnitPrices.isActive, true)
+        ));
 
       // 새 단가 등록
-      const result = await db.execute(sql`
-        INSERT INTO settlement_unit_prices 
-        (service_plan_id, new_customer_price, port_in_price, effective_from, memo, created_by)
-        VALUES (${data.servicePlanId}, ${data.newCustomerPrice}, ${data.portInPrice}, ${data.effectiveFrom || new Date()}, ${data.memo || ''}, ${data.createdBy})
-        RETURNING id, service_plan_id as service_plan_id, 
-          new_customer_price, port_in_price,
-          is_active, effective_from,
-          effective_until, memo,
-          created_at, updated_at,
-          created_by
-      `);
-
-      const created = result.rows[0] as any;
+      const [created] = await db.insert(settlementUnitPrices)
+        .values({
+          servicePlanId: data.servicePlanId,
+          newCustomerPrice: data.newCustomerPrice,
+          portInPrice: data.portInPrice,
+          effectiveFrom: data.effectiveFrom || new Date(),
+          memo: data.memo || '',
+          createdBy: data.createdBy,
+          isActive: true
+        })
+        .returning();
       
       // Add carrier and servicePlanName by joining
       const [servicePlan] = await db.select().from(servicePlans).where(eq(servicePlans.id, data.servicePlanId));
       return {
         id: created.id,
-        servicePlanId: created.service_plan_id,
-        newCustomerPrice: Number(created.new_customer_price),
-        portInPrice: Number(created.port_in_price),
-        isActive: created.is_active,
-        effectiveFrom: created.effective_from,
-        effectiveUntil: created.effective_until,
+        servicePlanId: created.servicePlanId,
+        newCustomerPrice: created.newCustomerPrice,
+        portInPrice: created.portInPrice,
+        isActive: created.isActive,
+        effectiveFrom: created.effectiveFrom,
+        effectiveUntil: created.effectiveUntil,
         memo: created.memo,
-        createdAt: created.created_at,
-        updatedAt: created.updated_at,
-        createdBy: created.created_by,
+        createdAt: created.createdAt,
+        updatedAt: created.updatedAt,
+        createdBy: created.createdBy,
         carrier: servicePlan?.carrier || '',
         servicePlanName: servicePlan?.planName || ''
       };
