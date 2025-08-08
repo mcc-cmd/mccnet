@@ -1988,7 +1988,7 @@ export class DatabaseStorage implements IStorage {
           .from(documents)
           .where(and(
             sql`date(uploaded_at) = date('now')`,
-            sql`contact_code IN (${sql.join(dealerCodes.map(code => sql`'${code}'`), sql`, `)})`
+            inArray(documents.contactCode, dealerCodes)
           ));
         todaySubmissions = {rows: todaySubmissionsQuery};
         console.log('Sales manager today submissions query result:', todaySubmissionsQuery);
@@ -2019,7 +2019,7 @@ export class DatabaseStorage implements IStorage {
           .where(and(
             sql`date(activated_at) = date('now')`,
             eq(documents.activationStatus, '개통'),
-            sql`contact_code IN (${sql.join(dealerCodes.map(code => sql`'${code}'`), sql`, `)})`
+            inArray(documents.contactCode, dealerCodes)
           ));
         todayCompletions = {rows: todayCompletionsQuery};
         console.log('Sales manager today completions query result:', todayCompletionsQuery);
@@ -2052,7 +2052,7 @@ export class DatabaseStorage implements IStorage {
           .where(and(
             sql`date(activated_at) = date('now')`,
             eq(documents.activationStatus, '기타완료'),
-            sql`contact_code IN (${sql.join(dealerCodes.map(code => sql`'${code}'`), sql`, `)})`
+            inArray(documents.contactCode, dealerCodes)
           ));
         todayOtherCompleted = {rows: todayOtherCompletedQuery};
         console.log('Sales manager today other completed query result:', todayOtherCompletedQuery);

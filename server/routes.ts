@@ -1151,11 +1151,14 @@ router.get('/api/dashboard/worker-stats', requireAuth, async (req: any, res) => 
 // 당일 통계 API
 router.get('/api/dashboard/today-stats', requireAuth, async (req: any, res) => {
   try {
+    console.log('=== TODAY STATS API CALLED ===');
+    console.log('Session data:', req.session);
+    console.log('Headers:', req.headers);
+    
     // 근무자(user)인 경우 해당 근무자의 ID를 전달, 관리자는 전체 데이터 조회, 영업과장은 자신 소속팀 데이터만
     const workerId = req.session.userType === 'user' ? req.session.userId : undefined;
     const salesManagerId = req.session.userType === 'sales_manager' ? req.session.userId : undefined;
     console.log('Today stats request - userType:', req.session.userType, 'userId:', req.session.userId, 'workerId:', workerId, 'salesManagerId:', salesManagerId);
-    console.log('Session details:', { userType: req.session.userType, userId: req.session.userId, sessionId: req.sessionID });
     
     const stats = await storage.getTodayStats(workerId, salesManagerId);
     console.log('Today stats result:', stats);
