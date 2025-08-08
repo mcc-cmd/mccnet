@@ -771,6 +771,7 @@ export class DatabaseStorage implements IStorage {
         code: contactCodeData.code,
         dealerName: contactCodeData.dealerName,
         carrier: contactCodeData.carrier,
+        realSalesPOS: contactCodeData.realSalesPOS || null,
         salesManagerId: contactCodeData.salesManagerId || null,
         salesManagerName: contactCodeData.salesManagerName || null,
         isActive: contactCodeData.isActive !== false,
@@ -786,6 +787,8 @@ export class DatabaseStorage implements IStorage {
 
   async updateContactCode(id: number, contactCodeData: any): Promise<ContactCode> {
     try {
+      console.log(`💾 Updating contact code ${id} in database:`, contactCodeData);
+      
       const [updatedContactCode] = await db.update(contactCodes)
         .set(contactCodeData)
         .where(eq(contactCodes.id, id))
@@ -795,6 +798,7 @@ export class DatabaseStorage implements IStorage {
         throw new Error('접점코드를 찾을 수 없습니다.');
       }
       
+      console.log(`✅ Database update successful for contact code ${id}:`, updatedContactCode);
       return updatedContactCode;
     } catch (error) {
       console.error('Update contact code error:', error);
