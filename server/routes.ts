@@ -512,6 +512,15 @@ router.get('/api/admin/sales-managers', requireAuth, async (req, res) => {
   }
 });
 
+router.get('/api/admin/sales-teams', requireAuth, async (req, res) => {
+  try {
+    const teams = await storage.getSalesTeams();
+    res.json(teams);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // 비밀번호 변경 API (관리자 패널용)
 router.post('/api/admin/change-password', requireAdmin, async (req: any, res) => {
   try {

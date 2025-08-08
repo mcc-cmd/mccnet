@@ -75,6 +75,18 @@ type CreateSalesManagerForm = {
   team: string;
 };
 
+type UpdateSalesManagerForm = {
+  id?: number;
+  teamId: number;
+  managerName: string;
+  managerCode: string;
+  username: string;
+  password?: string;
+  position: string;
+  contactPhone?: string;
+  email?: string;
+};
+
 type ChangeUserRoleForm = {
   userId: number;
   accountType: 'admin' | 'sales_manager' | 'worker';
@@ -1187,6 +1199,8 @@ export function AdminPanel() {
   const [adminDialogOpen, setAdminDialogOpen] = useState(false);
   const [workerDialogOpen, setWorkerDialogOpen] = useState(false);
   const [salesManagerDialogOpen, setSalesManagerDialogOpen] = useState(false);
+  const [editSalesManagerDialogOpen, setEditSalesManagerDialogOpen] = useState(false);
+  const [editingManager, setEditingManager] = useState<any>(null);
   const [editUserDialogOpen, setEditUserDialogOpen] = useState(false);
   const [changePasswordDialogOpen, setChangePasswordDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<any>(null);
@@ -1292,6 +1306,12 @@ export function AdminPanel() {
   const { data: salesManagers = [] } = useQuery({
     queryKey: ['/api/admin/sales-managers'],
     queryFn: () => apiRequest('/api/admin/sales-managers')
+  });
+
+  // Sales teams data query
+  const { data: salesTeams = [] } = useQuery({
+    queryKey: ['/api/admin/sales-teams'],
+    queryFn: () => apiRequest('/api/admin/sales-teams')
   });
 
   // Combined users list (기존 users + 영업과장 + 관리자)
@@ -1432,6 +1452,19 @@ export function AdminPanel() {
       password: '',
       name: '',
       team: 'DX 1팀',
+    },
+  });
+
+  const editSalesManagerForm = useForm<UpdateSalesManagerForm>({
+    defaultValues: {
+      teamId: 1,
+      managerName: '',
+      managerCode: '',
+      username: '',
+      password: '',
+      position: '과장',
+      contactPhone: '',
+      email: '',
     },
   });
 
@@ -1645,6 +1678,30 @@ export function AdminPanel() {
       toast({
         title: '성공',
         description: '비밀번호가 성공적으로 변경되었습니다.',
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: '오류',
+        description: error.message,
+        variant: 'destructive',
+      });
+    },
+  });
+
+  const updateSalesManagerMutation = useMutation({
+    mutationFn: (data: UpdateSalesManagerForm & { id: number }) => 
+      apiRequest(`/api/admin/sales-managers/${data.id}`, {
+        method: 'PUT',
+        body: JSON.stringify(data),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/sales-managers'] });
+      setEditSalesManagerDialogOpen(false);
+      editSalesManagerForm.reset();
+      toast({
+        title: '성공',
+        description: '영업과장 정보가 성공적으로 수정되었습니다.',
       });
     },
     onError: (error: Error) => {
@@ -2055,6 +2112,27 @@ export function AdminPanel() {
 
   const handleCreateSalesManager = (data: CreateSalesManagerForm) => {
     createSalesManagerMutation.mutate(data);
+  };
+
+  const handleEditSalesManager = (manager: any) => {
+    setEditingManager(manager);
+    editSalesManagerForm.reset({
+      teamId: manager.teamId || 1,
+      managerName: manager.managerName || '',
+      managerCode: manager.managerCode || '',
+      username: manager.username || '',
+      password: '',
+      position: manager.position || '과장',
+      contactPhone: manager.contactPhone || '',
+      email: manager.email || '',
+    });
+    setEditSalesManagerDialogOpen(true);
+  };
+
+  const handleUpdateSalesManager = (data: UpdateSalesManagerForm) => {
+    if (editingManager) {
+      updateSalesManagerMutation.mutate({ ...data, id: editingManager.id });
+    }
   };
 
   const handleEditUser = (userToEdit: any) => {
@@ -3527,26 +3605,29 @@ export function AdminPanel() {
                                   onClick={(e) => {
                                     e.preventDefault();
                                     e.stopPropagation();
-                                    console.log('=== EDIT BUTTON CLICKED ===');
-                                    console.log('User:', user);
                                     
-                                    // 편집할 사용자 설정
-                                    setEditingUser(user);
-                                    
-                                    // 현재 역할 설정
-                                    const currentRole = (user as any).accountType === 'admin' ? 'admin' : 
-                                                      (user as any).accountType === 'sales_manager' ? 'sales_manager' : 'worker';
-                                    
-                                    // Form 리셋
-                                    editUserForm.reset({
-                                      username: user.username,
-                                      name: (user as any).displayName || user.name,
-                                      password: '',
-                                      role: currentRole
-                                    });
-                                    
-                                    // 다이얼로그 열기
-                                    setEditUserDialogOpen(true);
+                                    // 영업과장인 경우 영업과장 편집 다이얼로그 열기
+                                    if ((user as any).accountType === 'sales_manager') {
+                                      handleEditSalesManager(user);
+                                    } else {
+                                      // 일반 사용자 편집
+                                      setEditingUser(user);
+                                      
+                                      // 현재 역할 설정
+                                      const currentRole = (user as any).accountType === 'admin' ? 'admin' : 
+                                                        (user as any).accountType === 'sales_manager' ? 'sales_manager' : 'worker';
+                                      
+                                      // Form 리셋
+                                      editUserForm.reset({
+                                        username: user.username,
+                                        name: (user as any).displayName || user.name,
+                                        password: '',
+                                        role: currentRole
+                                      });
+                                      
+                                      // 다이얼로그 열기
+                                      setEditUserDialogOpen(true);
+                                    }
                                   }}
                                   className="inline-flex items-center px-2 py-1 border border-gray-300 rounded text-sm bg-white text-blue-600 hover:bg-blue-50 hover:border-blue-300"
                                   title="사용자 정보 수정"
@@ -6333,6 +6414,142 @@ function AdditionalServiceDeductionManagement() {
           <p className="mt-1 text-sm text-gray-500">첫 번째 차감 정책을 추가해보세요.</p>
         </div>
       )}
+
+      {/* Edit Sales Manager Dialog */}
+      <Dialog open={editSalesManagerDialogOpen} onOpenChange={setEditSalesManagerDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>영업과장 정보 수정</DialogTitle>
+          </DialogHeader>
+          <Form {...editSalesManagerForm}>
+            <form onSubmit={editSalesManagerForm.handleSubmit(handleUpdateSalesManager)} className="space-y-4">
+              <FormField
+                control={editSalesManagerForm.control}
+                name="teamId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>팀</FormLabel>
+                    <Select onValueChange={(value) => field.onChange(parseInt(value))} value={field.value?.toString()}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="팀을 선택하세요" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {salesTeams.map((team: any) => (
+                          <SelectItem key={team.id} value={team.id.toString()}>
+                            {team.teamName}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={editSalesManagerForm.control}
+                name="managerName"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>이름</FormLabel>
+                    <FormControl>
+                      <Input placeholder="이름을 입력하세요" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={editSalesManagerForm.control}
+                name="managerCode"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>관리자 코드</FormLabel>
+                    <FormControl>
+                      <Input placeholder="관리자 코드를 입력하세요" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={editSalesManagerForm.control}
+                name="username"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>사용자명</FormLabel>
+                    <FormControl>
+                      <Input placeholder="사용자명을 입력하세요" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={editSalesManagerForm.control}
+                name="password"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>비밀번호 (변경시에만 입력)</FormLabel>
+                    <FormControl>
+                      <Input type="password" placeholder="새 비밀번호" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={editSalesManagerForm.control}
+                name="position"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>직급</FormLabel>
+                    <FormControl>
+                      <Input placeholder="직급을 입력하세요" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={editSalesManagerForm.control}
+                name="contactPhone"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>연락처</FormLabel>
+                    <FormControl>
+                      <Input placeholder="연락처를 입력하세요" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={editSalesManagerForm.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>이메일</FormLabel>
+                    <FormControl>
+                      <Input type="email" placeholder="이메일을 입력하세요" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <div className="flex justify-end space-x-2">
+                <Button type="button" variant="outline" onClick={() => setEditSalesManagerDialogOpen(false)}>
+                  취소
+                </Button>
+                <Button type="submit" disabled={updateSalesManagerMutation.isPending}>
+                  {updateSalesManagerMutation.isPending ? '수정 중...' : '수정'}
+                </Button>
+              </div>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
