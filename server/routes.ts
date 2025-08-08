@@ -686,16 +686,22 @@ router.post('/api/admin/users', requireAdmin, async (req, res) => {
 router.put('/api/admin/users/:id', requireAdmin, async (req, res) => {
   try {
     const id = parseInt(req.params.id);
-    const { username, password, name } = req.body;
+    const { username, password, name, role, userType, team } = req.body;
+    
+    console.log('Updating user:', id, 'with data:', { username, password: password ? '***' : undefined, name, role, userType, team });
     
     const updateData: any = {};
     if (username) updateData.username = username;
-    if (password) updateData.password = password;
+    if (password && password.trim() !== '') updateData.password = password;
     if (name) updateData.name = name;
+    if (role) updateData.role = role;
+    if (userType) updateData.userType = userType;
+    if (team !== undefined) updateData.team = team; // team이 null일 수도 있으므로 !== undefined 체크
     
     const user = await storage.updateUser(id, updateData);
     res.json({ success: true, message: '사용자 정보가 성공적으로 업데이트되었습니다.' });
   } catch (error: any) {
+    console.error('User update error:', error);
     res.status(400).json({ error: error.message });
   }
 });

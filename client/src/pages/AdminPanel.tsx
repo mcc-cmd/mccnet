@@ -99,6 +99,8 @@ type EditUserForm = {
   password: string;
   name: string;
   role: 'admin' | 'sales_manager' | 'worker';
+  userType?: 'admin' | 'sales_manager' | 'user';
+  team?: string;
 };
 
 type UpdateDocumentStatusForm = {
@@ -1480,6 +1482,8 @@ export function AdminPanel() {
         password: z.string().optional(),
         name: z.string().min(1, '이름을 입력해주세요'),
         role: z.enum(['admin', 'sales_manager', 'worker']),
+        userType: z.enum(['admin', 'sales_manager', 'user']).optional(),
+        team: z.string().optional(),
       })
     ),
     defaultValues: {
@@ -1487,6 +1491,8 @@ export function AdminPanel() {
       password: '',
       name: '',
       role: 'worker',
+      userType: 'user',
+      team: '',
     },
   });
 
@@ -1959,7 +1965,7 @@ export function AdminPanel() {
 
   // 사용자 수정 뮤테이션
   const updateUserMutation = useMutation({
-    mutationFn: ({ id, data }: { id: number; data: { username?: string; password?: string; name?: string } }) =>
+    mutationFn: ({ id, data }: { id: number; data: { username?: string; password?: string; name?: string; role?: string; userType?: string; team?: string } }) =>
       apiRequest(`/api/admin/users/${id}`, {
         method: 'PUT',
         body: JSON.stringify(data),
@@ -1992,7 +1998,13 @@ export function AdminPanel() {
     if (data.username !== editingUser.username) updateData.username = data.username;
     if (data.password && data.password.trim() !== '') updateData.password = data.password;
     if (data.name !== editingUser.name) updateData.name = data.name;
-    if (data.role !== editingUser.role) updateData.role = data.role;
+    if (data.role !== editingUser.role && data.role !== editingUser.userType) updateData.role = data.role;
+    if (data.userType && data.userType !== editingUser.userType) updateData.userType = data.userType;
+    if (data.team !== editingUser.team) updateData.team = data.team;
+    
+    console.log('handleUpdateUser - editingUser:', editingUser);
+    console.log('handleUpdateUser - formData:', data);
+    console.log('handleUpdateUser - updateData:', updateData);
     
     if (Object.keys(updateData).length === 0) {
       toast({
@@ -2006,12 +2018,15 @@ export function AdminPanel() {
   };
 
   const openEditUserDialog = (user: any) => {
+    console.log('openEditUserDialog - user:', user);
     setEditingUser(user);
     editUserForm.reset({
       username: user.username || '',
       password: '',
       name: user.name || '',
       role: user.role || user.userType || 'worker',
+      userType: user.userType || 'user',
+      team: user.team || '',
     });
     setEditUserDialogOpen(true);
   };
@@ -5669,6 +5684,28 @@ export function AdminPanel() {
                   name="role"
                   render={({ field }) => (
                     <FormItem>
+                      <FormLabel>역할</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="역할을 선택하세요" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="admin">관리자</SelectItem>
+                          <SelectItem value="sales_manager">영업과장</SelectItem>
+                          <SelectItem value="worker">근무자</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={editUserForm.control}
+                  name="userType"
+                  render={({ field }) => (
+                    <FormItem>
                       <FormLabel>계정 유형</FormLabel>
                       <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl>
@@ -5679,7 +5716,29 @@ export function AdminPanel() {
                         <SelectContent>
                           <SelectItem value="admin">관리자</SelectItem>
                           <SelectItem value="sales_manager">영업과장</SelectItem>
-                          <SelectItem value="worker">근무자</SelectItem>
+                          <SelectItem value="user">일반사용자</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={editUserForm.control}
+                  name="team"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>소속팀</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value || ""}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="소속팀을 선택하세요" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="">팀 없음</SelectItem>
+                          <SelectItem value="DX 1팀">DX 1팀</SelectItem>
+                          <SelectItem value="DX 2팀">DX 2팀</SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />

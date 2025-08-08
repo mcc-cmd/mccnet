@@ -1194,15 +1194,46 @@ export class DatabaseStorage implements IStorage {
     if (userData.password) {
       updateData.password = await bcrypt.hash(userData.password, 10);
     }
+    if (userData.role) updateData.role = userData.role;
+    if (userData.userType) updateData.userType = userData.userType;
+    if (userData.team !== undefined) updateData.team = userData.team;
     
-    // 관리자 테이블에서 업데이트 시도
-    const adminResult = await db.update(admins)
-      .set(updateData)
-      .where(eq(admins.id, id))
-      .returning();
+    console.log('UpdateUser - Attempting to update user:', id, 'with data:', updateData);
+    
+    // 먼저 users 테이블에서 업데이트 시도
+    try {
+      const userResult = await db.update(users)
+        .set(updateData)
+        .where(eq(users.id, id))
+        .returning();
+        
+      if (userResult.length > 0) {
+        console.log('UpdateUser - Successfully updated user in users table:', userResult[0]);
+        return userResult[0];
+      }
+    } catch (error) {
+      console.log('UpdateUser - Failed to update users table:', error);
+    }
+    
+    // users 테이블에 없으면 관리자 테이블에서 업데이트 시도
+    try {
+      const adminUpdateData = { ...updateData };
+      // admins 테이블에는 role, userType, team 필드가 없으므로 제거
+      delete adminUpdateData.role;
+      delete adminUpdateData.userType;
+      delete adminUpdateData.team;
       
-    if (adminResult.length > 0) {
-      return adminResult[0];
+      const adminResult = await db.update(admins)
+        .set(adminUpdateData)
+        .where(eq(admins.id, id))
+        .returning();
+        
+      if (adminResult.length > 0) {
+        console.log('UpdateUser - Successfully updated user in admins table:', adminResult[0]);
+        return adminResult[0];
+      }
+    } catch (error) {
+      console.log('UpdateUser - Failed to update admins table:', error);
     }
     
     throw new Error('사용자를 찾을 수 없습니다.');
