@@ -449,14 +449,10 @@ router.post('/api/admin/create-sales-manager', requireAdmin, async (req, res) =>
       return res.status(400).json({ error: `로그인 ID '${username}'는 이미 사용 중입니다.` });
     }
 
-    // 팀이 존재하는지 확인하고, 없으면 생성
+    // 팀이 존재하는지 확인
     let salesTeam = await storage.getSalesTeamByName(team);
     if (!salesTeam) {
-      const teamCode = team === 'DX 1팀' ? 'DX01' : 'DX02';
-      salesTeam = await storage.createSalesTeam({
-        teamName: team,
-        teamCode
-      });
+      return res.status(400).json({ error: `영업팀 '${team}'을 찾을 수 없습니다.` });
     }
 
     // 고유한 영업과장 코드 생성 - 타임스탬프와 랜덤 요소 포함
@@ -480,9 +476,7 @@ router.post('/api/admin/create-sales-manager', requireAdmin, async (req, res) =>
       name,
       username,
       password,
-      team,
-      teamId: salesTeam.id,
-      managerCode
+      team
     });
 
     res.json(manager);
@@ -4177,27 +4171,7 @@ router.delete('/api/admin/sales-teams/:id', requireAdmin, async (req: any, res) 
 });
 
 // 영업과장 관리 API
-router.post('/api/admin/sales-managers', requireAdmin, async (req: any, res) => {
-  try {
-    const data = createSalesManagerSchema.parse(req.body);
-    const manager = await storage.createSalesManager(data);
-    res.json(manager);
-  } catch (error: any) {
-    res.status(400).json({ error: error.message });
-  }
-});
-
-router.get('/api/admin/sales-managers', requireAdmin, async (req: any, res) => {
-  try {
-    const { teamId } = req.query;
-    const managers = teamId 
-      ? await storage.getSalesManagersByTeamId(parseInt(teamId as string))
-      : await storage.getSalesManagers();
-    res.json(managers);
-  } catch (error: any) {
-    res.status(500).json({ error: error.message });
-  }
-});
+// 중복 라우트 제거됨 - 위쪽의 기존 라우트 사용
 
 router.get('/api/admin/sales-managers/:id', requireAdmin, async (req: any, res) => {
   try {
