@@ -1236,16 +1236,20 @@ router.get('/api/documents', requireAuth, async (req: any, res) => {
     
     // 정산 관련 요청인 경우 정산금액 계산 추가
     let processedDocuments = documents;
+    let settlementPrices: any[] = [];
+    let deductionPolicies: any[] = [];
+    let calculateSettlementAmount: any = null;
+    
     if (decodedActivationStatus === '개통') {
       try {
         // 정산단가 정보 조회
-        const settlementPrices = await storage.getActiveSettlementUnitPrices();
+        settlementPrices = await storage.getActiveSettlementUnitPrices();
         
         // 부가서비스 차감 정책 조회
-        const deductionPolicies = await storage.getAdditionalServiceDeductions();
+        deductionPolicies = await storage.getAdditionalServiceDeductions();
         
         // 정산금액 계산 함수
-        const calculateSettlementAmount = (doc: any) => {
+        calculateSettlementAmount = (doc: any) => {
           if (!doc.servicePlanId) return 0;
           
           console.log(`Document ${doc.id} settlement calculation:`, {
@@ -1356,7 +1360,7 @@ router.get('/api/documents', requireAuth, async (req: any, res) => {
         if (doc.settlementAmount && parseFloat(doc.settlementAmount) > 0) {
           // 수동으로 설정된 정산금액이 있으면 그대로 사용
           calculatedSettlementAmount = parseFloat(doc.settlementAmount);
-        } else if (typeof calculateSettlementAmount === 'function') {
+        } else if (calculateSettlementAmount) {
           // 수동 설정값이 없으면 자동 계산
           calculatedSettlementAmount = calculateSettlementAmount(doc);
         }
