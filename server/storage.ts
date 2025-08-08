@@ -2216,7 +2216,7 @@ export class DatabaseStorage implements IStorage {
       
       let whereConditions = [
         eq(documents.activationStatus, '개통'),
-        isNotNull(documents.activatedBy)
+        isNotNull(documents.activatedByName)
       ];
       
       if (startDate && endDate) {
@@ -2232,23 +2232,24 @@ export class DatabaseStorage implements IStorage {
         whereConditions.push(sql`date(activated_at) <= ${endDate}`);
       }
 
+      // activated_by_name을 기준으로 통계 집계 (더 정확함)
       const workerStats = await db.select({
+        workerName: documents.activatedByName,
         workerId: documents.activatedBy,
         count: sql`count(*)`
       })
         .from(documents)
         .where(and(...whereConditions))
-        .groupBy(documents.activatedBy)
+        .groupBy(documents.activatedByName)
         .orderBy(sql`count(*) DESC`);
 
-      // 근무자 이름 조회를 위해 각 workerId에 대해 이름 가져오기
+      // 결과 정리
       const result = [];
       for (const stat of workerStats) {
-        if (stat.workerId) {
-          const user = await this.getUserById(stat.workerId);
+        if (stat.workerName) {
           result.push({
             workerId: stat.workerId,
-            workerName: user?.name || `사용자 ${stat.workerId}`,
+            workerName: stat.workerName,
             count: parseInt(String(stat.count || 0))
           });
         }
