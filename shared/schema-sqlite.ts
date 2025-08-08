@@ -225,10 +225,14 @@ export const additionalServices = sqliteTable("additional_services", {
 // 정산 단가 테이블
 export const settlementUnitPrices = sqliteTable("settlement_unit_prices", {
   id: integer("id").primaryKey({ autoIncrement: true }),
-  carrierId: integer("carrier_id").references(() => carriers.id).notNull(),
-  customerType: text("customer_type").notNull(),
-  unitPrice: real("unit_price").notNull(),
+  servicePlanId: integer("service_plan_id").references(() => servicePlans.id).notNull(),
+  newCustomerPrice: real("new_customer_price").notNull(),
+  portInPrice: real("port_in_price").notNull(),
   isActive: integer("is_active", { mode: 'boolean' }).default(1),
+  effectiveFrom: text("effective_from").default(sql`CURRENT_TIMESTAMP`),
+  effectiveUntil: text("effective_until"),
+  memo: text("memo"),
+  createdBy: integer("created_by").references(() => users.id).notNull(),
   createdAt: text("created_at").default(sql`CURRENT_TIMESTAMP`),
   updatedAt: text("updated_at").default(sql`CURRENT_TIMESTAMP`),
 });

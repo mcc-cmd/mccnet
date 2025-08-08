@@ -1616,12 +1616,12 @@ export class DatabaseStorage implements IStorage {
       // 기존 활성 단가 비활성화
       await db.update(settlementUnitPrices)
         .set({ 
-          isActive: false, 
+          isActive: 0, // SQLite에서는 boolean을 0/1로 처리
           effectiveUntil: new Date()
         })
         .where(and(
           eq(settlementUnitPrices.servicePlanId, data.servicePlanId),
-          eq(settlementUnitPrices.isActive, true)
+          eq(settlementUnitPrices.isActive, 1)
         ));
 
       // 새 단가 등록
@@ -1633,7 +1633,7 @@ export class DatabaseStorage implements IStorage {
           effectiveFrom: data.effectiveFrom || new Date(),
           memo: data.memo || '',
           createdBy: data.createdBy,
-          isActive: true
+          isActive: 1 // SQLite에서는 boolean을 0/1로 처리
         })
         .returning();
       
