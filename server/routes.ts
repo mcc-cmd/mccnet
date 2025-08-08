@@ -2571,6 +2571,8 @@ router.post('/api/settlement-unit-prices', requireAdmin, async (req: any, res) =
     console.log('Settlement unit price creation request body:', req.body);
     const data = createSettlementUnitPriceSchema.parse(req.body);
     console.log('Parsed data:', data);
+    console.log('Session userId:', req.session.userId);
+    
     const price = await storage.createSettlementUnitPrice({
       ...data,
       createdBy: req.session.userId

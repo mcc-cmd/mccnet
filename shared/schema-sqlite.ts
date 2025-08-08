@@ -232,7 +232,7 @@ export const settlementUnitPrices = sqliteTable("settlement_unit_prices", {
   effectiveFrom: text("effective_from").default(sql`CURRENT_TIMESTAMP`),
   effectiveUntil: text("effective_until"),
   memo: text("memo"),
-  createdBy: integer("created_by").references(() => users.id).notNull(),
+  createdBy: integer("created_by").notNull(),
   createdAt: text("created_at").default(sql`CURRENT_TIMESTAMP`),
   updatedAt: text("updated_at").default(sql`CURRENT_TIMESTAMP`),
 });
