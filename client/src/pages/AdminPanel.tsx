@@ -5327,6 +5327,27 @@ export function AdminPanel() {
                   </CardDescription>
                 </div>
                 <div className="flex items-center space-x-2">
+                  <Button
+                    variant="outline"
+                    onClick={handleDownloadSettlementPricingTemplate}
+                  >
+                    <Download className="mr-2 h-4 w-4" />
+                    엑셀 템플릿 다운로드
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => settlementPricingExcelInputRef.current?.click()}
+                  >
+                    <Upload className="mr-2 h-4 w-4" />
+                    엑셀 업로드
+                  </Button>
+                  <input
+                    type="file"
+                    ref={settlementPricingExcelInputRef}
+                    accept=".xlsx,.xls,.csv"
+                    style={{ display: 'none' }}
+                    onChange={handleSettlementPricingExcelUpload}
+                  />
                   <Dialog open={settlementPriceDialogOpen} onOpenChange={setSettlementPriceDialogOpen}>
                     <DialogTrigger asChild>
                       <Button>
