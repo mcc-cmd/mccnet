@@ -379,8 +379,17 @@ export class DatabaseStorage implements IStorage {
       }
     }
 
+    // 비밀번호 해시화 (제공된 경우에만)
+    const updateData = { ...data };
+    if (data.password && data.password.trim() !== '') {
+      updateData.password = await bcrypt.hash(data.password, 10);
+    } else {
+      // 비밀번호가 빈 문자열이면 업데이트하지 않음
+      delete updateData.password;
+    }
+
     const [result] = await db.update(salesManagers)
-      .set(data)
+      .set(updateData)
       .where(eq(salesManagers.id, id))
       .returning();
     return result;
