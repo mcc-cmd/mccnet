@@ -2428,9 +2428,12 @@ export class DatabaseStorage implements IStorage {
       let carrierStats;
       
       if (salesManagerId && dealerCodes.length > 0) {
-        // 영업과장인 경우: 담당 판매점의 개통 완료 문서만 조회
+        // 영업과장인 경우: 담당 판매점의 개통 완료 문서만 조회하며 판매점 정보도 포함
         let query = `
-          SELECT carrier, count(*) as count 
+          SELECT 
+            carrier, 
+            contact_code,
+            count(*) as count 
           FROM documents 
           WHERE activation_status = '개통'
             AND contact_code IN (${dealerCodes.map(code => `'${code.replace(/'/g, "''")}'`).join(',')})
@@ -2444,7 +2447,7 @@ export class DatabaseStorage implements IStorage {
           query += ` AND date(activated_at) <= '${endDate}'`;
         }
         
-        query += ` GROUP BY carrier ORDER BY count(*) DESC`;
+        query += ` GROUP BY carrier, contact_code ORDER BY carrier, count(*) DESC`;
         
         carrierStats = await db.all(sql.raw(query));
       } else if (salesManagerId && dealerCodes.length === 0) {
@@ -2485,6 +2488,7 @@ export class DatabaseStorage implements IStorage {
         let detailQuery = `
           SELECT 
             carrier,
+            contact_code,
             customer_type,
             count(*) as count 
           FROM documents 
@@ -2500,7 +2504,7 @@ export class DatabaseStorage implements IStorage {
           detailQuery += ` AND date(activated_at) <= '${endDate}'`;
         }
         
-        detailQuery += ` GROUP BY carrier, customer_type ORDER BY carrier, customer_type`;
+        detailQuery += ` GROUP BY carrier, contact_code, customer_type ORDER BY carrier, contact_code, customer_type`;
         
         carrierDetailStats = await db.all(sql.raw(detailQuery));
       } else if (salesManagerId && dealerCodes.length === 0) {
@@ -2533,12 +2537,13 @@ export class DatabaseStorage implements IStorage {
           .orderBy(documents.carrier, documents.customerType);
       }
       
-      // 통신사별로 신규/번호이동 통계를 정리
+      // 통신사별로 신규/번호이동 통계를 정리하고 판매점별 상세 정보 포함
       const carrierMap = new Map();
       
-      carrierDetailStats.forEach((stat: any) => {
+      // 먼저 carrierStats에서 통신사별 판매점 정보를 구성
+      carrierStats.forEach((stat: any) => {
         const carrier = stat.carrier || '미분류';
-        const customerType = stat.customer_type;
+        const contactCode = stat.contact_code;
         const count = parseInt(String(stat.count || 0));
         
         if (!carrierMap.has(carrier)) {
@@ -2546,17 +2551,50 @@ export class DatabaseStorage implements IStorage {
             carrier,
             newCustomer: 0,
             portIn: 0,
-            total: 0
+            total: 0,
+            dealers: []
           });
         }
         
         const carrierData = carrierMap.get(carrier);
-        if (customerType === 'new') {
-          carrierData.newCustomer += count;
-        } else if (customerType === 'port-in') {
-          carrierData.portIn += count;
-        }
         carrierData.total += count;
+        
+        // 판매점별 정보 초기화
+        carrierData.dealers.push({
+          contactCode,
+          newCustomer: 0,
+          portIn: 0,
+          total: count
+        });
+      });
+      
+      // 그 다음 상세 통계에서 신규/번호이동 정보를 업데이트
+      carrierDetailStats.forEach((stat: any) => {
+        const carrier = stat.carrier || '미분류';
+        const contactCode = stat.contact_code;
+        const customerType = stat.customer_type;
+        const count = parseInt(String(stat.count || 0));
+        
+        if (carrierMap.has(carrier)) {
+          const carrierData = carrierMap.get(carrier);
+          
+          // 통신사 전체 통계 업데이트
+          if (customerType === 'new') {
+            carrierData.newCustomer += count;
+          } else if (customerType === 'port-in') {
+            carrierData.portIn += count;
+          }
+          
+          // 해당 판매점의 상세 정보 업데이트
+          const dealerInfo = carrierData.dealers.find((d: any) => d.contactCode === contactCode);
+          if (dealerInfo) {
+            if (customerType === 'new') {
+              dealerInfo.newCustomer += count;
+            } else if (customerType === 'port-in') {
+              dealerInfo.portIn += count;
+            }
+          }
+        }
       });
 
       const result = Array.from(carrierMap.values());

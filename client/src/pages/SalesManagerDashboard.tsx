@@ -171,33 +171,55 @@ export default function SalesManagerDashboard() {
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b">
-                  <th className="text-left py-2">통신사</th>
-                  <th className="text-center py-2">신규</th>
-                  <th className="text-center py-2">번호이동</th>
-                  <th className="text-center py-2">합계</th>
-                </tr>
-              </thead>
-              <tbody>
-                {carrierStats?.map((stat, index) => (
-                  <tr key={index} className="border-b">
-                    <td className="py-2 font-medium">{stat.carrier}</td>
-                    <td className="text-center py-2">{stat.newCustomer || 0}건</td>
-                    <td className="text-center py-2">{stat.portIn || 0}건</td>
-                    <td className="text-center py-2 font-semibold">{stat.total || 0}건</td>
-                  </tr>
-                ))}
-                {(!carrierStats || carrierStats.length === 0) && (
-                  <tr>
-                    <td colSpan={4} className="text-center py-8 text-gray-500">
-                      오늘 판매 데이터가 없습니다.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
+            <div className="space-y-6">
+              {carrierStats?.map((stat, index) => (
+                <div key={index} className="border rounded-lg p-4">
+                  <div className="flex justify-between items-center mb-3">
+                    <h4 className="text-lg font-semibold text-gray-800">{stat.carrier}</h4>
+                    <div className="flex space-x-4 text-sm">
+                      <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded">
+                        신규: {stat.newCustomer || 0}건
+                      </span>
+                      <span className="bg-green-100 text-green-800 px-2 py-1 rounded">
+                        번호이동: {stat.portIn || 0}건
+                      </span>
+                      <span className="bg-gray-100 text-gray-800 px-2 py-1 rounded font-semibold">
+                        총합: {stat.total || 0}건
+                      </span>
+                    </div>
+                  </div>
+                  
+                  {stat.dealers && stat.dealers.length > 0 && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                      {stat.dealers.map((dealer: any, dealerIndex: number) => (
+                        <div key={dealerIndex} className="bg-gray-50 p-3 rounded border">
+                          <div className="font-medium text-sm text-gray-800 mb-1">
+                            {dealer.contactCode}
+                          </div>
+                          <div className="flex justify-between text-xs text-gray-600">
+                            <span>신규: {dealer.newCustomer}건</span>
+                            <span>번이: {dealer.portIn}건</span>
+                            <span className="font-semibold">계: {dealer.total}건</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  
+                  {(!stat.dealers || stat.dealers.length === 0) && (
+                    <div className="text-center text-gray-500 text-sm py-2">
+                      판매점 정보가 없습니다.
+                    </div>
+                  )}
+                </div>
+              ))}
+              
+              {(!carrierStats || carrierStats.length === 0) && (
+                <div className="text-center py-8 text-gray-500">
+                  오늘 판매 데이터가 없습니다.
+                </div>
+              )}
+            </div>
           </div>
         </CardContent>
       </Card>
