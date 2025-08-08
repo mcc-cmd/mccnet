@@ -46,11 +46,17 @@ export function Sidebar({ isOpen = true, onClose }: SidebarProps) {
   const { user } = useAuth();
 
   const isAdmin = user?.userType === 'admin';
+  const isSalesManager = user?.userType === 'sales_manager';
   const isWorker = user?.role === 'dealer_worker';
   
-  // 정산 관리는 관리자만 접근 가능
+  // 영업과장은 읽기 전용 메뉴만 접근 가능 (접수 신청 제외)
   let baseNavigation = navigation;
-  if (!isAdmin) {
+  if (isSalesManager) {
+    // 영업과장은 읽기 전용 메뉴만 (접수 신청 제외)
+    baseNavigation = navigation.filter(item => 
+      item.name !== '접수 신청' && item.name !== '정산 관리'
+    );
+  } else if (!isAdmin) {
     // 관리자가 아닌 경우 정산 관리 제외
     baseNavigation = navigation.filter(item => item.name !== '정산 관리');
   }

@@ -341,7 +341,8 @@ export function Documents() {
   };
 
   const canSetServicePlan = (document: any) => {
-    return document.activationStatus === '개통' || document.activationStatus === '개통완료';
+    // 영업과장은 읽기 전용이므로 요금제 설정 불가
+    return (document.activationStatus === '개통' || document.activationStatus === '개통완료') && user?.userType !== 'sales_manager';
   };
 
   const handleActivationSubmit = () => {
@@ -376,12 +377,24 @@ export function Documents() {
   // Permission check functions
   const canUploadDocuments = () => {
     // 판매점만 접수 가능, 관리자와 근무자는 업로드 불가 (처리만 담당)
-    return user?.role === 'dealer_store';
+    // 영업과장은 읽기 전용이므로 업로드 불가
+    return user?.role === 'dealer_store' && user?.userType !== 'sales_manager';
   };
 
   const canManageActivationStatus = () => {
     // 관리자는 모든 권한, 근무자도 개통상태 관리 가능
-    return user?.userType === 'admin' || user?.userType === 'worker' || user?.role === 'worker' || user?.role === 'dealer_worker';
+    // 영업과장은 읽기 전용이므로 상태 변경 불가
+    return (user?.userType === 'admin' || user?.userType === 'worker' || user?.role === 'worker' || user?.role === 'dealer_worker') && user?.userType !== 'sales_manager';
+  };
+
+  const canDeleteDocuments = () => {
+    // 관리자만 삭제 가능, 영업과장은 읽기 전용이므로 삭제 불가
+    return user?.userType === 'admin' && user?.userType !== 'sales_manager';
+  };
+
+  const canManageSettlements = () => {
+    // 관리자만 정산 관리 가능, 영업과장은 읽기 전용이므로 정산 생성 불가
+    return user?.userType === 'admin' && user?.userType !== 'sales_manager';
   };
 
   // Helper functions for the new table
@@ -1530,15 +1543,17 @@ export function Documents() {
                               다운로드
                             </Button>
                             
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => handleActivationStatusChange(doc)}
-                              className="h-7 text-xs"
-                            >
-                              <Settings className="mr-1 h-3 w-3" />
-                              상태변경
-                            </Button>
+                            {canManageActivationStatus() && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleActivationStatusChange(doc)}
+                                className="h-7 text-xs"
+                              >
+                                <Settings className="mr-1 h-3 w-3" />
+                                상태변경
+                              </Button>
+                            )}
                             
                             {canSetServicePlan(doc) && (
                               <Button

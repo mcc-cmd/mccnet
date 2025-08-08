@@ -2223,42 +2223,79 @@ export class DatabaseStorage implements IStorage {
         console.log('Sales manager dealer codes for monthly status stats:', dealerCodes);
       }
 
-      let conditions = [
-        sql`date(uploaded_at) >= ${monthStart}`,
-        sql`date(uploaded_at) < date(${monthStart}, '+1 month')`
-      ];
+      let monthlyStats;
+      
+      if (salesManagerId && dealerCodes.length > 0) {
+        // 영업과장인 경우: 담당 판매점만 조회
+        let query = `
+          SELECT 
+            count(*) as total,
+            count(case when activation_status = '대기' then 1 end) as pending,
+            count(case when activation_status = '진행중' then 1 end) as inProgress,
+            count(case when activation_status = '업무요청중' then 1 end) as workRequest,
+            count(case when activation_status = '개통' then 1 end) as activated,
+            count(case when activation_status = '취소' then 1 end) as cancelled,
+            count(case when activation_status = '보완필요' then 1 end) as needsReview,
+            count(case when activation_status = '기타완료' then 1 end) as otherCompleted,
+            count(case when activation_status = '폐기' then 1 end) as discarded
+          FROM documents 
+          WHERE date(uploaded_at) >= '${monthStart}'
+            AND date(uploaded_at) < date('${monthStart}', '+1 month')
+            AND contact_code IN (${dealerCodes.map(code => `'${code.replace(/'/g, "''")}'`).join(',')})
+        `;
+        
+        const result = await db.all(sql.raw(query));
+        monthlyStats = result;
+      } else if (salesManagerId && dealerCodes.length === 0) {
+        // 영업과장인데 담당 판매점이 없는 경우
+        monthlyStats = [{
+          total: 0, pending: 0, inProgress: 0, workRequest: 0,
+          activated: 0, cancelled: 0, needsReview: 0, otherCompleted: 0, discarded: 0
+        }];
+      } else {
+        // 관리자나 근무자인 경우: 전체 조회
+        let conditions = [
+          sql`date(uploaded_at) >= ${monthStart}`,
+          sql`date(uploaded_at) < date(${monthStart}, '+1 month')`
+        ];
 
-      // 근무자인 경우 자신이 처리한 건만 조회 (완료된 건들은 activatedBy로 필터링)
-      if (workerId) {
-        conditions.push(
-          or(
-            // 완료되지 않은 상태 (모든 근무자가 볼 수 있음)
-            inArray(documents.activationStatus, ['대기', '진행중', '업무요청중', '보완필요']),
-            // 완료된 상태는 자신이 처리한 건만
-            and(
-              inArray(documents.activationStatus, ['개통', '취소', '기타완료', '폐기']),
-              eq(documents.activatedBy, workerId)
+        // 근무자인 경우 자신이 처리한 건만 조회 (완료된 건들은 activatedBy로 필터링)
+        if (workerId) {
+          conditions.push(
+            or(
+              // 완료되지 않은 상태 (모든 근무자가 볼 수 있음)
+              eq(documents.activationStatus, '대기'),
+              eq(documents.activationStatus, '진행중'),
+              eq(documents.activationStatus, '업무요청중'),
+              eq(documents.activationStatus, '보완필요'),
+              // 완료된 상태는 자신이 처리한 건만
+              and(
+                or(
+                  eq(documents.activationStatus, '개통'),
+                  eq(documents.activationStatus, '취소'),
+                  eq(documents.activationStatus, '기타완료'),
+                  eq(documents.activationStatus, '폐기')
+                ),
+                eq(documents.activatedBy, workerId)
+              )
             )
-          )
-        );
-      } else if (salesManagerId && dealerCodes.length > 0) {
-        // 영업과장인 경우 해당 판매점만 조회
-        conditions.push(inArray(documents.dealerCode, dealerCodes));
-      }
+          );
+        }
 
-      const monthlyStats = await db.select({
-        total: sql`count(*)`,
-        pending: sql`count(case when activation_status = '대기' then 1 end)`,
-        inProgress: sql`count(case when activation_status = '진행중' then 1 end)`,
-        workRequest: sql`count(case when activation_status = '업무요청중' then 1 end)`,
-        activated: sql`count(case when activation_status = '개통' then 1 end)`,
-        cancelled: sql`count(case when activation_status = '취소' then 1 end)`,
-        needsReview: sql`count(case when activation_status = '보완필요' then 1 end)`,
-        otherCompleted: sql`count(case when activation_status = '기타완료' then 1 end)`,
-        discarded: sql`count(case when activation_status = '폐기' then 1 end)`
-      })
-      .from(documents)
-      .where(and(...conditions));
+        monthlyStats = await db.select({
+          total: sql`count(*)`,
+          pending: sql`count(case when activation_status = '대기' then 1 end)`,
+          inProgress: sql`count(case when activation_status = '진행중' then 1 end)`,
+          workRequest: sql`count(case when activation_status = '업무요청중' then 1 end)`,
+          activated: sql`count(case when activation_status = '개통' then 1 end)`,
+          cancelled: sql`count(case when activation_status = '취소' then 1 end)`,
+          needsReview: sql`count(case when activation_status = '보완필요' then 1 end)`,
+          otherCompleted: sql`count(case when activation_status = '기타완료' then 1 end)`,
+          discarded: sql`count(case when activation_status = '폐기' then 1 end)`
+        })
+        .from(documents)
+        .where(and(...conditions));
+      }
 
       const result = {
         totalDocuments: parseInt(String(monthlyStats[0]?.total || 0)),

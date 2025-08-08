@@ -30,6 +30,19 @@ export default function WorkRequests() {
   const { user } = useAuth();
   const apiRequest = useApiRequest();
 
+  // 영업과장은 읽기 전용이므로 업무 요청 처리 불가
+  if (user?.userType === 'sales_manager') {
+    return (
+      <Layout title="업무 요청중">
+        <div className="flex flex-col items-center justify-center h-64">
+          <MessageSquare className="h-16 w-16 text-gray-400 mb-4" />
+          <h3 className="text-lg font-medium text-gray-900 mb-2">접근 권한이 없습니다</h3>
+          <p className="text-sm text-gray-500">영업과장은 읽기 전용 권한입니다.</p>
+        </div>
+      </Layout>
+    );
+  }
+
   const queryClient = useQueryClient();
   const { toast } = useToast();
 

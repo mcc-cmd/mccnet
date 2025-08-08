@@ -391,16 +391,18 @@ export function CompletedActivations() {
                             {getActivationStatusBadge(doc.activationStatus)}
                           </td>
                           <td className="px-3 py-2">
-                            <Button
-                              size="sm"
-                              variant="destructive"
-                              onClick={() => handleCancelActivation(doc.id)}
-                              disabled={cancelActivationMutation.isPending}
-                              className="text-xs"
-                            >
-                              <X className="h-3 w-3 mr-1" />
-                              14일내 개취
-                            </Button>
+                            {user?.userType !== 'sales_manager' && (
+                              <Button
+                                size="sm"
+                                variant="destructive"
+                                onClick={() => handleCancelActivation(doc.id)}
+                                disabled={cancelActivationMutation.isPending}
+                                className="text-xs"
+                              >
+                                <X className="h-3 w-3 mr-1" />
+                                14일내 개취
+                              </Button>
+                            )}
                           </td>
                         </tr>
                       ))}
@@ -499,19 +501,21 @@ export function CompletedActivations() {
                           </div>
                         )}
 
-                        {/* 개통취소 버튼 */}
-                        <div className="mt-3">
-                          <Button
-                            size="sm"
-                            variant="destructive"
-                            onClick={() => handleCancelActivation(doc.id)}
-                            disabled={cancelActivationMutation.isPending}
-                            className="w-full text-sm"
-                          >
-                            <X className="h-4 w-4 mr-2" />
-                            14일내 개취
-                          </Button>
-                        </div>
+                        {/* 개통취소 버튼 - 영업과장은 숨김 */}
+                        {user?.userType !== 'sales_manager' && (
+                          <div className="mt-3">
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              onClick={() => handleCancelActivation(doc.id)}
+                              disabled={cancelActivationMutation.isPending}
+                              className="w-full text-sm"
+                            >
+                              <X className="h-4 w-4 mr-2" />
+                              14일내 개취
+                            </Button>
+                          </div>
+                        )}
                       </div>
                     </Card>
                   ))}

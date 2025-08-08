@@ -21,6 +21,19 @@ export function SubmitApplication() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [location] = useLocation();
+
+  // 영업과장은 읽기 전용이므로 접수 신청 불가
+  if (user?.userType === 'sales_manager') {
+    return (
+      <Layout title="접수 신청">
+        <div className="flex flex-col items-center justify-center h-64">
+          <FileText className="h-16 w-16 text-gray-400 mb-4" />
+          <h3 className="text-lg font-medium text-gray-900 mb-2">접근 권한이 없습니다</h3>
+          <p className="text-sm text-gray-500">영업과장은 읽기 전용 권한입니다.</p>
+        </div>
+      </Layout>
+    );
+  }
   
   // 폼 데이터 상태 - 기본값으로 초기화 (저장 기능 완전 제거)
   const [formData, setFormData] = useState({
