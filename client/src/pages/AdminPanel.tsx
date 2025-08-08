@@ -1209,6 +1209,7 @@ export function AdminPanel() {
   const [editSalesManagerDialogOpen, setEditSalesManagerDialogOpen] = useState(false);
   const [editingManager, setEditingManager] = useState<any>(null);
   const [editUserDialogOpen, setEditUserDialogOpen] = useState(false);
+  const [editingUser, setEditingUser] = useState<any>(null);
   const [changePasswordDialogOpen, setChangePasswordDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<any>(null);
 
@@ -1263,7 +1264,6 @@ export function AdminPanel() {
   const [carrierDealerDetails, setCarrierDealerDetails] = useState<Array<{ dealerName: string; count: number }>>([]);
 
   // User management states
-  const [editingUser, setEditingUser] = useState<(User & { dealerName: string; userType: string }) | null>(null);
   
   // 서비스플랜 업로드 관련
   const [selectedExcelFile, setSelectedExcelFile] = useState<File | null>(null);
@@ -1453,6 +1453,23 @@ export function AdminPanel() {
     },
   });
 
+  const editUserForm = useForm<EditUserForm>({
+    resolver: zodResolver(
+      z.object({
+        username: z.string().min(1, '아이디를 입력해주세요'),
+        password: z.string().optional(),
+        name: z.string().min(1, '이름을 입력해주세요'),
+        role: z.enum(['admin', 'sales_manager', 'worker']),
+      })
+    ),
+    defaultValues: {
+      username: '',
+      password: '',
+      name: '',
+      role: 'worker',
+    },
+  });
+
   const salesManagerForm = useForm<CreateSalesManagerForm>({
     defaultValues: {
       username: '',
@@ -1482,15 +1499,7 @@ export function AdminPanel() {
     },
   });
 
-  const editUserForm = useForm<EditUserForm>({
-    resolver: zodResolver(editUserSchema),
-    defaultValues: {
-      username: '',
-      password: '',
-      name: '',
-      role: 'worker',
-    },
-  });
+
 
   const statusForm = useForm<UpdateDocumentStatusForm>({
     resolver: zodResolver(updateDocumentStatusSchema),
@@ -1954,13 +1963,14 @@ export function AdminPanel() {
 
 
 
-  const handleUpdateUser = (data: { username: string; password: string; name: string }) => {
+  const handleUpdateUser = (data: EditUserForm) => {
     if (!editingUser) return;
     
     const updateData: any = {};
     if (data.username !== editingUser.username) updateData.username = data.username;
-    if (data.password) updateData.password = data.password;
+    if (data.password && data.password.trim() !== '') updateData.password = data.password;
     if (data.name !== editingUser.name) updateData.name = data.name;
+    if (data.role !== editingUser.role) updateData.role = data.role;
     
     if (Object.keys(updateData).length === 0) {
       toast({
@@ -1971,6 +1981,17 @@ export function AdminPanel() {
     }
     
     updateUserMutation.mutate({ id: editingUser.id, data: updateData });
+  };
+
+  const openEditUserDialog = (user: any) => {
+    setEditingUser(user);
+    editUserForm.reset({
+      username: user.username || '',
+      password: '',
+      name: user.name || '',
+      role: user.role || user.userType || 'worker',
+    });
+    setEditUserDialogOpen(true);
   };
 
   // 사용자 삭제 함수
@@ -5228,6 +5249,104 @@ export function AdminPanel() {
             </div>
           </TabsContent>
         </Tabs>
+
+        {/* Edit User Dialog */}
+        <Dialog open={editUserDialogOpen} onOpenChange={setEditUserDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>사용자 정보 수정</DialogTitle>
+              <DialogDescription>
+                사용자 계정 정보를 수정합니다. 관리자만 비밀번호를 변경할 수 있습니다.
+              </DialogDescription>
+            </DialogHeader>
+            <Form {...editUserForm}>
+              <form onSubmit={editUserForm.handleSubmit(handleUpdateUser)} className="space-y-4">
+                <FormField
+                  control={editUserForm.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>이름</FormLabel>
+                      <FormControl>
+                        <Input placeholder="이름을 입력하세요" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={editUserForm.control}
+                  name="username"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>아이디</FormLabel>
+                      <FormControl>
+                        <Input 
+                          placeholder="아이디를 입력하세요" 
+                          {...field} 
+                          disabled={true}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                      <p className="text-xs text-gray-500">아이디는 변경할 수 없습니다.</p>
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={editUserForm.control}
+                  name="password"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>비밀번호</FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="password" 
+                          placeholder={user?.userType === 'admin' ? "새 비밀번호를 입력하세요 (비워두면 변경하지 않음)" : "관리자만 비밀번호를 변경할 수 있습니다"}
+                          {...field}
+                          disabled={user?.userType !== 'admin'}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                      {user?.userType !== 'admin' && (
+                        <p className="text-xs text-red-500">관리자 권한이 필요합니다.</p>
+                      )}
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={editUserForm.control}
+                  name="role"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>계정 유형</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="계정 유형을 선택하세요" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="admin">관리자</SelectItem>
+                          <SelectItem value="sales_manager">영업과장</SelectItem>
+                          <SelectItem value="worker">근무자</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <div className="flex justify-end space-x-2">
+                  <Button type="button" variant="outline" onClick={() => setEditUserDialogOpen(false)}>
+                    취소
+                  </Button>
+                  <Button type="submit" disabled={updateUserMutation.isPending}>
+                    {updateUserMutation.isPending ? '수정 중...' : '수정'}
+                  </Button>
+                </div>
+              </form>
+            </Form>
+          </DialogContent>
+        </Dialog>
       </div>
     </Layout>
   )
