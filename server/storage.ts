@@ -1639,6 +1639,10 @@ export class DatabaseStorage implements IStorage {
       
       // Add carrier and servicePlanName by joining
       const [servicePlan] = await db.select().from(servicePlans).where(eq(servicePlans.id, data.servicePlanId));
+      
+      // 해당 요금제의 개통완료 문서들의 정산금액 재계산 및 업데이트
+      await this.updateSettlementAmountsForServicePlan(data.servicePlanId, data.newCustomerPrice, data.portInPrice);
+      
       return {
         id: created.id,
         servicePlanId: created.servicePlanId,
@@ -1686,6 +1690,39 @@ export class DatabaseStorage implements IStorage {
       memo: data.memo,
       createdBy: data.updatedBy
     });
+  }
+
+  // 해당 요금제의 개통완료 문서들의 정산금액을 새로운 단가로 업데이트
+  async updateSettlementAmountsForServicePlan(servicePlanId: number, newCustomerPrice: number, portInPrice: number): Promise<void> {
+    try {
+      // 해당 요금제의 개통완료 문서들 조회
+      const result = await db.all(sql`
+        SELECT id, previous_carrier, carrier
+        FROM documents 
+        WHERE service_plan_id = ${servicePlanId.toString()} 
+        AND activation_status = '개통'
+      `);
+
+      console.log(`Found ${result.length} completed documents for service plan ${servicePlanId}`);
+
+      // 각 문서의 정산금액 업데이트
+      for (const doc of result) {
+        // 번호이동 여부 확인
+        const isPortIn = doc.previous_carrier && doc.previous_carrier !== doc.carrier;
+        const settlementAmount = isPortIn ? portInPrice : newCustomerPrice;
+
+        // 정산금액 업데이트
+        await db.run(sql`
+          UPDATE documents 
+          SET settlement_amount = ${settlementAmount}, updated_at = ${new Date().toISOString()}
+          WHERE id = ${doc.id}
+        `);
+
+        console.log(`Updated settlement amount for document ${doc.id}: ${settlementAmount}`);
+      }
+    } catch (error) {
+      console.error('Error updating settlement amounts for service plan:', error);
+    }
   }
 
   async deleteSettlementUnitPrice(servicePlanId: number): Promise<void> {
