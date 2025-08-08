@@ -20,8 +20,10 @@ export const useAuth = create<AuthState>()(
 
       login: async (credentials) => {
         try {
-          // 먼저 관리자/근무자 로그인 시도
-          let response = await fetch('/api/auth/login', {
+          console.log('Attempting login with credentials');
+          
+          // 통합 로그인 API 호출 (관리자, 근무자, 영업과장 모두 처리)
+          const response = await fetch('/api/auth/login', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -29,11 +31,19 @@ export const useAuth = create<AuthState>()(
             body: JSON.stringify(credentials),
           });
 
-          let data: AuthResponse | null = null;
+          console.log('Login response status:', response.status, response.ok);
 
           if (response.ok) {
-            data = await response.json();
+            const data: AuthResponse = await response.json();
+            console.log('Login response data:', data);
+            
             if (data.success && data.user && data.sessionId) {
+              console.log('Setting auth state:', {
+                user: data.user,
+                sessionId: data.sessionId?.substring(0, 8) + '...',
+                isAuthenticated: true,
+              });
+              
               set({
                 user: data.user,
                 sessionId: data.sessionId,
@@ -43,30 +53,9 @@ export const useAuth = create<AuthState>()(
             }
           }
 
-          // 관리자/근무자 로그인이 실패하면 영업과장 로그인 시도
-          response = await fetch('/api/auth/manager-login', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(credentials),
-          });
-
-          if (response.ok) {
-            data = await response.json();
-            if (data.success && data.user && data.sessionId) {
-              // 영업과장 로그인 성공 시 zustand 상태 설정
-              set({
-                user: data.user,
-                sessionId: data.sessionId,
-                isAuthenticated: true,
-              });
-              return true;
-            }
-          }
-
-          // 모든 로그인 시도 실패
+          // 로그인 실패
           const errorData = await response.json().catch(() => ({ error: '아이디 또는 비밀번호가 올바르지 않습니다.' }));
+          console.error('Login failed:', errorData);
           throw new Error(errorData.error || '아이디 또는 비밀번호가 올바르지 않습니다.');
 
         } catch (error) {

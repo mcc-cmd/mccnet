@@ -4,8 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useQuery } from '@tanstack/react-query';
-import { apiRequest } from '@/lib/queryClient';
-import { useAuth } from '@/lib/auth';
+import { useAuth, useApiRequest } from '@/lib/auth';
 import { 
   BarChart, 
   Bar, 
@@ -50,17 +49,20 @@ const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8'];
 
 export default function SalesManagerDashboard() {
   const { user, logout } = useAuth();
+  const apiRequest = useApiRequest();
 
   // 당일 실적 데이터 조회
-  const { data: todayStats, isLoading: todayLoading } = useQuery({
+  const { data: todayStats, isLoading: todayLoading, error: todayError } = useQuery({
     queryKey: ['/api/dashboard/today-stats'],
-    queryFn: () => apiRequest('/api/dashboard/today-stats') as Promise<TodayStats>,
+    queryFn: () => apiRequest('/api/dashboard/today-stats', { method: 'GET' }),
+    enabled: !!user,
   });
 
   // 통신사별 실적 데이터 조회
-  const { data: carrierStats, isLoading: carrierLoading } = useQuery({
+  const { data: carrierStats, isLoading: carrierLoading, error: carrierError } = useQuery({
     queryKey: ['/api/dashboard/carrier-stats'],
-    queryFn: () => apiRequest('/api/dashboard/carrier-stats') as Promise<CarrierStats[]>,
+    queryFn: () => apiRequest('/api/dashboard/carrier-stats', { method: 'GET' }),
+    enabled: !!user,
   });
 
   const handleLogout = async () => {
@@ -79,6 +81,10 @@ export default function SalesManagerDashboard() {
         </div>
       </div>
     );
+  }
+
+  if (todayError || carrierError) {
+    console.error('Dashboard errors:', { todayError, carrierError });
   }
 
   const today = new Date().toLocaleDateString('ko-KR', {
