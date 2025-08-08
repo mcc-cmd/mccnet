@@ -5000,8 +5000,8 @@ export function AdminPanel() {
                                   <SelectContent>
                                     {carriersLoading ? (
                                       <SelectItem value="loading" disabled>통신사 로딩 중...</SelectItem>
-                                    ) : carriers && carriers.length > 0 ? (
-                                      carriers.map((carrier) => (
+                                    ) : carriersData && carriersData.filter(c => c.isActive).length > 0 ? (
+                                      carriersData.filter(c => c.isActive).map((carrier) => (
                                         <SelectItem key={carrier.id} value={carrier.name}>
                                           {carrier.name}
                                         </SelectItem>
