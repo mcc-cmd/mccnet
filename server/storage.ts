@@ -2965,6 +2965,58 @@ export class DatabaseStorage implements IStorage {
       throw error;
     }
   }
+
+  // 영업과장 정보 업데이트
+  async updateSalesManager(id: number, data: UpdateSalesManagerForm): Promise<SalesManager> {
+    console.log('updateSalesManager called with:', { id, data });
+    
+    // 중복 체크: username (자기 자신 제외)
+    if (data.username) {
+      const [existingByUsername] = await db.select().from(salesManagers).where(
+        and(
+          eq(salesManagers.username, data.username), 
+          eq(salesManagers.isActive, 1),
+          sql`${salesManagers.id} != ${id}`
+        )
+      );
+      if (existingByUsername) {
+        throw new Error(`로그인 ID '${data.username}'는 이미 사용 중입니다.`);
+      }
+    }
+
+    // 중복 체크: managerCode (자기 자신 제외)
+    if (data.managerCode) {
+      const [existingByCode] = await db.select().from(salesManagers).where(
+        and(
+          eq(salesManagers.managerCode, data.managerCode), 
+          eq(salesManagers.isActive, true),
+          sql`${salesManagers.id} != ${id}`
+        )
+      );
+      if (existingByCode) {
+        throw new Error(`과장 코드 '${data.managerCode}'는 이미 사용 중입니다.`);
+      }
+    }
+
+    // 비밀번호 해시화 (제공된 경우에만)
+    const updateData = { ...data };
+    if (data.password && data.password.trim() !== '') {
+      updateData.password = await bcrypt.hash(data.password, 10);
+    } else {
+      // 비밀번호가 빈 문자열이면 업데이트하지 않음
+      delete updateData.password;
+    }
+
+    console.log('Final updateData:', updateData);
+
+    const [result] = await db.update(salesManagers)
+      .set(updateData)
+      .where(eq(salesManagers.id, id))
+      .returning();
+    
+    console.log('Update result:', result);
+    return result;
+  }
 }
 
 export const storage = new DatabaseStorage();

@@ -103,30 +103,8 @@ export default function SalesManagerDashboard() {
 
   const renderOverview = () => (
     <div className="space-y-6">
-      {/* 전체 통계 카드 */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">총 개통 건수</CardTitle>
-            <ShoppingCart className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{salesStats?.totalActivations || 0}</div>
-            <p className="text-xs text-muted-foreground">누적 개통 건수</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">이번 달 개통</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{salesStats?.monthlyActivations || 0}</div>
-            <p className="text-xs text-muted-foreground">이번 달 실적</p>
-          </CardContent>
-        </Card>
-
+      {/* 전체 통계 카드 - 영업과장은 판매점수만 표시 */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">영업과장 수</CardTitle>
@@ -184,44 +162,21 @@ export default function SalesManagerDashboard() {
         </Card>
       )}
 
-      {/* 영업과장별 실적 */}
+      {/* 판매점 목록 */}
       <Card>
         <CardHeader>
-          <CardTitle>영업과장별 실적</CardTitle>
+          <CardTitle>판매점 목록</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {salesStats?.salesManagerStats
-              .filter(manager => {
-                if (isTeamLeader) return manager.team === currentUserTeam;
-                if (isManager || isAssociate) return manager.name === user?.name;
-                return false;
-              })
-              .map((manager) => (
-              <div key={manager.id} className="border rounded-lg p-4">
+            {salesStats?.dealerStats?.map((dealer, index) => (
+              <div key={index} className="border rounded-lg p-4">
                 <div className="flex justify-between items-center">
                   <div>
-                    <h3 className="font-medium">{manager.name} ({manager.position})</h3>
-                    <p className="text-sm text-gray-600">{manager.team}</p>
-                    <div className="mt-2 space-y-1">
-                      <div className="text-sm">
-                        <span className="text-gray-500">총 개통:</span> {manager.totalActivations}건
-                      </div>
-                      <div className="text-sm">
-                        <span className="text-gray-500">이번 달:</span> {manager.monthlyActivations}건
-                      </div>
-                    </div>
+                    <h3 className="font-medium">{dealer.dealerName}</h3>
+                    <p className="text-sm text-gray-600">접점코드: {dealer.contactCode}</p>
+                    <p className="text-sm text-gray-600">통신사: {dealer.carrier}</p>
                   </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      setSelectedSalesManager(manager);
-                      setViewMode('manager');
-                    }}
-                  >
-                    자세히 보기 <ChevronRight className="ml-1 h-4 w-4" />
-                  </Button>
                 </div>
               </div>
             ))}
@@ -388,19 +343,7 @@ export default function SalesManagerDashboard() {
               }`}
             >
               <BarChart3 className="mr-3 h-4 w-4" />
-              실적 대시보드
-            </button>
-            
-            <button
-              onClick={() => setViewMode('team')}
-              className={`w-full flex items-center px-3 py-2 text-sm font-medium rounded-md ${
-                viewMode === 'team' 
-                  ? 'bg-accent text-white' 
-                  : 'text-gray-600 hover:bg-gray-50'
-              }`}
-            >
-              <Users className="mr-3 h-4 w-4" />
-              팀별 실적
+              대시보드
             </button>
           </div>
         </nav>
@@ -435,9 +378,9 @@ export default function SalesManagerDashboard() {
       {/* 메인 컨텐츠 */}
       <div className="flex-1 p-6">
         <div className="mb-6">
-          <h1 className="text-2xl font-bold text-gray-900">영업 실적 대시보드</h1>
+          <h1 className="text-2xl font-bold text-gray-900">대시보드</h1>
           <p className="text-gray-600">
-            {user?.team}의 실적 현황을 확인하세요
+            판매점 현황 정보
           </p>
         </div>
 

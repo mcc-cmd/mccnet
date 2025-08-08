@@ -4245,11 +4245,20 @@ router.get('/api/admin/sales-managers/:id', requireAdmin, async (req: any, res) 
 
 router.put('/api/admin/sales-managers/:id', requireAdmin, async (req: any, res) => {
   try {
+    console.log('Sales manager update request - params:', req.params);
+    console.log('Sales manager update request - body:', req.body);
+    
     const id = parseInt(req.params.id);
     const data = updateSalesManagerSchema.parse(req.body);
+    
+    console.log('Parsed update data:', data);
+    
     const manager = await storage.updateSalesManager(id, data);
+    
+    console.log('Update successful, returning:', manager);
     res.json(manager);
   } catch (error: any) {
+    console.error('Sales manager update error:', error);
     res.status(400).json({ error: error.message });
   }
 });
