@@ -2435,11 +2435,89 @@ export class DatabaseStorage implements IStorage {
           .orderBy(sql`count(*) DESC`);
       }
 
-      const result = carrierStats.map(stat => ({
-        carrier: stat.carrier || '미분류',
-        count: parseInt(String(stat.count || 0))
-      }));
+      // 신규/번호이동별 세부 통계도 함께 조회
+      let carrierDetailStats;
+      
+      if (salesManagerId && dealerCodes.length > 0) {
+        // 영업과장인 경우: 담당 판매점의 개통 완료 문서만 조회하여 신규/번호이동 구분
+        let detailQuery = `
+          SELECT 
+            carrier,
+            customer_type,
+            count(*) as count 
+          FROM documents 
+          WHERE activation_status = '개통'
+            AND contact_code IN (${dealerCodes.map(code => `'${code.replace(/'/g, "''")}'`).join(',')})
+        `;
+        
+        if (startDate && endDate) {
+          detailQuery += ` AND date(activated_at) >= '${startDate}' AND date(activated_at) <= '${endDate}'`;
+        } else if (startDate) {
+          detailQuery += ` AND date(activated_at) >= '${startDate}'`;
+        } else if (endDate) {
+          detailQuery += ` AND date(activated_at) <= '${endDate}'`;
+        }
+        
+        detailQuery += ` GROUP BY carrier, customer_type ORDER BY carrier, customer_type`;
+        
+        carrierDetailStats = await db.all(sql.raw(detailQuery));
+      } else if (salesManagerId && dealerCodes.length === 0) {
+        carrierDetailStats = [];
+      } else {
+        // 관리자나 근무자인 경우: 전체 개통 완료 문서 조회
+        let whereConditions = [eq(documents.activationStatus, '개통')];
+        
+        if (startDate && endDate) {
+          whereConditions.push(
+            and(
+              sql`date(activated_at) >= ${startDate}`,
+              sql`date(activated_at) <= ${endDate}`
+            )
+          );
+        } else if (startDate) {
+          whereConditions.push(sql`date(activated_at) >= ${startDate}`);
+        } else if (endDate) {
+          whereConditions.push(sql`date(activated_at) <= ${endDate}`);
+        }
 
+        carrierDetailStats = await db.select({
+          carrier: documents.carrier,
+          customer_type: documents.customerType,
+          count: sql`count(*)`
+        })
+          .from(documents)
+          .where(and(...whereConditions))
+          .groupBy(documents.carrier, documents.customerType)
+          .orderBy(documents.carrier, documents.customerType);
+      }
+      
+      // 통신사별로 신규/번호이동 통계를 정리
+      const carrierMap = new Map();
+      
+      carrierDetailStats.forEach((stat: any) => {
+        const carrier = stat.carrier || '미분류';
+        const customerType = stat.customer_type;
+        const count = parseInt(String(stat.count || 0));
+        
+        if (!carrierMap.has(carrier)) {
+          carrierMap.set(carrier, {
+            carrier,
+            newCustomer: 0,
+            portIn: 0,
+            total: 0
+          });
+        }
+        
+        const carrierData = carrierMap.get(carrier);
+        if (customerType === 'new') {
+          carrierData.newCustomer += count;
+        } else if (customerType === 'port-in') {
+          carrierData.portIn += count;
+        }
+        carrierData.total += count;
+      });
+
+      const result = Array.from(carrierMap.values());
       console.log('Carrier stats result:', result);
       return result;
     } catch (error) {

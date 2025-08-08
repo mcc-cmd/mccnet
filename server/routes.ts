@@ -1126,7 +1126,8 @@ router.get('/api/dashboard/carrier-stats', requireAuth, async (req: any, res) =>
     }
     
     const { startDate, endDate } = req.query;
-    const salesManagerId = req.session.userType === 'sales_manager' ? req.session.userId : null;
+    const salesManagerId = req.session.userType === 'sales_manager' ? req.session.managerId || req.session.userId : null;
+    console.log('Carrier stats request - userType:', req.session.userType, 'userId:', req.session.userId, 'managerId:', req.session.managerId, 'salesManagerId:', salesManagerId);
     const stats = await storage.getCarrierStats(startDate, endDate, salesManagerId);
     res.json(stats);
   } catch (error: any) {
@@ -1157,8 +1158,8 @@ router.get('/api/dashboard/today-stats', requireAuth, async (req: any, res) => {
     
     // 근무자(user)인 경우 해당 근무자의 ID를 전달, 관리자는 전체 데이터 조회, 영업과장은 자신 소속팀 데이터만
     const workerId = req.session.userType === 'user' ? req.session.userId : undefined;
-    const salesManagerId = req.session.userType === 'sales_manager' ? req.session.userId : undefined;
-    console.log('Today stats request - userType:', req.session.userType, 'userId:', req.session.userId, 'workerId:', workerId, 'salesManagerId:', salesManagerId);
+    const salesManagerId = req.session.userType === 'sales_manager' ? req.session.managerId || req.session.userId : undefined;
+    console.log('Today stats request - userType:', req.session.userType, 'userId:', req.session.userId, 'managerId:', req.session.managerId, 'workerId:', workerId, 'salesManagerId:', salesManagerId);
     
     const stats = await storage.getTodayStats(workerId, salesManagerId);
     console.log('Today stats result:', stats);
