@@ -3294,6 +3294,9 @@ router.post('/api/contact-codes/upload-excel', contactCodeUpload.single('file'),
       return res.status(400).json({ error: '파일을 업로드해주세요.' });
     }
 
+    const forceUpdate = req.body.forceUpdate === 'true';
+    console.log('Force update mode:', forceUpdate);
+
     filePath = req.file.path;
     console.log('Processing file:', filePath);
 
@@ -3415,15 +3418,18 @@ router.post('/api/contact-codes/upload-excel', contactCodeUpload.single('file'),
           const newDealerName = String(dealerName).trim();
           const newRealSalesPOS = realSalesPOS ? String(realSalesPOS).trim() : null;
           
-          const hasChanges = (
+          const hasChanges = forceUpdate || (
             existingCode.carrier !== newCarrier ||
             existingCode.dealerName !== newDealerName ||
             existingCode.realSalesPOS !== newRealSalesPOS ||
-            (salesManagerId && existingCode.salesManagerId !== salesManagerId)
+            existingCode.salesManagerId !== salesManagerId
           );
           
           if (hasChanges) {
             console.log(`Updating contact code ${code}: changes detected`);
+            console.log(`  Old: carrier=${existingCode.carrier}, dealer=${existingCode.dealerName}, realSalesPOS=${existingCode.realSalesPOS}, salesManagerId=${existingCode.salesManagerId}`);
+            console.log(`  New: carrier=${newCarrier}, dealer=${newDealerName}, realSalesPOS=${newRealSalesPOS}, salesManagerId=${salesManagerId}`);
+            
             await storage.updateContactCode(existingCode.id, {
               carrier: newCarrier,
               dealerName: newDealerName,
@@ -3436,6 +3442,8 @@ router.post('/api/contact-codes/upload-excel', contactCodeUpload.single('file'),
           } else {
             duplicatesSkipped++;
             console.log(`Skipping duplicate contact code: ${code} (no changes)`);
+            console.log(`  Current: carrier=${existingCode.carrier}, dealer=${existingCode.dealerName}, realSalesPOS=${existingCode.realSalesPOS}, salesManagerId=${existingCode.salesManagerId}`);
+            console.log(`  Excel:   carrier=${newCarrier}, dealer=${newDealerName}, realSalesPOS=${newRealSalesPOS}, salesManagerId=${salesManagerId}`);
           }
           continue;
         }

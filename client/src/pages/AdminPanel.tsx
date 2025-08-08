@@ -16,6 +16,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
 import { Switch } from '@/components/ui/switch';
+import { Checkbox } from '@/components/ui/checkbox';
 import { createDealerSchema, createUserSchema, createAdminSchema, createWorkerSchema, updateDocumentStatusSchema, createServicePlanSchema, createAdditionalServiceSchema, createCarrierSchema, updateCarrierSchema, createSettlementUnitPriceSchema, updateSettlementUnitPriceSchema, createAdditionalServiceDeductionSchema, updateAdditionalServiceDeductionSchema, editUserSchema } from '../../../shared/schema';
 import type { Dealer, User, Document, ServicePlan, AdditionalService, Carrier, SettlementUnitPrice, CreateSettlementUnitPriceForm, UpdateSettlementUnitPriceForm, AdditionalServiceDeduction, CreateAdditionalServiceDeductionForm, UpdateAdditionalServiceDeductionForm } from '../../../shared/schema';
 import { 
@@ -1247,6 +1248,7 @@ export function AdminPanel() {
   const [contactCodeCarrierFilter, setContactCodeCarrierFilter] = useState('all');
   const [selectedContactCodes, setSelectedContactCodes] = useState<number[]>([]);
   const [selectAllContactCodes, setSelectAllContactCodes] = useState(false);
+  const [forceUpdateContactCodes, setForceUpdateContactCodes] = useState(false);
   
   // 서비스 플랜 검색 및 필터링
   const [servicePlanSearch, setServicePlanSearch] = useState('');
@@ -2026,9 +2028,10 @@ export function AdminPanel() {
 
   // 접점코드 엑셀 업로드 뮤테이션
   const contactCodeExcelUploadMutation = useMutation({
-    mutationFn: async (file: File) => {
+    mutationFn: async ({ file, forceUpdate }: { file: File; forceUpdate: boolean }) => {
       const formData = new FormData();
       formData.append('file', file);
+      formData.append('forceUpdate', String(forceUpdate));
       
       return apiRequest('/api/contact-codes/upload-excel', {
         method: 'POST',
@@ -2773,7 +2776,7 @@ export function AdminPanel() {
   const handleContactCodeExcelUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      contactCodeExcelUploadMutation.mutate(file);
+      contactCodeExcelUploadMutation.mutate({ file, forceUpdate: forceUpdateContactCodes });
     }
   };
 
@@ -3205,37 +3208,50 @@ export function AdminPanel() {
                     개통방명 코드를 관리하여 자동으로 판매점명이 설정되도록 합니다.
                   </CardDescription>
                 </div>
-                <div className="space-x-2">
-                  <input
-                    ref={contactCodeExcelInputRef}
-                    type="file"
-                    accept=".xlsx,.xls"
-                    onChange={handleContactCodeExcelUpload}
-                    className="hidden"
-                  />
-                  <Button
-                    variant="outline"
-                    onClick={handleDownloadTemplate}
-                  >
-                    <Download className="mr-2 h-4 w-4" />
-                    양식 다운로드
-                  </Button>
-                  <Button
-                    variant="outline"
-                    onClick={() => contactCodeExcelInputRef.current?.click()}
-                    disabled={contactCodeExcelUploadMutation.isPending}
-                  >
-                    <Upload className="mr-2 h-4 w-4" />
-                    {contactCodeExcelUploadMutation.isPending ? '업로드 중...' : '엑셀 업로드'}
-                  </Button>
-                  <Dialog open={contactCodeDialogOpen} onOpenChange={setContactCodeDialogOpen}>
-                    <DialogTrigger asChild>
-                      <Button>
-                        <Plus className="mr-2 h-4 w-4" />
-                        접점코드 추가
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent>
+                <div className="space-y-3">
+                  <div className="flex items-center space-x-2">
+                    <Checkbox 
+                      id="forceUpdateContactCodes"
+                      checked={forceUpdateContactCodes}
+                      onCheckedChange={(checked) => setForceUpdateContactCodes(checked === true)}
+                    />
+                    <Label htmlFor="forceUpdateContactCodes" className="text-sm">
+                      기존 접점코드 강제 업데이트 (영업과장 매핑 변경 시)
+                    </Label>
+                  </div>
+                  <div className="space-x-2">
+                    <input
+                      ref={contactCodeExcelInputRef}
+                      type="file"
+                      accept=".xlsx,.xls"
+                      onChange={handleContactCodeExcelUpload}
+                      className="hidden"
+                    />
+                    <Button
+                      variant="outline"
+                      onClick={handleDownloadTemplate}
+                    >
+                      <Download className="mr-2 h-4 w-4" />
+                      양식 다운로드
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => contactCodeExcelInputRef.current?.click()}
+                      disabled={contactCodeExcelUploadMutation.isPending}
+                    >
+                      <Upload className="mr-2 h-4 w-4" />
+                      {contactCodeExcelUploadMutation.isPending ? '업로드 중...' : '엑셀 업로드'}
+                    </Button>
+                  </div>
+                </div>
+                <Dialog open={contactCodeDialogOpen} onOpenChange={setContactCodeDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button>
+                      <Plus className="mr-2 h-4 w-4" />
+                      접점코드 추가
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
                       <DialogHeader>
                         <DialogTitle>새 접점코드 추가</DialogTitle>
                       </DialogHeader>
@@ -3314,7 +3330,6 @@ export function AdminPanel() {
                       </form>
                     </DialogContent>
                   </Dialog>
-                </div>
               </CardHeader>
               <CardContent>
                 {/* 검색 및 필터 */}
