@@ -1854,13 +1854,14 @@ export class DatabaseStorage implements IStorage {
   // 영업과장 소속 판매점 조회 유틸리티 메서드
   async getSalesManagerDealerCodes(salesManagerId: number): Promise<string[]> {
     try {
-      // SQLite 직접 쿼리 사용
-      const result = await db.all(
-        sql`SELECT code FROM contact_codes WHERE sales_manager_id = ${salesManagerId}`
-      );
+      // Drizzle ORM을 사용한 조회
+      const result = await db.select({ code: contactCodes.code })
+        .from(contactCodes)
+        .where(eq(contactCodes.salesManagerId, salesManagerId));
       
-      console.log('Found contact codes for manager', salesManagerId, ':', result.map((r: any) => r.code));
-      return result.map((r: any) => r.code);
+      const codes = result.map((r: any) => r.code);
+      console.log('Found contact codes for manager', salesManagerId, ':', codes);
+      return codes;
     } catch (error) {
       console.error('Get sales manager dealer codes error:', error);
       return [];

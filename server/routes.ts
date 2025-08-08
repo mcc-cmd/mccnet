@@ -1155,7 +1155,10 @@ router.get('/api/dashboard/today-stats', requireAuth, async (req: any, res) => {
     const workerId = req.session.userType === 'user' ? req.session.userId : undefined;
     const salesManagerId = req.session.userType === 'sales_manager' ? req.session.userId : undefined;
     console.log('Today stats request - userType:', req.session.userType, 'userId:', req.session.userId, 'workerId:', workerId, 'salesManagerId:', salesManagerId);
+    console.log('Session details:', { userType: req.session.userType, userId: req.session.userId, sessionId: req.sessionID });
+    
     const stats = await storage.getTodayStats(workerId, salesManagerId);
+    console.log('Today stats result:', stats);
     
     // API 응답 형식을 프론트엔드 기대값에 맞춤
     const response = {
@@ -1165,6 +1168,7 @@ router.get('/api/dashboard/today-stats', requireAuth, async (req: any, res) => {
       carrierStats: []
     };
     
+    console.log('Today stats response:', response);
     res.json(response);
   } catch (error: any) {
     console.error('Today stats error:', error);
