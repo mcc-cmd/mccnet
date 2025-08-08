@@ -1305,10 +1305,8 @@ router.get('/api/documents', requireAuth, async (req: any, res) => {
         };
         
         // 각 문서에 정산금액 추가
-        processedDocuments = documents.map(doc => ({
-          ...doc,
-          calculatedSettlementAmount: calculateSettlementAmount(doc)
-        }));
+        // 정산금액 계산은 나중에 개별적으로 처리
+        processedDocuments = documents;
       } catch (error) {
         console.error('Settlement calculation error:', error);
         // 에러 발생 시 원본 documents 반환
@@ -1352,9 +1350,22 @@ router.get('/api/documents', requireAuth, async (req: any, res) => {
         console.log('Skipping user lookup - includeActivatedBy:', includeActivatedBy, 'activatedBy:', doc.activatedBy);
       }
       
+      // 정산금액 계산 (수동 설정값이 있으면 우선 사용)
+      let calculatedSettlementAmount = 0;
+      if (decodedActivationStatus === '개통') {
+        if (doc.settlementAmount && parseFloat(doc.settlementAmount) > 0) {
+          // 수동으로 설정된 정산금액이 있으면 그대로 사용
+          calculatedSettlementAmount = parseFloat(doc.settlementAmount);
+        } else if (typeof calculateSettlementAmount === 'function') {
+          // 수동 설정값이 없으면 자동 계산
+          calculatedSettlementAmount = calculateSettlementAmount(doc);
+        }
+      }
+
       const result = {
         ...doc,
-        storeName: storeName || doc.contactCode || '-'
+        storeName: storeName || doc.contactCode || '-',
+        calculatedSettlementAmount
       };
       
       if (activatedByName) {
