@@ -449,8 +449,11 @@ router.post('/api/admin/create-sales-manager', requireAdmin, async (req, res) =>
       return res.status(400).json({ error: `로그인 ID '${username}'는 이미 사용 중입니다.` });
     }
 
+    // 팀 이름 정규화 (공백 제거)
+    const normalizedTeamName = team.replace(/\s+/g, '');
+    
     // 팀이 존재하는지 확인
-    let salesTeam = await storage.getSalesTeamByName(team);
+    let salesTeam = await storage.getSalesTeamByName(normalizedTeamName);
     if (!salesTeam) {
       return res.status(400).json({ error: `영업팀 '${team}'을 찾을 수 없습니다.` });
     }

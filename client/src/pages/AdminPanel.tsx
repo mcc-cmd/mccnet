@@ -3586,7 +3586,7 @@ export function AdminPanel() {
                       </thead>
                       <tbody className="bg-white divide-y divide-gray-200">
                         {users.map((user, index) => (
-                          <tr key={`user-${user.id}-${index}`}>
+                          <tr key={`${(user as any).accountType}-${user.id}-${user.username}`}>
                             <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                               {(user as any).displayName || user.name}
                             </td>

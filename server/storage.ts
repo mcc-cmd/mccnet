@@ -285,10 +285,11 @@ export class DatabaseStorage implements IStorage {
       
       const hashedPassword = await bcrypt.hash(data.password, 10);
       
-      // team 이름을 teamId로 변환
-      let teamId = 1; // 기본값
-      if (data.team === 'DX 2팀') {
-        teamId = 2;
+      // team 이름을 teamId로 변환 (공백 제거하여 매칭)
+      const normalizedTeamName = data.team.replace(/\s+/g, '');
+      let teamId = 2; // 기본값 DX1팀
+      if (normalizedTeamName === 'DX2팀') {
+        teamId = 3;
       }
       
       const [result] = await db.insert(salesManagers).values({
