@@ -1305,15 +1305,25 @@ export function Settlements() {
                               const backendAmount = (doc as any).calculatedSettlementAmount;
                               const manualAmount = (doc as any).settlementAmount;
                               
+                              console.log(`Table render - Document ${doc.id}: backendAmount=${backendAmount}, manualAmount=${manualAmount}, type=${typeof backendAmount}`);
+                              
                               if (backendAmount !== undefined && backendAmount !== null) {
                                 const amount = typeof backendAmount === 'number' ? backendAmount : parseFloat(backendAmount);
-                                return !isNaN(amount) ? `${amount.toLocaleString()}원` : '0원';
+                                const result = !isNaN(amount) ? `${amount.toLocaleString()}원` : '0원';
+                                console.log(`Table render - Document ${doc.id}: Using backend amount ${amount}, result=${result}`);
+                                return result;
                               } else if (manualAmount) {
                                 const amount = parseInt(manualAmount);
-                                return !isNaN(amount) ? `${amount.toLocaleString()}원` : '0원';
+                                const result = !isNaN(amount) ? `${amount.toLocaleString()}원` : '0원';
+                                console.log(`Table render - Document ${doc.id}: Using manual amount ${amount}, result=${result}`);
+                                return result;
                               } else if (settlementPrices) {
-                                return `${calculateSettlementAmount(doc, settlementPrices, deductionPolicies).toLocaleString()}원`;
+                                const amount = calculateSettlementAmount(doc, settlementPrices, deductionPolicies);
+                                const result = `${amount.toLocaleString()}원`;
+                                console.log(`Table render - Document ${doc.id}: Using calculated amount ${amount}, result=${result}`);
+                                return result;
                               } else {
+                                console.log(`Table render - Document ${doc.id}: No amount found, using 0원`);
                                 return '0원';
                               }
                             })()}
