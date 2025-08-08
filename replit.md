@@ -4,6 +4,12 @@
 This project is a document management system for MCC네트월드 telecommunications dealers. Its main purpose is to streamline the handling of customer reception documents, offering capabilities such as role-based authentication, secure file uploads, comprehensive document tracking, and administrative functionalities. The system aims to enhance efficiency in managing customer activations and related processes.
 
 ## Recent Changes (January 2025)
+- **2025-01-08**: Successfully implemented contact code force update functionality
+  - Added "기존 접점코드 강제 업데이트" checkbox in AdminPanel contact code upload dialog
+  - Enhanced backend API to process forceUpdate parameter with detailed logging
+  - Fixed force update mechanism to properly update all existing contact codes regardless of changes
+  - Confirmed successful testing with sales manager changes (정선웅 → 박종열) 
+  - Users can now force update all 917+ contact codes by checking the checkbox before Excel upload
 - **2025-01-08**: Integrated Real Sales POS (실판매POS) field across contact code management system
   - Added realSalesPOS column to contact_codes table in SQLite database
   - Enhanced AdminPanel contact code management interface with realSalesPOS input/display fields
