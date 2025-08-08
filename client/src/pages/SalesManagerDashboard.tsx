@@ -50,6 +50,7 @@ const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8'];
 export default function SalesManagerDashboard() {
   const { user, logout } = useAuth();
   const apiRequest = useApiRequest();
+  const [statsView, setStatsView] = useState<'today' | 'monthly'>('today');
 
   // 당일 실적 데이터 조회
   const { data: todayStats, isLoading: todayLoading, error: todayError } = useQuery({
@@ -58,10 +59,25 @@ export default function SalesManagerDashboard() {
     enabled: !!user,
   });
 
-  // 통신사별 실적 데이터 조회
+  // 통신사별 실적 데이터 조회 (당일)
   const { data: carrierStats, isLoading: carrierLoading, error: carrierError } = useQuery({
     queryKey: ['/api/dashboard/carrier-stats'],
     queryFn: () => apiRequest('/api/dashboard/carrier-stats', { method: 'GET' }),
+    enabled: !!user,
+  });
+
+  // 통신사별 실적 데이터 조회 (당월)
+  const { data: monthlyCarrierStats, isLoading: monthlyCarrierLoading } = useQuery({
+    queryKey: ['/api/dashboard/carrier-stats', 'monthly'],
+    queryFn: () => {
+      const currentDate = new Date();
+      const startDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1)
+        .toISOString().split('T')[0];
+      const endDate = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0)
+        .toISOString().split('T')[0];
+      
+      return apiRequest(`/api/dashboard/carrier-stats?startDate=${startDate}&endDate=${endDate}`, { method: 'GET' });
+    },
     enabled: !!user,
   });
 
@@ -93,7 +109,7 @@ export default function SalesManagerDashboard() {
     day: 'numeric'
   });
 
-  const carrierChartData = carrierStats?.map(stat => ({
+  const carrierChartData = carrierStats?.map((stat: any) => ({
     carrier: stat.carrier,
     신규: stat.newCustomer || 0,
     번호이동: stat.portIn || 0,
@@ -138,78 +154,71 @@ export default function SalesManagerDashboard() {
         </Card>
       </div>
 
-      {/* 통신사별 실적 차트 */}
-      <Card>
-        <CardHeader>
-          <CardTitle>통신사별 판매 현황 (신규/번호이동)</CardTitle>
-          <p className="text-sm text-gray-600">{today}</p>
-        </CardHeader>
-        <CardContent>
-          {carrierChartData.length > 0 ? (
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={carrierChartData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="carrier" />
-                <YAxis />
-                <Tooltip />
-                <Bar dataKey="신규" fill="#8884d8" name="신규" />
-                <Bar dataKey="번호이동" fill="#82ca9d" name="번호이동" />
-              </BarChart>
-            </ResponsiveContainer>
-          ) : (
-            <div className="text-center py-8 text-gray-500">
-              오늘 판매 데이터가 없습니다.
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* 통신사별 상세 통계 테이블 */}
+      {/* 통신사별 상세 현황 - 당일/당월 탭 */}
       <Card>
         <CardHeader>
           <CardTitle>통신사별 상세 현황</CardTitle>
+          <div className="flex space-x-1 bg-gray-100 p-1 rounded-lg w-fit">
+            <button
+              onClick={() => setStatsView('today')}
+              className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
+                statsView === 'today'
+                  ? 'bg-white text-gray-900 shadow-sm'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              당일
+            </button>
+            <button
+              onClick={() => setStatsView('monthly')}
+              className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
+                statsView === 'monthly'
+                  ? 'bg-white text-gray-900 shadow-sm'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              당월
+            </button>
+          </div>
         </CardHeader>
         <CardContent>
-          <div className="overflow-x-auto">
-            <div className="space-y-6">
-              {carrierStats?.map((stat, index) => (
+          {statsView === 'today' ? (
+            <div className="space-y-4">
+              {carrierStats?.map((stat: any, index: number) => (
                 <div key={index} className="border rounded-lg p-4">
-                  <div className="flex justify-between items-center mb-3">
-                    <h4 className="text-lg font-semibold text-gray-800">{stat.carrier}</h4>
-                    <div className="flex space-x-4 text-sm">
-                      <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded">
-                        신규: {stat.newCustomer || 0}건
-                      </span>
-                      <span className="bg-green-100 text-green-800 px-2 py-1 rounded">
-                        번호이동: {stat.portIn || 0}건
-                      </span>
-                      <span className="bg-gray-100 text-gray-800 px-2 py-1 rounded font-semibold">
-                        총합: {stat.total || 0}건
-                      </span>
+                  <h4 className="text-lg font-semibold text-gray-800 mb-3">{stat.carrier}</h4>
+                  <div className="grid grid-cols-2 gap-3 mb-4">
+                    <div className="bg-green-50 p-3 rounded-lg text-center">
+                      <div className="text-sm text-gray-600">신규</div>
+                      <div className="text-xl font-bold text-green-700">{stat.newCustomer || 0}건</div>
+                    </div>
+                    <div className="bg-blue-50 p-3 rounded-lg text-center">
+                      <div className="text-sm text-gray-600">번호이동</div>
+                      <div className="text-xl font-bold text-blue-700">{stat.portIn || 0}건</div>
                     </div>
                   </div>
                   
                   {stat.dealers && stat.dealers.length > 0 && (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                      {stat.dealers.map((dealer: any, dealerIndex: number) => (
-                        <div key={dealerIndex} className="bg-gray-50 p-3 rounded border">
-                          <div className="font-medium text-sm text-gray-800 mb-1">
-                            {dealer.contactCode}
+                    <details className="group">
+                      <summary className="flex items-center justify-between cursor-pointer text-sm font-medium text-gray-700 hover:text-gray-900">
+                        판매점별 상세 ({stat.dealers.length}개 판매점)
+                        <span className="ml-2 transform group-open:rotate-180 transition-transform">▼</span>
+                      </summary>
+                      <div className="mt-3 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
+                        {stat.dealers.map((dealer: any, dealerIndex: number) => (
+                          <div key={dealerIndex} className="bg-gray-50 p-2 rounded text-xs">
+                            <div className="font-medium text-gray-800 mb-1 truncate" title={dealer.contactCode}>
+                              {dealer.contactCode}
+                            </div>
+                            <div className="flex justify-between text-gray-600">
+                              <span>신규 {dealer.newCustomer}</span>
+                              <span>번이 {dealer.portIn}</span>
+                              <span className="font-semibold">계 {dealer.total}</span>
+                            </div>
                           </div>
-                          <div className="flex justify-between text-xs text-gray-600">
-                            <span>신규: {dealer.newCustomer}건</span>
-                            <span>번이: {dealer.portIn}건</span>
-                            <span className="font-semibold">계: {dealer.total}건</span>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                  
-                  {(!stat.dealers || stat.dealers.length === 0) && (
-                    <div className="text-center text-gray-500 text-sm py-2">
-                      판매점 정보가 없습니다.
-                    </div>
+                        ))}
+                      </div>
+                    </details>
                   )}
                 </div>
               ))}
@@ -220,7 +229,54 @@ export default function SalesManagerDashboard() {
                 </div>
               )}
             </div>
-          </div>
+          ) : (
+            <div className="space-y-4">
+              {monthlyCarrierStats?.map((stat: any, index: number) => (
+                <div key={index} className="border rounded-lg p-4">
+                  <h4 className="text-lg font-semibold text-gray-800 mb-3">{stat.carrier}</h4>
+                  <div className="grid grid-cols-2 gap-3 mb-4">
+                    <div className="bg-green-50 p-3 rounded-lg text-center">
+                      <div className="text-sm text-gray-600">신규</div>
+                      <div className="text-xl font-bold text-green-700">{stat.newCustomer || 0}건</div>
+                    </div>
+                    <div className="bg-blue-50 p-3 rounded-lg text-center">
+                      <div className="text-sm text-gray-600">번호이동</div>
+                      <div className="text-xl font-bold text-blue-700">{stat.portIn || 0}건</div>
+                    </div>
+                  </div>
+                  
+                  {stat.dealers && stat.dealers.length > 0 && (
+                    <details className="group">
+                      <summary className="flex items-center justify-between cursor-pointer text-sm font-medium text-gray-700 hover:text-gray-900">
+                        판매점별 상세 ({stat.dealers.length}개 판매점)
+                        <span className="ml-2 transform group-open:rotate-180 transition-transform">▼</span>
+                      </summary>
+                      <div className="mt-3 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
+                        {stat.dealers.map((dealer: any, dealerIndex: number) => (
+                          <div key={dealerIndex} className="bg-gray-50 p-2 rounded text-xs">
+                            <div className="font-medium text-gray-800 mb-1 truncate" title={dealer.contactCode}>
+                              {dealer.contactCode}
+                            </div>
+                            <div className="flex justify-between text-gray-600">
+                              <span>신규 {dealer.newCustomer}</span>
+                              <span>번이 {dealer.portIn}</span>
+                              <span className="font-semibold">계 {dealer.total}</span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </details>
+                  )}
+                </div>
+              ))}
+              
+              {(!monthlyCarrierStats || monthlyCarrierStats.length === 0) && (
+                <div className="text-center py-8 text-gray-500">
+                  이번 달 판매 데이터가 없습니다.
+                </div>
+              )}
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
@@ -244,7 +300,7 @@ export default function SalesManagerDashboard() {
               <User className="h-5 w-5 text-gray-400" />
               <div>
                 <div className="font-medium">{user?.name}</div>
-                <div className="text-sm text-gray-500">{user?.team || '영업과장'}</div>
+                <div className="text-sm text-gray-500">{user?.role || '영업과장'}</div>
               </div>
             </div>
           </div>
