@@ -1,5 +1,6 @@
 import { Router } from "express";
 import multer from "multer";
+import formidable from "formidable";
 import path from "path";
 import fs from "fs";
 import bcrypt from "bcrypt";
@@ -889,39 +890,99 @@ const handleUploadError = (error: any, req: any, res: any, next: any) => {
   return res.status(400).json({ error: error.message || '파일 업로드 중 오류가 발생했습니다.' });
 };
 
-router.post('/api/documents', requireAuth, (req: any, res: any, next: any) => {
-  // Raw body를 삭제하여 multer가 깨끗하게 파싱할 수 있도록 함
-  delete req.body;
-  delete req.rawBody;
-  
-  // 요청 헤더 로깅
-  console.log('Upload request headers:', {
-    'content-type': req.headers['content-type'],
-    'content-length': req.headers['content-length']
-  });
-  
-  upload.single('file')(req, res, (error: any) => {
-    if (error) {
-      console.error('Multer processing error:', error);
-      return handleUploadError(error, req, res, next);
-    }
-    console.log('Multer processing successful');
-    next();
-  });
-}, async (req: any, res) => {
+// Formidable을 사용한 대체 파일 업로드 처리
+router.post('/api/documents', requireAuth, async (req: any, res: any) => {
   try {
-    console.log('Document upload request received');
-    console.log('Request body keys:', Object.keys(req.body || {}));
-    console.log('File info:', req.file ? { name: req.file.originalname, size: req.file.size } : 'No file');
+    console.log('Document upload request received with formidable');
     
-    // 모든 사용자 유형(관리자, 작업자, 대리점)이 접수 신청 가능
-    const data = uploadDocumentSchema.parse(req.body);
+    const form = formidable({
+      uploadDir: path.join(process.cwd(), 'uploads', 'temp'),
+      keepExtensions: true,
+      maxFileSize: 10 * 1024 * 1024, // 10MB
+      maxFields: 30,
+      maxFieldsSize: 2 * 1024 * 1024, // 2MB
+      multiples: false,
+      filename: (name, ext, part) => {
+        const timestamp = Date.now();
+        return `${timestamp}-${part.originalFilename}`;
+      }
+    });
+
+    // 임시 업로드 디렉터리 생성
+    const tempDir = path.join(process.cwd(), 'uploads', 'temp');
+    if (!fs.existsSync(tempDir)) {
+      fs.mkdirSync(tempDir, { recursive: true });
+    }
+
+    const [fields, files] = await form.parse(req);
+    
+    console.log('Formidable parsing successful');
+    console.log('Fields:', Object.keys(fields));
+    console.log('Files:', Object.keys(files));
+
+    // 필드 데이터 추출 (배열에서 첫 번째 값 가져오기)
+    const formData: any = {};
+    for (const [key, value] of Object.entries(fields)) {
+      formData[key] = Array.isArray(value) ? value[0] : value;
+    }
+
+    // 파일 처리
+    const uploadedFile = files.file?.[0];
+    let finalFilePath = null;
+    let originalFileName = null;
+    let fileSize = null;
+
+    if (uploadedFile) {
+      console.log('Processing uploaded file:', uploadedFile.originalFilename);
+      
+      // 파일 타입 검증
+      const allowedExts = /\.(jpeg|jpg|png|pdf|doc|docx)$/i;
+      const allowedMimes = /^(image\/(jpeg|jpg|png)|application\/(pdf|msword|vnd\.openxmlformats-officedocument\.wordprocessingml\.document))$/i;
+      
+      const extValid = allowedExts.test(uploadedFile.originalFilename || '');
+      const mimeValid = allowedMimes.test(uploadedFile.mimetype || '');
+
+      if (!extValid || !mimeValid) {
+        // 임시 파일 삭제
+        if (fs.existsSync(uploadedFile.filepath)) {
+          fs.unlinkSync(uploadedFile.filepath);
+        }
+        return res.status(400).json({ error: '허용되지 않는 파일 형식입니다. (JPG, PNG, PDF, DOC, DOCX만 가능)' });
+      }
+
+      // dealerId 결정
+      let dealerId = null;
+      if (req.session.userType === 'user' && req.session.dealerId) {
+        dealerId = req.session.dealerId;
+      }
+
+      // 최종 저장 디렉터리
+      const finalDir = path.join(process.cwd(), 'uploads', 'docs', String(dealerId || 'admin'));
+      if (!fs.existsSync(finalDir)) {
+        fs.mkdirSync(finalDir, { recursive: true });
+      }
+
+      // 파일 이동
+      const timestamp = Date.now();
+      const ext = path.extname(uploadedFile.originalFilename || '');
+      const basename = path.basename(uploadedFile.originalFilename || '', ext);
+      const newFileName = `${timestamp}-${basename}${ext}`;
+      finalFilePath = path.join(finalDir, newFileName);
+      
+      fs.renameSync(uploadedFile.filepath, finalFilePath);
+      originalFileName = uploadedFile.originalFilename;
+      fileSize = uploadedFile.size;
+      
+      console.log('File moved to:', finalFilePath);
+    }
+
+    // 스키마 검증
+    const data = uploadDocumentSchema.parse(formData);
     
     // 통신사별 필수 필드 검증
     if (data.carrier) {
       const carrierInfo = await storage.getCarrierById(parseInt(data.carrier));
       if (carrierInfo) {
-        // 필수 필드 검증
         if (carrierInfo.requireCustomerPhone && (!data.customerPhone || data.customerPhone.trim() === '')) {
           return res.status(400).json({ error: '연락처를 입력하세요' });
         }
@@ -931,7 +992,7 @@ router.post('/api/documents', requireAuth, (req: any, res: any, next: any) => {
       }
     }
     
-    // dealerId 설정: 관리자/작업자는 null, 일반 사용자는 본인의 dealerId
+    // dealerId 설정
     let dealerId = null;
     if (req.session.userType === 'user' && req.session.dealerId) {
       dealerId = req.session.dealerId;
@@ -941,15 +1002,16 @@ router.post('/api/documents', requireAuth, (req: any, res: any, next: any) => {
       ...data,
       dealerId: dealerId,
       userId: req.session.userId,
-      filePath: req.file?.path || null,
-      fileName: req.file?.originalname || null,
-      fileSize: req.file?.size || null
+      filePath: finalFilePath,
+      fileName: originalFileName,
+      fileSize: fileSize
     });
 
     console.log('Document uploaded successfully:', document.id);
     res.json(document);
+
   } catch (error: any) {
-    console.error('Document upload processing error:', error);
+    console.error('Document upload error:', error);
     if (error.name === 'ZodError') {
       return res.status(400).json({ error: '입력 데이터 형식이 올바르지 않습니다.' });
     }
