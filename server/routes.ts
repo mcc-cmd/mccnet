@@ -1341,7 +1341,7 @@ router.get('/api/documents', requireAuth, async (req: any, res) => {
     
     console.log('Final dealerId for query:', dealerId, 'isAdmin:', isAdmin, 'isWorker:', isWorker, 'allWorkers:', allWorkers);
     
-    const documents = await storage.getDocuments({
+    const documents = await storage.getDocuments(dealerId, {
       status: status as string,
       activationStatus: decodedActivationStatus,
       search: search as string,
@@ -1349,8 +1349,8 @@ router.get('/api/documents', requireAuth, async (req: any, res) => {
       startDate: startDate as string,
       endDate: endDate as string,
       carrier: carrier as string,
-      dealerId: dealerId,
-      workerId: workerId
+      workerId: workerId,
+      excludeDeleted: true
     });
     
     // 정산 관련 요청인 경우 정산금액 계산 추가
