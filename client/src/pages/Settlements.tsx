@@ -857,9 +857,7 @@ export function Settlements() {
 
   // 부가서비스 정책 재계산
   const recalculateMutation = useMutation({
-    mutationFn: () => apiRequest('/api/settlements/recalculate', {
-      method: 'POST',
-    }),
+    mutationFn: () => apiRequest('POST', '/api/settlements/recalculate'),
     onSuccess: (data: any) => {
       queryClient.invalidateQueries({ queryKey: ['/api/completed-documents'] });
       toast({
