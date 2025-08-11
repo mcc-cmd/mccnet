@@ -256,6 +256,36 @@ export const settlementUnitPrices = sqliteTable("settlement_unit_prices", {
   updatedAt: text("updated_at").default(sql`CURRENT_TIMESTAMP`),
 });
 
+// 통신사별 부가서비스 정산 정책 테이블
+export const carrierServicePolicies = sqliteTable("carrier_service_policies", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  carrier: text("carrier").notNull(), // 통신사명
+  policyName: text("policy_name").notNull(), // 정책명 (예: "인터넷결합 미유치 시 차감")
+  policyType: text("policy_type").notNull(), // "deduction" | "addition"
+  serviceCategory: text("service_category").notNull(), // "internet", "tv", "security", "mobile" 등
+  amount: real("amount").notNull(), // 차감/추가 금액
+  description: text("description"), // 설명
+  isActive: integer("is_active", { mode: 'boolean' }).default(1),
+  effectiveFrom: text("effective_from").default(sql`CURRENT_TIMESTAMP`),
+  effectiveUntil: text("effective_until"), // null이면 현재 유효
+  createdAt: text("created_at").default(sql`CURRENT_TIMESTAMP`),
+  updatedAt: text("updated_at").default(sql`CURRENT_TIMESTAMP`),
+  createdBy: integer("created_by").notNull(), // 생성한 관리자 ID
+});
+
+// 정산에 적용된 부가서비스 정책 로그 테이블
+export const settlementServicePolicyLogs = sqliteTable("settlement_service_policy_logs", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  documentId: integer("document_id").notNull(), // 문서 ID
+  policyId: integer("policy_id").references(() => carrierServicePolicies.id), // 적용된 정책 ID
+  policyType: text("policy_type").notNull(), // "deduction" | "addition"
+  policyName: text("policy_name").notNull(), // 정책명 (스냅샷)
+  amount: real("amount").notNull(), // 실제 적용된 금액
+  reason: text("reason"), // 적용 사유
+  appliedAt: text("applied_at").default(sql`CURRENT_TIMESTAMP`),
+  appliedBy: integer("applied_by").notNull(), // 적용한 관리자 ID
+});
+
 //===============================================
 // Zod 스키마 정의
 //===============================================
@@ -344,6 +374,8 @@ export type ServicePlan = typeof servicePlans.$inferSelect;
 export type AdditionalService = typeof additionalServices.$inferSelect;
 export type SettlementUnitPrice = typeof settlementUnitPrices.$inferSelect;
 export type ContactCode = typeof contactCodes.$inferSelect;
+export type CarrierServicePolicy = typeof carrierServicePolicies.$inferSelect;
+export type SettlementServicePolicyLog = typeof settlementServicePolicyLogs.$inferSelect;
 
 // 인증 세션 테이블 (데이터베이스 기반 세션 저장소)
 export const authSessions = sqliteTable("auth_sessions", {
@@ -402,4 +434,52 @@ export const MENU_PERMISSIONS = {
   carriers: { name: '통신사 관리', id: 'carriers' },
   contact_codes: { name: '접점코드 관리', id: 'contact_codes' },
   reports: { name: '리포트', id: 'reports' },
+} as const;
+
+//===============================================
+// 통신사 정책 관련 스키마
+//===============================================
+
+// 통신사별 부가서비스 정책 스키마
+export const createCarrierServicePolicySchema = createInsertSchema(carrierServicePolicies).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
+  policyType: z.enum(['deduction', 'addition'], { 
+    errorMap: () => ({ message: '정책 유형을 선택해주세요 (차감/추가)' }) 
+  }),
+  serviceCategory: z.enum(['internet', 'tv', 'security', 'mobile', 'bundle', 'other'], {
+    errorMap: () => ({ message: '서비스 카테고리를 선택해주세요' })
+  }),
+  amount: z.number().min(0, '금액은 0 이상이어야 합니다'),
+});
+
+export const updateCarrierServicePolicySchema = createCarrierServicePolicySchema.partial();
+
+export type CreateCarrierServicePolicyForm = z.infer<typeof createCarrierServicePolicySchema>;
+export type UpdateCarrierServicePolicyForm = z.infer<typeof updateCarrierServicePolicySchema>;
+
+// 정산 서비스 정책 로그 스키마
+export const createSettlementServicePolicyLogSchema = createInsertSchema(settlementServicePolicyLogs).omit({
+  id: true,
+  appliedAt: true,
+});
+
+export type CreateSettlementServicePolicyLogForm = z.infer<typeof createSettlementServicePolicyLogSchema>;
+
+// 서비스 카테고리 상수
+export const SERVICE_CATEGORIES = {
+  internet: { name: '인터넷', id: 'internet' },
+  tv: { name: 'TV', id: 'tv' },
+  security: { name: '보안', id: 'security' },
+  mobile: { name: '모바일', id: 'mobile' },
+  bundle: { name: '결합상품', id: 'bundle' },
+  other: { name: '기타', id: 'other' },
+} as const;
+
+// 정책 유형 상수
+export const POLICY_TYPES = {
+  deduction: { name: '차감', id: 'deduction' },
+  addition: { name: '추가', id: 'addition' },
 } as const;

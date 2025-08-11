@@ -5,7 +5,7 @@ import { db } from './db';
 import { 
   admins, salesTeams, salesManagers, contactCodeMappings, contactCodes,
   carriers, servicePlans, additionalServices, documents, users, settlementUnitPrices,
-  authSessions
+  authSessions, carrierServicePolicies, settlementServicePolicyLogs
 } from '../shared/schema-sqlite';
 import type {
   Admin,
@@ -24,7 +24,12 @@ import type {
   UpdateSalesManagerForm,
   UpdateContactCodeMappingForm,
   CreateWorkerForm,
-  SettlementUnitPrice
+  SettlementUnitPrice,
+  CarrierServicePolicy,
+  SettlementServicePolicyLog,
+  CreateCarrierServicePolicyForm,
+  UpdateCarrierServicePolicyForm,
+  CreateSettlementServicePolicyLogForm
 } from '../shared/schema-sqlite';
 
 // 인메모리 세션 저장소 (임시)
@@ -141,6 +146,16 @@ export interface IStorage {
   getUserPermissions(userId: number, userType: string): Promise<any[]>;
   updateUserPermissions(userId: number, userType: string, permissions: any[]): Promise<void>;
   getAllUsersForPermissions(): Promise<any[]>;
+  
+  // 통신사별 부가서비스 정책 관리
+  getCarrierServicePolicies(carrier?: string): Promise<CarrierServicePolicy[]>;
+  createCarrierServicePolicy(data: CreateCarrierServicePolicyForm & { createdBy: number }): Promise<CarrierServicePolicy>;
+  updateCarrierServicePolicy(id: number, data: UpdateCarrierServicePolicyForm): Promise<CarrierServicePolicy | null>;
+  deleteCarrierServicePolicy(id: number): Promise<boolean>;
+  
+  // 정산 부가서비스 정책 적용 관리
+  applyServicePolicyToSettlement(data: CreateSettlementServicePolicyLogForm): Promise<SettlementServicePolicyLog>;
+  getSettlementPolicyLogs(documentId: number): Promise<SettlementServicePolicyLog[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -3391,6 +3406,134 @@ export class DatabaseStorage implements IStorage {
       ];
     } catch (error) {
       console.error('Get all users for permissions error:', error);
+      return [];
+    }
+  }
+
+  //===============================================
+  // 통신사별 부가서비스 정책 관리
+  //===============================================
+
+  // 통신사별 부가서비스 정책 목록 조회
+  async getCarrierServicePolicies(carrier?: string): Promise<CarrierServicePolicy[]> {
+    try {
+      let query = db.select().from(carrierServicePolicies)
+        .where(eq(carrierServicePolicies.isActive, true))
+        .orderBy(desc(carrierServicePolicies.createdAt));
+
+      if (carrier) {
+        query = db.select().from(carrierServicePolicies)
+          .where(and(
+            eq(carrierServicePolicies.isActive, true),
+            eq(carrierServicePolicies.carrier, carrier)
+          ))
+          .orderBy(desc(carrierServicePolicies.createdAt));
+      }
+
+      const result = await query;
+      return result as CarrierServicePolicy[];
+    } catch (error) {
+      console.error('Get carrier service policies error:', error);
+      return [];
+    }
+  }
+
+  // 통신사별 부가서비스 정책 생성
+  async createCarrierServicePolicy(data: CreateCarrierServicePolicyForm & { createdBy: number }): Promise<CarrierServicePolicy> {
+    try {
+      const [result] = await db.insert(carrierServicePolicies)
+        .values({
+          ...data,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        })
+        .returning();
+      
+      return result as CarrierServicePolicy;
+    } catch (error) {
+      console.error('Create carrier service policy error:', error);
+      throw new Error('부가서비스 정책 생성에 실패했습니다.');
+    }
+  }
+
+  // 통신사별 부가서비스 정책 수정
+  async updateCarrierServicePolicy(id: number, data: UpdateCarrierServicePolicyForm): Promise<CarrierServicePolicy | null> {
+    try {
+      const [result] = await db.update(carrierServicePolicies)
+        .set({
+          ...data,
+          updatedAt: new Date().toISOString(),
+        })
+        .where(eq(carrierServicePolicies.id, id))
+        .returning();
+      
+      return result as CarrierServicePolicy || null;
+    } catch (error) {
+      console.error('Update carrier service policy error:', error);
+      throw new Error('부가서비스 정책 수정에 실패했습니다.');
+    }
+  }
+
+  // 통신사별 부가서비스 정책 삭제
+  async deleteCarrierServicePolicy(id: number): Promise<boolean> {
+    try {
+      // 실제 삭제 대신 비활성화
+      const [result] = await db.update(carrierServicePolicies)
+        .set({ 
+          isActive: false,
+          updatedAt: new Date().toISOString()
+        })
+        .where(eq(carrierServicePolicies.id, id))
+        .returning();
+      
+      return !!result;
+    } catch (error) {
+      console.error('Delete carrier service policy error:', error);
+      return false;
+    }
+  }
+
+  // 정산에 부가서비스 정책 적용
+  async applyServicePolicyToSettlement(data: CreateSettlementServicePolicyLogForm): Promise<SettlementServicePolicyLog> {
+    try {
+      // 정책 정보 조회
+      const [policy] = await db.select().from(carrierServicePolicies)
+        .where(eq(carrierServicePolicies.id, data.policyId));
+      
+      if (!policy) {
+        throw new Error('부가서비스 정책을 찾을 수 없습니다.');
+      }
+
+      const [result] = await db.insert(settlementServicePolicyLogs)
+        .values({
+          documentId: data.documentId,
+          policyId: data.policyId,
+          policyType: policy.policyType,
+          policyName: policy.policyName,
+          amount: policy.amount,
+          reason: data.reason,
+          appliedBy: data.appliedBy,
+          appliedAt: new Date().toISOString(),
+        })
+        .returning();
+      
+      return result as SettlementServicePolicyLog;
+    } catch (error) {
+      console.error('Apply service policy to settlement error:', error);
+      throw new Error('부가서비스 정책 적용에 실패했습니다.');
+    }
+  }
+
+  // 정산 부가서비스 정책 적용 내역 조회
+  async getSettlementPolicyLogs(documentId: number): Promise<SettlementServicePolicyLog[]> {
+    try {
+      const result = await db.select().from(settlementServicePolicyLogs)
+        .where(eq(settlementServicePolicyLogs.documentId, documentId))
+        .orderBy(desc(settlementServicePolicyLogs.appliedAt));
+      
+      return result as SettlementServicePolicyLog[];
+    } catch (error) {
+      console.error('Get settlement policy logs error:', error);
       return [];
     }
   }

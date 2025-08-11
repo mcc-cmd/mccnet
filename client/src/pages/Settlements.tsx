@@ -42,10 +42,11 @@ import {
   TableHeader, 
   TableRow 
 } from '@/components/ui/table';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { useApiRequest, useAuth } from '@/lib/auth';
 import { apiRequest } from '@/lib/queryClient';
-import { Users, Clock, CheckCircle, Download, FileText, Calendar, Plus, Search, Calculator } from 'lucide-react';
+import { Users, Clock, CheckCircle, Download, FileText, Calendar, Plus, Search, Calculator, Settings, Trash2, Edit } from 'lucide-react';
 
 interface CompletedDocument {
   id: number;
@@ -96,6 +97,33 @@ interface SettlementStats {
   totalAmount: number;
 }
 
+// 통신사별 부가서비스 정책 타입
+interface CarrierServicePolicy {
+  id: number;
+  carrier: string;
+  policyName: string;
+  policyType: 'deduction' | 'addition';
+  serviceCategory: string;
+  amount: number;
+  description?: string;
+  isActive: boolean;
+  effectiveFrom: string;
+  effectiveUntil?: string;
+  createdAt: string;
+  updatedAt: string;
+  createdBy: number;
+}
+
+// 서비스 카테고리 상수
+const SERVICE_CATEGORIES = {
+  internet: '인터넷',
+  tv: 'TV',
+  security: '보안',
+  mobile: '모바일',
+  bundle: '결합상품',
+  other: '기타',
+};
+
 // 수기 정산 등록 스키마
 const manualSettlementSchema = z.object({
   customerName: z.string().min(1, '고객명을 입력해주세요'),
@@ -118,6 +146,22 @@ const manualSettlementSchema = z.object({
 });
 
 type ManualSettlementForm = z.infer<typeof manualSettlementSchema>;
+
+// 통신사별 부가서비스 정책 등록 스키마
+const servicePolicySchema = z.object({
+  carrier: z.string().min(1, '통신사를 선택해주세요'),
+  policyName: z.string().min(1, '정책명을 입력해주세요'),
+  policyType: z.enum(['deduction', 'addition'], { 
+    errorMap: () => ({ message: '정책 유형을 선택해주세요' }) 
+  }),
+  serviceCategory: z.enum(['internet', 'tv', 'security', 'mobile', 'bundle', 'other'], {
+    errorMap: () => ({ message: '서비스 카테고리를 선택해주세요' })
+  }),
+  amount: z.number().min(0, '금액은 0 이상이어야 합니다'),
+  description: z.string().optional(),
+});
+
+type ServicePolicyForm = z.infer<typeof servicePolicySchema>;
 
 export function Settlements() {
   const { user } = useAuth();
@@ -143,6 +187,9 @@ export function Settlements() {
   const [endDate, setEndDate] = useState(currentMonthDates.end);
   const [searchQuery, setSearchQuery] = useState('');
   const [manualDialogOpen, setManualDialogOpen] = useState(false);
+  const [policyDialogOpen, setPolicyDialogOpen] = useState(false);
+  const [editingPolicy, setEditingPolicy] = useState<CarrierServicePolicy | null>(null);
+  const [activeTab, setActiveTab] = useState('settlements');
   const [editAmountDialogOpen, setEditAmountDialogOpen] = useState(false);
   const [selectedDocumentForEdit, setSelectedDocumentForEdit] = useState<CompletedDocument | null>(null);
   const [editAmount, setEditAmount] = useState('');
@@ -209,6 +256,24 @@ export function Settlements() {
     },
   });
 
+  // 통신사별 부가서비스 정책 조회
+  const { data: carrierPolicies, refetch: refetchPolicies } = useQuery({
+    queryKey: ['/api/carrier-service-policies'],
+    queryFn: async () => {
+      const response = await apiRequest('GET', '/api/carrier-service-policies');
+      return response.json() as CarrierServicePolicy[];
+    },
+  });
+
+  // 통신사 목록 조회
+  const { data: carriers } = useQuery({
+    queryKey: ['/api/carriers'],
+    queryFn: async () => {
+      const response = await apiRequest('GET', '/api/carriers');
+      return response.json();
+    },
+  });
+
   // 수기 정산 등록 폼
   const form = useForm<ManualSettlementForm>({
     resolver: zodResolver(manualSettlementSchema),
@@ -229,6 +294,19 @@ export function Settlements() {
       registrationFeePostpaid: false,
       simFeePrepaid: false,
       simFeePostpaid: false,
+    },
+  });
+
+  // 통신사별 부가서비스 정책 폼
+  const policyForm = useForm<ServicePolicyForm>({
+    resolver: zodResolver(servicePolicySchema),
+    defaultValues: {
+      carrier: '',
+      policyName: '',
+      policyType: 'deduction',
+      serviceCategory: 'internet',
+      amount: 0,
+      description: '',
     },
   });
 
@@ -297,6 +375,77 @@ export function Settlements() {
       toast({
         title: "등록 실패",
         description: error.message || "정산 등록 중 오류가 발생했습니다.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // 통신사별 부가서비스 정책 생성 mutation
+  const createPolicyMutation = useMutation({
+    mutationFn: async (data: ServicePolicyForm) => {
+      const response = await apiRequest('POST', '/api/carrier-service-policies', data);
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "정책 등록 완료",
+        description: "부가서비스 정책이 성공적으로 등록되었습니다.",
+      });
+      setPolicyDialogOpen(false);
+      policyForm.reset();
+      refetchPolicies();
+    },
+    onError: (error: any) => {
+      toast({
+        title: "등록 실패", 
+        description: error.message || "정책 등록 중 오류가 발생했습니다.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // 통신사별 부가서비스 정책 수정 mutation
+  const updatePolicyMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: number; data: ServicePolicyForm }) => {
+      const response = await apiRequest('PUT', `/api/carrier-service-policies/${id}`, data);
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "정책 수정 완료",
+        description: "부가서비스 정책이 성공적으로 수정되었습니다.",
+      });
+      setPolicyDialogOpen(false);
+      setEditingPolicy(null);
+      policyForm.reset();
+      refetchPolicies();
+    },
+    onError: (error: any) => {
+      toast({
+        title: "수정 실패",
+        description: error.message || "정책 수정 중 오류가 발생했습니다.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // 통신사별 부가서비스 정책 삭제 mutation
+  const deletePolicyMutation = useMutation({
+    mutationFn: async (id: number) => {
+      const response = await apiRequest('DELETE', `/api/carrier-service-policies/${id}`);
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "정책 삭제 완료",
+        description: "부가서비스 정책이 성공적으로 삭제되었습니다.",
+      });
+      refetchPolicies();
+    },
+    onError: (error: any) => {
+      toast({
+        title: "삭제 실패",
+        description: error.message || "정책 삭제 중 오류가 발생했습니다.",
         variant: "destructive",
       });
     },
@@ -671,6 +820,40 @@ export function Settlements() {
     }
   };
 
+  // 통신사별 부가서비스 정책 관련 핸들러들
+  const handleCreatePolicy = () => {
+    setEditingPolicy(null);
+    policyForm.reset();
+    setPolicyDialogOpen(true);
+  };
+
+  const handleEditPolicy = (policy: CarrierServicePolicy) => {
+    setEditingPolicy(policy);
+    policyForm.reset({
+      carrier: policy.carrier,
+      policyName: policy.policyName,
+      policyType: policy.policyType,
+      serviceCategory: policy.serviceCategory,
+      amount: policy.amount,
+      description: policy.description || '',
+    });
+    setPolicyDialogOpen(true);
+  };
+
+  const handleDeletePolicy = (id: number) => {
+    if (confirm('정말로 이 정책을 삭제하시겠습니까?')) {
+      deletePolicyMutation.mutate(id);
+    }
+  };
+
+  const onPolicySubmit = (data: ServicePolicyForm) => {
+    if (editingPolicy) {
+      updatePolicyMutation.mutate({ id: editingPolicy.id, data });
+    } else {
+      createPolicyMutation.mutate(data);
+    }
+  };
+
   return (
     <Layout title="정산 관리">
       <div className="container mx-auto p-6">
@@ -678,340 +861,356 @@ export function Settlements() {
           <div>
             <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">정산 관리</h1>
             <p className="text-gray-600 dark:text-gray-400 mt-2">
-              접수 관리의 개통 완료 데이터를 기반으로 정산 정보를 관리합니다.
+              정산 데이터 관리 및 통신사별 부가서비스 정책을 설정합니다.
             </p>
           </div>
-          <Dialog open={manualDialogOpen} onOpenChange={setManualDialogOpen}>
-            <DialogTrigger asChild>
-              <Button className="bg-teal-600 hover:bg-teal-700">
-                <Plus className="w-4 h-4 mr-2" />
-                수기 정산 등록
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle>수기 정산 등록</DialogTitle>
-              </DialogHeader>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                개통 완료된 고객 정보를 수기로 등록합니다.
-              </p>
-              <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="customerName"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>고객명 *</FormLabel>
-                          <FormControl>
-                            <Input placeholder="고객명을 입력하세요" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="customerPhone"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>고객 연락처 *</FormLabel>
-                          <FormControl>
-                            <Input placeholder="연락처를 입력하세요" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="storeName"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>판매점 *</FormLabel>
-                          <FormControl>
-                            <Input placeholder="판매점을 입력하세요" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="carrier"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>통신사 *</FormLabel>
-                          <Select onValueChange={field.onChange} defaultValue={field.value}>
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="통신사를 선택하세요" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              <SelectItem value="SK텔링크">SK텔링크</SelectItem>
-                              <SelectItem value="SK프리티">SK프리티</SelectItem>
-                              <SelectItem value="SK스테이지파이브">SK스테이지파이브</SelectItem>
-                              <SelectItem value="KT엠모바일">KT엠모바일</SelectItem>
-                              <SelectItem value="KT프리즈">KT프리즈</SelectItem>
-                              <SelectItem value="헬로모바일">헬로모바일</SelectItem>
-                              <SelectItem value="헬로모바일LG">헬로모바일LG</SelectItem>
-                              <SelectItem value="미래엔">미래엔</SelectItem>
-                              <SelectItem value="중국외국인">중국외국인</SelectItem>
-                              <SelectItem value="선불">선불</SelectItem>
-                              <SelectItem value="기타">기타</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-
-                  <FormField
-                    control={form.control}
-                    name="activatedAt"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>개통날짜 *</FormLabel>
-                        <FormControl>
-                          <Input type="date" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="servicePlanId"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>요금제</FormLabel>
-                        <Select onValueChange={(value) => field.onChange(value ? parseInt(value) : undefined)}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="요금제를 선택하세요" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {servicePlans?.map((plan: any) => (
-                              <SelectItem key={plan.id} value={plan.id.toString()}>
-                                {plan.planName}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <div className="grid grid-cols-3 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="subscriptionNumber"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>가입번호/계약번호</FormLabel>
-                          <FormControl>
-                            <Input placeholder="가입번호 또는 계약번호를 입력하세요" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="deviceModel"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>기기모델</FormLabel>
-                          <FormControl>
-                            <Input placeholder="기기모델을 입력하세요" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="simNumber"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>유심번호</FormLabel>
-                          <FormControl>
-                            <Input placeholder="유심번호를 입력하세요" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-
-                  <div className="space-y-3">
-                    <Label>부가 등록 여부</Label>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <FormField
-                          control={form.control}
-                          name="bundleApplied"
-                          render={({ field }) => (
-                            <FormItem className="flex flex-row items-center space-x-3 space-y-0">
-                              <FormControl>
-                                <input
-                                  type="checkbox"
-                                  checked={field.value}
-                                  onChange={(e) => handleBundleChange('bundleApplied', e.target.checked)}
-                                  className="rounded border-gray-300"
-                                />
-                              </FormControl>
-                              <div className="space-y-1 leading-none">
-                                <FormLabel>결합 적용</FormLabel>
-                              </div>
-                            </FormItem>
-                          )}
-                        />
-                        <FormField
-                          control={form.control}
-                          name="registrationFeePrepaid"
-                          render={({ field }) => (
-                            <FormItem className="flex flex-row items-center space-x-3 space-y-0">
-                              <FormControl>
-                                <input
-                                  type="checkbox"
-                                  checked={field.value}
-                                  onChange={(e) => handleRegistrationFeeChange('registrationFeePrepaid', e.target.checked)}
-                                  className="rounded border-gray-300"
-                                />
-                              </FormControl>
-                              <div className="space-y-1 leading-none">
-                                <FormLabel>가입비 선납</FormLabel>
-                              </div>
-                            </FormItem>
-                          )}
-                        />
-                        <FormField
-                          control={form.control}
-                          name="simFeePrepaid"
-                          render={({ field }) => (
-                            <FormItem className="flex flex-row items-center space-x-3 space-y-0">
-                              <FormControl>
-                                <input
-                                  type="checkbox"
-                                  checked={field.value}
-                                  onChange={(e) => handleSimFeeChange('simFeePrepaid', e.target.checked)}
-                                  className="rounded border-gray-300"
-                                />
-                              </FormControl>
-                              <div className="space-y-1 leading-none">
-                                <FormLabel>유심비 선납</FormLabel>
-                              </div>
-                            </FormItem>
-                          )}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <FormField
-                          control={form.control}
-                          name="bundleNotApplied"
-                          render={({ field }) => (
-                            <FormItem className="flex flex-row items-center space-x-3 space-y-0">
-                              <FormControl>
-                                <input
-                                  type="checkbox"
-                                  checked={field.value}
-                                  onChange={(e) => handleBundleChange('bundleNotApplied', e.target.checked)}
-                                  className="rounded border-gray-300"
-                                />
-                              </FormControl>
-                              <div className="space-y-1 leading-none">
-                                <FormLabel>결합 미적용</FormLabel>
-                              </div>
-                            </FormItem>
-                          )}
-                        />
-                        <FormField
-                          control={form.control}
-                          name="registrationFeePostpaid"
-                          render={({ field }) => (
-                            <FormItem className="flex flex-row items-center space-x-3 space-y-0">
-                              <FormControl>
-                                <input
-                                  type="checkbox"
-                                  checked={field.value}
-                                  onChange={(e) => handleRegistrationFeeChange('registrationFeePostpaid', e.target.checked)}
-                                  className="rounded border-gray-300"
-                                />
-                              </FormControl>
-                              <div className="space-y-1 leading-none">
-                                <FormLabel>가입비 후납</FormLabel>
-                              </div>
-                            </FormItem>
-                          )}
-                        />
-                        <FormField
-                          control={form.control}
-                          name="simFeePostpaid"
-                          render={({ field }) => (
-                            <FormItem className="flex flex-row items-center space-x-3 space-y-0">
-                              <FormControl>
-                                <input
-                                  type="checkbox"
-                                  checked={field.value}
-                                  onChange={(e) => handleSimFeeChange('simFeePostpaid', e.target.checked)}
-                                  className="rounded border-gray-300"
-                                />
-                              </FormControl>
-                              <div className="space-y-1 leading-none">
-                                <FormLabel>유심비 후납</FormLabel>
-                              </div>
-                            </FormItem>
-                          )}
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  <FormField
-                    control={form.control}
-                    name="notes"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>정산 금액</FormLabel>
-                        <FormControl>
-                          <Input placeholder="정산 금액을 입력하세요" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <div className="flex justify-end space-x-2">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => setManualDialogOpen(false)}
-                    >
-                      취소
-                    </Button>
-                    <Button
-                      type="submit"
-                      className="bg-teal-600 hover:bg-teal-700"
-                      disabled={createManualSettlement.isPending}
-                    >
-                      {createManualSettlement.isPending ? '등록 중...' : '등록'}
-                    </Button>
-                  </div>
-                </form>
-              </Form>
-            </DialogContent>
-          </Dialog>
         </div>
+
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="settlements">정산 관리</TabsTrigger>
+            <TabsTrigger value="policies">부가서비스 정책</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="settlements" className="space-y-6">
+            <div className="flex justify-between items-center">
+              <div>
+                <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">정산 데이터</h2>
+                <p className="text-gray-600 dark:text-gray-400 text-sm mt-1">
+                  개통 완료 데이터를 기반으로 정산 정보를 관리합니다.
+                </p>
+              </div>
+              <Dialog open={manualDialogOpen} onOpenChange={setManualDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button className="bg-teal-600 hover:bg-teal-700">
+                    <Plus className="w-4 h-4 mr-2" />
+                    수기 정산 등록
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                  <DialogHeader>
+                    <DialogTitle>수기 정산 등록</DialogTitle>
+                  </DialogHeader>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                    개통 완료된 고객 정보를 수기로 등록합니다.
+                  </p>
+                  <Form {...form}>
+                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                      <div className="grid grid-cols-2 gap-4">
+                        <FormField
+                          control={form.control}
+                          name="customerName"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>고객명 *</FormLabel>
+                              <FormControl>
+                                <Input placeholder="고객명을 입력하세요" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="customerPhone"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>고객 연락처 *</FormLabel>
+                              <FormControl>
+                                <Input placeholder="연락처를 입력하세요" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-4">
+                        <FormField
+                          control={form.control}
+                          name="storeName"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>판매점 *</FormLabel>
+                              <FormControl>
+                                <Input placeholder="판매점을 입력하세요" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="carrier"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>통신사 *</FormLabel>
+                              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <FormControl>
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="통신사를 선택하세요" />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  <SelectItem value="SK텔링크">SK텔링크</SelectItem>
+                                  <SelectItem value="SK프리티">SK프리티</SelectItem>
+                                  <SelectItem value="SK스테이지파이브">SK스테이지파이브</SelectItem>
+                                  <SelectItem value="KT엠모바일">KT엠모바일</SelectItem>
+                                  <SelectItem value="KT프리즈">KT프리즈</SelectItem>
+                                  <SelectItem value="헬로모바일">헬로모바일</SelectItem>
+                                  <SelectItem value="헬로모바일LG">헬로모바일LG</SelectItem>
+                                  <SelectItem value="미래엔">미래엔</SelectItem>
+                                  <SelectItem value="중국외국인">중국외국인</SelectItem>
+                                  <SelectItem value="선불">선불</SelectItem>
+                                  <SelectItem value="기타">기타</SelectItem>
+                                </SelectContent>
+                              </Select>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+
+                      <FormField
+                        control={form.control}
+                        name="activatedAt"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>개통날짜 *</FormLabel>
+                            <FormControl>
+                              <Input type="date" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name="servicePlanId"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>요금제</FormLabel>
+                            <Select onValueChange={(value) => field.onChange(value ? parseInt(value) : undefined)}>
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="요금제를 선택하세요" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                {servicePlans?.map((plan: any) => (
+                                  <SelectItem key={plan.id} value={plan.id.toString()}>
+                                    {plan.planName}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <div className="grid grid-cols-3 gap-4">
+                        <FormField
+                          control={form.control}
+                          name="subscriptionNumber"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>가입번호/계약번호</FormLabel>
+                              <FormControl>
+                                <Input placeholder="가입번호 또는 계약번호를 입력하세요" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="deviceModel"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>기기모델</FormLabel>
+                              <FormControl>
+                                <Input placeholder="기기모델을 입력하세요" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="simNumber"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>유심번호</FormLabel>
+                              <FormControl>
+                                <Input placeholder="유심번호를 입력하세요" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+
+                      <div className="space-y-3">
+                        <Label>부가 등록 여부</Label>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <FormField
+                              control={form.control}
+                              name="bundleApplied"
+                              render={({ field }) => (
+                                <FormItem className="flex flex-row items-center space-x-3 space-y-0">
+                                  <FormControl>
+                                    <input
+                                      type="checkbox"
+                                      checked={field.value}
+                                      onChange={(e) => handleBundleChange('bundleApplied', e.target.checked)}
+                                      className="rounded border-gray-300"
+                                    />
+                                  </FormControl>
+                                  <div className="space-y-1 leading-none">
+                                    <FormLabel>결합 적용</FormLabel>
+                                  </div>
+                                </FormItem>
+                              )}
+                            />
+                            <FormField
+                              control={form.control}
+                              name="registrationFeePrepaid"
+                              render={({ field }) => (
+                                <FormItem className="flex flex-row items-center space-x-3 space-y-0">
+                                  <FormControl>
+                                    <input
+                                      type="checkbox"
+                                      checked={field.value}
+                                      onChange={(e) => handleRegistrationFeeChange('registrationFeePrepaid', e.target.checked)}
+                                      className="rounded border-gray-300"
+                                    />
+                                  </FormControl>
+                                  <div className="space-y-1 leading-none">
+                                    <FormLabel>가입비 선납</FormLabel>
+                                  </div>
+                                </FormItem>
+                              )}
+                            />
+                            <FormField
+                              control={form.control}
+                              name="simFeePrepaid"
+                              render={({ field }) => (
+                                <FormItem className="flex flex-row items-center space-x-3 space-y-0">
+                                  <FormControl>
+                                    <input
+                                      type="checkbox"
+                                      checked={field.value}
+                                      onChange={(e) => handleSimFeeChange('simFeePrepaid', e.target.checked)}
+                                      className="rounded border-gray-300"
+                                    />
+                                  </FormControl>
+                                  <div className="space-y-1 leading-none">
+                                    <FormLabel>유심비 선납</FormLabel>
+                                  </div>
+                                </FormItem>
+                              )}
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <FormField
+                              control={form.control}
+                              name="bundleNotApplied"
+                              render={({ field }) => (
+                                <FormItem className="flex flex-row items-center space-x-3 space-y-0">
+                                  <FormControl>
+                                    <input
+                                      type="checkbox"
+                                      checked={field.value}
+                                      onChange={(e) => handleBundleChange('bundleNotApplied', e.target.checked)}
+                                      className="rounded border-gray-300"
+                                    />
+                                  </FormControl>
+                                  <div className="space-y-1 leading-none">
+                                    <FormLabel>결합 미적용</FormLabel>
+                                  </div>
+                                </FormItem>
+                              )}
+                            />
+                            <FormField
+                              control={form.control}
+                              name="registrationFeePostpaid"
+                              render={({ field }) => (
+                                <FormItem className="flex flex-row items-center space-x-3 space-y-0">
+                                  <FormControl>
+                                    <input
+                                      type="checkbox"
+                                      checked={field.value}
+                                      onChange={(e) => handleRegistrationFeeChange('registrationFeePostpaid', e.target.checked)}
+                                      className="rounded border-gray-300"
+                                    />
+                                  </FormControl>
+                                  <div className="space-y-1 leading-none">
+                                    <FormLabel>가입비 후납</FormLabel>
+                                  </div>
+                                </FormItem>
+                              )}
+                            />
+                            <FormField
+                              control={form.control}
+                              name="simFeePostpaid"
+                              render={({ field }) => (
+                                <FormItem className="flex flex-row items-center space-x-3 space-y-0">
+                                  <FormControl>
+                                    <input
+                                      type="checkbox"
+                                      checked={field.value}
+                                      onChange={(e) => handleSimFeeChange('simFeePostpaid', e.target.checked)}
+                                      className="rounded border-gray-300"
+                                    />
+                                  </FormControl>
+                                  <div className="space-y-1 leading-none">
+                                    <FormLabel>유심비 후납</FormLabel>
+                                  </div>
+                                </FormItem>
+                              )}
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      <FormField
+                        control={form.control}
+                        name="notes"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>정산 금액</FormLabel>
+                            <FormControl>
+                              <Input placeholder="정산 금액을 입력하세요" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <div className="flex justify-end space-x-2">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => setManualDialogOpen(false)}
+                        >
+                          취소
+                        </Button>
+                        <Button
+                          type="submit"
+                          className="bg-teal-600 hover:bg-teal-700"
+                          disabled={createManualSettlement.isPending}
+                        >
+                          {createManualSettlement.isPending ? '등록 중...' : '등록'}
+                        </Button>
+                      </div>
+                    </form>
+                  </Form>
+                </DialogContent>
+              </Dialog>
+            </div>
 
         {/* 통계 카드 */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
@@ -1460,61 +1659,306 @@ export function Settlements() {
           </CardContent>
         </Card>
 
-        {/* 정산 금액 수정 다이얼로그 */}
-        <Dialog open={editAmountDialogOpen} onOpenChange={setEditAmountDialogOpen}>
-          <DialogContent className="max-w-md">
-            <DialogHeader>
-              <DialogTitle>정산 금액 수정</DialogTitle>
-            </DialogHeader>
-            {selectedDocumentForEdit && (
-              <div className="space-y-4">
-                <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                  <div className="text-sm">
-                    <div className="font-medium">{selectedDocumentForEdit.customerName}</div>
-                    <div className="text-gray-600 dark:text-gray-400">{selectedDocumentForEdit.customerPhone}</div>
-                    <div className="text-gray-600 dark:text-gray-400">{selectedDocumentForEdit.storeName || selectedDocumentForEdit.dealerName}</div>
-                  </div>
-                </div>
-                
-                <div>
-                  <Label htmlFor="editAmount">정산 금액 (원)</Label>
-                  <Input
-                    id="editAmount"
-                    type="number"
-                    value={editAmount}
-                    onChange={(e) => setEditAmount(e.target.value)}
-                    placeholder="정산 금액을 입력하세요"
-                    min="0"
-                    step="1000"
-                  />
-                  <p className="text-xs text-gray-500 mt-1">
-                    현재 자동 계산된 금액: {settlementPrices ? 
-                      calculateSettlementAmount(selectedDocumentForEdit, settlementPrices, deductionPolicies).toLocaleString() : '0'
-                    }원
-                  </p>
-                </div>
+            {/* 정산 금액 수정 다이얼로그 */}
+            <Dialog open={editAmountDialogOpen} onOpenChange={setEditAmountDialogOpen}>
+              <DialogContent className="max-w-md">
+                <DialogHeader>
+                  <DialogTitle>정산 금액 수정</DialogTitle>
+                </DialogHeader>
+                {selectedDocumentForEdit && (
+                  <div className="space-y-4">
+                    <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                      <div className="text-sm">
+                        <div className="font-medium">{selectedDocumentForEdit.customerName}</div>
+                        <div className="text-gray-600 dark:text-gray-400">{selectedDocumentForEdit.customerPhone}</div>
+                        <div className="text-gray-600 dark:text-gray-400">{selectedDocumentForEdit.storeName || selectedDocumentForEdit.dealerName}</div>
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <Label htmlFor="editAmount">정산 금액 (원)</Label>
+                      <Input
+                        id="editAmount"
+                        type="number"
+                        value={editAmount}
+                        onChange={(e) => setEditAmount(e.target.value)}
+                        placeholder="정산 금액을 입력하세요"
+                        min="0"
+                        step="1000"
+                      />
+                      <p className="text-xs text-gray-500 mt-1">
+                        현재 자동 계산된 금액: {settlementPrices ? 
+                          calculateSettlementAmount(selectedDocumentForEdit, settlementPrices, deductionPolicies).toLocaleString() : '0'
+                        }원
+                      </p>
+                    </div>
 
-                <div className="flex justify-end space-x-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => setEditAmountDialogOpen(false)}
-                  >
-                    취소
-                  </Button>
-                  <Button
-                    type="button"
-                    onClick={handleUpdateAmount}
-                    className="bg-blue-600 hover:bg-blue-700"
-                    disabled={updateSettlementAmount.isPending}
-                  >
-                    {updateSettlementAmount.isPending ? '수정 중...' : '수정'}
-                  </Button>
-                </div>
+                    <div className="flex justify-end space-x-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => setEditAmountDialogOpen(false)}
+                      >
+                        취소
+                      </Button>
+                      <Button
+                        type="button"
+                        onClick={handleUpdateAmount}
+                        className="bg-blue-600 hover:bg-blue-700"
+                        disabled={updateSettlementAmount.isPending}
+                      >
+                        {updateSettlementAmount.isPending ? '수정 중...' : '수정'}
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </DialogContent>
+            </Dialog>
+          </TabsContent>
+
+          {/* 통신사별 부가서비스 정책 관리 탭 */}
+          <TabsContent value="policies" className="space-y-6">
+            <div className="flex justify-between items-center">
+              <div>
+                <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">통신사별 부가서비스 정책</h2>
+                <p className="text-gray-600 dark:text-gray-400 text-sm mt-1">
+                  통신사별로 부가서비스 차감/추가 정책을 관리합니다.
+                </p>
               </div>
-            )}
-          </DialogContent>
-        </Dialog>
+              <Dialog open={policyDialogOpen} onOpenChange={setPolicyDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button className="bg-blue-600 hover:bg-blue-700" onClick={handleCreatePolicy}>
+                    <Settings className="w-4 h-4 mr-2" />
+                    정책 추가
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-lg">
+                  <DialogHeader>
+                    <DialogTitle>
+                      {editingPolicy ? '정책 수정' : '부가서비스 정책 추가'}
+                    </DialogTitle>
+                  </DialogHeader>
+                  <Form {...policyForm}>
+                    <form onSubmit={policyForm.handleSubmit(onPolicySubmit)} className="space-y-4">
+                      <FormField
+                        control={policyForm.control}
+                        name="carrier"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>통신사 *</FormLabel>
+                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="통신사를 선택하세요" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                {carriers?.map((carrier: any) => (
+                                  <SelectItem key={carrier} value={carrier}>
+                                    {carrier}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={policyForm.control}
+                        name="policyName"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>정책명 *</FormLabel>
+                            <FormControl>
+                              <Input placeholder="예: 인터넷결합 미유치 시 차감" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <div className="grid grid-cols-2 gap-4">
+                        <FormField
+                          control={policyForm.control}
+                          name="policyType"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>정책 유형 *</FormLabel>
+                              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <FormControl>
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="정책 유형 선택" />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  <SelectItem value="deduction">차감</SelectItem>
+                                  <SelectItem value="addition">추가</SelectItem>
+                                </SelectContent>
+                              </Select>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        <FormField
+                          control={policyForm.control}
+                          name="serviceCategory"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>서비스 카테고리 *</FormLabel>
+                              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <FormControl>
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="카테고리 선택" />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  {Object.entries(SERVICE_CATEGORIES).map(([key, value]) => (
+                                    <SelectItem key={key} value={key}>
+                                      {value}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+
+                      <FormField
+                        control={policyForm.control}
+                        name="amount"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>금액 (원) *</FormLabel>
+                            <FormControl>
+                              <Input
+                                type="number"
+                                placeholder="0"
+                                {...field}
+                                onChange={(e) => field.onChange(Number(e.target.value))}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={policyForm.control}
+                        name="description"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>설명</FormLabel>
+                            <FormControl>
+                              <Input placeholder="정책에 대한 설명을 입력하세요" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <div className="flex justify-end space-x-2">
+                        <Button type="button" variant="outline" onClick={() => setPolicyDialogOpen(false)}>
+                          취소
+                        </Button>
+                        <Button
+                          type="submit"
+                          disabled={createPolicyMutation.isPending || updatePolicyMutation.isPending}
+                        >
+                          {createPolicyMutation.isPending || updatePolicyMutation.isPending
+                            ? '처리 중...'
+                            : editingPolicy
+                            ? '수정'
+                            : '등록'}
+                        </Button>
+                      </div>
+                    </form>
+                  </Form>
+                </DialogContent>
+              </Dialog>
+            </div>
+
+            {/* 정책 목록 테이블 */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Settings className="w-5 h-5" />
+                  부가서비스 정책 목록
+                </CardTitle>
+                <CardDescription>
+                  등록된 통신사별 부가서비스 정책을 관리합니다.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>통신사</TableHead>
+                      <TableHead>정책명</TableHead>
+                      <TableHead>유형</TableHead>
+                      <TableHead>카테고리</TableHead>
+                      <TableHead>금액</TableHead>
+                      <TableHead>등록일</TableHead>
+                      <TableHead>작업</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {carrierPolicies?.map((policy) => (
+                      <TableRow key={policy.id}>
+                        <TableCell>{policy.carrier}</TableCell>
+                        <TableCell className="font-medium">{policy.policyName}</TableCell>
+                        <TableCell>
+                          <Badge variant={policy.policyType === 'deduction' ? 'destructive' : 'default'}>
+                            {policy.policyType === 'deduction' ? '차감' : '추가'}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          {SERVICE_CATEGORIES[policy.serviceCategory as keyof typeof SERVICE_CATEGORIES] || policy.serviceCategory}
+                        </TableCell>
+                        <TableCell className="font-mono">
+                          {policy.policyType === 'deduction' ? '-' : '+'}
+                          {policy.amount.toLocaleString()}원
+                        </TableCell>
+                        <TableCell>
+                          {format(new Date(policy.createdAt), 'yy.MM.dd', { locale: ko })}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleEditPolicy(policy)}
+                            >
+                              <Edit className="w-3 h-3" />
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleDeletePolicy(policy.id)}
+                              className="text-red-600 hover:text-red-700"
+                            >
+                              <Trash2 className="w-3 h-3" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+
+                {!carrierPolicies || carrierPolicies.length === 0 && (
+                  <div className="text-center py-8 text-gray-500">
+                    등록된 부가서비스 정책이 없습니다.
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </div>
     </Layout>
   );

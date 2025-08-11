@@ -42,6 +42,11 @@ import {
   updateAdditionalServiceDeductionSchema,
   type AuthResponse
 } from "../shared/schema";
+import {
+  createCarrierServicePolicySchema,
+  updateCarrierServicePolicySchema,
+  createSettlementServicePolicyLogSchema
+} from "../shared/schema-sqlite";
 
 const router = Router();
 
@@ -3040,6 +3045,110 @@ router.delete('/api/settlement-unit-prices/:servicePlanId', requireAdmin, async 
     res.json({ success: true });
   } catch (error: any) {
     res.status(500).json({ error: error.message });
+  }
+});
+
+//===============================================
+// 통신사별 부가서비스 정책 관리 API
+//===============================================
+
+// 통신사별 부가서비스 정책 목록 조회
+router.get('/api/carrier-service-policies', requireAuth, async (req: any, res) => {
+  try {
+    const { carrier } = req.query;
+    const policies = await storage.getCarrierServicePolicies(carrier);
+    res.json(policies);
+  } catch (error: any) {
+    console.error('Get carrier service policies error:', error);
+    res.status(500).json({ error: error.message || '부가서비스 정책 조회 중 오류가 발생했습니다.' });
+  }
+});
+
+// 통신사별 부가서비스 정책 생성
+router.post('/api/carrier-service-policies', requireAuth, requireAdmin, async (req: any, res) => {
+  try {
+    const data = createCarrierServicePolicySchema.parse(req.body);
+    const policy = await storage.createCarrierServicePolicy({
+      ...data,
+      createdBy: req.session.userId
+    });
+    res.json(policy);
+  } catch (error: any) {
+    console.error('Create carrier service policy error:', error);
+    if (error.name === 'ZodError') {
+      return res.status(400).json({ error: '입력 데이터 형식이 올바르지 않습니다.' });
+    }
+    res.status(500).json({ error: error.message || '부가서비스 정책 생성 중 오류가 발생했습니다.' });
+  }
+});
+
+// 통신사별 부가서비스 정책 수정
+router.put('/api/carrier-service-policies/:id', requireAuth, requireAdmin, async (req: any, res) => {
+  try {
+    const policyId = parseInt(req.params.id);
+    const data = updateCarrierServicePolicySchema.parse(req.body);
+    const policy = await storage.updateCarrierServicePolicy(policyId, data);
+    
+    if (!policy) {
+      return res.status(404).json({ error: '부가서비스 정책을 찾을 수 없습니다.' });
+    }
+    
+    res.json(policy);
+  } catch (error: any) {
+    console.error('Update carrier service policy error:', error);
+    if (error.name === 'ZodError') {
+      return res.status(400).json({ error: '입력 데이터 형식이 올바르지 않습니다.' });
+    }
+    res.status(500).json({ error: error.message || '부가서비스 정책 수정 중 오류가 발생했습니다.' });
+  }
+});
+
+// 통신사별 부가서비스 정책 삭제
+router.delete('/api/carrier-service-policies/:id', requireAuth, requireAdmin, async (req: any, res) => {
+  try {
+    const policyId = parseInt(req.params.id);
+    const success = await storage.deleteCarrierServicePolicy(policyId);
+    
+    if (!success) {
+      return res.status(404).json({ error: '부가서비스 정책을 찾을 수 없습니다.' });
+    }
+    
+    res.json({ success: true });
+  } catch (error: any) {
+    console.error('Delete carrier service policy error:', error);
+    res.status(500).json({ error: error.message || '부가서비스 정책 삭제 중 오류가 발생했습니다.' });
+  }
+});
+
+// 정산에 부가서비스 정책 적용
+router.post('/api/settlements/:documentId/apply-policy', requireAuth, requireAdmin, async (req: any, res) => {
+  try {
+    const documentId = parseInt(req.params.documentId);
+    const { policyId, reason } = req.body;
+    
+    const logEntry = await storage.applyServicePolicyToSettlement({
+      documentId,
+      policyId: parseInt(policyId),
+      reason,
+      appliedBy: req.session.userId
+    });
+    
+    res.json(logEntry);
+  } catch (error: any) {
+    console.error('Apply service policy error:', error);
+    res.status(500).json({ error: error.message || '부가서비스 정책 적용 중 오류가 발생했습니다.' });
+  }
+});
+
+// 정산 부가서비스 정책 적용 내역 조회
+router.get('/api/settlements/:documentId/policy-logs', requireAuth, async (req: any, res) => {
+  try {
+    const documentId = parseInt(req.params.documentId);
+    const logs = await storage.getSettlementPolicyLogs(documentId);
+    res.json(logs);
+  } catch (error: any) {
+    console.error('Get settlement policy logs error:', error);
+    res.status(500).json({ error: error.message || '정산 정책 적용 내역 조회 중 오류가 발생했습니다.' });
   }
 });
 
