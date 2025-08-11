@@ -2127,16 +2127,16 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteSettlementUnitPrice(servicePlanId: number): Promise<void> {
-    await db.execute(sql`
+    await db.run(sql`
       UPDATE settlement_unit_prices 
-      SET is_active = false, effective_until = NOW()
+      SET is_active = false, effective_until = datetime('now')
       WHERE service_plan_id = ${servicePlanId} AND is_active = true
     `);
   }
 
   async getSettlementUnitPriceByServicePlan(servicePlanId: number): Promise<SettlementUnitPrice | null> {
     try {
-      const result = await db.execute(sql`
+      const result = await db.all(sql`
         SELECT 
           sup.id, 
           sup.service_plan_id as "servicePlanId",
@@ -2158,9 +2158,9 @@ export class DatabaseStorage implements IStorage {
         LIMIT 1
       `);
 
-      if (result.rows.length === 0) return null;
+      if (result.length === 0) return null;
 
-      const row = result.rows[0] as any;
+      const row = result[0] as any;
       return {
         ...row,
         newCustomerPrice: Number(row.newCustomerPrice),
