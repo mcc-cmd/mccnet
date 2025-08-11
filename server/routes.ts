@@ -2229,11 +2229,12 @@ router.get('/api/settlements/export', requireAuth, async (req: any, res) => {
       dealerId = undefined; // 모든 문서를 볼 수 있도록 설정
     }
     
-    // 개통 완료된 문서 조회
+    // 개통 완료된 문서 조회 (삭제되지 않은 문서만)
     const documents = await storage.getDocuments(dealerId, {
       activationStatus: '개통',
       startDate: startDate as string,
-      endDate: endDate as string
+      endDate: endDate as string,
+      excludeDeleted: true  // 삭제된 문서 제외
     });
     
     // 정산단가 정보 조회

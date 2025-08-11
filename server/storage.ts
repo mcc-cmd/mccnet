@@ -1437,15 +1437,15 @@ export class DatabaseStorage implements IStorage {
     }
   }
   
-  async getDocuments(filters?: {
+  async getDocuments(dealerId?: number, filters?: {
     status?: string;
     activationStatus?: string;
     search?: string;
     startDate?: string;
     endDate?: string;
     carrier?: string;
-    dealerId?: number;
     workerId?: number;
+    excludeDeleted?: boolean;
   }): Promise<any[]> {
     try {
       // 기본 쿼리로 모든 문서 조회 (orderBy 제거)
@@ -1501,6 +1501,11 @@ export class DatabaseStorage implements IStorage {
         if (filters.endDate) {
           const endDate = new Date(filters.endDate);
           result = result.filter(doc => new Date(doc.uploadedAt) <= endDate);
+        }
+        
+        // 삭제된 문서 제외 필터
+        if (filters.excludeDeleted) {
+          result = result.filter(doc => doc.isDeleted !== true && doc.isDeleted !== 1);
         }
       }
       
@@ -1626,8 +1631,11 @@ export class DatabaseStorage implements IStorage {
 
   async bulkDeleteDocuments(documentIds: number[]): Promise<number> {
     try {
-      const result = await db.delete(documents).where(inArray(documents.id, documentIds));
-      return documentIds.length; // Return the number of documents that were attempted to be deleted
+      // Soft delete: 실제 삭제 대신 isDeleted 플래그를 true로 설정
+      const result = await db.update(documents)
+        .set({ isDeleted: true })
+        .where(inArray(documents.id, documentIds));
+      return documentIds.length; // Return the number of documents that were marked as deleted
     } catch (error) {
       console.error('Error bulk deleting documents:', error);
       throw new Error('문서 대량 삭제에 실패했습니다.');

@@ -210,6 +210,7 @@ export const documents = sqliteTable("documents", {
   bundleCarrier: text("bundle_carrier"),
   carrierId: integer("carrier_id"),
   phoneNumber: text("phone_number"),
+  isDeleted: integer("is_deleted", { mode: 'boolean' }).default(0),
 });
 
 // 서비스 요금제 테이블
