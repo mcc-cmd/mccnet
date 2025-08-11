@@ -1444,6 +1444,12 @@ export class DatabaseStorage implements IStorage {
           );
         }
         
+        if (filters.contactCode) {
+          result = result.filter(doc => 
+            doc.contactCode?.includes(filters.contactCode!)
+          );
+        }
+        
         if (filters.carrier) {
           result = result.filter(doc => doc.carrier === filters.carrier);
         }

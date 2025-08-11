@@ -1297,8 +1297,8 @@ router.get('/api/dashboard/monthly-status-stats', requireAuth, async (req: any, 
 
 router.get('/api/documents', requireAuth, async (req: any, res) => {
   try {
-    const { status, activationStatus, search, startDate, endDate, carrier, allWorkers, includeActivatedBy } = req.query;
-    console.log('Documents API request:', { status, activationStatus, search, startDate, endDate, carrier, allWorkers, includeActivatedBy });
+    const { status, activationStatus, search, contactCode, startDate, endDate, carrier, allWorkers, includeActivatedBy } = req.query;
+    console.log('Documents API request:', { status, activationStatus, search, contactCode, startDate, endDate, carrier, allWorkers, includeActivatedBy });
     console.log('Session data:', { 
       userId: req.session.userId, 
       dealerId: req.session.dealerId, 
@@ -1345,6 +1345,7 @@ router.get('/api/documents', requireAuth, async (req: any, res) => {
       status: status as string,
       activationStatus: decodedActivationStatus,
       search: search as string,
+      contactCode: contactCode as string,
       startDate: startDate as string,
       endDate: endDate as string,
       carrier: carrier as string,

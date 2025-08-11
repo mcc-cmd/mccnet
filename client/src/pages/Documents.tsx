@@ -30,6 +30,7 @@ export function Documents() {
   const [filters, setFilters] = useState({
     status: '',
     search: '',
+    contactCode: '',
     startDate: '',
     endDate: ''
   });
@@ -1373,6 +1374,15 @@ export function Documents() {
                     placeholder="고객명 또는 연락처 검색"
                     value={filters.search}
                     onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
+                    className="w-48"
+                  />
+                </div>
+                <div className="flex items-center space-x-2">
+                  <span className="text-sm text-muted-foreground">개통방명코드:</span>
+                  <Input
+                    placeholder="개통방명코드 검색"
+                    value={filters.contactCode}
+                    onChange={(e) => setFilters(prev => ({ ...prev, contactCode: e.target.value }))}
                     className="w-48"
                   />
                 </div>
