@@ -238,7 +238,17 @@ export function StatusChange() {
                         </div>
                       </div>
                       <div className="text-right text-sm text-gray-500">
-                        <div>{format(new Date(doc.createdAt), 'yyyy-MM-dd HH:mm', { locale: ko })}</div>
+                        <div>
+                          {doc.createdAt ? (
+                            (() => {
+                              try {
+                                return format(new Date(doc.createdAt), 'yyyy-MM-dd HH:mm', { locale: ko });
+                              } catch {
+                                return '날짜 오류';
+                              }
+                            })()
+                          ) : '날짜 없음'}
+                        </div>
                         {doc.contactCode && (
                           <div className="text-xs text-gray-400">{doc.contactCode}</div>
                         )}
