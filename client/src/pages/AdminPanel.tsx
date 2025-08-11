@@ -6090,7 +6090,7 @@ export function AdminPanel() {
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="">팀 없음</SelectItem>
+                          <SelectItem value="none">팀 없음</SelectItem>
                           <SelectItem value="DX 1팀">DX 1팀</SelectItem>
                           <SelectItem value="DX 2팀">DX 2팀</SelectItem>
                         </SelectContent>
