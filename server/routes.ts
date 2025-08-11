@@ -1705,13 +1705,48 @@ router.patch('/api/documents/:id/settlement-amount', requireAdmin, async (req: a
   }
 });
 
-router.delete('/api/documents/:id', requireAdmin, async (req: any, res) => {
+router.delete('/api/documents/:id', requireAuth, async (req: any, res) => {
   try {
     const id = parseInt(req.params.id);
+    const session = req.session as AuthSession;
+    
+    // Check if user is admin or worker
+    if (!session.userType || !['admin', 'user'].includes(session.userType)) {
+      return res.status(403).json({ error: '삭제 권한이 없습니다.' });
+    }
+
     await storage.deleteDocument(id);
-    res.json({ success: true });
+    res.json({ success: true, message: '문서가 삭제되었습니다.' });
   } catch (error: any) {
     res.status(500).json({ error: error.message });
+  }
+});
+
+// Bulk delete documents (admin and worker only)
+router.delete('/api/documents', requireAuth, async (req: any, res) => {
+  try {
+    const { documentIds } = req.body;
+    const session = req.session as AuthSession;
+    
+    // Check if user is admin or worker
+    if (!session.userType || !['admin', 'user'].includes(session.userType)) {
+      return res.status(403).json({ error: '삭제 권한이 없습니다.' });
+    }
+
+    if (!Array.isArray(documentIds) || documentIds.length === 0) {
+      return res.status(400).json({ error: '삭제할 문서 ID가 필요합니다.' });
+    }
+
+    const result = await storage.bulkDeleteDocuments(documentIds);
+    
+    res.json({ 
+      success: true, 
+      message: `${result}개의 문서가 삭제되었습니다.`,
+      deletedCount: result
+    });
+  } catch (error: any) {
+    console.error('Error bulk deleting documents:', error);
+    res.status(500).json({ error: '문서 삭제 중 오류가 발생했습니다.' });
   }
 });
 

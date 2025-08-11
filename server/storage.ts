@@ -1624,6 +1624,16 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
+  async bulkDeleteDocuments(documentIds: number[]): Promise<number> {
+    try {
+      const result = await db.delete(documents).where(inArray(documents.id, documentIds));
+      return documentIds.length; // Return the number of documents that were attempted to be deleted
+    } catch (error) {
+      console.error('Error bulk deleting documents:', error);
+      throw new Error('문서 대량 삭제에 실패했습니다.');
+    }
+  }
+
   async findDuplicateDocuments(params: {
     customerName: string;
     customerPhone: string;
