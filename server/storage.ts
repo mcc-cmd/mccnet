@@ -1448,6 +1448,7 @@ export class DatabaseStorage implements IStorage {
     excludeDeleted?: boolean;
   }): Promise<any[]> {
     try {
+      console.log('=== getDocuments called with filters ===', filters);
       // 기본 쿼리로 모든 문서 조회 (orderBy 제거)
       let result = await db.select().from(documents);
       
