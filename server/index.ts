@@ -21,8 +21,24 @@ interface ClientConnection {
 
 const clients = new Map<number, ClientConnection>();
 
-app.use(express.json({ limit: '50mb' }));
-app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+// Body parser middleware - 파일 업로드 라우트에서는 multer가 처리하므로 조건부 적용
+app.use((req, res, next) => {
+  // 파일 업로드 라우트가 아닌 경우에만 body parser 적용
+  if (req.path !== '/api/documents' || req.method !== 'POST') {
+    express.json({ limit: '50mb' })(req, res, next);
+  } else {
+    next();
+  }
+});
+
+app.use((req, res, next) => {
+  // 파일 업로드 라우트가 아닌 경우에만 urlencoded parser 적용
+  if (req.path !== '/api/documents' || req.method !== 'POST') {
+    express.urlencoded({ extended: true, limit: '50mb' })(req, res, next);
+  } else {
+    next();
+  }
+});
 
 // WebSocket 연결 처리
 wss.on('connection', (ws: WebSocket, req) => {

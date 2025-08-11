@@ -66,16 +66,25 @@ const upload = multer({
   storage: uploadStorage,
   limits: {
     fileSize: 10 * 1024 * 1024, // 10MB
+    fieldSize: 1024 * 1024, // 1MB for field values
+    fields: 20, // max number of fields
+    files: 1, // max number of files
+    parts: 50 // max number of parts
   },
   fileFilter: (req, file, cb) => {
-    const allowedTypes = /jpeg|jpg|png|pdf|doc|docx/;
-    const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
-    const mimetype = allowedTypes.test(file.mimetype);
+    try {
+      const allowedTypes = /jpeg|jpg|png|pdf|doc|docx/;
+      const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
+      const mimetype = allowedTypes.test(file.mimetype);
 
-    if (mimetype && extname) {
-      return cb(null, true);
-    } else {
-      cb(new Error('허용되지 않는 파일 형식입니다.'));
+      if (mimetype && extname) {
+        return cb(null, true);
+      } else {
+        cb(new Error('허용되지 않는 파일 형식입니다.'));
+      }
+    } catch (error) {
+      console.error('File filter error:', error);
+      cb(new Error('파일 검증 중 오류가 발생했습니다.'));
     }
   }
 });
@@ -843,8 +852,47 @@ router.get('/api/pricing-tables/active', requireAuth, async (req, res) => {
 
 
 // Document upload route
-router.post('/api/documents', requireAuth, upload.single('file'), async (req: any, res) => {
+// Multer error handling middleware
+const handleUploadError = (error: any, req: any, res: any, next: any) => {
+  if (error instanceof multer.MulterError) {
+    console.error('Multer error:', error);
+    if (error.code === 'LIMIT_FILE_SIZE') {
+      return res.status(400).json({ error: '파일 크기가 너무 큽니다. 10MB 이하의 파일을 업로드해주세요.' });
+    }
+    if (error.code === 'LIMIT_UNEXPECTED_FILE') {
+      return res.status(400).json({ error: '예상치 못한 파일 필드입니다.' });
+    }
+    if (error.code === 'LIMIT_FIELD_COUNT') {
+      return res.status(400).json({ error: '필드 수가 제한을 초과했습니다.' });
+    }
+    if (error.code === 'LIMIT_PART_COUNT') {
+      return res.status(400).json({ error: '파트 수가 제한을 초과했습니다.' });
+    }
+    return res.status(400).json({ error: `파일 업로드 오류: ${error.message}` });
+  }
+  
+  if (error.message && error.message.includes('Malformed part header')) {
+    console.error('Malformed part header error:', error);
+    return res.status(400).json({ error: '파일 업로드 형식에 문제가 있습니다. 페이지를 새로고침한 후 다시 시도해주세요.' });
+  }
+  
+  console.error('Upload middleware error:', error);
+  return res.status(400).json({ error: error.message || '파일 업로드 중 오류가 발생했습니다.' });
+};
+
+router.post('/api/documents', requireAuth, (req: any, res: any, next: any) => {
+  upload.single('file')(req, res, (error: any) => {
+    if (error) {
+      return handleUploadError(error, req, res, next);
+    }
+    next();
+  });
+}, async (req: any, res) => {
   try {
+    console.log('Document upload request received');
+    console.log('Request body keys:', Object.keys(req.body || {}));
+    console.log('File info:', req.file ? { name: req.file.originalname, size: req.file.size } : 'No file');
+    
     // 모든 사용자 유형(관리자, 작업자, 대리점)이 접수 신청 가능
     const data = uploadDocumentSchema.parse(req.body);
     
@@ -877,10 +925,14 @@ router.post('/api/documents', requireAuth, upload.single('file'), async (req: an
       fileSize: req.file?.size || null
     });
 
+    console.log('Document uploaded successfully:', document.id);
     res.json(document);
   } catch (error: any) {
-    console.error('Document upload error:', error);
-    res.status(400).json({ error: error.message });
+    console.error('Document upload processing error:', error);
+    if (error.name === 'ZodError') {
+      return res.status(400).json({ error: '입력 데이터 형식이 올바르지 않습니다.' });
+    }
+    res.status(500).json({ error: error.message || '문서 처리 중 오류가 발생했습니다.' });
   }
 });
 
