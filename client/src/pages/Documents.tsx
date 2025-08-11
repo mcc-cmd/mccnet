@@ -406,7 +406,12 @@ export function Documents() {
   const canManageActivationStatus = () => {
     // 관리자는 모든 권한, 근무자도 개통상태 관리 가능
     // 영업과장은 읽기 전용이므로 상태 변경 불가
-    return (user?.userType === 'admin' || user?.userType === 'worker' || user?.role === 'worker' || user?.role === 'dealer_worker') && user?.userType !== 'sales_manager';
+    if (user?.userType === 'sales_manager') return false;
+    
+    return user?.userType === 'admin' || 
+           user?.userType === 'user' || 
+           user?.userType === 'worker' || 
+           user?.role === 'dealer_worker';
   };
 
   const canDeleteDocuments = () => {
