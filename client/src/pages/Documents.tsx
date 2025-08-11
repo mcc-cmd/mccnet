@@ -85,8 +85,9 @@ export function Documents() {
     queryKey: ['/api/documents', filters, user?.id],
     queryFn: () => {
       const params = new URLSearchParams();
-      // 접수 관리는 대기/진행중 상태만 표시
+      // 접수 관리는 대기/진행중 상태만 표시 (개통완료 제외)
       params.append('activationStatus', '대기,진행중');
+      params.append('excludeDeleted', 'true');
       
       // 근무자는 자신이 접수한 문서만 조회, 관리자는 모든 문서 조회
       if (user?.userRole === 'dealer_worker') {

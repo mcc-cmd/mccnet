@@ -4,6 +4,12 @@
 This project is a document management system for MCC네트월드 telecommunications dealers. Its main purpose is to streamline the handling of customer reception documents, offering capabilities such as role-based authentication, secure file uploads, comprehensive document tracking, and administrative functionalities. The system aims to enhance efficiency in managing customer activations and related processes.
 
 ## Recent Changes (January 2025)
+- **2025-01-11**: Enhanced settlements data display and refined data access controls
+  - ADDED: 가입비 (Registration Fee) and 유심비 (SIM Fee) columns to settlements management table
+  - ENHANCED: Settlements table now displays registration fee and SIM fee application status (적용/미적용)
+  - IMPROVED: Documents management (접수 관리) refined to explicitly exclude completed activations with excludeDeleted parameter
+  - VERIFIED: Service plans already correctly filtered by selected carrier in document activation dialog
+  - COMPLETED: Soft delete implementation with isDeleted column to preserve data integrity while filtering views
 - **2025-01-11**: Completed worker access to status change functionality and universal completed activations viewing
   - ADDED: "상태 변경" tab in sidebar navigation for all workers with comprehensive status management interface
   - FIXED: Worker accounts now have full access to document status change functionality (대기→진행중→개통완료 workflow)

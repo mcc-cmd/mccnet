@@ -1231,6 +1231,8 @@ export function Settlements() {
                           <TableHead className="min-w-[140px] text-xs font-medium">요금제</TableHead>
                           <TableHead className="min-w-[80px] text-xs font-medium">부가서비스</TableHead>
                           <TableHead className="min-w-[80px] text-xs font-medium">결합여부</TableHead>
+                          <TableHead className="min-w-[80px] text-xs font-medium">가입비</TableHead>
+                          <TableHead className="min-w-[80px] text-xs font-medium">유심비</TableHead>
                           <TableHead className="min-w-[100px] text-xs font-medium">정산금액</TableHead>
                           <TableHead className="min-w-[120px] text-xs font-medium">가입번호</TableHead>
                           <TableHead className="min-w-[100px] text-xs font-medium">기기/유심</TableHead>
@@ -1298,6 +1300,12 @@ export function Settlements() {
                         </TableCell>
                         <TableCell className="whitespace-nowrap">
                           {getStatusBadge(doc.bundleApplied, doc.bundleNotApplied)}
+                        </TableCell>
+                        <TableCell className="whitespace-nowrap text-xs">
+                          {doc.registrationFeePrepaid || doc.registrationFeePostpaid || doc.registrationFeeInstallment ? '적용' : '미적용'}
+                        </TableCell>
+                        <TableCell className="whitespace-nowrap text-xs">
+                          {doc.simFeePrepaid || doc.simFeePostpaid ? '적용' : '미적용'}
                         </TableCell>
                         <TableCell className="whitespace-nowrap">
                           <button
