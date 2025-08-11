@@ -66,21 +66,30 @@ const upload = multer({
   storage: uploadStorage,
   limits: {
     fileSize: 10 * 1024 * 1024, // 10MB
-    fieldSize: 1024 * 1024, // 1MB for field values
-    fields: 20, // max number of fields
+    fieldSize: 2 * 1024 * 1024, // 2MB for field values 
+    fields: 30, // 필드 수 증가
     files: 1, // max number of files
-    parts: 50 // max number of parts
+    parts: 100, // 파트 수 증가
+    headerPairs: 2000 // 헤더 쌍 수 증가
   },
   fileFilter: (req, file, cb) => {
     try {
-      const allowedTypes = /jpeg|jpg|png|pdf|doc|docx/;
-      const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
-      const mimetype = allowedTypes.test(file.mimetype);
+      console.log('File filter - originalname:', file.originalname);
+      console.log('File filter - mimetype:', file.mimetype);
+      
+      const allowedExts = /\.(jpeg|jpg|png|pdf|doc|docx)$/i;
+      const allowedMimes = /^(image\/(jpeg|jpg|png)|application\/(pdf|msword|vnd\.openxmlformats-officedocument\.wordprocessingml\.document))$/i;
+      
+      const extValid = allowedExts.test(file.originalname);
+      const mimeValid = allowedMimes.test(file.mimetype);
 
-      if (mimetype && extname) {
+      console.log('File validation - ext:', extValid, 'mime:', mimeValid);
+
+      if (extValid && mimeValid) {
         return cb(null, true);
       } else {
-        cb(new Error('허용되지 않는 파일 형식입니다.'));
+        console.log('File rejected - invalid type');
+        cb(new Error('허용되지 않는 파일 형식입니다. (JPG, PNG, PDF, DOC, DOCX만 가능)'));
       }
     } catch (error) {
       console.error('File filter error:', error);
@@ -881,10 +890,22 @@ const handleUploadError = (error: any, req: any, res: any, next: any) => {
 };
 
 router.post('/api/documents', requireAuth, (req: any, res: any, next: any) => {
+  // Raw body를 삭제하여 multer가 깨끗하게 파싱할 수 있도록 함
+  delete req.body;
+  delete req.rawBody;
+  
+  // 요청 헤더 로깅
+  console.log('Upload request headers:', {
+    'content-type': req.headers['content-type'],
+    'content-length': req.headers['content-length']
+  });
+  
   upload.single('file')(req, res, (error: any) => {
     if (error) {
+      console.error('Multer processing error:', error);
       return handleUploadError(error, req, res, next);
     }
+    console.log('Multer processing successful');
     next();
   });
 }, async (req: any, res) => {

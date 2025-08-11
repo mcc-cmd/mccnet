@@ -21,20 +21,27 @@ interface ClientConnection {
 
 const clients = new Map<number, ClientConnection>();
 
-// Body parser middleware - 파일 업로드 라우트에서는 multer가 처리하므로 조건부 적용
-app.use((req, res, next) => {
-  // 파일 업로드 라우트가 아닌 경우에만 body parser 적용
-  if (req.path !== '/api/documents' || req.method !== 'POST') {
-    express.json({ limit: '50mb' })(req, res, next);
-  } else {
-    next();
+// Body parser middleware - 파일 업로드 라우트 완전 제외
+app.use('/api', (req, res, next) => {
+  // 파일 업로드 라우트는 multer에서만 처리
+  if (req.path === '/documents' && req.method === 'POST') {
+    return next();
   }
+  
+  // 다른 API 라우트는 기본 body parser 사용
+  express.json({ limit: '50mb' })(req, res, (err) => {
+    if (err) return next();
+    express.urlencoded({ extended: true, limit: '50mb' })(req, res, next);
+  });
 });
 
+// 비-API 라우트용 body parser
 app.use((req, res, next) => {
-  // 파일 업로드 라우트가 아닌 경우에만 urlencoded parser 적용
-  if (req.path !== '/api/documents' || req.method !== 'POST') {
-    express.urlencoded({ extended: true, limit: '50mb' })(req, res, next);
+  if (!req.path.startsWith('/api/')) {
+    express.json({ limit: '50mb' })(req, res, (err) => {
+      if (err) return next();
+      express.urlencoded({ extended: true, limit: '50mb' })(req, res, next);
+    });
   } else {
     next();
   }
