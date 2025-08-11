@@ -261,7 +261,7 @@ export function Settlements() {
     queryKey: ['/api/carrier-service-policies'],
     queryFn: async () => {
       const response = await apiRequest('GET', '/api/carrier-service-policies');
-      return response.json() as CarrierServicePolicy[];
+      return response.json();
     },
   });
 
@@ -833,7 +833,7 @@ export function Settlements() {
       carrier: policy.carrier,
       policyName: policy.policyName,
       policyType: policy.policyType,
-      serviceCategory: policy.serviceCategory,
+      serviceCategory: policy.serviceCategory as 'internet' | 'tv' | 'security' | 'mobile' | 'bundle' | 'other',
       amount: policy.amount,
       description: policy.description || '',
     });
@@ -1501,7 +1501,7 @@ export function Settlements() {
                           {getStatusBadge(doc.bundleApplied, doc.bundleNotApplied)}
                         </TableCell>
                         <TableCell className="whitespace-nowrap text-xs">
-                          {Number(doc.registrationFeePrepaid) === 1 || Number(doc.registrationFeePostpaid) === 1 || Number(doc.registrationFeeInstallment) === 1 ? '적용' : '미적용'}
+                          {Number(doc.registrationFeePrepaid) === 1 || Number(doc.registrationFeePostpaid) === 1 ? '적용' : '미적용'}
                         </TableCell>
                         <TableCell className="whitespace-nowrap text-xs">
                           {Number(doc.simFeePrepaid) === 1 || Number(doc.simFeePostpaid) === 1 ? '적용' : '미적용'}
@@ -1907,7 +1907,7 @@ export function Settlements() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {carrierPolicies?.map((policy) => (
+                    {carrierPolicies?.map((policy: any) => (
                       <TableRow key={policy.id}>
                         <TableCell>{policy.carrier}</TableCell>
                         <TableCell className="font-medium">{policy.policyName}</TableCell>
