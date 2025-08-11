@@ -1197,7 +1197,7 @@ function CarrierManagement() {
         ) : (
           <div className="space-y-4">
             {carriers.length > 0 ? (
-              <div className="grid gap-4">
+              <div className="grid gap-4 max-h-[600px] overflow-y-auto">
                 {carriers
                   .sort((a: Carrier, b: Carrier) => (a.displayOrder || 0) - (b.displayOrder || 0))
                   .map((carrier: Carrier) => (
@@ -4124,7 +4124,7 @@ export function AdminPanel() {
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-accent mx-auto"></div>
                   </div>
                 ) : users.length > 0 ? (
-                  <div className="overflow-x-auto">
+                  <div className="overflow-x-auto max-h-[600px] overflow-y-auto">
                     <table className="min-w-full divide-y divide-gray-300">
                       <thead className="bg-gray-50">
                         <tr>
@@ -4236,7 +4236,7 @@ export function AdminPanel() {
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-accent mx-auto"></div>
                   </div>
                 ) : workerStats && workerStats.length > 0 ? (
-                  <div className="overflow-x-auto">
+                  <div className="overflow-x-auto max-h-[500px] overflow-y-auto">
                     <table className="min-w-full divide-y divide-gray-300">
                       <thead className="bg-gray-50">
                         <tr>
@@ -5212,7 +5212,7 @@ export function AdminPanel() {
                       <p className="mt-2 text-sm text-gray-500">요금제를 불러오는 중...</p>
                     </div>
                   ) : filteredServicePlans && filteredServicePlans.length > 0 ? (
-                    <div className="space-y-6">
+                    <div className="space-y-6 max-h-[700px] overflow-y-auto">
                       {/* 전체 선택 체크박스 */}
                       <div className="flex items-center gap-2 p-3 bg-gray-50 dark:bg-gray-800 border-b mb-4">
                         <input
@@ -5880,7 +5880,7 @@ export function AdminPanel() {
                     <p className="mt-2 text-sm text-gray-500">요금제를 불러오는 중...</p>
                   </div>
                 ) : servicePlans && servicePlans.length > 0 ? (
-                  <div className="overflow-x-auto">
+                  <div className="overflow-x-auto max-h-[600px] overflow-y-auto">
                     <table className="min-w-full divide-y divide-gray-200">
                       <thead className="bg-gray-50">
                         <tr>

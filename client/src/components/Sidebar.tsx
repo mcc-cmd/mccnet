@@ -79,7 +79,7 @@ export function Sidebar({ isOpen = true, onClose }: SidebarProps) {
         "fixed inset-y-0 left-0 z-30 w-auto min-w-64 max-w-80 bg-primary transform transition-transform duration-300 ease-in-out md:translate-x-0 md:static md:inset-0",
         isOpen ? "translate-x-0" : "-translate-x-full"
       )}>
-        <div className="flex flex-col h-full">
+        <div className="flex flex-col h-full overflow-hidden">
           {/* Logo */}
           <div className="flex flex-col items-center flex-shrink-0 px-4 py-6 border-b border-gray-700">
             <Link href="/dashboard" className="flex flex-col items-center cursor-pointer hover:opacity-80 transition-opacity">
@@ -110,7 +110,7 @@ export function Sidebar({ isOpen = true, onClose }: SidebarProps) {
           )}
 
           {/* Navigation */}
-          <nav className="flex-1 px-3 pb-4 space-y-1">
+          <nav className="flex-1 px-3 pb-4 space-y-1 overflow-y-auto overflow-x-hidden sidebar-scroll">
             {currentNavigation.map((item) => {
               const isActive = location === item.href;
               return (
