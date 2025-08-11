@@ -1460,7 +1460,7 @@ export class DatabaseStorage implements IStorage {
         if (filters.activationStatus) {
           const statuses = filters.activationStatus.split(',').map(s => s.trim());
           result = result.filter(doc => {
-            const docStatus = doc.activationStatus || '대기'; // 기본값을 '대기'로 설정
+            const docStatus = doc.activation_status || '대기'; // 기본값을 '대기'로 설정
             return statuses.includes(docStatus);
           });
         }
