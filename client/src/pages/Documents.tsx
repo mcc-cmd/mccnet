@@ -89,14 +89,16 @@ export function Documents() {
       params.append('activationStatus', '대기,진행중');
       
       // 근무자는 자신이 접수한 문서만 조회, 관리자는 모든 문서 조회
-      if (user?.userType === 'dealer_worker') {
+      if (user?.userRole === 'dealer_worker') {
         params.append('workerFilter', 'my'); // 자신이 접수한 문서만
       } else {
         params.append('allWorkers', 'true'); // 관리자는 모든 문서
       }
       
       Object.entries(filters).forEach(([key, value]) => {
-        if (value && value !== 'all' && key !== 'activationStatus') params.append(key, value);
+        if (value && value !== 'all' && key !== 'activationStatus') {
+          params.append(key, value);
+        }
       });
       return apiRequest(`/api/documents?${params}`);
     },
@@ -265,7 +267,7 @@ export function Documents() {
         : `document_${documentId}`;
       
       // 현재 문서의 고객명 찾기
-      const currentDoc = documents?.find(doc => doc.id === documentId);
+      const currentDoc = documents?.find((doc: any) => doc.id === documentId);
       const customerFileName = currentDoc 
         ? getCustomerFileName(currentDoc.customerName, originalFileName)
         : originalFileName;
@@ -344,6 +346,25 @@ export function Documents() {
   const canSetServicePlan = (document: any) => {
     // 영업과장은 읽기 전용이므로 요금제 설정 불가
     return (document.activationStatus === '개통' || document.activationStatus === '개통완료') && user?.userType !== 'sales_manager';
+  };
+
+  const handleServicePlanChange = (doc: any) => {
+    setSelectedDocument(doc);
+    setServicePlanForm({
+      servicePlanId: doc.servicePlanId?.toString() || '',
+      additionalServiceIds: doc.additionalServiceIds || [],
+      registrationFeePrepaid: doc.registrationFeePrepaid || false,
+      registrationFeePostpaid: doc.registrationFeePostpaid || false,
+      registrationFeeInstallment: doc.registrationFeeInstallment || false,
+      simFeePrepaid: doc.simFeePrepaid || false,
+      simFeePostpaid: doc.simFeePostpaid || false,
+      bundleApplied: doc.bundleApplied || false,
+      bundleNotApplied: doc.bundleNotApplied || false,
+      deviceModel: doc.deviceModel || '',
+      simNumber: doc.simNumber || '',
+      subscriptionNumber: doc.subscriptionNumber || ''
+    });
+    setServicePlanDialogOpen(true);
   };
 
   const handleActivationSubmit = () => {
@@ -1580,7 +1601,6 @@ export function Documents() {
                             {(doc as any).activationStatus === '진행중' && (
                               <ChatDialog 
                                 documentId={doc.id} 
-                                customerName={doc.customerName}
                                 onTrigger={(
                                   <Button size="sm" variant="outline" className="h-7 text-xs">
                                     <MessageCircle className="mr-1 h-3 w-3" />
