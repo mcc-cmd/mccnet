@@ -1302,10 +1302,10 @@ export function Settlements() {
                           {getStatusBadge(doc.bundleApplied, doc.bundleNotApplied)}
                         </TableCell>
                         <TableCell className="whitespace-nowrap text-xs">
-                          {doc.registrationFeePrepaid || doc.registrationFeePostpaid || doc.registrationFeeInstallment ? '적용' : '미적용'}
+                          {Number(doc.registrationFeePrepaid) === 1 || Number(doc.registrationFeePostpaid) === 1 || Number(doc.registrationFeeInstallment) === 1 ? '적용' : '미적용'}
                         </TableCell>
                         <TableCell className="whitespace-nowrap text-xs">
-                          {doc.simFeePrepaid || doc.simFeePostpaid ? '적용' : '미적용'}
+                          {Number(doc.simFeePrepaid) === 1 || Number(doc.simFeePostpaid) === 1 ? '적용' : '미적용'}
                         </TableCell>
                         <TableCell className="whitespace-nowrap">
                           <button

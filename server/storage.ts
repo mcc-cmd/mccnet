@@ -1459,10 +1459,15 @@ export class DatabaseStorage implements IStorage {
         
         if (filters.activationStatus) {
           const statuses = filters.activationStatus.split(',').map(s => s.trim());
+          console.log('Filtering by activationStatus:', statuses);
+          console.log('Before filtering:', result.map(doc => ({ id: doc.id, status: doc.activation_status })));
           result = result.filter(doc => {
             const docStatus = doc.activation_status || '대기'; // 기본값을 '대기'로 설정
-            return statuses.includes(docStatus);
+            const isIncluded = statuses.includes(docStatus);
+            console.log(`Doc ${doc.id}: status=${docStatus}, included=${isIncluded}`);
+            return isIncluded;
           });
+          console.log('After filtering:', result.map(doc => ({ id: doc.id, status: doc.activation_status })));
         }
         
         if (filters.search) {
