@@ -1451,6 +1451,11 @@ export class DatabaseStorage implements IStorage {
       console.log('=== getDocuments called with filters ===', filters);
       // 기본 쿼리로 모든 문서 조회 (orderBy 제거)
       let result = await db.select().from(documents);
+      console.log('Raw database result sample:', result.slice(0,2).map(doc => ({ 
+        id: doc.id, 
+        activationStatus: doc.activationStatus,
+        rawKeys: Object.keys(doc).filter(k => k.includes('activation'))
+      })));
       
       // 필터 적용 (메모리에서 처리)
       if (filters) {
@@ -1461,14 +1466,14 @@ export class DatabaseStorage implements IStorage {
         if (filters.activationStatus) {
           const statuses = filters.activationStatus.split(',').map(s => s.trim());
           console.log('Filtering by activationStatus:', statuses);
-          console.log('Before filtering:', result.map(doc => ({ id: doc.id, status: doc.activation_status })));
+          console.log('Before filtering:', result.map(doc => ({ id: doc.id, status: doc.activationStatus })));
           result = result.filter(doc => {
-            const docStatus = doc.activation_status || '대기'; // 기본값을 '대기'로 설정
+            const docStatus = doc.activationStatus || '대기'; // 기본값을 '대기'로 설정
             const isIncluded = statuses.includes(docStatus);
             console.log(`Doc ${doc.id}: status=${docStatus}, included=${isIncluded}`);
             return isIncluded;
           });
-          console.log('After filtering:', result.map(doc => ({ id: doc.id, status: doc.activation_status })));
+          console.log('After filtering:', result.map(doc => ({ id: doc.id, status: doc.activationStatus })));
         }
         
         if (filters.search) {
