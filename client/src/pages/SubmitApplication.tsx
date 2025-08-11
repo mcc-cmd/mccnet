@@ -53,7 +53,26 @@ export function SubmitApplication() {
 
   // 저장 기능 완전 제거 - 사용자가 입력한 데이터는 페이지에 있는 동안만 유지
 
-  // 접점코드 변경 시 판매점명 자동 조회
+  // 접점코드 검색 함수
+  const searchContactCodes = async (query: string) => {
+    if (query.length < 1) {
+      setContactCodeSuggestions([]);
+      setShowContactCodeSuggestions(false);
+      return;
+    }
+
+    try {
+      const response = await apiRequest(`/api/contact-codes/search?q=${encodeURIComponent(query)}`);
+      setContactCodeSuggestions(response || []);
+      setShowContactCodeSuggestions(true);
+    } catch (error) {
+      console.warn('접점코드 검색 실패:', error);
+      setContactCodeSuggestions([]);
+      setShowContactCodeSuggestions(false);
+    }
+  };
+
+  // 접점코드 변경 시 판매점명 자동 조회 및 실시간 검색
   const handleContactCodeChange = async (contactCode: string) => {
     setFormData(prev => {
       const newData = { ...prev, contactCode };
@@ -66,19 +85,36 @@ export function SubmitApplication() {
       return newData;
     });
     
+    setContactCodeSearchTerm(contactCode);
+    
+    // 실시간 검색 제안
     if (contactCode.trim() && !formData.carrier.includes('기타')) {
+      await searchContactCodes(contactCode);
+      
+      // 정확한 코드 일치 시 자동 선택
       try {
         const response = await apiRequest(`/api/contact-codes/search/${contactCode}`);
         if (response?.dealerName) {
           setFormData(prev => ({ ...prev, storeName: response.dealerName }));
         }
-        // 응답이 없어도 기존 데이터는 보존 - 초기화하지 않음
       } catch (error) {
-        // 오류가 있어도 기존 데이터는 보존 - 초기화하지 않음
         console.warn('접점코드 조회 실패:', error);
       }
+    } else {
+      setContactCodeSuggestions([]);
+      setShowContactCodeSuggestions(false);
     }
-    // 접점코드가 비어있어도 기존 데이터는 보존 - 초기화하지 않음
+  };
+
+  // 접점코드 제안 선택
+  const selectContactCodeSuggestion = (suggestion: any) => {
+    setFormData(prev => ({ 
+      ...prev, 
+      contactCode: suggestion.code, 
+      storeName: suggestion.dealerName 
+    }));
+    setContactCodeSearchTerm(suggestion.code);
+    setShowContactCodeSuggestions(false);
   };
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [dragActive, setDragActive] = useState(false);
@@ -99,6 +135,11 @@ export function SubmitApplication() {
 
   // 통신사 검색 상태
   const [carrierSearchTerm, setCarrierSearchTerm] = useState('');
+  
+  // 접점코드 검색 상태
+  const [contactCodeSearchTerm, setContactCodeSearchTerm] = useState('');
+  const [contactCodeSuggestions, setContactCodeSuggestions] = useState<any[]>([]);
+  const [showContactCodeSuggestions, setShowContactCodeSuggestions] = useState(false);
   
   // 검색된 통신사 목록
   const filteredCarriers = carriers.filter(carrier => 
@@ -498,7 +539,13 @@ export function SubmitApplication() {
                             <Input
                               placeholder="통신사 검색..."
                               value={carrierSearchTerm}
-                              onChange={(e) => setCarrierSearchTerm(e.target.value)}
+                              onChange={(e) => {
+                                e.stopPropagation();
+                                setCarrierSearchTerm(e.target.value);
+                              }}
+                              onKeyDown={(e) => {
+                                e.stopPropagation();
+                              }}
                               className="border-0 focus:ring-0 p-0 h-auto"
                               onClick={(e) => e.stopPropagation()}
                             />
@@ -662,15 +709,55 @@ export function SubmitApplication() {
                       >
                         개통방명 코드 *
                       </Label>
-                      <Input
-                        id="contactCode"
-                        name="contactCode"
-                        value={formData.contactCode}
-                        onChange={(e) => handleContactCodeChange(e.target.value)}
-                        placeholder="개통방명 코드를 입력하세요"
-                        className={`mt-1 ${getFieldStyle(true)}`}
-                        required
-                      />
+                      <div className="relative">
+                        <Input
+                          id="contactCode"
+                          name="contactCode"
+                          value={formData.contactCode}
+                          onChange={(e) => handleContactCodeChange(e.target.value)}
+                          onFocus={() => {
+                            if (contactCodeSuggestions.length > 0) {
+                              setShowContactCodeSuggestions(true);
+                            }
+                          }}
+                          onBlur={() => {
+                            // 잠시 지연 후 숨기기 (클릭 이벤트가 먼저 실행되도록)
+                            setTimeout(() => setShowContactCodeSuggestions(false), 200);
+                          }}
+                          placeholder="개통방명 코드를 입력하세요"
+                          className={`mt-1 ${getFieldStyle(true)}`}
+                          required
+                        />
+                        
+                        {/* 검색 제안 드롭다운 */}
+                        {showContactCodeSuggestions && contactCodeSuggestions.length > 0 && (
+                          <div className="absolute z-50 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md shadow-lg max-h-60 overflow-y-auto">
+                            {contactCodeSuggestions.map((suggestion, index) => (
+                              <div
+                                key={index}
+                                className="px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer border-b border-gray-100 dark:border-gray-700 last:border-b-0"
+                                onClick={() => selectContactCodeSuggestion(suggestion)}
+                              >
+                                <div className="flex items-center justify-between">
+                                  <div className="flex flex-col">
+                                    <span className="font-medium text-sm text-gray-900 dark:text-gray-100">
+                                      {suggestion.code}
+                                    </span>
+                                    <span className="text-xs text-gray-500 dark:text-gray-400">
+                                      {suggestion.dealerName}
+                                    </span>
+                                  </div>
+                                  {suggestion.carrier && (
+                                    <span className="text-xs text-gray-400 bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">
+                                      {suggestion.carrier}
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
                       <div className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
                     </div>
                   )}

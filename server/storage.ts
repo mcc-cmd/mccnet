@@ -845,17 +845,41 @@ export class DatabaseStorage implements IStorage {
   // 접점 코드 관련 메서드들
   async findContactCodeByCode(code: string): Promise<ContactCode | undefined> {
     try {
-      // 접점코드 또는 대리점명으로 검색
-      const [contactCode] = await db.select().from(contactCodes).where(
-        or(
-          eq(contactCodes.code, code),
-          like(contactCodes.dealerName, `%${code}%`)
-        )
+      // 먼저 정확한 코드 일치 검색
+      let [contactCode] = await db.select().from(contactCodes).where(
+        eq(contactCodes.code, code)
       );
+      
+      // 정확한 코드가 없으면 대리점명으로 검색
+      if (!contactCode) {
+        [contactCode] = await db.select().from(contactCodes).where(
+          like(contactCodes.dealerName, `%${code}%`)
+        );
+      }
+      
       return contactCode;
     } catch (error) {
       console.error('Find contact code error:', error);
       return undefined;
+    }
+  }
+
+  async searchContactCodes(query: string): Promise<ContactCode[]> {
+    try {
+      const results = await db.select().from(contactCodes).where(
+        and(
+          eq(contactCodes.isActive, true),
+          or(
+            like(contactCodes.code, `%${query}%`),
+            like(contactCodes.dealerName, `%${query}%`)
+          )
+        )
+      ).orderBy(contactCodes.code).limit(10);
+      
+      return results;
+    } catch (error) {
+      console.error('Search contact codes error:', error);
+      return [];
     }
   }
 

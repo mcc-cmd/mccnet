@@ -3369,6 +3369,22 @@ router.get('/api/contact-codes/search/:code', requireAuth, async (req: any, res)
   }
 });
 
+// 접점코드 다중 검색 API (부분 일치)
+router.get('/api/contact-codes/search', requireAuth, async (req: any, res) => {
+  try {
+    const { q } = req.query;
+    if (!q || q.length < 1) {
+      return res.json([]);
+    }
+    
+    const results = await storage.searchContactCodes(q as string);
+    res.json(results);
+  } catch (error: any) {
+    console.error('Search contact codes error:', error);
+    res.status(500).json({ error: '접점코드 검색에 실패했습니다.' });
+  }
+});
+
 router.post('/api/contact-codes', requireAuth, async (req: any, res) => {
   try {
     const { code, dealerName, realSalesPOS, carrier, isActive, salesManagerId, salesManagerName } = req.body;
