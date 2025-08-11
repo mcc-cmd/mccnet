@@ -890,10 +890,10 @@ export function Settlements() {
                 <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
                   <DialogHeader>
                     <DialogTitle>수기 정산 등록</DialogTitle>
+                    <DialogDescription>
+                      개통 완료된 고객 정보를 수기로 등록합니다.
+                    </DialogDescription>
                   </DialogHeader>
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                    개통 완료된 고객 정보를 수기로 등록합니다.
-                  </p>
                   <Form {...form}>
                     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                       <div className="grid grid-cols-2 gap-4">
@@ -1000,7 +1000,7 @@ export function Settlements() {
                               <SelectContent>
                                 {servicePlans?.map((plan: any) => (
                                   <SelectItem key={plan.id} value={plan.id.toString()}>
-                                    {plan.planName}
+                                    {plan.planName || `Plan ${plan.id}`}
                                   </SelectItem>
                                 ))}
                               </SelectContent>
@@ -1737,6 +1737,9 @@ export function Settlements() {
                     <DialogTitle>
                       {editingPolicy ? '정책 수정' : '부가서비스 정책 추가'}
                     </DialogTitle>
+                    <DialogDescription>
+                      통신사별 부가서비스 차감/추가 정책을 설정합니다.
+                    </DialogDescription>
                   </DialogHeader>
                   <Form {...policyForm}>
                     <form onSubmit={policyForm.handleSubmit(onPolicySubmit)} className="space-y-4">
@@ -1753,11 +1756,15 @@ export function Settlements() {
                                 </SelectTrigger>
                               </FormControl>
                               <SelectContent>
-                                {carriers?.map((carrier: any) => (
-                                  <SelectItem key={carrier} value={carrier}>
-                                    {carrier}
-                                  </SelectItem>
-                                ))}
+                                {carriers?.map((carrier: any, index: number) => {
+                                  const carrierName = typeof carrier === 'object' ? carrier.name : carrier;
+                                  const carrierKey = typeof carrier === 'object' ? carrier.id || index : carrier;
+                                  return (
+                                    <SelectItem key={carrierKey} value={carrierName}>
+                                      {carrierName}
+                                    </SelectItem>
+                                  );
+                                })}
                               </SelectContent>
                             </Select>
                             <FormMessage />
