@@ -732,6 +732,7 @@ export function Settlements() {
       toast({
         title: "정산 금액 수정 완료",
         description: "정산 금액이 성공적으로 수정되었습니다.",
+        duration: 3000, // 3초
       });
       setEditAmountDialogOpen(false);
       setSelectedDocumentForEdit(null);
@@ -743,6 +744,7 @@ export function Settlements() {
         title: "수정 실패",
         description: error.message || "정산 금액 수정 중 오류가 발생했습니다.",
         variant: "destructive",
+        duration: 3000, // 3초
       });
     },
   });
@@ -757,6 +759,7 @@ export function Settlements() {
         title: "유효하지 않은 금액",
         description: "올바른 금액을 입력해주세요.",
         variant: "destructive",
+        duration: 3000, // 3초
       });
       return;
     }
@@ -801,12 +804,14 @@ export function Settlements() {
       toast({
         title: "다운로드 완료",
         description: "정산 데이터를 엑셀 파일로 다운로드했습니다.",
+        duration: 3000, // 3초
       });
     } catch (error) {
       toast({
         title: "다운로드 실패",
         description: "엑셀 파일 다운로드 중 오류가 발생했습니다.",
         variant: "destructive",
+        duration: 3000, // 3초
       });
     }
   };
@@ -866,6 +871,7 @@ export function Settlements() {
       toast({
         title: "재계산 완료",
         description: `${data.updatedDocuments}건의 정산 금액이 부가서비스 정책을 반영하여 업데이트되었습니다.`,
+        duration: 3000, // 3초
       });
     },
     onError: (error: any) => {
@@ -873,6 +879,7 @@ export function Settlements() {
         title: "재계산 실패",
         description: error.message || "정산 재계산에 실패했습니다.",
         variant: "destructive",
+        duration: 3000, // 3초
       });
     }
   });
@@ -1471,6 +1478,7 @@ export function Settlements() {
                           <TableHead className="min-w-[80px] text-xs font-medium">결합여부</TableHead>
                           <TableHead className="min-w-[80px] text-xs font-medium">가입비</TableHead>
                           <TableHead className="min-w-[80px] text-xs font-medium">유심비</TableHead>
+                          <TableHead className="min-w-[80px] text-xs font-medium">부가 차감</TableHead>
                           <TableHead className="min-w-[100px] text-xs font-medium">정산금액</TableHead>
                           <TableHead className="min-w-[120px] text-xs font-medium">가입번호</TableHead>
                           <TableHead className="min-w-[100px] text-xs font-medium">기기/유심</TableHead>
@@ -1544,6 +1552,42 @@ export function Settlements() {
                         </TableCell>
                         <TableCell className="whitespace-nowrap text-xs">
                           {Number(doc.simFeePrepaid) === 1 || Number(doc.simFeePostpaid) === 1 ? '적용' : '미적용'}
+                        </TableCell>
+                        <TableCell className="whitespace-nowrap">
+                          {(() => {
+                            const backendAmount = (doc as any).calculatedSettlementAmount;
+                            const manualAmount = (doc as any).settlementAmount;
+                            
+                            // 부가서비스 정책이 적용되었는지 확인
+                            if (backendAmount !== undefined && backendAmount !== null) {
+                              // 실제 기본 정산단가를 조회해서 차이를 계산
+                              const servicePlan = settlementPrices?.find((p: any) => 
+                                p.servicePlanId === doc.servicePlanId && p.isActive
+                              );
+                              
+                              if (servicePlan) {
+                                const basePrice = (doc as any).customerType === 'port-in' ? 
+                                  servicePlan.portInPrice : servicePlan.newCustomerPrice;
+                                const actualAmount = typeof backendAmount === 'number' ? backendAmount : parseFloat(backendAmount);
+                                
+                                if (!isNaN(actualAmount) && !isNaN(basePrice)) {
+                                  const policyAdjustment = actualAmount - basePrice;
+                                  if (policyAdjustment !== 0) {
+                                    return (
+                                      <Badge 
+                                        variant={policyAdjustment > 0 ? "default" : "destructive"} 
+                                        className="text-xs"
+                                      >
+                                        {policyAdjustment > 0 ? '+' : ''}{policyAdjustment.toLocaleString()}원
+                                      </Badge>
+                                    );
+                                  }
+                                }
+                              }
+                            }
+                            
+                            return <span className="text-xs text-muted-foreground">-</span>;
+                          })()}
                         </TableCell>
                         <TableCell className="whitespace-nowrap">
                           <button
@@ -1674,6 +1718,42 @@ export function Settlements() {
                           <div>
                             <span className="text-muted-foreground">결합여부:</span>
                             <div className="mt-1">{getStatusBadge(doc.bundleApplied, doc.bundleNotApplied)}</div>
+                          </div>
+                          <div>
+                            <span className="text-muted-foreground">부가 차감:</span>
+                            <div className="mt-1">
+                              {(() => {
+                                const backendAmount = (doc as any).calculatedSettlementAmount;
+                                
+                                if (backendAmount !== undefined && backendAmount !== null) {
+                                  const servicePlan = settlementPrices?.find((p: any) => 
+                                    p.servicePlanId === doc.servicePlanId && p.isActive
+                                  );
+                                  
+                                  if (servicePlan) {
+                                    const basePrice = (doc as any).customerType === 'port-in' ? 
+                                      servicePlan.portInPrice : servicePlan.newCustomerPrice;
+                                    const actualAmount = typeof backendAmount === 'number' ? backendAmount : parseFloat(backendAmount);
+                                    
+                                    if (!isNaN(actualAmount) && !isNaN(basePrice)) {
+                                      const policyAdjustment = actualAmount - basePrice;
+                                      if (policyAdjustment !== 0) {
+                                        return (
+                                          <Badge 
+                                            variant={policyAdjustment > 0 ? "default" : "destructive"} 
+                                            className="text-xs"
+                                          >
+                                            {policyAdjustment > 0 ? '+' : ''}{policyAdjustment.toLocaleString()}원
+                                          </Badge>
+                                        );
+                                      }
+                                    }
+                                  }
+                                }
+                                
+                                return <span className="text-xs text-muted-foreground">-</span>;
+                              })()}
+                            </div>
                           </div>
                         </div>
                         
