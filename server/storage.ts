@@ -1746,6 +1746,11 @@ export class DatabaseStorage implements IStorage {
         updateData.simNumber = data.simNumber;
         updateData.subscriptionNumber = data.subscriptionNumber;
         updateData.dealerNotes = data.dealerNotes;
+        
+        // 정산 금액 계산 및 부가서비스 정책 적용
+        // 문서에서 현재 통신사 정보를 가져와서 사용
+        const currentDoc = await db.get(sql`SELECT carrier FROM documents WHERE id = ${id}`);
+        await this.calculateAndSetSettlementAmount(id, data.servicePlanId, currentDoc?.carrier || data.carrier || '');
       } else if (data.activationStatus === '취소') {
         updateData.cancelledBy = workerId || data.cancelledBy;
       } else if (data.activationStatus === '진행중') {
@@ -1966,23 +1971,158 @@ export class DatabaseStorage implements IStorage {
 
       console.log(`Found ${result.length} completed documents for service plan ${servicePlanId}`);
 
-      // 각 문서의 정산금액 업데이트
+          // 각 문서의 정산금액 업데이트
       for (const doc of result) {
         // 번호이동 여부 확인
         const isPortIn = doc.previous_carrier && doc.previous_carrier !== doc.carrier;
-        const settlementAmount = isPortIn ? portInPrice : newCustomerPrice;
+        const baseSettlementAmount = isPortIn ? portInPrice : newCustomerPrice;
+        
+        // 부가서비스 정책 적용
+        const finalSettlementAmount = await this.calculateFinalSettlementAmount(doc.id, doc.carrier, baseSettlementAmount);
 
         // 정산금액 업데이트
         await db.run(sql`
           UPDATE documents 
-          SET settlement_amount = ${settlementAmount}, updated_at = ${new Date().toISOString()}
+          SET settlement_amount = ${finalSettlementAmount}, updated_at = ${new Date().toISOString()}
           WHERE id = ${doc.id}
         `);
 
-        console.log(`Updated settlement amount for document ${doc.id} (${doc.customer_name}): ${settlementAmount}`);
+        console.log(`Updated settlement amount for document ${doc.id} (${doc.customer_name}): ${baseSettlementAmount} -> ${finalSettlementAmount} (with policies applied)`);
       }
     } catch (error) {
       console.error('Error updating settlement amounts for service plan:', error);
+    }
+  }
+
+  // 개통 처리 시 정산 금액 계산 및 설정
+  async calculateAndSetSettlementAmount(documentId: number, servicePlanId: number, carrier: string): Promise<void> {
+    try {
+      // 문서 정보 조회
+      const document = await db.get(sql`
+        SELECT id, customer_type, previous_carrier, carrier 
+        FROM documents 
+        WHERE id = ${documentId}
+      `);
+      
+      if (!document) return;
+
+      // 기본 정산 금액 계산
+      const unitPrice = await this.getSettlementUnitPriceByServicePlan(servicePlanId);
+      let baseAmount = 0;
+      
+      if (unitPrice) {
+        const isPortIn = document.previous_carrier && document.previous_carrier !== document.carrier;
+        baseAmount = isPortIn ? unitPrice.portInPrice : unitPrice.newCustomerPrice;
+      }
+      
+      // 부가서비스 정책 적용
+      const finalAmount = await this.calculateFinalSettlementAmount(documentId, carrier, baseAmount);
+      
+      // 정산 금액 업데이트
+      await db.run(sql`
+        UPDATE documents 
+        SET settlement_amount = ${finalAmount}, updated_at = ${new Date().toISOString()}
+        WHERE id = ${documentId}
+      `);
+      
+      console.log(`Set settlement amount for activation document ${documentId}: ${baseAmount} -> ${finalAmount} (with policies)`);
+      
+    } catch (error) {
+      console.error('Error calculating settlement amount for activation:', error);
+    }
+  }
+
+  // 부가서비스 정책을 적용한 최종 정산 금액 계산
+  async calculateFinalSettlementAmount(documentId: number, carrier: string, baseAmount: number): Promise<number> {
+    try {
+      // 해당 통신사의 활성 부가서비스 정책들 조회
+      const policies = await db.select().from(carrierServicePolicies)
+        .where(eq(carrierServicePolicies.carrier, carrier));
+      
+      let finalAmount = baseAmount;
+      
+      for (const policy of policies) {
+        if (policy.policyType === 'deduction') {
+          finalAmount -= policy.amount;
+          console.log(`Applied deduction policy "${policy.policyName}" to document ${documentId}: -${policy.amount}`);
+        } else if (policy.policyType === 'addition') {
+          finalAmount += policy.amount;
+          console.log(`Applied addition policy "${policy.policyName}" to document ${documentId}: +${policy.amount}`);
+        }
+      }
+      
+      // 음수 방지
+      finalAmount = Math.max(0, finalAmount);
+      
+      console.log(`Final settlement amount for document ${documentId}: ${baseAmount} -> ${finalAmount} (${policies.length} policies applied)`);
+      return finalAmount;
+      
+    } catch (error) {
+      console.error('Error calculating final settlement amount:', error);
+      return baseAmount; // 오류 시 기본 금액 반환
+    }
+  }
+
+  // 모든 개통 완료 문서의 정산 금액을 부가서비스 정책을 적용하여 재계산
+  async recalculateAllSettlementsWithPolicies(): Promise<number> {
+    try {
+      const result = await db.all(sql`
+        SELECT 
+          d.id, 
+          d.carrier, 
+          d.service_plan_id, 
+          d.customer_type,
+          d.previous_carrier,
+          d.customer_name,
+          d.activated_at
+        FROM documents d
+        WHERE d.activation_status = '개통'
+        AND d.service_plan_id IS NOT NULL
+        AND d.activated_at IS NOT NULL
+        ORDER BY d.id
+      `);
+
+      console.log(`Found ${result.length} activated documents to recalculate`);
+      let updatedCount = 0;
+
+      for (const doc of result) {
+        try {
+          // 기본 정산금액 계산
+          const servicePlanId = parseFloat(doc.service_plan_id);
+          const isPortIn = doc.previous_carrier && doc.previous_carrier !== doc.carrier;
+          
+          // 요금제 단가 조회
+          const unitPrice = await this.getSettlementUnitPriceByServicePlan(servicePlanId);
+          let baseAmount = 0;
+          
+          if (unitPrice) {
+            baseAmount = isPortIn ? unitPrice.portInPrice : unitPrice.newCustomerPrice;
+          }
+          
+          // 부가서비스 정책 적용
+          const finalAmount = await this.calculateFinalSettlementAmount(doc.id, doc.carrier, baseAmount);
+          
+          // 정산금액 업데이트
+          await db.run(sql`
+            UPDATE documents 
+            SET settlement_amount = ${finalAmount}, updated_at = ${new Date().toISOString()}
+            WHERE id = ${doc.id}
+          `);
+          
+          updatedCount++;
+          console.log(`Recalculated settlement for document ${doc.id} (${doc.customer_name}): ${baseAmount} -> ${finalAmount}`);
+          
+        } catch (docError) {
+          console.error(`Error recalculating document ${doc.id}:`, docError);
+        }
+      }
+      
+      console.log(`Successfully recalculated ${updatedCount} documents with service policies applied`);
+      return updatedCount;
+      
+    } catch (error) {
+      console.error('Error recalculating all settlements with policies:', error);
+      throw new Error('정산 재계산에 실패했습니다.');
     }
   }
 

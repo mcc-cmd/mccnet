@@ -855,6 +855,33 @@ export function Settlements() {
     }
   };
 
+  // 부가서비스 정책 재계산
+  const recalculateMutation = useMutation({
+    mutationFn: () => apiRequest('/api/settlements/recalculate', {
+      method: 'POST',
+    }),
+    onSuccess: (data: any) => {
+      queryClient.invalidateQueries({ queryKey: ['/api/completed-documents'] });
+      toast({
+        title: "재계산 완료",
+        description: `${data.updatedDocuments}건의 정산 금액이 부가서비스 정책을 반영하여 업데이트되었습니다.`,
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "재계산 실패",
+        description: error.message || "정산 재계산에 실패했습니다.",
+        variant: "destructive",
+      });
+    }
+  });
+
+  const handleRecalculate = () => {
+    if (confirm('모든 정산 데이터에 부가서비스 정책을 적용하여 재계산하시겠습니까?')) {
+      recalculateMutation.mutate();
+    }
+  };
+
   return (
     <Layout title="정산 관리">
       <div className="container mx-auto p-6">
@@ -881,7 +908,16 @@ export function Settlements() {
                   개통 완료 데이터를 기반으로 정산 정보를 관리합니다.
                 </p>
               </div>
-              <Dialog open={manualDialogOpen} onOpenChange={setManualDialogOpen}>
+              <div className="flex gap-3">
+                <Button 
+                  onClick={handleRecalculate}
+                  disabled={recalculateMutation.isPending}
+                  className="bg-orange-600 hover:bg-orange-700"
+                >
+                  <Calculator className="w-4 h-4 mr-2" />
+                  {recalculateMutation.isPending ? '재계산 중...' : '부가서비스 정책 재계산'}
+                </Button>
+                <Dialog open={manualDialogOpen} onOpenChange={setManualDialogOpen}>
                 <DialogTrigger asChild>
                   <Button className="bg-teal-600 hover:bg-teal-700">
                     <Plus className="w-4 h-4 mr-2" />
@@ -1211,6 +1247,7 @@ export function Settlements() {
                   </Form>
                 </DialogContent>
               </Dialog>
+              </div>
             </div>
 
         {/* 통계 카드 */}

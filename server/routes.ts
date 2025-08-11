@@ -3623,6 +3623,27 @@ router.get('/api/contact-codes', requireAuth, async (req: any, res) => {
   }
 });
 
+// 부가서비스 정책을 기존 정산 데이터에 적용
+router.post('/api/settlements/recalculate', requireAuth, async (req: any, res) => {
+  try {
+    const { userId, userType } = req.session;
+    
+    if (userType !== 'admin') {
+      return res.status(403).json({ error: '관리자만 접근 가능합니다.' });
+    }
+
+    // 모든 개통 완료 문서의 정산금액을 부가서비스 정책을 적용하여 재계산
+    const result = await storage.recalculateAllSettlementsWithPolicies();
+    res.json({ 
+      message: '정산 금액이 부가서비스 정책을 반영하여 재계산되었습니다.',
+      updatedDocuments: result 
+    });
+  } catch (error: any) {
+    console.error('Recalculate settlements error:', error);
+    res.status(500).json({ error: '정산 재계산에 실패했습니다.' });
+  }
+});
+
 router.get('/api/contact-codes/carrier/:carrier', requireAuth, async (req: any, res) => {
   try {
     const { carrier } = req.params;
