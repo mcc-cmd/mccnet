@@ -98,6 +98,22 @@ export const admins = sqliteTable("admins", {
   usernameIdx: uniqueIndex("admin_username_unique").on(table.username),
 }));
 
+// 사용자 권한 테이블
+export const userPermissions = sqliteTable("user_permissions", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  userId: integer("user_id").notNull(),
+  userType: text("user_type").notNull(), // 'admin', 'user', 'sales_manager'
+  menuId: text("menu_id").notNull(), // 메뉴 식별자 (dashboard, documents, settlements, 등)
+  canView: integer("can_view", { mode: 'boolean' }).default(0), // 보기 권한
+  canEdit: integer("can_edit", { mode: 'boolean' }).default(0), // 수정 권한
+  canDelete: integer("can_delete", { mode: 'boolean' }).default(0), // 삭제 권한
+  isActive: integer("is_active", { mode: 'boolean' }).default(1),
+  createdAt: text("created_at").default(sql`CURRENT_TIMESTAMP`),
+  updatedAt: text("updated_at").default(sql`CURRENT_TIMESTAMP`),
+}, (table) => ({
+  userPermissionIdx: uniqueIndex("user_permission_unique").on(table.userId, table.userType, table.menuId),
+}));
+
 // 근무자 테이블
 export const users = sqliteTable("users", {
   id: integer("id").primaryKey({ autoIncrement: true }),
@@ -358,3 +374,31 @@ export interface AuthSession {
 
 // 인증 세션 타입
 export type AuthSessionRecord = typeof authSessions.$inferSelect;
+
+// 사용자 권한 타입
+export type UserPermission = typeof userPermissions.$inferSelect;
+
+// 사용자 권한 스키마
+export const createUserPermissionSchema = createInsertSchema(userPermissions).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const updateUserPermissionSchema = createUserPermissionSchema.partial();
+
+export type CreateUserPermissionForm = z.infer<typeof createUserPermissionSchema>;
+export type UpdateUserPermissionForm = z.infer<typeof updateUserPermissionSchema>;
+
+// 메뉴 권한 정의
+export const MENU_PERMISSIONS = {
+  dashboard: { name: '대시보드', id: 'dashboard' },
+  documents: { name: '문서 관리', id: 'documents' },
+  settlements: { name: '정산 관리', id: 'settlements' },
+  admin: { name: '관리자 패널', id: 'admin' },
+  downloads: { name: '다운로드', id: 'downloads' },
+  workers: { name: '근무자 관리', id: 'workers' },
+  carriers: { name: '통신사 관리', id: 'carriers' },
+  contact_codes: { name: '접점코드 관리', id: 'contact_codes' },
+  reports: { name: '리포트', id: 'reports' },
+} as const;

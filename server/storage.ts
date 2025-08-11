@@ -136,6 +136,11 @@ export interface IStorage {
   // 영업과장 계정 관리 (관리자 패널에서 생성된 계정들)
   getUnassignedSalesManagerAccounts(): Promise<any[]>;
   assignSalesManagerToTeam(data: any): Promise<any>;
+  
+  // 사용자 권한 관리
+  getUserPermissions(userId: number, userType: string): Promise<any[]>;
+  updateUserPermissions(userId: number, userType: string, permissions: any[]): Promise<void>;
+  getAllUsersForPermissions(): Promise<any[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -3236,6 +3241,92 @@ export class DatabaseStorage implements IStorage {
     
     console.log('Update result:', result);
     return result;
+  }
+
+  // 사용자 권한 관리 메서드
+  async getUserPermissions(userId: number, userType: string): Promise<any[]> {
+    try {
+      const permissions = await db.select().from(userPermissions)
+        .where(and(
+          eq(userPermissions.userId, userId),
+          eq(userPermissions.userType, userType),
+          eq(userPermissions.isActive, 1)
+        ));
+      return permissions;
+    } catch (error) {
+      console.error('Get user permissions error:', error);
+      return [];
+    }
+  }
+
+  async updateUserPermissions(userId: number, userType: string, permissions: any[]): Promise<void> {
+    try {
+      // 기존 권한 모두 삭제
+      await db.delete(userPermissions)
+        .where(and(
+          eq(userPermissions.userId, userId),
+          eq(userPermissions.userType, userType)
+        ));
+
+      // 새 권한 삽입
+      if (permissions.length > 0) {
+        const insertData = permissions.map(perm => ({
+          userId,
+          userType,
+          menuId: perm.menuId,
+          canView: perm.canView ? 1 : 0,
+          canEdit: perm.canEdit ? 1 : 0,
+          canDelete: perm.canDelete ? 1 : 0,
+          isActive: 1
+        }));
+
+        await db.insert(userPermissions).values(insertData);
+      }
+    } catch (error) {
+      console.error('Update user permissions error:', error);
+      throw error;
+    }
+  }
+
+  async getAllUsersForPermissions(): Promise<any[]> {
+    try {
+      // 관리자 조회
+      const adminUsers = await db.select({
+        id: admins.id,
+        name: admins.name,
+        username: admins.username,
+        userType: sql`'admin'`.as('userType'),
+        isActive: admins.isActive
+      }).from(admins).where(eq(admins.isActive, 1));
+
+      // 영업과장 조회
+      const managerUsers = await db.select({
+        id: salesManagers.id,
+        name: salesManagers.managerName,
+        username: salesManagers.username,
+        userType: sql`'sales_manager'`.as('userType'),
+        isActive: salesManagers.isActive
+      }).from(salesManagers).where(eq(salesManagers.isActive, 1));
+
+      // 근무자 조회
+      const workerUsers = await db.select({
+        id: users.id,
+        name: users.name,
+        username: users.username,
+        userType: sql`'user'`.as('userType'),
+        isActive: users.isActive
+      }).from(users).where(eq(users.isActive, 1));
+
+      // 모든 사용자 통합
+      return [
+        ...adminUsers,
+        ...managerUsers,
+        ...workerUsers
+      ];
+    } catch (error) {
+      console.error('Get all users for permissions error:', error);
+      return [];
+    }
   }
 }
 

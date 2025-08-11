@@ -136,7 +136,218 @@ const CARRIERS = [
   { id: 'mvno-prepaid', name: 'LG스마텔' },
 ];
 
+// 메뉴 권한 목록
+const MENU_PERMISSIONS = {
+  dashboard: { name: '대시보드', id: 'dashboard' },
+  documents: { name: '문서 관리', id: 'documents' },
+  settlements: { name: '정산 관리', id: 'settlements' },
+  admin: { name: '관리자 패널', id: 'admin' },
+  downloads: { name: '다운로드', id: 'downloads' },
+  workers: { name: '근무자 관리', id: 'workers' },
+  carriers: { name: '통신사 관리', id: 'carriers' },
+  contact_codes: { name: '접점코드 관리', id: 'contact_codes' },
+  reports: { name: '리포트', id: 'reports' },
+} as const;
 
+// 사용자 권한 관리 컴포넌트
+function UserPermissionsTab() {
+  const [selectedUser, setSelectedUser] = useState<any>(null);
+  const [permissionsDialogOpen, setPermissionsDialogOpen] = useState(false);
+  const [permissions, setPermissions] = useState<any[]>([]);
+  const apiRequest = useApiRequest();
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  // 모든 사용자 조회
+  const { data: allUsers = [], isLoading: usersLoading } = useQuery({
+    queryKey: ['/api/admin/all-users'],
+    queryFn: () => apiRequest('/api/admin/all-users'),
+  });
+
+  // 권한 조회
+  const loadUserPermissions = async (userId: number, userType: string) => {
+    try {
+      const userPermissions = await apiRequest(`/api/admin/user-permissions/${userId}/${userType}`);
+      setPermissions(userPermissions || []);
+    } catch (error) {
+      console.error('권한 조회 오류:', error);
+      setPermissions([]);
+    }
+  };
+
+  // 권한 업데이트
+  const updatePermissions = useMutation({
+    mutationFn: async (data: { userId: number; userType: string; permissions: any[] }) => {
+      return apiRequest('/api/admin/user-permissions', {
+        method: 'POST',
+        body: JSON.stringify(data)
+      });
+    },
+    onSuccess: () => {
+      toast({ title: '권한이 성공적으로 업데이트되었습니다.' });
+      setPermissionsDialogOpen(false);
+    },
+    onError: (error: any) => {
+      toast({ 
+        title: '권한 업데이트 실패',
+        description: error.message,
+        variant: 'destructive'
+      });
+    }
+  });
+
+  const handleOpenPermissions = async (user: any) => {
+    setSelectedUser(user);
+    await loadUserPermissions(user.id, user.userType);
+    setPermissionsDialogOpen(true);
+  };
+
+  const handlePermissionChange = (menuId: string, permissionType: 'canView' | 'canEdit' | 'canDelete', value: boolean) => {
+    setPermissions(prev => {
+      const updated = [...prev];
+      const existing = updated.find(p => p.menuId === menuId);
+      
+      if (existing) {
+        existing[permissionType] = value;
+      } else {
+        updated.push({
+          menuId,
+          canView: permissionType === 'canView' ? value : false,
+          canEdit: permissionType === 'canEdit' ? value : false,
+          canDelete: permissionType === 'canDelete' ? value : false,
+        });
+      }
+      return updated;
+    });
+  };
+
+  const handleSavePermissions = () => {
+    if (!selectedUser) return;
+    
+    updatePermissions.mutate({
+      userId: selectedUser.id,
+      userType: selectedUser.userType,
+      permissions: permissions.filter(p => p.canView || p.canEdit || p.canDelete)
+    });
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>사용자 권한 관리</CardTitle>
+        <CardDescription>
+          각 사용자별로 메뉴 접근 권한을 설정할 수 있습니다.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        {usersLoading ? (
+          <div className="flex justify-center py-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {allUsers.map((user: any) => (
+              <div key={`${user.userType}-${user.id}`} className="flex items-center justify-between p-4 border rounded-lg">
+                <div className="flex items-center space-x-4">
+                  <div>
+                    <p className="font-medium">{user.name}</p>
+                    <p className="text-sm text-gray-500">
+                      {user.username} ({user.userType === 'admin' ? '관리자' : user.userType === 'sales_manager' ? '영업과장' : '근무자'})
+                    </p>
+                  </div>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleOpenPermissions(user)}
+                >
+                  <Settings className="w-4 h-4 mr-2" />
+                  권한 설정
+                </Button>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* 권한 설정 다이얼로그 */}
+        <Dialog open={permissionsDialogOpen} onOpenChange={setPermissionsDialogOpen}>
+          <DialogContent className="max-w-4xl">
+            <DialogHeader>
+              <DialogTitle>
+                {selectedUser?.name} 권한 설정
+              </DialogTitle>
+              <DialogDescription>
+                사용자의 메뉴별 접근 권한을 설정합니다.
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="space-y-4">
+              <div className="grid grid-cols-4 gap-4 text-sm font-medium text-gray-700 border-b pb-2">
+                <div>메뉴</div>
+                <div className="text-center">보기</div>
+                <div className="text-center">수정</div>
+                <div className="text-center">삭제</div>
+              </div>
+              
+              {Object.entries(MENU_PERMISSIONS).map(([key, menu]) => {
+                const permission = permissions.find(p => p.menuId === menu.id) || {
+                  canView: false,
+                  canEdit: false,
+                  canDelete: false
+                };
+
+                return (
+                  <div key={menu.id} className="grid grid-cols-4 gap-4 items-center py-2 border-b">
+                    <div className="font-medium">{menu.name}</div>
+                    <div className="text-center">
+                      <Checkbox
+                        checked={permission.canView}
+                        onCheckedChange={(checked) => 
+                          handlePermissionChange(menu.id, 'canView', checked === true)
+                        }
+                      />
+                    </div>
+                    <div className="text-center">
+                      <Checkbox
+                        checked={permission.canEdit}
+                        onCheckedChange={(checked) => 
+                          handlePermissionChange(menu.id, 'canEdit', checked === true)
+                        }
+                      />
+                    </div>
+                    <div className="text-center">
+                      <Checkbox
+                        checked={permission.canDelete}
+                        onCheckedChange={(checked) => 
+                          handlePermissionChange(menu.id, 'canDelete', checked === true)
+                        }
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="flex justify-end space-x-2 mt-6">
+              <Button
+                variant="outline"
+                onClick={() => setPermissionsDialogOpen(false)}
+              >
+                취소
+              </Button>
+              <Button
+                onClick={handleSavePermissions}
+                disabled={updatePermissions.isPending}
+              >
+                {updatePermissions.isPending ? '저장 중...' : '저장'}
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      </CardContent>
+    </Card>
+  );
+}
 
 // 통신사 관리 컴포넌트
 function CarrierManagement() {
@@ -3198,7 +3409,7 @@ export function AdminPanel() {
 
         {/* Admin Tabs */}
         <Tabs defaultValue="users" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-8">
+          <TabsList className="grid w-full grid-cols-9">
             <TabsTrigger value="contact-codes" className="flex items-center space-x-2">
               <Settings className="h-4 w-4" />
               <span>접점코드</span>
@@ -3210,6 +3421,10 @@ export function AdminPanel() {
             <TabsTrigger value="users" className="flex items-center space-x-2">
               <Users className="h-4 w-4" />
               <span>사용자 관리</span>
+            </TabsTrigger>
+            <TabsTrigger value="permissions" className="flex items-center space-x-2">
+              <Settings className="h-4 w-4" />
+              <span>권한 관리</span>
             </TabsTrigger>
             <TabsTrigger value="documents" className="flex items-center space-x-2">
               <FileText className="h-4 w-4" />
@@ -5747,6 +5962,12 @@ export function AdminPanel() {
               </CardContent>
             </Card>
           </TabsContent>
+
+          {/* 사용자 권한 관리 탭 */}
+          <TabsContent value="permissions">
+            <UserPermissionsTab />
+          </TabsContent>
+
         </Tabs>
 
         {/* Edit User Dialog */}

@@ -4456,4 +4456,38 @@ router.get('/api/sales-manager/performance', requireAuth, async (req: any, res) 
   }
 });
 
+// 모든 사용자 조회 API (권한 관리용)
+router.get('/api/admin/all-users', requireAuth, async (req, res) => {
+  try {
+    const allUsers = await storage.getAllUsersForPermissions();
+    res.json(allUsers);
+  } catch (error: any) {
+    console.error('Get all users error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// 사용자 권한 관리 API
+router.get('/api/admin/user-permissions/:userId/:userType', requireAuth, async (req, res) => {
+  try {
+    const { userId, userType } = req.params;
+    const permissions = await storage.getUserPermissions(Number(userId), userType);
+    res.json(permissions);
+  } catch (error: any) {
+    console.error('Get user permissions error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.post('/api/admin/user-permissions', requireAuth, async (req, res) => {
+  try {
+    const { userId, userType, permissions } = req.body;
+    await storage.updateUserPermissions(Number(userId), userType, permissions);
+    res.json({ success: true });
+  } catch (error: any) {
+    console.error('Update user permissions error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 export default router;
