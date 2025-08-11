@@ -37,9 +37,10 @@ export function CompletedActivations() {
     queryFn: () => {
       const params = new URLSearchParams();
       params.append('activationStatus', '개통');
-      // 개통완료 관리는 전체 개통 문서를 보여줌 (작업자 필터링 제거)
-      // 개통 처리자 이름을 포함하도록 요청
+      // 개통완료는 모든 직원이 전체 문서를 볼 수 있음
+      // 나중에 판매점 기능 추가 시 판매점별 필터링 적용 예정
       params.append('includeActivatedBy', 'true');
+      params.append('allWorkers', 'true'); // 모든 근무자의 개통완료 문서 조회
       Object.entries(filters).forEach(([key, value]) => {
         if (value) params.append(key, value);
       });

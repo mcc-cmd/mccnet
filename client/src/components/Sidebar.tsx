@@ -22,6 +22,7 @@ const navigation = [
   { name: '대시보드', href: '/dashboard', icon: LayoutDashboard },
   { name: '접수 신청', href: '/submit-application', icon: FileText },
   { name: '접수 관리', href: '/documents', icon: FileText },
+  { name: '상태 변경', href: '/status-change', icon: TestTube },
   { name: '업무 요청중', href: '/work-requests', icon: Clock },
   { name: '개통완료 관리', href: '/completed', icon: CheckCircle },
   { name: '기타완료', href: '/other-completions', icon: Star },
@@ -49,12 +50,12 @@ export function Sidebar({ isOpen = true, onClose }: SidebarProps) {
   const isSalesManager = user?.userType === 'sales_manager';
   const isWorker = user?.role === 'dealer_worker';
   
-  // 영업과장은 읽기 전용 메뉴만 접근 가능 (접수 신청 제외)
+  // 영업과장은 읽기 전용 메뉴만 접근 가능 (접수 신청, 상태 변경 제외)
   let baseNavigation = navigation;
   if (isSalesManager) {
-    // 영업과장은 읽기 전용 메뉴만 (접수 신청 제외)
+    // 영업과장은 읽기 전용 메뉴만 (접수 신청, 상태 변경 제외)
     baseNavigation = navigation.filter(item => 
-      item.name !== '접수 신청' && item.name !== '정산 관리'
+      item.name !== '접수 신청' && item.name !== '상태 변경' && item.name !== '정산 관리'
     );
   } else if (!isAdmin) {
     // 관리자가 아닌 경우 정산 관리 제외

@@ -1326,13 +1326,14 @@ router.get('/api/documents', requireAuth, async (req: any, res) => {
     if (isAdmin) {
       dealerId = undefined; // 관리자는 모든 문서를 볼 수 있음
     } else if (isWorker) {
-      // allWorkers=true인 경우 (접수 관리에서 호출) 모든 서류를 볼 수 있도록 함
-      if (allWorkers === 'true') {
+      // allWorkers=true인 경우 (접수 관리에서 호출) 또는 개통완료 조회 시 모든 서류를 볼 수 있도록 함
+      if (allWorkers === 'true' || decodedActivationStatus === '개통') {
         dealerId = undefined; // 모든 서류 조회 가능
+        workerId = undefined; // 개통완료는 모든 사용자가 볼 수 있음
       } else {
         dealerId = undefined; // 근무자도 모든 문서를 볼 수 있지만
         // 당월 개통현황에서는 자신이 처리한 문서만 표시하기 위해 workerId 설정
-        if (decodedActivationStatus && decodedActivationStatus.includes('개통')) {
+        if (decodedActivationStatus && decodedActivationStatus.includes('개통') && decodedActivationStatus !== '개통') {
           workerId = req.session.userId;
         }
       }

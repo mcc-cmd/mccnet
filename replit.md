@@ -4,6 +4,13 @@
 This project is a document management system for MCC네트월드 telecommunications dealers. Its main purpose is to streamline the handling of customer reception documents, offering capabilities such as role-based authentication, secure file uploads, comprehensive document tracking, and administrative functionalities. The system aims to enhance efficiency in managing customer activations and related processes.
 
 ## Recent Changes (January 2025)
+- **2025-01-11**: Completed worker access to status change functionality and universal completed activations viewing
+  - ADDED: "상태 변경" tab in sidebar navigation for all workers with comprehensive status management interface
+  - FIXED: Worker accounts now have full access to document status change functionality (대기→진행중→개통완료 workflow)
+  - ENHANCED: "개통완료 관리" is now accessible to all staff members (직원, 관리자, 영업과장) for collaborative workflow
+  - IMPLEMENTED: StatusChange.tsx component with document selection, status modification, and remarks system
+  - RESOLVED: Backend API modified to allow all users to view completed activation documents regardless of processor
+  - VERIFIED: Role-based access control maintains security while enabling necessary collaborative features
 - **2025-01-08**: Successfully fixed critical dashboard statistics display and data attribution issues
   - RESOLVED: Database ID conflicts where same ID (3) existed across admins, users, and sales_managers tables
   - FIXED: Data attribution corrections - updated activated_by_name fields from incorrect "이다엘" to correct "L)수정"

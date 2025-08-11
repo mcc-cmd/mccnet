@@ -17,6 +17,7 @@ import { SubmitApplication } from '@/pages/SubmitApplication';
 import { Downloads } from '@/pages/Downloads';
 import { AdminPanel } from '@/pages/AdminPanel';
 import { Settlements } from '@/pages/Settlements';
+import { StatusChange } from '@/pages/StatusChange';
 import { TestPage } from '@/pages/TestPage';
 import WorkRequests from '@/pages/WorkRequests';
 import NotFound from '@/pages/not-found';
@@ -78,6 +79,7 @@ function AppRoutes() {
       <Route path="/dashboard" component={Dashboard} />
       <Route path="/submit-application" component={SubmitApplication} />
       <Route path="/documents" component={Documents} />
+      <Route path="/status-change" component={StatusChange} />
       <Route path="/work-requests" component={WorkRequests} />
       <Route path="/completed" component={CompletedActivations} />
       <Route path="/cancelled" component={CancelledActivations} />
