@@ -200,6 +200,14 @@ export function Settlements() {
   const [editAmountDialogOpen, setEditAmountDialogOpen] = useState(false);
   const [selectedDocumentForEdit, setSelectedDocumentForEdit] = useState<CompletedDocument | null>(null);
   const [editAmount, setEditAmount] = useState('');
+  const [policyDetailDialogOpen, setPolicyDetailDialogOpen] = useState(false);
+  const [selectedPolicyDetail, setSelectedPolicyDetail] = useState<{
+    basePrice: number;
+    actualAmount: number;
+    adjustment: number;
+    documentId: number;
+    customerName: string;
+  } | null>(null);
 
 
   // 관리자 권한 확인
@@ -1584,33 +1592,22 @@ export function Settlements() {
                                   
                                   if (policyAdjustment !== 0) {
                                     return (
-                                      <TooltipProvider>
-                                        <Tooltip>
-                                          <TooltipTrigger asChild>
-                                            <div className="inline-block cursor-help">
-                                              <Badge 
-                                                variant={policyAdjustment > 0 ? "default" : "destructive"} 
-                                                className="text-xs"
-                                              >
-                                                {policyAdjustment > 0 ? '+' : ''}{policyAdjustment.toLocaleString()}원
-                                              </Badge>
-                                            </div>
-                                          </TooltipTrigger>
-                                          <TooltipContent>
-                                            <div className="max-w-xs">
-                                              <p className="font-medium">정책 적용 세부 내용</p>
-                                              <p className="text-sm">기본 단가: {basePrice.toLocaleString()}원</p>
-                                              <p className="text-sm">실제 정산: {actualAmount.toLocaleString()}원</p>
-                                              <p className="text-sm">
-                                                {policyAdjustment > 0 ? '추가' : '차감'}: {Math.abs(policyAdjustment).toLocaleString()}원
-                                              </p>
-                                              <p className="text-xs text-muted-foreground mt-1">
-                                                부가서비스 정책이 적용되었습니다
-                                              </p>
-                                            </div>
-                                          </TooltipContent>
-                                        </Tooltip>
-                                      </TooltipProvider>
+                                      <Badge 
+                                        variant={policyAdjustment > 0 ? "default" : "destructive"} 
+                                        className="text-xs cursor-pointer hover:opacity-80"
+                                        onClick={() => {
+                                          setSelectedPolicyDetail({
+                                            basePrice,
+                                            actualAmount,
+                                            adjustment: policyAdjustment,
+                                            documentId: doc.id,
+                                            customerName: doc.customerName
+                                          });
+                                          setPolicyDetailDialogOpen(true);
+                                        }}
+                                      >
+                                        {policyAdjustment > 0 ? '+' : ''}{policyAdjustment.toLocaleString()}원
+                                      </Badge>
                                     );
                                   }
                                 }
@@ -1773,33 +1770,22 @@ export function Settlements() {
                                       
                                       if (policyAdjustment !== 0) {
                                         return (
-                                          <TooltipProvider>
-                                            <Tooltip>
-                                              <TooltipTrigger asChild>
-                                                <div className="inline-block cursor-help">
-                                                  <Badge 
-                                                    variant={policyAdjustment > 0 ? "default" : "destructive"} 
-                                                    className="text-xs"
-                                                  >
-                                                    {policyAdjustment > 0 ? '+' : ''}{policyAdjustment.toLocaleString()}원
-                                                  </Badge>
-                                                </div>
-                                              </TooltipTrigger>
-                                              <TooltipContent>
-                                                <div className="max-w-xs">
-                                                  <p className="font-medium">정책 적용 세부 내용</p>
-                                                  <p className="text-sm">기본 단가: {basePrice.toLocaleString()}원</p>
-                                                  <p className="text-sm">실제 정산: {actualAmount.toLocaleString()}원</p>
-                                                  <p className="text-sm">
-                                                    {policyAdjustment > 0 ? '추가' : '차감'}: {Math.abs(policyAdjustment).toLocaleString()}원
-                                                  </p>
-                                                  <p className="text-xs text-muted-foreground mt-1">
-                                                    부가서비스 정책이 적용되었습니다
-                                                  </p>
-                                                </div>
-                                              </TooltipContent>
-                                            </Tooltip>
-                                          </TooltipProvider>
+                                          <Badge 
+                                            variant={policyAdjustment > 0 ? "default" : "destructive"} 
+                                            className="text-xs cursor-pointer hover:opacity-80"
+                                            onClick={() => {
+                                              setSelectedPolicyDetail({
+                                                basePrice,
+                                                actualAmount,
+                                                adjustment: policyAdjustment,
+                                                documentId: doc.id,
+                                                customerName: doc.customerName
+                                              });
+                                              setPolicyDetailDialogOpen(true);
+                                            }}
+                                          >
+                                            {policyAdjustment > 0 ? '+' : ''}{policyAdjustment.toLocaleString()}원
+                                          </Badge>
                                         );
                                       }
                                     }
@@ -1882,6 +1868,64 @@ export function Settlements() {
                         disabled={updateSettlementAmount.isPending}
                       >
                         {updateSettlementAmount.isPending ? '수정 중...' : '수정'}
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </DialogContent>
+            </Dialog>
+
+            {/* 정책 세부 내용 다이얼로그 */}
+            <Dialog open={policyDetailDialogOpen} onOpenChange={setPolicyDetailDialogOpen}>
+              <DialogContent className="max-w-md">
+                <DialogHeader>
+                  <DialogTitle>정책 적용 세부 내용</DialogTitle>
+                </DialogHeader>
+                {selectedPolicyDetail && (
+                  <div className="space-y-4">
+                    <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                      <div className="text-sm">
+                        <div className="font-medium">고객명: {selectedPolicyDetail.customerName}</div>
+                        <div className="text-gray-600 dark:text-gray-400">문서 번호: #{selectedPolicyDetail.documentId}</div>
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-3">
+                      <div className="flex justify-between items-center py-2 border-b border-gray-200 dark:border-gray-700">
+                        <span className="text-sm font-medium">기본 단가</span>
+                        <span className="text-sm">{selectedPolicyDetail.basePrice.toLocaleString()}원</span>
+                      </div>
+                      
+                      <div className="flex justify-between items-center py-2 border-b border-gray-200 dark:border-gray-700">
+                        <span className="text-sm font-medium">실제 정산</span>
+                        <span className="text-sm font-medium text-blue-600">{selectedPolicyDetail.actualAmount.toLocaleString()}원</span>
+                      </div>
+                      
+                      <div className="flex justify-between items-center py-2">
+                        <span className="text-sm font-medium">
+                          {selectedPolicyDetail.adjustment > 0 ? '추가 금액' : '차감 금액'}
+                        </span>
+                        <span className={`text-sm font-medium ${
+                          selectedPolicyDetail.adjustment > 0 ? 'text-green-600' : 'text-red-600'
+                        }`}>
+                          {selectedPolicyDetail.adjustment > 0 ? '+' : ''}{selectedPolicyDetail.adjustment.toLocaleString()}원
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                      <p className="text-xs text-blue-600 dark:text-blue-400">
+                        부가서비스 정책이 적용되어 정산 금액이 조정되었습니다.
+                      </p>
+                    </div>
+
+                    <div className="flex justify-end">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => setPolicyDetailDialogOpen(false)}
+                      >
+                        확인
                       </Button>
                     </div>
                   </div>
