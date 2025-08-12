@@ -2268,38 +2268,39 @@ export class DatabaseStorage implements IStorage {
 
       for (const doc of result) {
         try {
-          // 수동으로 설정된 정산 금액이 있는 경우 재계산에서 제외
+          // 수동으로 설정된 정산 금액 확인
           const manualCheck = await db.get(sql`
-            SELECT manual_settlement_amount 
+            SELECT manual_settlement_amount, settlement_amount
             FROM documents 
             WHERE id = ${doc.id}
           `);
           
-          if (manualCheck?.manual_settlement_amount !== null) {
-            console.log(`Skipping document ${doc.id} (${doc.customer_name}): manual settlement amount set`);
-            continue;
-          }
-          
-          // 기본 정산금액 계산
-          const servicePlanId = parseFloat(doc.service_plan_id);
-          const isPortIn = doc.previous_carrier && doc.previous_carrier !== doc.carrier;
-          
-          // 요금제 단가 조회
-          const unitPrice = await this.getSettlementUnitPriceByServicePlan(servicePlanId);
           let baseAmount = 0;
           
-          if (unitPrice) {
-            baseAmount = isPortIn ? unitPrice.portInPrice : unitPrice.newCustomerPrice;
+          if (manualCheck?.manual_settlement_amount !== null) {
+            // 수동 설정된 경우: 수동 금액을 기준으로 부가 정책만 적용
+            baseAmount = parseFloat(manualCheck.manual_settlement_amount);
+            console.log(`Using manual base amount for document ${doc.id} (${doc.customer_name}): ${baseAmount}`);
+          } else {
+            // 자동 계산: 요금제 단가로 기본 금액 계산
+            const servicePlanId = parseFloat(doc.service_plan_id);
+            const isPortIn = doc.previous_carrier && doc.previous_carrier !== doc.carrier;
+            
+            const unitPrice = await this.getSettlementUnitPriceByServicePlan(servicePlanId);
+            if (unitPrice) {
+              baseAmount = isPortIn ? unitPrice.portInPrice : unitPrice.newCustomerPrice;
+            }
+            console.log(`Using calculated base amount for document ${doc.id} (${doc.customer_name}): ${baseAmount}`);
           }
           
-          // 부가서비스 정책 적용
+          // 부가서비스 정책 적용 (수동/자동 관계없이 모든 문서에 적용)
           const finalAmount = await this.calculateFinalSettlementAmount(doc.id, doc.carrier, baseAmount);
           
-          // 정산금액 업데이트 (manual_settlement_amount가 null인 경우만)
+          // 정산금액 업데이트
           await db.run(sql`
             UPDATE documents 
             SET settlement_amount = ${finalAmount}, updated_at = ${new Date().toISOString()}
-            WHERE id = ${doc.id} AND manual_settlement_amount IS NULL
+            WHERE id = ${doc.id}
           `);
           
           updatedCount++;
