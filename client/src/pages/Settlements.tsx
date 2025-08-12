@@ -884,7 +884,15 @@ export function Settlements() {
       return response.json();
     },
     onSuccess: (data: any) => {
+      // 정산 데이터 새로고침
       queryClient.invalidateQueries({ queryKey: ['/api/completed-documents'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/settlements'] });
+      // 약간의 지연 후 한 번 더 새로고침 (데이터 동기화 보장)
+      setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: ['/api/completed-documents'] });
+        queryClient.invalidateQueries({ queryKey: ['/api/settlements'] });
+      }, 500);
+      
       toast({
         title: "재계산 완료",
         description: `${data.updatedDocuments}건의 정산 금액이 부가서비스 정책을 반영하여 업데이트되었습니다.`,
