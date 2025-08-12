@@ -1481,8 +1481,51 @@ export class DatabaseStorage implements IStorage {
   }): Promise<any[]> {
     try {
       console.log('=== getDocuments called with filters ===', filters);
-      // 기본 쿼리로 모든 문서 조회 (orderBy 제거)
-      let result = await db.select().from(documents);
+      // 기본 쿼리로 모든 문서 조회 (policy_details 포함)
+      let result = await db.select({
+        id: documents.id,
+        documentNumber: documents.documentNumber,
+        customerName: documents.customerName,
+        customerPhone: documents.customerPhone,
+        carrier: documents.carrier,
+        storeName: documents.storeName,
+        contactCode: documents.contactCode,
+        servicePlanId: documents.servicePlanId,
+        additionalServiceIds: documents.additionalServiceIds,
+        bundleApplied: documents.bundleApplied,
+        bundleNotApplied: documents.bundleNotApplied,
+        registrationFeePrepaid: documents.registrationFeePrepaid,
+        registrationFeePostpaid: documents.registrationFeePostpaid,
+        simFeePrepaid: documents.simFeePrepaid,
+        simFeePostpaid: documents.simFeePostpaid,
+        dealerNotes: documents.dealerNotes,
+        status: documents.status,
+        activationStatus: documents.activationStatus,
+        dealerId: documents.dealerId,
+        userId: documents.userId,
+        filePath: documents.filePath,
+        fileName: documents.fileName,
+        fileSize: documents.fileSize,
+        uploadedAt: documents.uploadedAt,
+        updatedAt: documents.updatedAt,
+        issuedDocuments: documents.issuedDocuments,
+        disposalReason: documents.disposalReason,
+        activatedBy: documents.activatedBy,
+        activatedAt: documents.activatedAt,
+        activatedByName: documents.activatedByName,
+        customerType: documents.customerType,
+        previousCarrier: documents.previousCarrier,
+        subscriptionNumber: documents.subscriptionNumber,
+        receivedAt: documents.receivedAt,
+        workerId: documents.workerId,
+        workerNotes: documents.workerNotes,
+        settlementAmount: documents.settlementAmount,
+        manualSettlementAmount: documents.manualSettlementAmount,
+        settlementNewCustomerPrice: documents.settlementNewCustomerPrice,
+        settlementPortInPrice: documents.settlementPortInPrice,
+        isDeleted: documents.isDeleted,
+        policyDetails: documents.policyDetails  // 정책 세부 내역 필드 추가
+      }).from(documents);
       console.log('Raw database result sample:', result.slice(0,2).map(doc => ({ 
         id: doc.id, 
         activationStatus: doc.activationStatus,
