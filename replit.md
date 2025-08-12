@@ -4,6 +4,14 @@
 This project is a document management system for MCC네트월드 telecommunications dealers. Its main purpose is to streamline the handling of customer reception documents, offering capabilities such as role-based authentication, secure file uploads, comprehensive document tracking, and administrative functionalities. The system aims to enhance efficiency in managing customer activations and related processes.
 
 ## Recent Changes (January 2025)
+- **2025-01-12**: Completed dealer Excel bulk upload functionality with contact code integration
+  - IMPLEMENTED: Dealer Excel upload template with dynamic carrier columns based on registered carriers
+  - RESTRUCTURED: Simplified dealer upload format to match contact code management (판매점명, 실판매POS, 영업과장, 아이디, 비밀번호 + 통신사별 접점코드)
+  - ENHANCED: Upload validation with duplicate checking (username-based) and password length requirements
+  - AUTOMATED: Contact code creation during dealer upload process - automatically saves to contact_codes table
+  - UPDATED: Usage instructions to reflect new simplified structure and carrier-specific contact code columns
+  - VERIFIED: Template dynamically generates columns based on active carriers in system
+  - CONFIRMED: Manual column header modifications (e.g., "SK접점코드", "KT접점코드") work correctly with upload system
 - **2025-01-12**: Fixed critical "부가 차감" (Additional Deduction) display and removed incorrect hardcoded deductions
   - RESOLVED: "부가 차감" table column now displays accurate deduction amounts with clickable red badges showing actual policy breakdown
   - FIXED: Removed incorrect "모바일 결합 미유치 차감" 40,000원 deduction from Document 43 (김광섭) - now correctly shows no deduction ("-")
