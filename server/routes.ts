@@ -3288,6 +3288,58 @@ router.post('/api/settlements/from-document/:documentId', requireAuth, async (re
   }
 });
 
+// 문서의 정산 정책 세부 정보 조회
+router.get('/api/documents/:id/settlement-policy-details', requireAuth, async (req: any, res) => {
+  try {
+    const documentId = parseInt(req.params.id);
+    
+    // 문서 정보 조회
+    const document = await storage.getDocumentById(documentId);
+    if (!document) {
+      return res.status(404).json({ error: '문서를 찾을 수 없습니다.' });
+    }
+
+    // 적용된 부가서비스 조회
+    let appliedServices = [];
+    if (document.additionalServiceIds) {
+      try {
+        const serviceIds = JSON.parse(document.additionalServiceIds);
+        const allServices = await storage.getAdditionalServices();
+        appliedServices = allServices.filter(service => serviceIds.includes(service.id));
+      } catch (e) {
+        console.warn('Error parsing additional service IDs:', e);
+      }
+    }
+
+    // 정산 정책 세부 정보 구성
+    const policyDetails = {
+      documentId: documentId,
+      appliedServices: appliedServices.map(service => ({
+        id: service.id,
+        name: service.serviceName,
+        carrier: service.carrier,
+        type: service.serviceType,
+        monthlyFee: service.monthlyFee || 0
+      })),
+      bundleStatus: {
+        applied: document.bundleApplied,
+        notApplied: document.bundleNotApplied
+      },
+      fees: {
+        registrationFeePrepaid: document.registrationFeePrepaid,
+        registrationFeePostpaid: document.registrationFeePostpaid,
+        simFeePrepaid: document.simFeePrepaid,
+        simFeePostpaid: document.simFeePostpaid
+      }
+    };
+
+    res.json(policyDetails);
+  } catch (error: any) {
+    console.error('Settlement policy details API error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // 개통 완료된 문서들을 일괄 정산 생성
 router.post('/api/settlements/bulk-from-activated', requireAuth, async (req: any, res) => {
   try {

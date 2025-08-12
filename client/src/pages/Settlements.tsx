@@ -21,6 +21,12 @@ import {
   DialogDescription
 } from '@/components/ui/dialog';
 import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
+import {
   Form,
   FormControl,
   FormField,
@@ -1578,12 +1584,31 @@ export function Settlements() {
                                   
                                   if (policyAdjustment !== 0) {
                                     return (
-                                      <Badge 
-                                        variant={policyAdjustment > 0 ? "default" : "destructive"} 
-                                        className="text-xs"
-                                      >
-                                        {policyAdjustment > 0 ? '+' : ''}{policyAdjustment.toLocaleString()}원
-                                      </Badge>
+                                      <TooltipProvider>
+                                        <Tooltip>
+                                          <TooltipTrigger asChild>
+                                            <Badge 
+                                              variant={policyAdjustment > 0 ? "default" : "destructive"} 
+                                              className="text-xs cursor-help"
+                                            >
+                                              {policyAdjustment > 0 ? '+' : ''}{policyAdjustment.toLocaleString()}원
+                                            </Badge>
+                                          </TooltipTrigger>
+                                          <TooltipContent>
+                                            <div className="max-w-xs">
+                                              <p className="font-medium">정책 적용 세부 내용</p>
+                                              <p className="text-sm">기본 단가: {basePrice.toLocaleString()}원</p>
+                                              <p className="text-sm">실제 정산: {actualAmount.toLocaleString()}원</p>
+                                              <p className="text-sm">
+                                                {policyAdjustment > 0 ? '추가' : '차감'}: {Math.abs(policyAdjustment).toLocaleString()}원
+                                              </p>
+                                              <p className="text-xs text-muted-foreground mt-1">
+                                                부가서비스 정책이 적용되었습니다
+                                              </p>
+                                            </div>
+                                          </TooltipContent>
+                                        </Tooltip>
+                                      </TooltipProvider>
                                     );
                                   }
                                 }
@@ -1746,12 +1771,31 @@ export function Settlements() {
                                       
                                       if (policyAdjustment !== 0) {
                                         return (
-                                          <Badge 
-                                            variant={policyAdjustment > 0 ? "default" : "destructive"} 
-                                            className="text-xs"
-                                          >
-                                            {policyAdjustment > 0 ? '+' : ''}{policyAdjustment.toLocaleString()}원
-                                          </Badge>
+                                          <TooltipProvider>
+                                            <Tooltip>
+                                              <TooltipTrigger asChild>
+                                                <Badge 
+                                                  variant={policyAdjustment > 0 ? "default" : "destructive"} 
+                                                  className="text-xs cursor-help"
+                                                >
+                                                  {policyAdjustment > 0 ? '+' : ''}{policyAdjustment.toLocaleString()}원
+                                                </Badge>
+                                              </TooltipTrigger>
+                                              <TooltipContent>
+                                                <div className="max-w-xs">
+                                                  <p className="font-medium">정책 적용 세부 내용</p>
+                                                  <p className="text-sm">기본 단가: {basePrice.toLocaleString()}원</p>
+                                                  <p className="text-sm">실제 정산: {actualAmount.toLocaleString()}원</p>
+                                                  <p className="text-sm">
+                                                    {policyAdjustment > 0 ? '추가' : '차감'}: {Math.abs(policyAdjustment).toLocaleString()}원
+                                                  </p>
+                                                  <p className="text-xs text-muted-foreground mt-1">
+                                                    부가서비스 정책이 적용되었습니다
+                                                  </p>
+                                                </div>
+                                              </TooltipContent>
+                                            </Tooltip>
+                                          </TooltipProvider>
                                         );
                                       }
                                     }
