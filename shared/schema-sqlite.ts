@@ -180,6 +180,7 @@ export const documents = sqliteTable("documents", {
   servicePlanId: text("service_plan_id"),
   additionalServiceIds: text("additional_service_ids"),
   settlementAmount: real("settlement_amount").default(0),
+  manualSettlementAmount: real("manual_settlement_amount"), // 수동으로 설정한 정산 금액
   registrationFeePrepaid: integer("registration_fee_prepaid", { mode: 'boolean' }).default(0),
   registrationFeePostpaid: integer("registration_fee_postpaid", { mode: 'boolean' }).default(0),
   registrationFeeInstallment: integer("registration_fee_installment", { mode: 'boolean' }).default(0),

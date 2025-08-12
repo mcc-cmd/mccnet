@@ -2268,6 +2268,18 @@ export class DatabaseStorage implements IStorage {
 
       for (const doc of result) {
         try {
+          // 수동으로 설정된 정산 금액이 있는 경우 재계산에서 제외
+          const manualCheck = await db.get(sql`
+            SELECT manual_settlement_amount 
+            FROM documents 
+            WHERE id = ${doc.id}
+          `);
+          
+          if (manualCheck?.manual_settlement_amount !== null) {
+            console.log(`Skipping document ${doc.id} (${doc.customer_name}): manual settlement amount set`);
+            continue;
+          }
+          
           // 기본 정산금액 계산
           const servicePlanId = parseFloat(doc.service_plan_id);
           const isPortIn = doc.previous_carrier && doc.previous_carrier !== doc.carrier;
@@ -2283,11 +2295,11 @@ export class DatabaseStorage implements IStorage {
           // 부가서비스 정책 적용
           const finalAmount = await this.calculateFinalSettlementAmount(doc.id, doc.carrier, baseAmount);
           
-          // 정산금액 업데이트
+          // 정산금액 업데이트 (manual_settlement_amount가 null인 경우만)
           await db.run(sql`
             UPDATE documents 
             SET settlement_amount = ${finalAmount}, updated_at = ${new Date().toISOString()}
-            WHERE id = ${doc.id}
+            WHERE id = ${doc.id} AND manual_settlement_amount IS NULL
           `);
           
           updatedCount++;
@@ -3510,9 +3522,11 @@ export class DatabaseStorage implements IStorage {
       await db.update(documents)
         .set({ 
           settlementAmount: settlementAmount.toString(),  // Convert to string for SQLite
+          manualSettlementAmount: settlementAmount.toString(), // 수동 설정 금액으로 기록
           updatedAt: new Date().toISOString()             // Convert to string for SQLite
         })
         .where(eq(documents.id, id));
+      console.log(`Updated document ${id} with manual settlement amount: ${settlementAmount}`);
     } catch (error) {
       console.error('Document settlement amount update error:', error);
       throw new Error('정산 금액 업데이트에 실패했습니다.');
