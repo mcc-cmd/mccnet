@@ -4391,6 +4391,8 @@ export function AdminPanel() {
                       <li><strong>판매점명</strong>: 판매점 이름 (필수)</li>
                       <li><strong>실판매POS</strong>: 실판매 POS 정보 (선택사항)</li>
                       <li><strong>영업과장</strong>: 담당 영업과장 이름 (선택사항)</li>
+                      <li><strong>아이디</strong>: 로그인용 아이디 (필수)</li>
+                      <li><strong>비밀번호</strong>: 로그인용 비밀번호 (필수, 최소 6자)</li>
                       <li><strong>통신사별 접점코드</strong>: 시스템에 등록된 통신사별 접점코드 (선택사항)</li>
                     </ul>
                     <p className="mb-2"><strong>주의사항:</strong></p>

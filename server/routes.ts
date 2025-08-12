@@ -3859,15 +3859,25 @@ router.post('/api/dealers/upload-excel', requireAuth, requireAdmin, contactCodeU
         const dealerName = String(row['판매점명'] || row['name'] || '').trim();
         const realSalesPOS = String(row['실판매POS'] || row['realSalesPOS'] || '').trim();
         const salesManagerName = String(row['영업과장'] || row['salesManager'] || '').trim();
+        const username = String(row['아이디'] || row['username'] || '').trim();
+        const password = String(row['비밀번호'] || row['password'] || '').trim();
 
         // 필수 필드 검증
         if (!dealerName) {
           errors.push(`행 ${i + 2}: 판매점명이 필요합니다.`);
           continue;
         }
+        if (!username) {
+          errors.push(`행 ${i + 2}: 아이디가 필요합니다.`);
+          continue;
+        }
+        if (!password || password.length < 6) {
+          errors.push(`행 ${i + 2}: 비밀번호는 최소 6자 이상이어야 합니다.`);
+          continue;
+        }
 
-        // 중복 체크 (판매점명 기준)
-        const existingDealer = await storage.findDealerByName(dealerName);
+        // 중복 체크 (아이디 기준)
+        const existingDealer = await storage.getDealerByUsername(username);
         if (existingDealer) {
           duplicatesSkipped++;
           continue;
@@ -3893,12 +3903,15 @@ router.post('/api/dealers/upload-excel', requireAuth, requireAdmin, contactCodeU
           }
         }
 
-        // 판매점 생성 (기본 정보만)
+        // 판매점 생성
         const dealerData = {
           name: dealerName,
+          username: username,
+          password: password,
           location: '자동생성',
           contactEmail: null,
-          contactPhone: null
+          contactPhone: null,
+          carrierCodes: JSON.stringify({})
         };
 
         const dealer = await storage.createDealer(dealerData);
@@ -3947,7 +3960,9 @@ router.get('/api/dealers/template', requireAuth, requireAdmin, async (req: any, 
     const csvHeaders = [
       '판매점명',
       '실판매POS',
-      '영업과장'
+      '영업과장',
+      '아이디',
+      '비밀번호'
     ];
 
     // 통신사별 접점코드 컬럼 추가
@@ -3959,7 +3974,9 @@ router.get('/api/dealers/template', requireAuth, requireAdmin, async (req: any, 
     const sampleData = [
       '샘플판매점',
       'POS001',
-      '홍길동'
+      '홍길동',
+      'sample_dealer',
+      'password123'
     ];
 
     // 통신사별 샘플 접점코드 추가
