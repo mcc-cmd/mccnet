@@ -3772,8 +3772,8 @@ router.post('/api/dealers', requireAuth, async (req: any, res) => {
 
     const { name, username, password, contactEmail, contactPhone, location, carrierCodes } = req.body;
     
-    if (!name || !username || !password || !contactEmail || !contactPhone || !location) {
-      return res.status(400).json({ error: '모든 필드를 입력해주세요.' });
+    if (!name || !username || !password) {
+      return res.status(400).json({ error: '필수 필드를 입력해주세요.' });
     }
 
     // 사용자명 중복 검사
@@ -3786,9 +3786,9 @@ router.post('/api/dealers', requireAuth, async (req: any, res) => {
       name,
       username,
       password,
-      contactEmail,
-      contactPhone,
-      location,
+      contactEmail: contactEmail || null,
+      contactPhone: contactPhone || null,
+      location: location || null,
       carrierCodes: JSON.stringify(carrierCodes || {}),
     });
 
@@ -3796,6 +3796,199 @@ router.post('/api/dealers', requireAuth, async (req: any, res) => {
   } catch (error: any) {
     console.error('Create dealer error:', error);
     res.status(500).json({ error: '판매점 생성에 실패했습니다.' });
+  }
+});
+
+// 판매점 엑셀 일괄 업로드 API
+router.post('/api/dealers/upload-excel', requireAuth, requireAdmin, contactCodeUpload.single('file'), async (req: any, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: '파일이 선택되지 않았습니다.' });
+    }
+
+    console.log('Reading dealer Excel file:', req.file.path);
+
+    // 엑셀 파일 읽기
+    let workbook;
+    try {
+      const fileExtension = path.extname(req.file.originalname).toLowerCase();
+      
+      if (fileExtension === '.csv') {
+        // CSV 파일 처리 - BOM 제거
+        let csvContent = fs.readFileSync(req.file.path, 'utf8');
+        if (csvContent.charCodeAt(0) === 0xFEFF) {
+          csvContent = csvContent.slice(1);
+        }
+        workbook = XLSX.read(csvContent, { type: 'string' });
+      } else {
+        // Excel 파일 처리
+        const fileBuffer = fs.readFileSync(req.file.path);
+        workbook = XLSX.read(fileBuffer, { type: 'buffer' });
+      }
+    } catch (readError) {
+      console.error('Error reading Excel file:', readError);
+      return res.status(400).json({ error: '엑셀 파일을 읽는데 실패했습니다. 파일이 손상되었거나 잘못된 형식일 수 있습니다.' });
+    }
+
+    if (!workbook.SheetNames || workbook.SheetNames.length === 0) {
+      return res.status(400).json({ error: '엑셀 파일에 워크시트가 없습니다.' });
+    }
+
+    const sheetName = workbook.SheetNames[0];
+    const worksheet = workbook.Sheets[sheetName];
+    
+    if (!worksheet) {
+      return res.status(400).json({ error: '워크시트를 읽을 수 없습니다.' });
+    }
+
+    const data = XLSX.utils.sheet_to_json(worksheet);
+    console.log('Dealer Excel data parsed:', data.length, 'rows');
+
+    let addedDealers = 0;
+    let duplicatesSkipped = 0;
+    const errors: string[] = [];
+
+    for (let i = 0; i < data.length; i++) {
+      const row = data[i] as any;
+      try {
+        // 필수 필드 검증
+        const name = String(row['사업체명'] || row['name'] || '').trim();
+        const ownerName = String(row['대표자명'] || row['ownerName'] || '').trim();
+        const businessNumber = String(row['사업자번호'] || row['businessNumber'] || '').trim();
+        const username = String(row['아이디'] || row['username'] || '').trim();
+        const password = String(row['비밀번호'] || row['password'] || '').trim();
+        
+        // 선택적 필드
+        const contactEmail = String(row['연락처이메일'] || row['contactEmail'] || '').trim();
+        const contactPhone = String(row['연락처전화번호'] || row['contactPhone'] || '').trim();
+        const location = String(row['위치'] || row['location'] || '').trim();
+        
+        // 통신사별 접점코드
+        const skContactCode = String(row['SK접점코드'] || row['skContactCode'] || '').trim();
+        const ktContactCode = String(row['KT접점코드'] || row['ktContactCode'] || '').trim();
+        const lguContactCode = String(row['LGU+접점코드'] || row['lguContactCode'] || '').trim();
+
+        // 필수 필드 검증
+        if (!name) {
+          errors.push(`행 ${i + 2}: 사업체명이 필요합니다.`);
+          continue;
+        }
+        if (!username) {
+          errors.push(`행 ${i + 2}: 아이디가 필요합니다.`);
+          continue;
+        }
+        if (!password || password.length < 6) {
+          errors.push(`행 ${i + 2}: 비밀번호는 최소 6자 이상이어야 합니다.`);
+          continue;
+        }
+
+        // 중복 체크 (아이디 기준)
+        const existingDealer = await storage.getDealerByUsername(username);
+        if (existingDealer) {
+          duplicatesSkipped++;
+          continue;
+        }
+
+        // 이메일 형식 검증 (선택사항이지만 입력된 경우)
+        if (contactEmail && !contactEmail.includes('@')) {
+          errors.push(`행 ${i + 2}: 올바른 이메일 형식이 아닙니다.`);
+          continue;
+        }
+
+        // 통신사별 접점코드 구성
+        const carrierCodes: Record<string, string> = {};
+        if (skContactCode) carrierCodes['SK'] = skContactCode;
+        if (ktContactCode) carrierCodes['KT'] = ktContactCode;
+        if (lguContactCode) carrierCodes['LGU+'] = lguContactCode;
+
+        // 판매점 생성
+        const dealerData = {
+          name,
+          username,
+          password,
+          contactEmail: contactEmail || null,
+          contactPhone: contactPhone || null,
+          location: location || null,
+          carrierCodes: JSON.stringify(carrierCodes)
+        };
+
+        await storage.createDealer(dealerData);
+        addedDealers++;
+
+      } catch (error: any) {
+        console.error(`Error processing row ${i + 2}:`, error);
+        errors.push(`행 ${i + 2}: ${error.message}`);
+      }
+    }
+
+    // 업로드된 파일 삭제
+    try {
+      fs.unlinkSync(req.file.path);
+    } catch (unlinkError) {
+      console.warn('Failed to delete uploaded file:', unlinkError);
+    }
+
+    res.json({
+      addedDealers,
+      duplicatesSkipped,
+      errors: errors.slice(0, 10), // 최대 10개의 오류만 반환
+      totalErrors: errors.length
+    });
+
+  } catch (error: any) {
+    console.error('Dealer excel upload error:', error);
+    res.status(500).json({ error: '판매점 업로드 중 오류가 발생했습니다.' });
+  }
+});
+
+// 판매점 엑셀 템플릿 다운로드 API
+router.get('/api/dealers/template', requireAuth, requireAdmin, async (req: any, res) => {
+  try {
+    // CSV 템플릿 생성
+    const csvHeaders = [
+      '사업체명',
+      '대표자명',
+      '사업자번호',
+      '아이디',
+      '비밀번호',
+      '연락처이메일',
+      '연락처전화번호',
+      '위치',
+      'SK접점코드',
+      'KT접점코드',
+      'LGU+접점코드'
+    ];
+
+    // 샘플 데이터
+    const sampleData = [
+      '샘플판매점',
+      '홍길동',
+      '123-45-67890',
+      'sample_dealer',
+      'password123',
+      'sample@example.com',
+      '010-1234-5678',
+      '서울시 강남구',
+      'SK001',
+      'KT001',
+      'LG001'
+    ];
+
+    // CSV 내용 생성 (UTF-8 BOM 포함)
+    let csvContent = '\uFEFF'; // UTF-8 BOM
+    csvContent += csvHeaders.join(',') + '\n';
+    csvContent += sampleData.join(',') + '\n';
+
+    // 파일명 설정 (한글 포함)
+    const fileName = `판매점_업로드_템플릿_${format(new Date(), 'yyyyMMdd')}.csv`;
+    
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename*=UTF-8''${encodeURIComponent(fileName)}`);
+    res.send(csvContent);
+
+  } catch (error: any) {
+    console.error('Template download error:', error);
+    res.status(500).json({ error: '템플릿 다운로드에 실패했습니다.' });
   }
 });
 

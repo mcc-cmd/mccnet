@@ -1490,6 +1490,7 @@ export function AdminPanel() {
   const [selectAllServicePlans, setSelectAllServicePlans] = useState(false);
   
   const contactCodeExcelInputRef = useRef<HTMLInputElement>(null);
+  const dealerExcelInputRef = useRef<HTMLInputElement>(null);
   
   // Analytics dialog states
   const [workerDetailsOpen, setWorkerDetailsOpen] = useState(false);
@@ -1542,6 +1543,65 @@ export function AdminPanel() {
         variant: 'destructive',
       });
     },
+  });
+
+  // 판매점 엑셀 일괄 업로드 뮤테이션
+  const dealerExcelUploadMutation = useMutation({
+    mutationFn: async (file: File) => {
+      const formData = new FormData();
+      formData.append('file', file);
+      return apiRequest('/api/dealers/upload-excel', {
+        method: 'POST',
+        body: formData
+      });
+    },
+    onSuccess: (data: any) => {
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/dealers'] });
+      
+      let description = `${data.addedDealers || 0}개의 판매점이 성공적으로 생성되었습니다.`;
+      if (data.duplicatesSkipped > 0) {
+        description += ` (${data.duplicatesSkipped}개 중복건 제외)`;
+      }
+      if (data.errors && data.errors.length > 0) {
+        description += `\n\n오류가 발생한 행:\n${data.errors.join('\n')}`;
+      }
+      
+      toast({
+        title: "업로드 완료",
+        description: description,
+      });
+      
+      if (dealerExcelInputRef.current) {
+        dealerExcelInputRef.current.value = '';
+      }
+    },
+    onError: (error: any) => {
+      console.error('Dealer upload error:', error);
+      
+      let description = error.message || "판매점 업로드에 실패했습니다.";
+      
+      if (error.details) {
+        if (Array.isArray(error.details)) {
+          const errorCount = error.totalErrors || error.details.length;
+          description += `\n\n오류 발생 (총 ${errorCount}건):\n${error.details.slice(0, 5).join('\n')}`;
+          if (errorCount > 5) {
+            description += `\n... 외 ${errorCount - 5}건 더`;
+          }
+        } else {
+          description += `\n\n오류 상세: ${error.details}`;
+        }
+      }
+      
+      toast({
+        title: "업로드 실패",
+        description: description,
+        variant: "destructive"
+      });
+      
+      if (dealerExcelInputRef.current) {
+        dealerExcelInputRef.current.value = '';
+      }
+    }
   });
 
   const handleCreateDealer = (data: CreateDealerForm) => {
@@ -3153,6 +3213,34 @@ export function AdminPanel() {
     document.body.removeChild(link);
   };
 
+  const handleDownloadDealerTemplate = () => {
+    // 판매점 엑셀 템플릿 생성
+    const csvContent = '\uFEFF' + // BOM for Excel UTF-8 recognition
+      '사업체명,대표자명,사업자번호,아이디,비밀번호,연락처이메일,연락처전화번호,위치,SK접점코드,KT접점코드,LGU+접점코드\n' +
+      '샘플판매점1,홍길동,123-45-67890,dealer1,password123,dealer1@example.com,010-1234-5678,서울시 강남구,SK12345,KT67890,LG11111\n' +
+      '테스트판매점2,김철수,234-56-78901,dealer2,password456,,010-9876-5432,부산시 해운대구,,KT54321,LG22222\n';
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', '판매점_업로드_양식.csv');
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const handleDealerExcelUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      dealerExcelUploadMutation.mutate(file);
+    }
+    if (dealerExcelInputRef.current) {
+      dealerExcelInputRef.current.value = '';
+    }
+  };
+
   // 엑셀 다운로드 mutation
   const exportMutation = useMutation({
     mutationFn: async () => {
@@ -3774,6 +3862,31 @@ export function AdminPanel() {
                   </CardDescription>
                 </div>
                 <div className="flex items-center space-x-2">
+                  {/* 판매점 엑셀 업로드 관련 버튼들 */}
+                  <Button 
+                    variant="outline" 
+                    onClick={handleDownloadDealerTemplate}
+                    className="text-green-600 border-green-600 hover:bg-green-50"
+                  >
+                    <Download className="mr-2 h-4 w-4" />
+                    양식 다운로드
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    onClick={() => dealerExcelInputRef.current?.click()}
+                    disabled={dealerExcelUploadMutation.isPending}
+                    className="text-blue-600 border-blue-600 hover:bg-blue-50"
+                  >
+                    <Upload className="mr-2 h-4 w-4" />
+                    {dealerExcelUploadMutation.isPending ? '업로드 중...' : '엑셀 업로드'}
+                  </Button>
+                  <input
+                    type="file"
+                    ref={dealerExcelInputRef}
+                    onChange={handleDealerExcelUpload}
+                    accept=".xlsx,.xls,.csv"
+                    style={{ display: 'none' }}
+                  />
                   <Dialog open={dealerDialogOpen} onOpenChange={setDealerDialogOpen}>
                     <DialogTrigger asChild>
                       <Button variant="outline">
@@ -4268,6 +4381,27 @@ export function AdminPanel() {
                 </div>
               </CardHeader>
               <CardContent>
+                {/* 판매점 엑셀 업로드 사용법 안내 */}
+                <div className="mb-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                  <h4 className="font-medium text-blue-900 dark:text-blue-100 mb-2">판매점 엑셀 업로드 사용법</h4>
+                  <div className="text-sm text-blue-700 dark:text-blue-300">
+                    <p className="mb-2">1. 위의 "양식 다운로드" 버튼을 클릭하여 템플릿을 다운로드하세요.</p>
+                    <p className="mb-2">2. 다운로드한 파일에 판매점 데이터를 입력하세요:</p>
+                    <ul className="list-disc list-inside ml-4 space-y-1 mb-2">
+                      <li><strong>사업체명</strong>: 판매점 이름 (필수)</li>
+                      <li><strong>대표자명</strong>: 대표자 성명 (필수)</li>
+                      <li><strong>사업자번호</strong>: 사업자등록번호 (필수)</li>
+                      <li><strong>아이디</strong>: 로그인용 아이디 (필수)</li>
+                      <li><strong>비밀번호</strong>: 로그인용 비밀번호 (필수)</li>
+                      <li><strong>연락처이메일</strong>: 이메일 주소 (선택사항)</li>
+                      <li><strong>연락처전화번호</strong>: 전화번호 (선택사항)</li>
+                      <li><strong>위치</strong>: 소재지 (선택사항)</li>
+                      <li><strong>SK접점코드, KT접점코드, LGU+접점코드</strong>: 각 통신사별 접점코드 (선택사항)</li>
+                    </ul>
+                    <p>3. 작성이 완료되면 "엑셀 업로드" 버튼을 클릭하여 파일을 업로드하세요.</p>
+                  </div>
+                </div>
+                
                 {usersLoading ? (
                   <div className="text-center py-8">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-accent mx-auto"></div>
