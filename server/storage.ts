@@ -1612,6 +1612,7 @@ export class DatabaseStorage implements IStorage {
             deviceModel: doc.deviceModel,
             simNumber: doc.simNumber,
             settlementAmount: doc.settlementAmount,
+            calculatedSettlementAmount: doc.settlementAmount, // 프론트엔드에서 사용하는 필드명으로 매핑
             activatedBy: doc.activatedBy,
             activatedByName: doc.activatedByName,
             cancelledBy: doc.cancelledBy,

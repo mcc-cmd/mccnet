@@ -1558,6 +1558,8 @@ export function Settlements() {
                             const backendAmount = (doc as any).calculatedSettlementAmount;
                             const manualAmount = (doc as any).settlementAmount;
                             
+                            console.log(`Policy check - Doc ${doc.id}: backend=${backendAmount}, manual=${manualAmount}, servicePlanId=${doc.servicePlanId}`);
+                            
                             // 부가서비스 정책이 적용되었는지 확인
                             if (backendAmount !== undefined && backendAmount !== null) {
                               // 실제 기본 정산단가를 조회해서 차이를 계산
@@ -1565,13 +1567,19 @@ export function Settlements() {
                                 p.servicePlanId === doc.servicePlanId && p.isActive
                               );
                               
+                              console.log(`Policy check - Doc ${doc.id}: servicePlan found=${!!servicePlan}, servicePlan=`, servicePlan);
+                              
                               if (servicePlan) {
                                 const basePrice = (doc as any).customerType === 'port-in' ? 
                                   servicePlan.portInPrice : servicePlan.newCustomerPrice;
                                 const actualAmount = typeof backendAmount === 'number' ? backendAmount : parseFloat(backendAmount);
                                 
+                                console.log(`Policy check - Doc ${doc.id}: basePrice=${basePrice}, actualAmount=${actualAmount}, customerType=${(doc as any).customerType}`);
+                                
                                 if (!isNaN(actualAmount) && !isNaN(basePrice)) {
                                   const policyAdjustment = actualAmount - basePrice;
+                                  console.log(`Policy check - Doc ${doc.id}: policyAdjustment=${policyAdjustment}`);
+                                  
                                   if (policyAdjustment !== 0) {
                                     return (
                                       <Badge 
