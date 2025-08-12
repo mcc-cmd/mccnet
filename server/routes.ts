@@ -3070,7 +3070,7 @@ router.post('/api/carrier-service-policies', requireAuth, requireAdmin, async (r
     const data = createCarrierServicePolicySchema.parse(req.body);
     const policy = await storage.createCarrierServicePolicy({
       ...data,
-      createdBy: req.session.userId
+      createdBy: req.user.id
     });
     res.json(policy);
   } catch (error: any) {

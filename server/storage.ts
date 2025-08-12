@@ -2062,20 +2062,42 @@ export class DatabaseStorage implements IStorage {
       for (const policy of policies) {
         let shouldApplyPolicy = false;
         
-        // 문서의 선택된 부가서비스 확인
-        const selectedServices = document.additionalServices || '';
-        console.log(`Document ${documentId} selected services: "${selectedServices}"`);
+        // 문서의 선택된 부가서비스 확인 - additionalServiceIds에서 서비스명 추출
+        let selectedServiceNames: string[] = [];
+        if (document.additionalServiceIds) {
+          try {
+            const serviceIds = JSON.parse(document.additionalServiceIds);
+            if (Array.isArray(serviceIds)) {
+              // 서비스 ID에서 서비스명 찾기
+              for (const serviceId of serviceIds) {
+                const service = additionalServicesQuery.find(s => s.id === parseInt(serviceId));
+                if (service) {
+                  selectedServiceNames.push(service.serviceName);
+                }
+              }
+            }
+          } catch (e) {
+            console.error('Failed to parse additionalServiceIds:', e);
+          }
+        }
+        
+        const selectedServices = selectedServiceNames.join(',');
+        console.log(`Document ${documentId} selected service IDs: "${document.additionalServiceIds}"`);
+        console.log(`Document ${documentId} selected service names: "${selectedServices}"`);
         
         if (policy.policyType === 'deduction') {
           // 차감 정책: 해당 부가서비스가 선택되지 않았을 때 적용
           const relatedService = additionalServicesQuery.find(service => 
             policy.policyName.includes(service.serviceName) || 
-            policy.description?.includes(service.serviceName)
+            policy.description?.includes(service.serviceName) ||
+            // 링투유와 필링은 같은 서비스를 의미
+            (service.serviceName === '필링' && (policy.policyName.includes('링투유') || policy.description?.includes('링투유'))) ||
+            (service.serviceName === '링투유' && (policy.policyName.includes('필링') || policy.description?.includes('필링')))
           );
           
           if (relatedService) {
             // 부가서비스가 선택되지 않았으면 차감 적용
-            shouldApplyPolicy = !selectedServices.includes(relatedService.serviceName);
+            shouldApplyPolicy = !selectedServiceNames.includes(relatedService.serviceName);
             console.log(`Deduction policy "${policy.policyName}" for service "${relatedService.serviceName}": shouldApply=${shouldApplyPolicy} (service not selected)`);
           } else {
             // 관련 서비스를 찾을 수 없으면 항상 차감 적용 (기본 차감)
@@ -2091,7 +2113,7 @@ export class DatabaseStorage implements IStorage {
           
           if (relatedService) {
             // 부가서비스가 선택되었으면 추가 적용
-            shouldApplyPolicy = selectedServices.includes(relatedService.serviceName);
+            shouldApplyPolicy = selectedServiceNames.includes(relatedService.serviceName);
             console.log(`Addition policy "${policy.policyName}" for service "${relatedService.serviceName}": shouldApply=${shouldApplyPolicy} (service selected)`);
           }
         }
