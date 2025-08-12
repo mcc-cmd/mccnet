@@ -1504,9 +1504,9 @@ export function AdminPanel() {
       name: z.string().min(1, '판매점명은 필수입니다'),
       username: z.string().min(1, '아이디는 필수입니다'),
       password: z.string().min(6, '비밀번호는 최소 6자 이상이어야 합니다'),
-      contactEmail: z.string().email('올바른 이메일 형식이 아닙니다'),
-      contactPhone: z.string().min(1, '전화번호는 필수입니다'),
-      location: z.string().min(1, '위치는 필수입니다'),
+      contactEmail: z.string().email('올바른 이메일 형식이 아닙니다').optional().or(z.literal('')),
+      contactPhone: z.string().optional(),
+      location: z.string().optional(),
       carrierCodes: z.record(z.string()),
     })),
     defaultValues: {
@@ -3831,7 +3831,7 @@ export function AdminPanel() {
                             name="contactEmail"
                             render={({ field }) => (
                               <FormItem>
-                                <FormLabel>연락처 이메일</FormLabel>
+                                <FormLabel>연락처 이메일 (선택사항)</FormLabel>
                                 <FormControl>
                                   <Input type="email" placeholder="이메일을 입력하세요" {...field} />
                                 </FormControl>
@@ -3844,7 +3844,7 @@ export function AdminPanel() {
                             name="contactPhone"
                             render={({ field }) => (
                               <FormItem>
-                                <FormLabel>연락처 전화번호</FormLabel>
+                                <FormLabel>연락처 전화번호 (선택사항)</FormLabel>
                                 <FormControl>
                                   <Input placeholder="전화번호를 입력하세요" {...field} />
                                 </FormControl>
@@ -3857,7 +3857,7 @@ export function AdminPanel() {
                             name="location"
                             render={({ field }) => (
                               <FormItem>
-                                <FormLabel>위치</FormLabel>
+                                <FormLabel>위치 (선택사항)</FormLabel>
                                 <FormControl>
                                   <Input placeholder="위치를 입력하세요" {...field} />
                                 </FormControl>

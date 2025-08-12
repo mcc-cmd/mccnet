@@ -494,9 +494,9 @@ export const dealerRegistrations = sqliteTable("dealer_registrations", {
   businessName: text("business_name").notNull(), // 사업체명
   representativeName: text("representative_name").notNull(), // 대표자명
   businessNumber: text("business_number").notNull(), // 사업자번호
-  contactPhone: text("contact_phone").notNull(),
-  contactEmail: text("contact_email").notNull(),
-  address: text("address").notNull(), // 사업장 주소
+  contactPhone: text("contact_phone"), // 선택사항
+  contactEmail: text("contact_email"), // 선택사항
+  address: text("address"), // 사업장 주소 (선택사항)
   bankAccount: text("bank_account"), // 정산 계좌
   bankName: text("bank_name"), // 은행명
   accountHolder: text("account_holder"), // 예금주
