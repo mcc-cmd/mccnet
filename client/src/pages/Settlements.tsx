@@ -1620,12 +1620,25 @@ export function Settlements() {
                                         variant={policyAdjustment > 0 ? "default" : "destructive"} 
                                         className="text-xs cursor-pointer hover:opacity-80"
                                         onClick={() => {
+                                          let policyDetails: Array<{name: string, type: string, amount: number, description?: string}> = [];
+                                          try {
+                                            const docPolicyDetails = (doc as any).policyDetails;
+                                            if (docPolicyDetails) {
+                                              policyDetails = typeof docPolicyDetails === 'string' 
+                                                ? JSON.parse(docPolicyDetails) 
+                                                : docPolicyDetails;
+                                            }
+                                          } catch (e) {
+                                            console.warn('Failed to parse policy details for document', doc.id, e);
+                                          }
+                                          
                                           setSelectedPolicyDetail({
                                             basePrice,
                                             actualAmount,
                                             adjustment: policyAdjustment,
                                             documentId: doc.id,
-                                            customerName: doc.customerName
+                                            customerName: doc.customerName,
+                                            policyDetails
                                           });
                                           setPolicyDetailDialogOpen(true);
                                         }}
