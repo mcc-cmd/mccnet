@@ -1110,6 +1110,7 @@ export class DatabaseStorage implements IStorage {
         planType: data.planType,
         dataAllowance: data.dataAllowance,
         monthlyFee: data.monthlyFee,
+        combinationEligible: data.combinationEligible ? 1 : 0,
         isActive: data.isActive,
         updatedAt: new Date().toISOString(),
       };

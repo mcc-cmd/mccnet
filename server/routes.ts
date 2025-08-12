@@ -2857,6 +2857,7 @@ router.post('/api/service-plans/upload-excel', requireAdmin, pricingUpload.singl
     }
 
     let addedPlans = 0;
+    let updatedPlans = 0;
     let duplicatesSkipped = 0;
     const duplicates: string[] = [];
 
@@ -2907,10 +2908,15 @@ router.post('/api/service-plans/upload-excel', requireAdmin, pricingUpload.singl
         // 중복 확인 - 요금제명과 통신사가 동일한 경우
         const existingPlan = await storage.findServicePlanByNameAndCarrier(planData.planName, planData.carrier);
         if (existingPlan) {
-          const duplicateKey = `${planData.carrier} - ${planData.planName}`;
+          // 기존 요금제가 있으면 결합 가능 여부만 업데이트
+          console.log(`Updating existing service plan: ${planData.carrier} - ${planData.planName}, combinationEligible: ${combinationEligible}`);
+          await storage.updateServicePlan(existingPlan.id, {
+            ...planData,
+            combinationEligible: combinationEligible
+          });
+          const duplicateKey = `${planData.carrier} - ${planData.planName} (업데이트됨)`;
           duplicates.push(duplicateKey);
-          duplicatesSkipped++;
-          console.log(`Duplicate service plan skipped: ${duplicateKey}`);
+          updatedPlans++;
           continue;
         }
 
@@ -2926,14 +2932,25 @@ router.post('/api/service-plans/upload-excel', requireAdmin, pricingUpload.singl
     fs.unlinkSync(file.path);
 
     // 결과 메시지 생성
-    let message = `${addedPlans}개의 요금제가 추가되었습니다.`;
+    let message = '';
+    if (addedPlans > 0 && updatedPlans > 0) {
+      message = `${addedPlans}개의 요금제가 추가되고, ${updatedPlans}개의 요금제가 업데이트되었습니다.`;
+    } else if (addedPlans > 0) {
+      message = `${addedPlans}개의 요금제가 추가되었습니다.`;
+    } else if (updatedPlans > 0) {
+      message = `${updatedPlans}개의 요금제가 업데이트되었습니다.`;
+    } else {
+      message = '처리된 요금제가 없습니다.';
+    }
+    
     if (duplicatesSkipped > 0) {
-      message += ` (${duplicatesSkipped}개 중복건 제외)`;
+      message += ` (${duplicatesSkipped}개 처리)`;
     }
 
     res.json({ 
       success: true, 
       addedPlans,
+      updatedPlans,
       duplicatesSkipped,
       duplicates: duplicates.slice(0, 10), // 최대 10개까지만 표시
       message
