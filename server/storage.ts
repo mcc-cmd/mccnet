@@ -2039,7 +2039,7 @@ export class DatabaseStorage implements IStorage {
         // 부가서비스 정책 적용
         const finalSettlementAmount = await this.calculateFinalSettlementAmount(doc.id, doc.carrier, baseSettlementAmount);
 
-        // 정산금액 업데이트
+        // 정산금액 업데이트 (정책 세부 내역은 calculateFinalSettlementAmount에서 이미 저장됨)
         await db.run(sql`
           UPDATE documents 
           SET settlement_amount = ${finalSettlementAmount}, updated_at = ${new Date().toISOString()}
@@ -2137,6 +2137,7 @@ export class DatabaseStorage implements IStorage {
       
       let finalAmount = baseAmount;
       let appliedPolicies = 0;
+      let policyDetails: Array<{name: string, type: string, amount: number, description?: string}> = [];
       
       // 해당 통신사의 부가서비스 목록 조회
       const additionalServicesQuery = await db.select().from(additionalServices)
@@ -2221,9 +2222,21 @@ export class DatabaseStorage implements IStorage {
         if (shouldApplyPolicy) {
           if (policy.policyType === 'deduction') {
             finalAmount -= policy.amount;
+            policyDetails.push({
+              name: policy.policyName,
+              type: 'deduction',
+              amount: policy.amount,
+              description: policy.description
+            });
             console.log(`Applied deduction policy "${policy.policyName}" to document ${documentId}: -${policy.amount}`);
           } else if (policy.policyType === 'addition') {
             finalAmount += policy.amount;
+            policyDetails.push({
+              name: policy.policyName,
+              type: 'addition',
+              amount: policy.amount,
+              description: policy.description
+            });
             console.log(`Applied addition policy "${policy.policyName}" to document ${documentId}: +${policy.amount}`);
           }
           appliedPolicies++;
@@ -2234,6 +2247,15 @@ export class DatabaseStorage implements IStorage {
       
       // 음수 방지
       finalAmount = Math.max(0, finalAmount);
+      
+      // 정책 세부 내역을 데이터베이스에 저장
+      if (policyDetails.length > 0) {
+        await db.run(sql`
+          UPDATE documents 
+          SET policy_details = ${JSON.stringify(policyDetails)}
+          WHERE id = ${documentId}
+        `);
+      }
       
       console.log(`Final settlement amount for document ${documentId}: ${baseAmount} -> ${finalAmount} (${appliedPolicies} policies applied)`);
       return finalAmount;

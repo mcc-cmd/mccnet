@@ -207,6 +207,7 @@ export function Settlements() {
     adjustment: number;
     documentId: number;
     customerName: string;
+    policyDetails?: Array<{name: string, type: string, amount: number, description?: string}>;
   } | null>(null);
 
 
@@ -1821,12 +1822,25 @@ export function Settlements() {
                                             variant={policyAdjustment > 0 ? "default" : "destructive"} 
                                             className="text-xs cursor-pointer hover:opacity-80"
                                             onClick={() => {
+                                              let policyDetails: Array<{name: string, type: string, amount: number, description?: string}> = [];
+                                              try {
+                                                const docPolicyDetails = (doc as any).policyDetails;
+                                                if (docPolicyDetails) {
+                                                  policyDetails = typeof docPolicyDetails === 'string' 
+                                                    ? JSON.parse(docPolicyDetails) 
+                                                    : docPolicyDetails;
+                                                }
+                                              } catch (e) {
+                                                console.warn('Failed to parse policy details for document', doc.id, e);
+                                              }
+                                              
                                               setSelectedPolicyDetail({
                                                 basePrice,
                                                 actualAmount,
                                                 adjustment: policyAdjustment,
                                                 documentId: doc.id,
-                                                customerName: doc.customerName
+                                                customerName: doc.customerName,
+                                                policyDetails
                                               });
                                               setPolicyDetailDialogOpen(true);
                                             }}
@@ -1960,9 +1974,37 @@ export function Settlements() {
                       </div>
                     </div>
 
+                    {/* 정책 세부 내역 */}
+                    {selectedPolicyDetail.policyDetails && selectedPolicyDetail.policyDetails.length > 0 && (
+                      <div className="space-y-3">
+                        <div className="text-sm font-medium text-gray-900 dark:text-gray-100">적용된 정책 세부 내역</div>
+                        <div className="space-y-2">
+                          {selectedPolicyDetail.policyDetails.map((policy, index) => (
+                            <div key={index} className="flex justify-between items-center p-2 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                              <div className="flex-1">
+                                <div className="text-sm font-medium">{policy.name}</div>
+                                {policy.description && (
+                                  <div className="text-xs text-gray-500 dark:text-gray-400">{policy.description}</div>
+                                )}
+                              </div>
+                              <Badge 
+                                variant={policy.type === 'deduction' ? 'destructive' : 'default'}
+                                className="ml-2"
+                              >
+                                {policy.type === 'deduction' ? '-' : '+'}{policy.amount.toLocaleString()}원
+                              </Badge>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
                     <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
                       <p className="text-xs text-blue-600 dark:text-blue-400">
-                        부가서비스 정책이 적용되어 정산 금액이 조정되었습니다.
+                        {selectedPolicyDetail.policyDetails && selectedPolicyDetail.policyDetails.length > 0 
+                          ? `총 ${selectedPolicyDetail.policyDetails.length}개의 정책이 적용되어 정산 금액이 조정되었습니다.`
+                          : '부가서비스 정책이 적용되어 정산 금액이 조정되었습니다.'
+                        }
                       </p>
                     </div>
 
