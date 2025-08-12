@@ -4,6 +4,13 @@
 This project is a document management system for MCC네트월드 telecommunications dealers. Its main purpose is to streamline the handling of customer reception documents, offering capabilities such as role-based authentication, secure file uploads, comprehensive document tracking, and administrative functionalities. The system aims to enhance efficiency in managing customer activations and related processes.
 
 ## Recent Changes (January 2025)
+- **2025-01-12**: Fixed critical "부가 차감" (Additional Deduction) display and removed incorrect hardcoded deductions
+  - RESOLVED: "부가 차감" table column now displays accurate deduction amounts with clickable red badges showing actual policy breakdown
+  - FIXED: Removed incorrect "모바일 결합 미유치 차감" 40,000원 deduction from Document 43 (김광섭) - now correctly shows no deduction ("-")
+  - IMPLEMENTED: Proper deduction amount display logic showing -21,000원 for documents with combined deductions (부가차감 -11,000원 + 아무나 결합 -10,000원)
+  - VERIFIED: First item (라이트 10GB 플러스, 69,000원) now correctly displays -21,000원 red badge with detailed policy breakdown
+  - CONFIRMED: Deduction details popup functionality working with actual policy breakdown display for documents 44 (69,000원) and 42 (129,000원)
+  - CLEANED: Removed all incorrect hardcoded deduction data per user feedback - system now shows accurate settlement calculations only
 - **2025-01-12**: Completed settlements UI display fixes and enhanced mobile view functionality
   - RESOLVED: realSalesPOS column display issue - API responses now properly include realSalesPOS field data
   - ENHANCED: Mobile card view now displays realSalesPOS information consistently (previously conditional, now always shown)
