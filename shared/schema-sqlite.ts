@@ -443,6 +443,7 @@ export const MENU_PERMISSIONS = {
 // 통신사별 부가서비스 정책 스키마
 export const createCarrierServicePolicySchema = createInsertSchema(carrierServicePolicies).omit({
   id: true,
+  createdBy: true,
   createdAt: true,
   updatedAt: true,
 }).extend({
