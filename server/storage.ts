@@ -2067,15 +2067,29 @@ export class DatabaseStorage implements IStorage {
       
       // 서비스 플랜의 결합 가능 여부 조회
       let servicePlanCombinationEligible = false;
+      let servicePlanName = "undefined";
       if (document.servicePlanId) {
-        const [servicePlan] = await db.select().from(servicePlans)
-          .where(eq(servicePlans.id, parseInt(document.servicePlanId)))
-          .limit(1);
-        
-        if (servicePlan) {
-          servicePlanCombinationEligible = servicePlan.combinationEligible || false;
-          console.log(`Document ${documentId} service plan "${servicePlan.planName}" combination eligible: ${servicePlanCombinationEligible}`);
+        try {
+          // servicePlanId를 문자열에서 숫자로 변환 (소수점 제거)
+          const planId = parseInt(parseFloat(document.servicePlanId.toString()));
+          console.log(`Document ${documentId} raw service_plan_id: "${document.servicePlanId}", parsed as: ${planId}`);
+          
+          const [servicePlan] = await db.select().from(servicePlans)
+            .where(eq(servicePlans.id, planId))
+            .limit(1);
+          
+          if (servicePlan) {
+            servicePlanCombinationEligible = Boolean(servicePlan.combinationEligible);
+            servicePlanName = servicePlan.name;
+            console.log(`Document ${documentId} service plan "${servicePlanName}" (ID: ${planId}) combination eligible: ${servicePlanCombinationEligible}`);
+          } else {
+            console.log(`Document ${documentId} service plan not found for ID: ${planId}`);
+          }
+        } catch (error) {
+          console.error(`Error fetching service plan for document ${documentId}:`, error);
         }
+      } else {
+        console.log(`Document ${documentId} has no service plan ID`);
       }
       
       // 해당 통신사의 활성 부가서비스 정책들 조회
