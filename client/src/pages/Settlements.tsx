@@ -1676,12 +1676,10 @@ export function Settlements() {
                             <span className="text-muted-foreground">판매점:</span>
                             <p className="font-medium text-xs truncate">{doc.storeName || doc.dealerName}</p>
                           </div>
-                          {(doc as any).realSalesPOS && (
-                            <div>
-                              <span className="text-muted-foreground">실판매POS:</span>
-                              <p className="font-medium text-xs truncate">{(doc as any).realSalesPOS}</p>
-                            </div>
-                          )}
+                          <div>
+                            <span className="text-muted-foreground">실판매POS:</span>
+                            <p className="font-medium text-xs truncate">{(doc as any).realSalesPOS || '-'}</p>
+                          </div>
                           <div>
                             <span className="text-muted-foreground">유형:</span>
                             <Badge variant={

@@ -4,6 +4,12 @@
 This project is a document management system for MCC네트월드 telecommunications dealers. Its main purpose is to streamline the handling of customer reception documents, offering capabilities such as role-based authentication, secure file uploads, comprehensive document tracking, and administrative functionalities. The system aims to enhance efficiency in managing customer activations and related processes.
 
 ## Recent Changes (January 2025)
+- **2025-01-12**: Completed settlements UI display fixes and enhanced mobile view functionality
+  - RESOLVED: realSalesPOS column display issue - API responses now properly include realSalesPOS field data
+  - ENHANCED: Mobile card view now displays realSalesPOS information consistently (previously conditional, now always shown)
+  - IMPROVED: Cleaned up policy adjustment calculation logs for production-ready UI experience
+  - VERIFIED: Desktop table and mobile card views both correctly display policy deductions (Document 36: -11,000원, Document 20: -40,000원)
+  - CONFIRMED: All settlement UI components working properly with 3-second toast notifications
 - **2025-01-11**: Completed visual policy feedback system and toast notification optimization
   - IMPLEMENTED: "부가 차감" column in settlements table showing service policy deductions/additions with visual indicators
   - ENHANCED: Policy visualization works on both desktop table view and mobile card view with proper color coding (green for additions, red for deductions)
