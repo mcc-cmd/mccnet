@@ -3865,25 +3865,31 @@ export function AdminPanel() {
                               </FormItem>
                             )}
                           />
-                          <div>
+                          <div className="space-y-4">
                             <Label className="text-sm font-medium">통신사별 접점코드 (선택사항)</Label>
-                            <div className="mt-2 space-y-3">
+                            <div className="space-y-3">
                               {carriersData?.map((carrier: any) => (
-                                <div key={carrier.id} className="flex items-center space-x-3">
-                                  <Label className="min-w-[120px] text-sm">{carrier.name}</Label>
-                                  <Input
-                                    placeholder="접점코드를 입력하세요"
-                                    value={dealerForm.watch(`carrierCodes.${carrier.name}`) || ''}
-                                    onChange={(e) => {
-                                      const currentCodes = dealerForm.getValues('carrierCodes');
-                                      dealerForm.setValue('carrierCodes', {
-                                        ...currentCodes,
-                                        [carrier.name]: e.target.value
-                                      });
-                                    }}
-                                    className="flex-1"
-                                  />
-                                </div>
+                                <FormField
+                                  key={carrier.id}
+                                  control={dealerForm.control}
+                                  name={`carrierCodes.${carrier.name}`}
+                                  render={({ field }) => (
+                                    <FormItem>
+                                      <div className="flex items-center space-x-3">
+                                        <FormLabel className="min-w-[120px] text-sm">{carrier.name}</FormLabel>
+                                        <FormControl>
+                                          <Input
+                                            placeholder="접점코드를 입력하세요"
+                                            {...field}
+                                            value={field.value || ''}
+                                            className="flex-1"
+                                          />
+                                        </FormControl>
+                                      </div>
+                                      <FormMessage />
+                                    </FormItem>
+                                  )}
+                                />
                               ))}
                             </div>
                           </div>
