@@ -124,6 +124,7 @@ export const servicePlans = pgTable("service_plans", {
   planType: varchar("plan_type", { length: 50 }).notNull(), // 요금제 유형 (LTE, 5G 등)
   dataAllowance: varchar("data_allowance", { length: 100 }), // 데이터 제공량
   monthlyFee: decimal("monthly_fee", { precision: 10, scale: 2 }).notNull(), // 월 요금
+  combinationEligible: boolean("combination_eligible").default(false), // 결합 가능 여부
   isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
@@ -257,6 +258,7 @@ export interface ServicePlan {
   planType: string;
   dataAllowance?: string;
   monthlyFee: number;
+  combinationEligible: boolean; // 결합 가능 여부
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -637,6 +639,7 @@ export interface ServicePlan {
   planType: string; // 5G, LTE, etc.
   dataAllowance: string;
   monthlyFee: number;
+  combinationEligible: boolean; // 결합 가능 여부
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -689,6 +692,7 @@ export const createServicePlanSchema = z.object({
   planType: z.string().min(1, "요금제 유형을 선택해주세요"),
   dataAllowance: z.string().min(1, "데이터 허용량을 입력해주세요"),
   monthlyFee: z.number().min(0, "월 요금을 입력해주세요"),
+  combinationEligible: z.boolean().default(false),
   isActive: z.boolean().default(true),
 });
 

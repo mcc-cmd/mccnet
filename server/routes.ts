@@ -2876,12 +2876,21 @@ router.post('/api/service-plans/upload-excel', requireAdmin, pricingUpload.singl
         const monthlyFeeRaw = String(rowData['월요금(원)'] || rowData['월요금'] || rowData['monthlyFee'] || '0');
         const monthlyFee = parseInt(monthlyFeeRaw.replace(/[^0-9]/g, '')) || 0;
         
+        // 결합 가능 여부 처리
+        const combinationEligibleRaw = rowData['결합가능'] || rowData['combinationEligible'] || false;
+        const combinationEligible = combinationEligibleRaw === true || 
+                                    combinationEligibleRaw === 'TRUE' || 
+                                    combinationEligibleRaw === 'true' || 
+                                    combinationEligibleRaw === '1' || 
+                                    combinationEligibleRaw === 1;
+
         const planData: any = {
           planName: planName,
           carrier: carrier,
           planType: String(rowData['요금제유형'] || rowData['planType'] || rowData['유형'] || 'LTE').trim(),
           dataAllowance: String(rowData['데이터제공량'] || rowData['dataAllowance'] || rowData['데이터'] || '').trim(),
           monthlyFee: monthlyFee,
+          combinationEligible: combinationEligible,
           isActive: rowData['활성여부'] !== false && rowData['isActive'] !== false
         };
 

@@ -979,42 +979,47 @@ export function Documents() {
                     </div>
                   </div>
 
-                  {/* 결합 옵션 */}
-                  <div>
-                    <Label>결합</Label>
-                    <div className="flex space-x-4 mt-2">
-                      <label className="flex items-center space-x-2">
-                        <input
-                          type="checkbox"
-                          checked={activationForm.bundleApplied}
-                          onChange={(e) => {
-                            setActivationForm(prev => ({
-                              ...prev,
-                              bundleApplied: e.target.checked,
-                              bundleNotApplied: e.target.checked ? false : prev.bundleNotApplied
-                            }));
-                          }}
-                          className="rounded"
-                        />
-                        <span className="text-sm">결합</span>
-                      </label>
-                      <label className="flex items-center space-x-2">
-                        <input
-                          type="checkbox"
-                          checked={activationForm.bundleNotApplied}
-                          onChange={(e) => {
-                            setActivationForm(prev => ({
-                              ...prev,
-                              bundleNotApplied: e.target.checked,
-                              bundleApplied: e.target.checked ? false : prev.bundleApplied
-                            }));
-                          }}
-                          className="rounded"
-                        />
-                        <span className="text-sm">미결합</span>
-                      </label>
-                    </div>
-                  </div>
+                  {/* 결합 옵션 - 선택된 요금제가 결합 가능한 경우에만 표시 */}
+                  {(() => {
+                    const selectedPlan = servicePlans?.find(plan => plan.id.toString() === activationForm.servicePlanId);
+                    return selectedPlan?.combinationEligible ? (
+                      <div>
+                        <Label>결합</Label>
+                        <div className="flex space-x-4 mt-2">
+                          <label className="flex items-center space-x-2">
+                            <input
+                              type="checkbox"
+                              checked={activationForm.bundleApplied}
+                              onChange={(e) => {
+                                setActivationForm(prev => ({
+                                  ...prev,
+                                  bundleApplied: e.target.checked,
+                                  bundleNotApplied: e.target.checked ? false : prev.bundleNotApplied
+                                }));
+                              }}
+                              className="rounded"
+                            />
+                            <span className="text-sm">결합</span>
+                          </label>
+                          <label className="flex items-center space-x-2">
+                            <input
+                              type="checkbox"
+                              checked={activationForm.bundleNotApplied}
+                              onChange={(e) => {
+                                setActivationForm(prev => ({
+                                  ...prev,
+                                  bundleNotApplied: e.target.checked,
+                                  bundleApplied: e.target.checked ? false : prev.bundleApplied
+                                }));
+                              }}
+                              className="rounded"
+                            />
+                            <span className="text-sm">미결합</span>
+                          </label>
+                        </div>
+                      </div>
+                    ) : null;
+                  })()}
                   
                   {/* 기기/유심/가입번호 정보 */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

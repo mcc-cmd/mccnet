@@ -1755,6 +1755,7 @@ export function AdminPanel() {
       planType: '',
       dataAllowance: '',
       monthlyFee: 0,
+      combinationEligible: false,
       isActive: true,
     },
   });
@@ -1769,6 +1770,7 @@ export function AdminPanel() {
       planType: '',
       dataAllowance: '',
       monthlyFee: 0,
+      combinationEligible: false,
       isActive: true,
     },
   });
@@ -2766,6 +2768,7 @@ export function AdminPanel() {
       planType: plan.planType,
       dataAllowance: plan.dataAllowance,
       monthlyFee: plan.monthlyFee,
+      combinationEligible: plan.combinationEligible || false,
       isActive: plan.isActive,
     });
     setEditServicePlanDialogOpen(true);
@@ -2814,10 +2817,10 @@ export function AdminPanel() {
   const handleDownloadServicePlanTemplate = () => {
     // Create Excel template for service plans
     const template = [
-      ['요금제명', '통신사', '요금제유형', '데이터제공량', '월요금(원)', '활성여부'],
-      ['선)363/1M', 'SK텔링크', 'LTE', '1GB', '36300', 'TRUE'],
-      ['중외)5G 웰컴 5', 'KT엠모바일', '5G', '5GB', '0', 'TRUE'],
-      ['미)이동의즐거움 K', 'LG미디어로그', 'LTE', '무제한', '0', 'TRUE']
+      ['요금제명', '통신사', '요금제유형', '데이터제공량', '월요금(원)', '결합가능', '활성여부'],
+      ['선)363/1M', 'SK텔링크', 'LTE', '1GB', '36300', 'FALSE', 'TRUE'],
+      ['중외)5G 웰컴 5', 'KT엠모바일', '5G', '5GB', '0', 'TRUE', 'TRUE'],
+      ['미)이동의즐거움 K', 'LG미디어로그', 'LTE', '무제한', '0', 'FALSE', 'TRUE']
     ];
     
     const csvContent = template.map(row => row.join(',')).join('\n');
@@ -4736,7 +4739,7 @@ export function AdminPanel() {
                         <li>• 2단계: 양식에 맞춰 요금제 정보를 입력하세요</li>
                         <li>• 3단계: 완성된 파일을 업로드하세요</li>
                         <li>• 지원 형식: .xlsx, .xls, .csv</li>
-                        <li>• 필수 컬럼: 요금제명, 통신사, 유형, 데이터, 월요금</li>
+                        <li>• 필수 컬럼: 요금제명, 통신사, 유형, 데이터, 월요금, 결합가능</li>
                       </ul>
                     </div>
 
@@ -5009,6 +5012,28 @@ export function AdminPanel() {
                               </FormItem>
                             )}
                           />
+                          <FormField
+                            control={servicePlanForm.control}
+                            name="combinationEligible"
+                            render={({ field }) => (
+                              <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                                <FormControl>
+                                  <Checkbox
+                                    checked={field.value}
+                                    onCheckedChange={field.onChange}
+                                  />
+                                </FormControl>
+                                <div className="space-y-1 leading-none">
+                                  <FormLabel>
+                                    결합 가능 요금제
+                                  </FormLabel>
+                                  <FormDescription>
+                                    이 요금제가 결합 상품으로 가입 가능한 경우 체크하세요
+                                  </FormDescription>
+                                </div>
+                              </FormItem>
+                            )}
+                          />
                           <div className="flex justify-end space-x-2">
                             <Button type="button" variant="outline" onClick={() => setServicePlanDialogOpen(false)}>
                               취소
@@ -5123,6 +5148,28 @@ export function AdminPanel() {
                                   />
                                 </FormControl>
                                 <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={editServicePlanForm.control}
+                            name="combinationEligible"
+                            render={({ field }) => (
+                              <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                                <FormControl>
+                                  <Checkbox
+                                    checked={field.value}
+                                    onCheckedChange={field.onChange}
+                                  />
+                                </FormControl>
+                                <div className="space-y-1 leading-none">
+                                  <FormLabel>
+                                    결합 가능 요금제
+                                  </FormLabel>
+                                  <FormDescription>
+                                    이 요금제가 결합 상품으로 가입 가능한 경우 체크하세요
+                                  </FormDescription>
+                                </div>
                               </FormItem>
                             )}
                           />

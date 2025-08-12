@@ -224,6 +224,7 @@ export const servicePlans = sqliteTable("service_plans", {
   discountType: text("discount_type"),
   discountAmount: real("discount_amount").default(0),
   finalPrice: real("final_price"),
+  combinationEligible: integer("combination_eligible", { mode: 'boolean' }).default(0), // 결합 가능 여부
   isActive: integer("is_active", { mode: 'boolean' }).default(1),
   createdAt: text("created_at").default(sql`CURRENT_TIMESTAMP`),
   updatedAt: text("updated_at").default(sql`CURRENT_TIMESTAMP`),

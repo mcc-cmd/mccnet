@@ -557,54 +557,59 @@ export default function WorkRequests() {
                   </div>
                 </div>
 
-                {/* 결합 */}
-                <div>
-                  <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                    결합
-                  </label>
-                  <div className="flex space-x-4 mt-2">
-                    <FormField
-                      control={statusForm.control}
-                      name="bundleApplied"
-                      render={({ field }) => (
-                        <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                          <FormControl>
-                            <Checkbox
-                              checked={field.value}
-                              onCheckedChange={(checked) => {
-                                field.onChange(checked);
-                                if (checked) {
-                                  statusForm.setValue('bundleNotApplied', false);
-                                }
-                              }}
-                            />
-                          </FormControl>
-                          <FormLabel className="text-sm font-normal">결합</FormLabel>
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={statusForm.control}
-                      name="bundleNotApplied"
-                      render={({ field }) => (
-                        <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                          <FormControl>
-                            <Checkbox
-                              checked={field.value}
-                              onCheckedChange={(checked) => {
-                                field.onChange(checked);
-                                if (checked) {
-                                  statusForm.setValue('bundleApplied', false);
-                                }
-                              }}
-                            />
-                          </FormControl>
-                          <FormLabel className="text-sm font-normal">미결합</FormLabel>
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                </div>
+                {/* 결합 - 선택된 요금제가 결합 가능한 경우에만 표시 */}
+                {(() => {
+                  const selectedPlan = servicePlans?.find(plan => plan.id.toString() === statusForm.watch('servicePlanId'));
+                  return selectedPlan?.combinationEligible ? (
+                    <div>
+                      <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                        결합
+                      </label>
+                      <div className="flex space-x-4 mt-2">
+                        <FormField
+                          control={statusForm.control}
+                          name="bundleApplied"
+                          render={({ field }) => (
+                            <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                              <FormControl>
+                                <Checkbox
+                                  checked={field.value}
+                                  onCheckedChange={(checked) => {
+                                    field.onChange(checked);
+                                    if (checked) {
+                                      statusForm.setValue('bundleNotApplied', false);
+                                    }
+                                  }}
+                                />
+                              </FormControl>
+                              <FormLabel className="text-sm font-normal">결합</FormLabel>
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={statusForm.control}
+                          name="bundleNotApplied"
+                          render={({ field }) => (
+                            <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                              <FormControl>
+                                <Checkbox
+                                  checked={field.value}
+                                  onCheckedChange={(checked) => {
+                                    field.onChange(checked);
+                                    if (checked) {
+                                      statusForm.setValue('bundleApplied', false);
+                                    }
+                                  }}
+                                />
+                              </FormControl>
+                              <FormLabel className="text-sm font-normal">미결합</FormLabel>
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                    </div>
+                  ) : null;
+                })()}
 
                 <FormField
                   control={statusForm.control}
