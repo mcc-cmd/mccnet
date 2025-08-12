@@ -1568,7 +1568,8 @@ export class DatabaseStorage implements IStorage {
             }
           }
           
-          // contactCode가 있으면 판매점명 조회
+          // contactCode가 있으면 판매점명과 실판매POS 조회
+          let realSalesPOS = null;
           if (doc.contactCode) {
             try {
               const [contactCodeResult] = await db.select()
@@ -1578,6 +1579,7 @@ export class DatabaseStorage implements IStorage {
               
               if (contactCodeResult) {
                 storeName = contactCodeResult.dealerName;
+                realSalesPOS = contactCodeResult.realSalesPOS;
               }
             } catch (error) {
               console.error('Error fetching store name for doc', doc.id, ':', error);
@@ -1619,7 +1621,8 @@ export class DatabaseStorage implements IStorage {
             assignedAt: doc.assignedAt,
             dealerName: '미확인',
             servicePlanName: servicePlanName,
-            storeName: storeName
+            storeName: storeName,
+            realSalesPOS: realSalesPOS
           };
         })
       );
