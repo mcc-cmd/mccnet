@@ -2802,12 +2802,23 @@ export class DatabaseStorage implements IStorage {
           contactEmail: dealerData.contactEmail,
           contactPhone: dealerData.contactPhone,
           address: dealerData.location,
-          contactCode: dealerData.contactCode,
           status: '승인', // 관리자가 직접 생성하므로 바로 승인
           isActive: true,
           createdAt: new Date()
         })
         .returning();
+
+      // 통신사별 접점코드 저장
+      if (dealerData.carrierCodes && typeof dealerData.carrierCodes === 'object') {
+        for (const [carrier, contactCode] of Object.entries(dealerData.carrierCodes)) {
+          if (contactCode && typeof contactCode === 'string' && contactCode.trim() !== '') {
+            await db.run(sql`
+              INSERT INTO dealer_carrier_codes (dealer_id, carrier, contact_code, created_at, updated_at)
+              VALUES (${dealer.id}, ${carrier}, ${contactCode.trim()}, ${new Date().toISOString()}, ${new Date().toISOString()})
+            `);
+          }
+        }
+      }
       
       return dealer;
     } catch (error) {
@@ -4111,12 +4122,26 @@ export class DatabaseStorage implements IStorage {
       const isValidPassword = await bcrypt.compare(password, dealer.password);
       if (!isValidPassword) return null;
 
+      // 판매점의 통신사별 접점코드 조회
+      const carrierCodes = await db.all(sql`
+        SELECT carrier, contact_code as contactCode
+        FROM dealer_carrier_codes 
+        WHERE dealer_id = ${dealer.id}
+      `);
+
+      // 통신사별 접점코드를 객체로 변환
+      const carrierCodesMap: Record<string, string> = {};
+      carrierCodes.forEach((code: any) => {
+        carrierCodesMap[code.carrier] = code.contactCode;
+      });
+
       return {
         id: dealer.id,
         businessName: dealer.business_name,
         representativeName: dealer.representative_name,
         username: dealer.username,
         contactCode: dealer.contact_code,
+        carrierCodes: carrierCodesMap,
         userType: 'dealer'
       };
     } catch (error) {

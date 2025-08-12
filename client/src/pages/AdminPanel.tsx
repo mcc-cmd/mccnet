@@ -51,7 +51,7 @@ type CreateDealerForm = {
   contactEmail: string;
   contactPhone: string;
   location: string;
-  contactCode?: string;
+  carrierCodes: Record<string, string>; // 통신사별 접점코드
 };
 
 type CreateUserForm = {
@@ -1507,6 +1507,7 @@ export function AdminPanel() {
       contactEmail: z.string().email('올바른 이메일 형식이 아닙니다'),
       contactPhone: z.string().min(1, '전화번호는 필수입니다'),
       location: z.string().min(1, '위치는 필수입니다'),
+      carrierCodes: z.record(z.string()),
     })),
     defaultValues: {
       name: '',
@@ -1515,7 +1516,7 @@ export function AdminPanel() {
       contactEmail: '',
       contactPhone: '',
       location: '',
-      contactCode: '',
+      carrierCodes: {},
     },
   });
   const [carrierDealerDetails, setCarrierDealerDetails] = useState<Array<{ dealerName: string; count: number }>>([]);
@@ -3864,31 +3865,28 @@ export function AdminPanel() {
                               </FormItem>
                             )}
                           />
-                          <FormField
-                            control={dealerForm.control}
-                            name="contactCode"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>접점코드 (선택사항)</FormLabel>
-                                <Select onValueChange={field.onChange} value={field.value || ""}>
-                                  <FormControl>
-                                    <SelectTrigger>
-                                      <SelectValue placeholder="접점코드를 선택하세요" />
-                                    </SelectTrigger>
-                                  </FormControl>
-                                  <SelectContent>
-                                    <SelectItem value="none">접점코드 없음</SelectItem>
-                                    {contactCodes?.filter(code => code.contactCode && code.contactCode.trim() !== '').map((code) => (
-                                      <SelectItem key={code.id} value={code.contactCode}>
-                                        {code.contactCode} - {code.dealerName} ({code.carrier})
-                                      </SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
+                          <div>
+                            <Label className="text-sm font-medium">통신사별 접점코드 (선택사항)</Label>
+                            <div className="mt-2 space-y-3">
+                              {carriers?.data?.map((carrier: any) => (
+                                <div key={carrier.id} className="flex items-center space-x-3">
+                                  <Label className="min-w-[120px] text-sm">{carrier.name}</Label>
+                                  <Input
+                                    placeholder="접점코드를 입력하세요"
+                                    value={dealerForm.watch(`carrierCodes.${carrier.name}`) || ''}
+                                    onChange={(e) => {
+                                      const currentCodes = dealerForm.getValues('carrierCodes');
+                                      dealerForm.setValue('carrierCodes', {
+                                        ...currentCodes,
+                                        [carrier.name]: e.target.value
+                                      });
+                                    }}
+                                    className="flex-1"
+                                  />
+                                </div>
+                              ))}
+                            </div>
+                          </div>
                           <div className="flex justify-end space-x-2">
                             <Button type="button" variant="outline" onClick={() => setDealerDialogOpen(false)}>
                               취소

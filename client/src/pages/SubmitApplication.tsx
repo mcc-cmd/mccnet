@@ -515,11 +515,11 @@ export function SubmitApplication() {
                           setFormData(prev => {
                             const newData = { ...prev, carrier: value };
                             
-                            // 판매점 사용자이고 접점코드가 설정되어 있으면 자동으로 입력
-                            if (user?.userType === 'dealer' && user?.contactCode) {
-                              newData.contactCode = user.contactCode;
+                            // 판매점 사용자이고 해당 통신사의 접점코드가 설정되어 있으면 자동으로 입력
+                            if (user?.userType === 'dealer' && user?.carrierCodes && user.carrierCodes[value]) {
+                              newData.contactCode = user.carrierCodes[value];
                               // 접점코드가 있으면 자동 조회 시도
-                              handleContactCodeChange(user.contactCode);
+                              handleContactCodeChange(user.carrierCodes[value]);
                             } else {
                               // 기타 통신사 선택 시 접점코드를 판매점명으로 설정
                               if (value.includes('기타') && newData.contactCode.trim()) {

@@ -540,3 +540,18 @@ export const chatMessages = sqliteTable("chat_messages", {
   isRead: integer("is_read", { mode: 'boolean' }).default(0),
   createdAt: text("created_at").default(sql`CURRENT_TIMESTAMP`),
 });
+
+// 판매점별 통신사 접점코드 테이블
+export const dealerCarrierCodes = sqliteTable("dealer_carrier_codes", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  dealerId: integer("dealer_id").notNull(), // 판매점 ID (dealer_registrations 테이블 참조)
+  carrier: text("carrier").notNull(), // 통신사명
+  contactCode: text("contact_code").notNull(), // 해당 통신사의 접점코드
+  createdAt: text("created_at").default(sql`CURRENT_TIMESTAMP`),
+  updatedAt: text("updated_at").default(sql`CURRENT_TIMESTAMP`),
+}, (table) => ({
+  dealerCarrierIdx: uniqueIndex("dealer_carrier_unique").on(table.dealerId, table.carrier),
+}));
+
+export type InsertDealerCarrierCode = typeof dealerCarrierCodes.$inferInsert;
+export type DealerCarrierCode = typeof dealerCarrierCodes.$inferSelect;
