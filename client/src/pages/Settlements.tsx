@@ -830,10 +830,13 @@ export function Settlements() {
     }
   };
 
-  const getStatusBadge = (bundleApplied: boolean, bundleNotApplied: boolean) => {
-    if (bundleApplied) {
+  const getStatusBadge = (bundleApplied: boolean | number, bundleNotApplied: boolean | number) => {
+    const applied = Number(bundleApplied) === 1;
+    const notApplied = Number(bundleNotApplied) === 1;
+    
+    if (applied) {
       return <Badge variant="default" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100">결합</Badge>;
-    } else if (bundleNotApplied) {
+    } else if (notApplied) {
       return <Badge variant="secondary" className="bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-100">미결합</Badge>;
     } else {
       return <Badge variant="outline">미지정</Badge>;
@@ -1533,7 +1536,7 @@ export function Settlements() {
                           </div>
                         </TableCell>
                         <TableCell className="whitespace-nowrap">
-                          {doc.additionalServices ? (
+                          {doc.additionalServices && doc.additionalServices.trim() !== '' ? (
                             <div className="flex gap-1">
                               {typeof doc.additionalServices === 'string' ? (
                                 doc.additionalServices.split(', ').slice(0, 1).map((service, index) => (

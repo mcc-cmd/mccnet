@@ -1603,6 +1603,33 @@ export class DatabaseStorage implements IStorage {
             }
           }
           
+          // 부가서비스 이름 조회
+          let additionalServicesNames = '';
+          if (doc.additionalServiceIds) {
+            try {
+              const serviceIds = JSON.parse(doc.additionalServiceIds);
+              if (Array.isArray(serviceIds) && serviceIds.length > 0) {
+                const services = await Promise.all(
+                  serviceIds.map(async (serviceId: number) => {
+                    try {
+                      const [service] = await db.select()
+                        .from(additionalServices)
+                        .where(eq(additionalServices.id, serviceId))
+                        .limit(1);
+                      return service?.serviceName || null;
+                    } catch (e) {
+                      console.error('Error fetching service name for ID', serviceId, ':', e);
+                      return null;
+                    }
+                  })
+                );
+                additionalServicesNames = services.filter(Boolean).join(', ');
+              }
+            } catch (error) {
+              console.error('Error parsing additional service IDs for doc', doc.id, ':', error);
+            }
+          }
+          
           return {
             id: doc.id,
             documentNumber: doc.documentNumber,
@@ -1639,7 +1666,16 @@ export class DatabaseStorage implements IStorage {
             dealerName: '미확인',
             servicePlanName: servicePlanName,
             storeName: storeName,
-            realSalesPOS: realSalesPOS
+            realSalesPOS: realSalesPOS,
+            // 정산 관련 필드 매핑
+            registrationFeePrepaid: doc.registrationFeePrepaid || 0,
+            registrationFeePostpaid: doc.registrationFeePostpaid || 0,
+            simFeePrepaid: doc.simFeePrepaid || 0,
+            simFeePostpaid: doc.simFeePostpaid || 0,
+            bundleApplied: doc.bundleApplied || 0,
+            bundleNotApplied: doc.bundleNotApplied || 0,
+            additionalServiceIds: doc.additionalServiceIds || '',
+            additionalServices: additionalServicesNames || ''
           };
         })
       );
