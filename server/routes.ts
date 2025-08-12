@@ -3166,10 +3166,17 @@ router.get('/api/settlement-unit-prices/service-plan/:servicePlanId', requireAdm
 // Additional Services API Routes
 router.get('/api/additional-services', requireAuth, async (req: any, res) => {
   try {
-    const { serviceType } = req.query;
-    const additionalServices = serviceType 
-      ? await storage.getAdditionalServicesByType(serviceType)
-      : await storage.getAdditionalServices();
+    const { serviceType, carrier } = req.query;
+    let additionalServices;
+    
+    if (carrier) {
+      additionalServices = await storage.getAdditionalServicesByCarrier(carrier);
+    } else if (serviceType) {
+      additionalServices = await storage.getAdditionalServicesByType(serviceType);
+    } else {
+      additionalServices = await storage.getAdditionalServices();
+    }
+    
     res.json(additionalServices);
   } catch (error: any) {
     res.status(500).json({ error: error.message });

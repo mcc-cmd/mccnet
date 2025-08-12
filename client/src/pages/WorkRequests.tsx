@@ -58,10 +58,15 @@ export default function WorkRequests() {
     queryFn: () => apiRequest('/api/service-plans')
   });
 
-  // 부가 서비스 조회
+  // 부가 서비스 조회 (통신망별 필터링)
   const { data: additionalServices = [] } = useQuery({
-    queryKey: ['/api/additional-services'],
-    queryFn: () => apiRequest('/api/additional-services')
+    queryKey: ['/api/additional-services', selectedDocument?.carrier],
+    queryFn: () => {
+      const carrier = selectedDocument?.carrier;
+      const params = carrier ? `?carrier=${encodeURIComponent(carrier)}` : '';
+      return apiRequest(`/api/additional-services${params}`);
+    },
+    enabled: statusDialogOpen, // 상태 변경 다이얼로그가 열렸을 때만 실행
   });
 
   // 활성화 상태 변경 폼

@@ -69,6 +69,7 @@ export interface IStorage {
   
   // 부가서비스 관련 메서드
   getAdditionalServices(): Promise<AdditionalService[]>;
+  getAdditionalServicesByCarrier(carrier: string): Promise<AdditionalService[]>;
   createAdditionalService(data: any): Promise<AdditionalService>;
   updateAdditionalService(id: number, data: any): Promise<AdditionalService>;
   deleteAdditionalService(id: number): Promise<void>;
@@ -1202,6 +1203,21 @@ export class DatabaseStorage implements IStorage {
       return result;
     } catch (error) {
       console.error('Get additional services error:', error);
+      return [];
+    }
+  }
+
+  async getAdditionalServicesByCarrier(carrier: string): Promise<any[]> {
+    try {
+      const result = await db.select().from(additionalServices)
+        .where(and(
+          eq(additionalServices.isActive, true),
+          eq(additionalServices.carrier, carrier)
+        ))
+        .orderBy(additionalServices.serviceName);
+      return result;
+    } catch (error) {
+      console.error('Get additional services by carrier error:', error);
       return [];
     }
   }

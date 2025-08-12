@@ -120,14 +120,16 @@ export function Documents() {
     loading: servicePlansLoading 
   });
 
-  // 부가서비스 고정 데이터 (필링, 캐치콜, 링투유, 통화중대기, 00700)
-  const additionalServices = [
-    { id: 1, serviceName: '필링', serviceType: '부가서비스', monthlyFee: 3000 },
-    { id: 2, serviceName: '캐치콜', serviceType: '부가서비스', monthlyFee: 2000 },
-    { id: 3, serviceName: '링투유', serviceType: '부가서비스', monthlyFee: 1500 },
-    { id: 4, serviceName: '통화중대기', serviceType: '부가서비스', monthlyFee: 1000 },
-    { id: 5, serviceName: '00700', serviceType: '부가서비스', monthlyFee: 0 }
-  ];
+  // 부가서비스 API 데이터 (통신망별 필터링)
+  const { data: additionalServices = [] } = useQuery({
+    queryKey: ['/api/additional-services', selectedDocument?.carrier],
+    queryFn: () => {
+      const carrier = selectedDocument?.carrier;
+      const params = carrier ? `?carrier=${encodeURIComponent(carrier)}` : '';
+      return apiRequest(`/api/additional-services${params}`);
+    },
+    enabled: activationDialogOpen, // 활성화 대화상자가 열렸을 때만 실행
+  });
 
   const uploadMutation = useMutation({
     mutationFn: async (data: FormData) => {
