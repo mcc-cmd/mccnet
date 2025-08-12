@@ -3895,6 +3895,236 @@ export class DatabaseStorage implements IStorage {
       return [];
     }
   }
+
+  // =====================================
+  // 판매점 등록 관련 메서드
+  // =====================================
+  
+  async createDealerRegistration(data: any): Promise<any> {
+    try {
+      // 아이디 중복 체크
+      const existingDealer = await db.get(sql`
+        SELECT username FROM dealer_registrations WHERE username = ${data.username}
+      `);
+      
+      if (existingDealer) {
+        throw new Error('이미 사용 중인 아이디입니다.');
+      }
+
+      // 사업자번호 중복 체크
+      const existingBusiness = await db.get(sql`
+        SELECT business_number FROM dealer_registrations WHERE business_number = ${data.businessNumber}
+      `);
+      
+      if (existingBusiness) {
+        throw new Error('이미 등록된 사업자번호입니다.');
+      }
+
+      const hashedPassword = await bcrypt.hash(data.password, 10);
+
+      const result = await db.run(sql`
+        INSERT INTO dealer_registrations (
+          business_name, representative_name, business_number, contact_phone, 
+          contact_email, address, bank_account, bank_name, account_holder,
+          username, password, status, is_active, created_at, updated_at
+        ) VALUES (
+          ${data.businessName}, ${data.representativeName}, ${data.businessNumber}, 
+          ${data.contactPhone}, ${data.contactEmail}, ${data.address}, 
+          ${data.bankAccount || null}, ${data.bankName || null}, ${data.accountHolder || null},
+          ${data.username}, ${hashedPassword}, '대기', 1, 
+          ${new Date().toISOString()}, ${new Date().toISOString()}
+        )
+      `);
+
+      return { id: result.lastInsertRowid, ...data, password: undefined };
+    } catch (error) {
+      console.error('Create dealer registration error:', error);
+      throw error;
+    }
+  }
+
+  async getDealerRegistrations(): Promise<any[]> {
+    try {
+      const result = await db.all(sql`
+        SELECT 
+          id, business_name as "businessName", representative_name as "representativeName",
+          business_number as "businessNumber", contact_phone as "contactPhone",
+          contact_email as "contactEmail", address, bank_account as "bankAccount",
+          bank_name as "bankName", account_holder as "accountHolder",
+          username, status, approved_by as "approvedBy", approved_at as "approvedAt",
+          rejection_reason as "rejectionReason", is_active as "isActive",
+          created_at as "createdAt", updated_at as "updatedAt"
+        FROM dealer_registrations 
+        ORDER BY created_at DESC
+      `);
+      
+      return result;
+    } catch (error) {
+      console.error('Get dealer registrations error:', error);
+      return [];
+    }
+  }
+
+  async updateDealerRegistrationStatus(id: number, status: string, adminId: number, rejectionReason?: string): Promise<void> {
+    try {
+      const now = new Date().toISOString();
+      
+      if (status === '승인') {
+        await db.run(sql`
+          UPDATE dealer_registrations 
+          SET status = ${status}, approved_by = ${adminId}, approved_at = ${now}, updated_at = ${now}
+          WHERE id = ${id}
+        `);
+      } else if (status === '거부') {
+        await db.run(sql`
+          UPDATE dealer_registrations 
+          SET status = ${status}, rejection_reason = ${rejectionReason || ''}, updated_at = ${now}
+          WHERE id = ${id}
+        `);
+      }
+    } catch (error) {
+      console.error('Update dealer registration status error:', error);
+      throw error;
+    }
+  }
+
+  async authenticateDealer(username: string, password: string): Promise<any> {
+    try {
+      const dealer = await db.get(sql`
+        SELECT * FROM dealer_registrations 
+        WHERE username = ${username} AND status = '승인' AND is_active = 1
+      `);
+
+      if (!dealer) return null;
+
+      const isValidPassword = await bcrypt.compare(password, dealer.password);
+      if (!isValidPassword) return null;
+
+      return {
+        id: dealer.id,
+        businessName: dealer.business_name,
+        representativeName: dealer.representative_name,
+        username: dealer.username,
+        userType: 'dealer'
+      };
+    } catch (error) {
+      console.error('Dealer authentication error:', error);
+      return null;
+    }
+  }
+
+  // =====================================
+  // 채팅 관련 메서드
+  // =====================================
+
+  async createChatRoom(data: { documentId: number; dealerId?: number; isActive: boolean }): Promise<any> {
+    try {
+      const result = await db.run(sql`
+        INSERT INTO chat_rooms (document_id, dealer_id, is_active, created_at, updated_at)
+        VALUES (${data.documentId}, ${data.dealerId || null}, ${data.isActive ? 1 : 0}, 
+                ${new Date().toISOString()}, ${new Date().toISOString()})
+      `);
+
+      return {
+        id: result.lastInsertRowid,
+        documentId: data.documentId,
+        dealerId: data.dealerId,
+        isActive: data.isActive,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
+    } catch (error) {
+      console.error('Create chat room error:', error);
+      throw error;
+    }
+  }
+
+  async getChatRoomByDocumentId(documentId: number): Promise<any> {
+    try {
+      const result = await db.get(sql`
+        SELECT 
+          id, document_id as "documentId", dealer_id as "dealerId", 
+          is_active as "isActive", created_at as "createdAt", updated_at as "updatedAt"
+        FROM chat_rooms 
+        WHERE document_id = ${documentId} AND is_active = 1
+        LIMIT 1
+      `);
+      
+      return result || null;
+    } catch (error) {
+      console.error('Get chat room by document ID error:', error);
+      return null;
+    }
+  }
+
+  async createChatMessage(data: {
+    chatRoomId: number;
+    senderId: number;
+    senderType: string;
+    senderName: string;
+    message: string;
+    messageType: string;
+    isRead: boolean;
+  }): Promise<any> {
+    try {
+      const result = await db.run(sql`
+        INSERT INTO chat_messages (
+          chat_room_id, sender_id, sender_type, sender_name, 
+          message, message_type, is_read, created_at
+        ) VALUES (
+          ${data.chatRoomId}, ${data.senderId}, ${data.senderType}, ${data.senderName},
+          ${data.message}, ${data.messageType}, ${data.isRead ? 1 : 0}, ${new Date().toISOString()}
+        )
+      `);
+
+      return {
+        id: result.lastInsertRowid,
+        chatRoomId: data.chatRoomId,
+        senderId: data.senderId,
+        senderType: data.senderType,
+        senderName: data.senderName,
+        message: data.message,
+        messageType: data.messageType,
+        isRead: data.isRead,
+        createdAt: new Date()
+      };
+    } catch (error) {
+      console.error('Create chat message error:', error);
+      throw error;
+    }
+  }
+
+  async getChatMessages(chatRoomId: number): Promise<any[]> {
+    try {
+      const result = await db.all(sql`
+        SELECT 
+          id, chat_room_id as "chatRoomId", sender_id as "senderId",
+          sender_type as "senderType", sender_name as "senderName",
+          message, message_type as "messageType", is_read as "isRead",
+          created_at as "createdAt"
+        FROM chat_messages 
+        WHERE chat_room_id = ${chatRoomId}
+        ORDER BY created_at ASC
+      `);
+      
+      return result;
+    } catch (error) {
+      console.error('Get chat messages error:', error);
+      return [];
+    }
+  }
+
+  async markMessageAsRead(messageId: number): Promise<void> {
+    try {
+      await db.run(sql`
+        UPDATE chat_messages 
+        SET is_read = 1 
+        WHERE id = ${messageId}
+      `);
+    } catch (error) {
+      console.error('Mark message as read error:', error);
+    }
+  }
 }
 
 export const storage = new DatabaseStorage();

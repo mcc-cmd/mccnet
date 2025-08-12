@@ -218,6 +218,56 @@ export const documents = pgTable("documents", {
   settlementAmount: decimal("settlement_amount", { precision: 10, scale: 2 }),
 });
 
+// 판매점 자체 가입 테이블
+export const dealerRegistrations = pgTable("dealer_registrations", {
+  id: serial("id").primaryKey(),
+  businessName: varchar("business_name", { length: 255 }).notNull(), // 사업체명
+  representativeName: varchar("representative_name", { length: 100 }).notNull(), // 대표자명
+  businessNumber: varchar("business_number", { length: 20 }).unique().notNull(), // 사업자번호
+  contactPhone: varchar("contact_phone", { length: 20 }).notNull(),
+  contactEmail: varchar("contact_email", { length: 100 }).unique().notNull(),
+  address: text("address").notNull(), // 사업장 주소
+  bankAccount: varchar("bank_account", { length: 100 }), // 정산 계좌
+  bankName: varchar("bank_name", { length: 50 }), // 은행명
+  accountHolder: varchar("account_holder", { length: 100 }), // 예금주
+  // 로그인 정보
+  username: varchar("username", { length: 50 }).unique().notNull(),
+  password: varchar("password", { length: 255 }).notNull(),
+  // 승인 상태
+  status: varchar("status", { length: 20 }).notNull().default('대기'), // '대기', '승인', '거부'
+  approvedBy: integer("approved_by").references(() => admins.id),
+  approvedAt: timestamp("approved_at"),
+  rejectionReason: text("rejection_reason"),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// 채팅방 테이블
+export const chatRooms = pgTable("chat_rooms", {
+  id: serial("id").primaryKey(),
+  documentId: integer("document_id").references(() => documents.id).notNull(),
+  dealerId: integer("dealer_id"), // 판매점 ID (documents에서 가져올 수도 있지만 직접 저장)
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// 채팅 메시지 테이블
+export const chatMessages = pgTable("chat_messages", {
+  id: serial("id").primaryKey(),
+  chatRoomId: integer("chat_room_id").references(() => chatRooms.id).notNull(),
+  senderId: integer("sender_id").notNull(), // 발송자 ID (dealer_registration 또는 user/admin)
+  senderType: varchar("sender_type", { length: 20 }).notNull(), // 'dealer', 'worker', 'admin'
+  senderName: varchar("sender_name", { length: 100 }).notNull(), // 발송자 이름
+  message: text("message").notNull(),
+  messageType: varchar("message_type", { length: 20 }).default('text'), // 'text', 'image', 'file'
+  isRead: boolean("is_read").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+
+
 // Database schema types
 export interface Admin {
   id: number;
@@ -435,6 +485,29 @@ export interface ChatMessage {
   messageType: 'text' | 'system';
   readAt?: Date;
   createdAt: Date;
+}
+
+// 판매점 등록 타입
+export interface DealerRegistration {
+  id: number;
+  businessName: string;
+  representativeName: string;
+  businessNumber: string;
+  contactPhone: string;
+  contactEmail: string;
+  address: string;
+  bankAccount?: string;
+  bankName?: string;
+  accountHolder?: string;
+  username: string;
+  password: string;
+  status: '대기' | '승인' | '거부';
+  approvedBy?: number;
+  approvedAt?: Date;
+  rejectionReason?: string;
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 export interface DocumentTemplate {
@@ -864,6 +937,33 @@ export const createChatMessageSchema = z.object({
 });
 
 export type CreateChatMessageForm = z.infer<typeof createChatMessageSchema>;
+
+// 판매점 등록 스키마
+export const dealerRegistrationSchema = createInsertSchema(dealerRegistrations).omit({
+  id: true,
+  status: true,
+  approvedBy: true,
+  approvedAt: true,
+  rejectionReason: true,
+  isActive: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const dealerLoginSchema = z.object({
+  username: z.string().min(1, "아이디를 입력해주세요"),
+  password: z.string().min(1, "비밀번호를 입력해주세요"),
+});
+
+export const sendChatMessageSchema = z.object({
+  documentId: z.number(),
+  message: z.string().min(1, "메시지를 입력해주세요"),
+  messageType: z.enum(['text', 'system']).default('text'),
+});
+
+export type DealerRegistrationForm = z.infer<typeof dealerRegistrationSchema>;
+export type DealerLoginForm = z.infer<typeof dealerLoginSchema>;
+export type SendChatMessageForm = z.infer<typeof sendChatMessageSchema>;
 
 // 통신사 관리 인터페이스
 export interface Carrier {

@@ -18,6 +18,12 @@ import { Downloads } from '@/pages/Downloads';
 import { AdminPanel } from '@/pages/AdminPanel';
 import { Settlements } from '@/pages/Settlements';
 
+// 판매점 관련 페이지
+import { DealerRegistration } from '@/pages/DealerRegistration';
+import { DealerLogin } from '@/pages/DealerLogin';
+import { DealerDashboard } from '@/pages/DealerDashboard';
+import { DealerChat } from '@/pages/DealerChat';
+
 import { TestPage } from '@/pages/TestPage';
 import WorkRequests from '@/pages/WorkRequests';
 import NotFound from '@/pages/not-found';
@@ -73,6 +79,18 @@ function AppRoutes() {
     );
   }
 
+  // 판매점은 판매점 전용 대시보드로 리다이렉트
+  if (user?.userType === 'dealer') {
+    return (
+      <Switch>
+        <Route path="/" component={() => <Redirect to="/dealer-dashboard" />} />
+        <Route path="/dealer-dashboard" component={DealerDashboard} />
+        <Route path="/dealer-chat/:documentId" component={DealerChat} />
+        <Route component={() => <Redirect to="/dealer-dashboard" />} />
+      </Switch>
+    );
+  }
+
   return (
     <Switch>
       <Route path="/" component={() => <Redirect to="/dashboard" />} />
@@ -116,6 +134,10 @@ function SalesManagerRoutes() {
 function MainApp() {
   return (
     <Switch>
+      {/* 판매점 관련 라우트 (인증 없이 접근 가능) */}
+      <Route path="/dealer-registration" component={DealerRegistration} />
+      <Route path="/dealer-login" component={DealerLogin} />
+      
       {/* 영업과장 대시보드 (인증 우회) */}
       <Route path="/sales-manager-dashboard" component={SalesManagerDashboard} />
       

@@ -8,6 +8,7 @@ import * as XLSX from 'xlsx';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { storage } from "./storage";
+import { ChatWebSocketServer } from './websocket';
 import { 
   createSalesTeamSchema,
   createSalesManagerSchema,
@@ -40,6 +41,9 @@ import {
   updateSettlementUnitPriceSchema,
   createAdditionalServiceDeductionSchema,
   updateAdditionalServiceDeductionSchema,
+  dealerRegistrationSchema,
+  dealerLoginSchema,
+  sendChatMessageSchema,
   type AuthResponse
 } from "../shared/schema";
 import {
@@ -4892,6 +4896,155 @@ router.post('/api/admin/user-permissions', requireAuth, async (req, res) => {
     res.json({ success: true });
   } catch (error: any) {
     console.error('Update user permissions error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// =====================================
+// 판매점 등록 관련 API
+// =====================================
+
+// 판매점 등록 신청
+router.post('/api/dealer-registration', async (req, res) => {
+  try {
+    const validatedData = dealerRegistrationSchema.parse(req.body);
+    const registration = await storage.createDealerRegistration(validatedData);
+    
+    res.status(201).json({
+      success: true,
+      message: '판매점 등록 신청이 완료되었습니다. 승인 후 이용 가능합니다.',
+      registrationId: registration.id
+    });
+  } catch (error: any) {
+    console.error('Dealer registration error:', error);
+    res.status(400).json({ 
+      success: false, 
+      error: error.message || '등록 신청 중 오류가 발생했습니다.' 
+    });
+  }
+});
+
+// 판매점 로그인
+router.post('/api/dealer-login', async (req, res) => {
+  try {
+    const { username, password } = dealerLoginSchema.parse(req.body);
+    const dealer = await storage.authenticateDealer(username, password);
+    
+    if (!dealer) {
+      return res.status(401).json({ 
+        success: false, 
+        error: '아이디 또는 비밀번호가 올바르지 않거나 승인되지 않은 계정입니다.' 
+      });
+    }
+
+    // 세션 설정
+    req.session.userId = dealer.id;
+    req.session.userType = 'dealer';
+    req.session.username = dealer.username;
+    req.session.name = dealer.representativeName;
+
+    res.json({
+      success: true,
+      user: {
+        id: dealer.id,
+        name: dealer.representativeName,
+        username: dealer.username,
+        userType: 'dealer',
+        businessName: dealer.businessName
+      }
+    });
+  } catch (error: any) {
+    console.error('Dealer login error:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: '로그인 중 오류가 발생했습니다.' 
+    });
+  }
+});
+
+// 관리자: 판매점 등록 신청 목록 조회
+router.get('/api/admin/dealer-registrations', requireAuth, async (req, res) => {
+  try {
+    const registrations = await storage.getDealerRegistrations();
+    res.json(registrations);
+  } catch (error: any) {
+    console.error('Get dealer registrations error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// 관리자: 판매점 등록 승인/거부
+router.put('/api/admin/dealer-registrations/:id/status', requireAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status, rejectionReason } = req.body;
+    
+    if (!['승인', '거부'].includes(status)) {
+      return res.status(400).json({ error: '올바르지 않은 상태입니다.' });
+    }
+
+    await storage.updateDealerRegistrationStatus(
+      Number(id), 
+      status, 
+      req.session.userId!, 
+      rejectionReason
+    );
+
+    res.json({ 
+      success: true, 
+      message: status === '승인' ? '판매점이 승인되었습니다.' : '판매점 신청이 거부되었습니다.' 
+    });
+  } catch (error: any) {
+    console.error('Update dealer registration status error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// =====================================
+// 채팅 관련 API
+// =====================================
+
+// 문서별 채팅방 정보 조회
+router.get('/api/chat/room/:documentId', requireAuth, async (req, res) => {
+  try {
+    const { documentId } = req.params;
+    
+    // 문서 존재 확인 및 권한 체크
+    const document = await storage.getDocument(Number(documentId));
+    if (!document) {
+      return res.status(404).json({ error: '문서를 찾을 수 없습니다.' });
+    }
+
+    // 판매점은 자신의 문서만, 관리자/직원은 모든 문서 접근 가능
+    if (req.session.userType === 'dealer' && document.dealerId !== req.session.userId) {
+      return res.status(403).json({ error: '접근 권한이 없습니다.' });
+    }
+
+    const chatRoom = await storage.getChatRoomByDocumentId(Number(documentId));
+    
+    res.json({
+      chatRoom,
+      document: {
+        id: document.id,
+        documentNumber: document.documentNumber,
+        customerName: document.customerName,
+        status: document.activationStatus
+      }
+    });
+  } catch (error: any) {
+    console.error('Get chat room error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// 채팅 메시지 조회
+router.get('/api/chat/messages/:chatRoomId', requireAuth, async (req, res) => {
+  try {
+    const { chatRoomId } = req.params;
+    const messages = await storage.getChatMessages(Number(chatRoomId));
+    res.json(messages);
+  } catch (error: any) {
+    console.error('Get chat messages error:', error);
     res.status(500).json({ error: error.message });
   }
 });
