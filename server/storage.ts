@@ -2055,7 +2055,7 @@ export class DatabaseStorage implements IStorage {
   // 부가서비스 정책을 적용한 최종 정산 금액 계산
   async calculateFinalSettlementAmount(documentId: number, carrier: string, baseAmount: number): Promise<number> {
     try {
-      // 문서의 부가서비스 정보 조회
+      // 문서의 부가서비스 정보와 서비스 플랜 정보 조회
       const [document] = await db.select().from(documents)
         .where(eq(documents.id, documentId))
         .limit(1);
@@ -2063,6 +2063,19 @@ export class DatabaseStorage implements IStorage {
       if (!document) {
         console.log(`Document ${documentId} not found for policy calculation`);
         return baseAmount;
+      }
+      
+      // 서비스 플랜의 결합 가능 여부 조회
+      let servicePlanCombinationEligible = false;
+      if (document.servicePlanId) {
+        const [servicePlan] = await db.select().from(servicePlans)
+          .where(eq(servicePlans.id, parseInt(document.servicePlanId)))
+          .limit(1);
+        
+        if (servicePlan) {
+          servicePlanCombinationEligible = servicePlan.combinationEligible || false;
+          console.log(`Document ${documentId} service plan "${servicePlan.planName}" combination eligible: ${servicePlanCombinationEligible}`);
+        }
       }
       
       // 해당 통신사의 활성 부가서비스 정책들 조회
@@ -2105,7 +2118,7 @@ export class DatabaseStorage implements IStorage {
         console.log(`Document ${documentId} selected service names: "${selectedServices}"`);
         
         if (policy.policyType === 'deduction') {
-          // 차감 정책: 해당 부가서비스가 선택되지 않았을 때 적용
+          // 차감 정책 처리
           const relatedService = additionalServicesQuery.find(service => 
             policy.policyName.includes(service.serviceName) || 
             policy.description?.includes(service.serviceName) ||
@@ -2114,12 +2127,27 @@ export class DatabaseStorage implements IStorage {
             (service.serviceName === '링투유' && (policy.policyName.includes('필링') || policy.description?.includes('필링')))
           );
           
-          if (relatedService) {
-            // 부가서비스가 선택되지 않았으면 차감 적용
+          // 결합 관련 차감 정책인지 확인 (정책명에 '결합', '미결합', 'bundle' 등이 포함)
+          const isBundleRelatedPolicy = policy.policyName.includes('결합') || 
+                                       policy.policyName.includes('bundle') ||
+                                       policy.description?.includes('결합') ||
+                                       policy.description?.includes('bundle');
+          
+          if (isBundleRelatedPolicy) {
+            // 결합 관련 차감은 결합 가능한 요금제이고 미결합 상태일 때만 적용
+            if (servicePlanCombinationEligible && document.bundleNotApplied && !document.bundleApplied) {
+              shouldApplyPolicy = true;
+              console.log(`Bundle deduction policy "${policy.policyName}": applied (combination eligible plan with bundle not applied)`);
+            } else {
+              shouldApplyPolicy = false;
+              console.log(`Bundle deduction policy "${policy.policyName}": not applied (plan not combination eligible or bundle applied)`);
+            }
+          } else if (relatedService) {
+            // 일반 부가서비스 차감: 해당 부가서비스가 선택되지 않았을 때 적용
             shouldApplyPolicy = !selectedServiceNames.includes(relatedService.serviceName);
             console.log(`Deduction policy "${policy.policyName}" for service "${relatedService.serviceName}": shouldApply=${shouldApplyPolicy} (service not selected)`);
           } else {
-            // 관련 서비스를 찾을 수 없으면 항상 차감 적용 (기본 차감)
+            // 관련 서비스를 찾을 수 없는 차감은 기본 차감으로 처리
             shouldApplyPolicy = true;
             console.log(`Deduction policy "${policy.policyName}": applied as default deduction (no related service found)`);
           }
