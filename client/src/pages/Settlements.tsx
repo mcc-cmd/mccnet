@@ -1620,14 +1620,21 @@ export function Settlements() {
                                         variant={policyAdjustment > 0 ? "default" : "destructive"} 
                                         className="text-xs cursor-pointer hover:opacity-80"
                                         onClick={() => {
+                                          console.log('Clicked policy detail for doc', doc.id);
+                                          console.log('Doc policyDetails field:', (doc as any).policyDetails);
+                                          console.log('Doc policy_details field:', (doc as any).policy_details);
+                                          console.log('Full doc object keys:', Object.keys(doc));
+                                          
                                           let policyDetails: Array<{name: string, type: string, amount: number, description?: string}> = [];
                                           try {
-                                            const docPolicyDetails = (doc as any).policyDetails;
+                                            const docPolicyDetails = (doc as any).policyDetails || (doc as any).policy_details;
+                                            console.log('Raw policy details:', docPolicyDetails);
                                             if (docPolicyDetails) {
                                               policyDetails = typeof docPolicyDetails === 'string' 
                                                 ? JSON.parse(docPolicyDetails) 
                                                 : docPolicyDetails;
                                             }
+                                            console.log('Parsed policy details:', policyDetails);
                                           } catch (e) {
                                             console.warn('Failed to parse policy details for document', doc.id, e);
                                           }
