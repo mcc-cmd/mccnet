@@ -1559,12 +1559,15 @@ export function Settlements() {
                             const manualAmount = (doc as any).settlementAmount;
                             
                             console.log(`Policy check - Doc ${doc.id}: backend=${backendAmount}, manual=${manualAmount}, servicePlanId=${doc.servicePlanId}`);
+                            console.log('Settlement prices sample:', settlementPrices?.slice(0, 2));
                             
                             // 부가서비스 정책이 적용되었는지 확인
                             if (backendAmount !== undefined && backendAmount !== null) {
-                              // 실제 기본 정산단가를 조회해서 차이를 계산
+                              // 실제 기본 정산단가를 조회해서 차이를 계산 (다양한 필드명으로 시도)
                               const servicePlan = settlementPrices?.find((p: any) => 
-                                p.servicePlanId === doc.servicePlanId && p.isActive
+                                (p.servicePlanId === doc.servicePlanId || p.id === doc.servicePlanId || 
+                                 String(p.servicePlanId) === String(doc.servicePlanId) || 
+                                 String(p.id) === String(doc.servicePlanId)) && p.isActive
                               );
                               
                               console.log(`Policy check - Doc ${doc.id}: servicePlan found=${!!servicePlan}, servicePlan=`, servicePlan);

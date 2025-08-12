@@ -2036,26 +2036,57 @@ export class DatabaseStorage implements IStorage {
   // 부가서비스 정책을 적용한 최종 정산 금액 계산
   async calculateFinalSettlementAmount(documentId: number, carrier: string, baseAmount: number): Promise<number> {
     try {
+      // 문서의 부가서비스 정보 조회
+      const [document] = await db.select().from(documents)
+        .where(eq(documents.id, documentId))
+        .limit(1);
+      
+      if (!document) {
+        console.log(`Document ${documentId} not found for policy calculation`);
+        return baseAmount;
+      }
+      
       // 해당 통신사의 활성 부가서비스 정책들 조회
       const policies = await db.select().from(carrierServicePolicies)
         .where(eq(carrierServicePolicies.carrier, carrier));
       
       let finalAmount = baseAmount;
+      let appliedPolicies = 0;
       
       for (const policy of policies) {
-        if (policy.policyType === 'deduction') {
-          finalAmount -= policy.amount;
-          console.log(`Applied deduction policy "${policy.policyName}" to document ${documentId}: -${policy.amount}`);
-        } else if (policy.policyType === 'addition') {
-          finalAmount += policy.amount;
-          console.log(`Applied addition policy "${policy.policyName}" to document ${documentId}: +${policy.amount}`);
+        let shouldApplyPolicy = false;
+        
+        // 정책 유형에 따른 적용 조건 검사
+        if (policy.policyName.includes('TV결합') || policy.policyName.includes('TV 결합')) {
+          // TV 결합 관련: bundleApplied가 체크되어 있으면 인센티브 적용
+          shouldApplyPolicy = document.bundleApplied === 1 || document.bundleApplied === true;
+        } else if (policy.policyName.includes('보안서비스') || policy.policyName.includes('보안')) {
+          // 보안서비스 관련: additionalServices에 보안 관련 서비스가 있으면 적용
+          const additionalServices = document.additionalServices || '';
+          shouldApplyPolicy = additionalServices.includes('보안') || additionalServices.includes('안심');
+        } else if (policy.policyName.includes('모바일 결합') && policy.policyType === 'deduction') {
+          // 모바일 결합 미유치 차감: bundleApplied가 체크되지 않았을 때 차감 적용
+          shouldApplyPolicy = !(document.bundleApplied === 1 || document.bundleApplied === true);
+        }
+        
+        if (shouldApplyPolicy) {
+          if (policy.policyType === 'deduction') {
+            finalAmount -= policy.amount;
+            console.log(`Applied deduction policy "${policy.policyName}" to document ${documentId}: -${policy.amount}`);
+          } else if (policy.policyType === 'addition') {
+            finalAmount += policy.amount;
+            console.log(`Applied addition policy "${policy.policyName}" to document ${documentId}: +${policy.amount}`);
+          }
+          appliedPolicies++;
+        } else {
+          console.log(`Policy "${policy.policyName}" not applied to document ${documentId} - condition not met`);
         }
       }
       
       // 음수 방지
       finalAmount = Math.max(0, finalAmount);
       
-      console.log(`Final settlement amount for document ${documentId}: ${baseAmount} -> ${finalAmount} (${policies.length} policies applied)`);
+      console.log(`Final settlement amount for document ${documentId}: ${baseAmount} -> ${finalAmount} (${appliedPolicies} policies applied)`);
       return finalAmount;
       
     } catch (error) {
