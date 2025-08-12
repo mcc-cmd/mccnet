@@ -1647,7 +1647,8 @@ router.get('/api/documents', requireAuth, async (req: any, res) => {
       const result = {
         ...doc,
         storeName: storeName || doc.contactCode || '-',
-        calculatedSettlementAmount
+        calculatedSettlementAmount,
+        realSalesPOS: doc.realSalesPOS || null  // realSalesPOS 필드 명시적으로 포함
       };
       
       if (activatedByName) {

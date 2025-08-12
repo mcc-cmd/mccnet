@@ -1558,30 +1558,23 @@ export function Settlements() {
                             const backendAmount = (doc as any).calculatedSettlementAmount;
                             const manualAmount = (doc as any).settlementAmount;
                             
-                            console.log(`Policy check - Doc ${doc.id}: backend=${backendAmount}, manual=${manualAmount}, servicePlanId=${doc.servicePlanId}`);
-                            console.log('Settlement prices sample:', settlementPrices?.slice(0, 2));
-                            
                             // 부가서비스 정책이 적용되었는지 확인
                             if (backendAmount !== undefined && backendAmount !== null) {
-                              // 실제 기본 정산단가를 조회해서 차이를 계산 (다양한 필드명으로 시도)
-                              const servicePlan = settlementPrices?.find((p: any) => 
-                                (p.servicePlanId === doc.servicePlanId || p.id === doc.servicePlanId || 
-                                 String(p.servicePlanId) === String(doc.servicePlanId) || 
-                                 String(p.id) === String(doc.servicePlanId)) && p.isActive
-                              );
+                              // servicePlanId를 숫자로 변환하여 비교
+                              const docServicePlanId = typeof doc.servicePlanId === 'string' ? parseFloat(doc.servicePlanId) : doc.servicePlanId;
                               
-                              console.log(`Policy check - Doc ${doc.id}: servicePlan found=${!!servicePlan}, servicePlan=`, servicePlan);
+                              const servicePlan = settlementPrices?.find((p: any) => {
+                                const priceServicePlanId = typeof p.servicePlanId === 'string' ? parseFloat(p.servicePlanId) : p.servicePlanId;
+                                return priceServicePlanId === docServicePlanId && p.isActive;
+                              });
                               
                               if (servicePlan) {
                                 const basePrice = (doc as any).customerType === 'port-in' ? 
                                   servicePlan.portInPrice : servicePlan.newCustomerPrice;
                                 const actualAmount = typeof backendAmount === 'number' ? backendAmount : parseFloat(backendAmount);
                                 
-                                console.log(`Policy check - Doc ${doc.id}: basePrice=${basePrice}, actualAmount=${actualAmount}, customerType=${(doc as any).customerType}`);
-                                
                                 if (!isNaN(actualAmount) && !isNaN(basePrice)) {
                                   const policyAdjustment = actualAmount - basePrice;
-                                  console.log(`Policy check - Doc ${doc.id}: policyAdjustment=${policyAdjustment}`);
                                   
                                   if (policyAdjustment !== 0) {
                                     return (
@@ -1735,8 +1728,6 @@ export function Settlements() {
                             <div className="mt-1">
                               {(() => {
                                 const backendAmount = (doc as any).calculatedSettlementAmount;
-                                console.log(`Policy check - Doc ${doc.id}: backend=${backendAmount}, manual=${doc.settlementAmount}, servicePlanId=${doc.servicePlanId}`);
-                                console.log(`Settlement prices sample:`, settlementPrices?.slice(0, 2));
                                 
                                 if (backendAmount !== undefined && backendAmount !== null) {
                                   // servicePlanId를 숫자로 변환하여 비교
@@ -1747,8 +1738,6 @@ export function Settlements() {
                                     return priceServicePlanId === docServicePlanId && p.isActive;
                                   });
                                   
-                                  console.log(`Policy check - Doc ${doc.id}: servicePlan found=${!!servicePlan}, servicePlan=`, servicePlan);
-                                  
                                   if (servicePlan) {
                                     const basePrice = (doc as any).customerType === 'port-in' ? 
                                       servicePlan.portInPrice : servicePlan.newCustomerPrice;
@@ -1756,7 +1745,6 @@ export function Settlements() {
                                     
                                     if (!isNaN(actualAmount) && !isNaN(basePrice)) {
                                       const policyAdjustment = actualAmount - basePrice;
-                                      console.log(`Policy adjustment - Doc ${doc.id}: actual=${actualAmount}, base=${basePrice}, adjustment=${policyAdjustment}`);
                                       
                                       if (policyAdjustment !== 0) {
                                         return (
