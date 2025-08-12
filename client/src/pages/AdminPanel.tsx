@@ -3868,7 +3868,7 @@ export function AdminPanel() {
                           <div>
                             <Label className="text-sm font-medium">통신사별 접점코드 (선택사항)</Label>
                             <div className="mt-2 space-y-3">
-                              {carriers?.data?.map((carrier: any) => (
+                              {carriersData?.map((carrier: any) => (
                                 <div key={carrier.id} className="flex items-center space-x-3">
                                   <Label className="min-w-[120px] text-sm">{carrier.name}</Label>
                                   <Input
