@@ -2802,6 +2802,7 @@ export class DatabaseStorage implements IStorage {
           contactEmail: dealerData.contactEmail,
           contactPhone: dealerData.contactPhone,
           address: dealerData.location,
+          contactCode: dealerData.contactCode,
           status: '승인', // 관리자가 직접 생성하므로 바로 승인
           isActive: true,
           createdAt: new Date()
@@ -4036,12 +4037,12 @@ export class DatabaseStorage implements IStorage {
         INSERT INTO dealer_registrations (
           business_name, representative_name, business_number, contact_phone, 
           contact_email, address, bank_account, bank_name, account_holder,
-          username, password, status, is_active, created_at, updated_at
+          username, password, contact_code, status, is_active, created_at, updated_at
         ) VALUES (
           ${data.businessName}, ${data.representativeName}, ${data.businessNumber}, 
           ${data.contactPhone}, ${data.contactEmail}, ${data.address}, 
           ${data.bankAccount || null}, ${data.bankName || null}, ${data.accountHolder || null},
-          ${data.username}, ${hashedPassword}, '대기', 1, 
+          ${data.username}, ${hashedPassword}, ${data.contactCode || null}, '대기', 1, 
           ${new Date().toISOString()}, ${new Date().toISOString()}
         )
       `);
@@ -4061,9 +4062,9 @@ export class DatabaseStorage implements IStorage {
           business_number as "businessNumber", contact_phone as "contactPhone",
           contact_email as "contactEmail", address, bank_account as "bankAccount",
           bank_name as "bankName", account_holder as "accountHolder",
-          username, status, approved_by as "approvedBy", approved_at as "approvedAt",
-          rejection_reason as "rejectionReason", is_active as "isActive",
-          created_at as "createdAt", updated_at as "updatedAt"
+          username, contact_code as "contactCode", status, approved_by as "approvedBy", 
+          approved_at as "approvedAt", rejection_reason as "rejectionReason", 
+          is_active as "isActive", created_at as "createdAt", updated_at as "updatedAt"
         FROM dealer_registrations 
         ORDER BY created_at DESC
       `);
@@ -4115,6 +4116,7 @@ export class DatabaseStorage implements IStorage {
         businessName: dealer.business_name,
         representativeName: dealer.representative_name,
         username: dealer.username,
+        contactCode: dealer.contact_code,
         userType: 'dealer'
       };
     } catch (error) {

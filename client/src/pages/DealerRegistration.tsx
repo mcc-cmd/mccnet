@@ -19,6 +19,7 @@ const dealerRegistrationSchema = z.object({
   businessAddress: z.string().min(1, "사업장 주소를 입력해주세요"),
   phoneNumber: z.string().min(1, "연락처를 입력해주세요"),
   email: z.string().email("올바른 이메일 형식을 입력해주세요"),
+  contactCode: z.string().optional(),
   username: z.string().min(4, "아이디는 4자 이상이어야 합니다"),
   password: z.string().min(6, "비밀번호는 6자 이상이어야 합니다"),
   additionalInfo: z.string().optional()
@@ -39,6 +40,7 @@ export function DealerRegistration() {
       businessAddress: "",
       phoneNumber: "",
       email: "",
+      contactCode: "",
       username: "",
       password: "",
       additionalInfo: ""
@@ -219,6 +221,23 @@ export function DealerRegistration() {
                           <Input 
                             type="email" 
                             placeholder="예: dealer@example.com" 
+                            {...field} 
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="contactCode"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>접점코드 (선택사항)</FormLabel>
+                        <FormControl>
+                          <Input 
+                            placeholder="예: 웅)대리점명" 
                             {...field} 
                           />
                         </FormControl>

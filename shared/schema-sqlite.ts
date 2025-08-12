@@ -503,6 +503,7 @@ export const dealerRegistrations = sqliteTable("dealer_registrations", {
   // 로그인 정보
   username: text("username").notNull(),
   password: text("password").notNull(),
+  contactCode: text("contact_code"), // 접점코드
   // 승인 상태
   status: text("status").notNull().default('대기'), // '대기', '승인', '거부'
   approvedBy: integer("approved_by").references(() => admins.id),

@@ -3770,7 +3770,7 @@ router.post('/api/dealers', requireAuth, async (req: any, res) => {
       return res.status(403).json({ error: '관리자만 접근 가능합니다.' });
     }
 
-    const { name, username, password, contactEmail, contactPhone, location } = req.body;
+    const { name, username, password, contactEmail, contactPhone, location, contactCode } = req.body;
     
     if (!name || !username || !password || !contactEmail || !contactPhone || !location) {
       return res.status(400).json({ error: '모든 필드를 입력해주세요.' });
@@ -3789,6 +3789,7 @@ router.post('/api/dealers', requireAuth, async (req: any, res) => {
       contactEmail,
       contactPhone,
       location,
+      contactCode: contactCode || null,
     });
 
     res.json(dealer);
@@ -4979,6 +4980,7 @@ router.post('/api/dealer-login', async (req, res) => {
     req.session.userType = 'dealer';
     req.session.username = dealer.username;
     req.session.name = dealer.representativeName;
+    req.session.contactCode = dealer.contactCode;
 
     res.json({
       success: true,
@@ -4987,7 +4989,8 @@ router.post('/api/dealer-login', async (req, res) => {
         name: dealer.representativeName,
         username: dealer.username,
         userType: 'dealer',
-        businessName: dealer.businessName
+        businessName: dealer.businessName,
+        contactCode: dealer.contactCode
       }
     });
   } catch (error: any) {

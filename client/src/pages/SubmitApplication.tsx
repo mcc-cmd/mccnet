@@ -514,14 +514,22 @@ export function SubmitApplication() {
                         onValueChange={(value) => {
                           setFormData(prev => {
                             const newData = { ...prev, carrier: value };
-                            // 기타 통신사 선택 시 접점코드를 판매점명으로 설정
-                            if (value.includes('기타') && newData.contactCode.trim()) {
-                              newData.storeName = newData.contactCode;
-                            } else if (!value.includes('기타')) {
-                              // 기타가 아닌 통신사 선택 시 기존 로직대로 처리
-                              if (newData.contactCode.trim()) {
-                                // 접점코드가 있으면 자동 조회 시도
-                                handleContactCodeChange(newData.contactCode);
+                            
+                            // 판매점 사용자이고 접점코드가 설정되어 있으면 자동으로 입력
+                            if (user?.userType === 'dealer' && user?.contactCode) {
+                              newData.contactCode = user.contactCode;
+                              // 접점코드가 있으면 자동 조회 시도
+                              handleContactCodeChange(user.contactCode);
+                            } else {
+                              // 기타 통신사 선택 시 접점코드를 판매점명으로 설정
+                              if (value.includes('기타') && newData.contactCode.trim()) {
+                                newData.storeName = newData.contactCode;
+                              } else if (!value.includes('기타')) {
+                                // 기타가 아닌 통신사 선택 시 기존 로직대로 처리
+                                if (newData.contactCode.trim()) {
+                                  // 접점코드가 있으면 자동 조회 시도
+                                  handleContactCodeChange(newData.contactCode);
+                                }
                               }
                             }
                             return newData;

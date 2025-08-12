@@ -51,6 +51,7 @@ type CreateDealerForm = {
   contactEmail: string;
   contactPhone: string;
   location: string;
+  contactCode?: string;
 };
 
 type CreateUserForm = {
@@ -1514,6 +1515,7 @@ export function AdminPanel() {
       contactEmail: '',
       contactPhone: '',
       location: '',
+      contactCode: '',
     },
   });
   const [carrierDealerDetails, setCarrierDealerDetails] = useState<Array<{ dealerName: string; count: number }>>([]);
@@ -3858,6 +3860,31 @@ export function AdminPanel() {
                                 <FormControl>
                                   <Input placeholder="위치를 입력하세요" {...field} />
                                 </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={dealerForm.control}
+                            name="contactCode"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>접점코드 (선택사항)</FormLabel>
+                                <Select onValueChange={field.onChange} value={field.value || ""}>
+                                  <FormControl>
+                                    <SelectTrigger>
+                                      <SelectValue placeholder="접점코드를 선택하세요" />
+                                    </SelectTrigger>
+                                  </FormControl>
+                                  <SelectContent>
+                                    <SelectItem value="">접점코드 없음</SelectItem>
+                                    {contactCodes?.map((code) => (
+                                      <SelectItem key={code.id} value={code.contactCode}>
+                                        {code.contactCode} - {code.dealerName} ({code.carrier})
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
                                 <FormMessage />
                               </FormItem>
                             )}
