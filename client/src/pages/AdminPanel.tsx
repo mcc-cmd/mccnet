@@ -3877,8 +3877,8 @@ export function AdminPanel() {
                                     </SelectTrigger>
                                   </FormControl>
                                   <SelectContent>
-                                    <SelectItem value="">접점코드 없음</SelectItem>
-                                    {contactCodes?.map((code) => (
+                                    <SelectItem value="none">접점코드 없음</SelectItem>
+                                    {contactCodes?.filter(code => code.contactCode && code.contactCode.trim() !== '').map((code) => (
                                       <SelectItem key={code.id} value={code.contactCode}>
                                         {code.contactCode} - {code.dealerName} ({code.carrier})
                                       </SelectItem>
