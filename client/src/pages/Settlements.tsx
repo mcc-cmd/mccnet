@@ -1637,35 +1637,7 @@ export function Settlements() {
                               );
                             }
                             
-                            if (backendAmount === 90000 && doc.customerName === '김광섭') {
-                              // 김광섭 (130,000 -> 90,000, -40,000원 차감)
-                              return (
-                                <Badge 
-                                  variant="destructive" 
-                                  className="text-xs cursor-pointer hover:opacity-80"
-                                  onClick={() => {
-                                    setSelectedPolicyDetail({
-                                      basePrice: 130000,
-                                      actualAmount: 90000,
-                                      adjustment: -40000,
-                                      documentId: doc.id,
-                                      customerName: doc.customerName,
-                                      policyDetails: [
-                                        {
-                                          name: "모바일 결합 미유치 차감",
-                                          type: "deduction",
-                                          amount: 40000,
-                                          description: "모바일 결합 미유치 시 차감"
-                                        }
-                                      ]
-                                    });
-                                    setPolicyDetailDialogOpen(true);
-                                  }}
-                                >
-                                  -40,000원
-                                </Badge>
-                              );
-                            }
+
                             
                             if (backendAmount === 129000 && doc.customerName === '홍길동') {
                               // 홍길동 (150,000 -> 129,000, -21,000원 차감)
