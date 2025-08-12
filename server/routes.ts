@@ -1648,7 +1648,8 @@ router.get('/api/documents', requireAuth, async (req: any, res) => {
         ...doc,
         storeName: storeName || doc.contactCode || '-',
         calculatedSettlementAmount,
-        realSalesPOS: doc.realSalesPOS || null  // realSalesPOS 필드 명시적으로 포함
+        realSalesPOS: doc.realSalesPOS || null,  // realSalesPOS 필드 명시적으로 포함
+        policyDetails: doc.policy_details  // policy_details를 policyDetails로 매핑
       };
       
       if (activatedByName) {
