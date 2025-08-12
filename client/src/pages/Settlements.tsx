@@ -1536,7 +1536,7 @@ export function Settlements() {
                           </div>
                         </TableCell>
                         <TableCell className="whitespace-nowrap">
-                          {doc.additionalServices && doc.additionalServices.trim() !== '' ? (
+                          {doc.additionalServices && (typeof doc.additionalServices === 'string' ? doc.additionalServices.trim() !== '' : doc.additionalServices.length > 0) ? (
                             <div className="flex gap-1">
                               {typeof doc.additionalServices === 'string' ? (
                                 doc.additionalServices.split(', ').slice(0, 1).map((service, index) => (
