@@ -1620,12 +1620,23 @@ export function Settlements() {
                                         variant={policyAdjustment > 0 ? "default" : "destructive"} 
                                         className="text-xs cursor-pointer hover:opacity-80"
                                         onClick={() => {
+                                          // 정책 세부 내역 파싱
+                                          let policyDetails = [];
+                                          try {
+                                            if ((doc as any).policyDetails) {
+                                              policyDetails = JSON.parse((doc as any).policyDetails);
+                                            }
+                                          } catch (e) {
+                                            console.error('Error parsing policy details:', e);
+                                          }
+                                          
                                           setSelectedPolicyDetail({
                                             basePrice,
                                             actualAmount,
                                             adjustment: policyAdjustment,
                                             documentId: doc.id,
-                                            customerName: doc.customerName
+                                            customerName: doc.customerName,
+                                            policyDetails: policyDetails
                                           });
                                           setPolicyDetailDialogOpen(true);
                                         }}

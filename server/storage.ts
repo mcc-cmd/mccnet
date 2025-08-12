@@ -1481,8 +1481,54 @@ export class DatabaseStorage implements IStorage {
   }): Promise<any[]> {
     try {
       console.log('=== getDocuments called with filters ===', filters);
-      // 기본 쿼리로 모든 문서 조회 (orderBy 제거)
-      let result = await db.select().from(documents);
+      // 기본 쿼리로 모든 문서 조회 (policy_details 포함)
+      let result = await db.select({
+        id: documents.id,
+        documentNumber: documents.documentNumber,
+        customerName: documents.customerName,
+        customerPhone: documents.customerPhone,
+        customerEmail: documents.customerEmail,
+        contactCode: documents.contactCode,
+        storeName: documents.storeName,
+        carrier: documents.carrier,
+        previousCarrier: documents.previousCarrier,
+        customerType: documents.customerType,
+        bundleNumber: documents.bundleNumber,
+        bundleCarrier: documents.bundleCarrier,
+        desiredNumber: documents.desiredNumber,
+        dealerId: documents.dealerId,
+        userId: documents.userId,
+        status: documents.status,
+        activationStatus: documents.activationStatus,
+        filePath: documents.filePath,
+        fileName: documents.fileName,
+        fileSize: documents.fileSize,
+        uploadedAt: documents.uploadedAt,
+        updatedAt: documents.updatedAt,
+        activatedBy: documents.activatedBy,
+        activatedAt: documents.activatedAt,
+        activatedByName: documents.activatedByName,
+        notes: documents.notes,
+        supplementNotes: documents.supplementNotes,
+        supplementRequiredBy: documents.supplementRequiredBy,
+        supplementRequiredAt: documents.supplementRequiredAt,
+        servicePlanId: documents.servicePlanId,
+        additionalServiceIds: documents.additionalServiceIds,
+        totalMonthlyFee: documents.totalMonthlyFee,
+        registrationFeePrepaid: documents.registrationFeePrepaid,
+        registrationFeePostpaid: documents.registrationFeePostpaid,
+        simFeePrepaid: documents.simFeePrepaid,
+        simFeePostpaid: documents.simFeePostpaid,
+        bundleApplied: documents.bundleApplied,
+        bundleNotApplied: documents.bundleNotApplied,
+        deviceModel: documents.deviceModel,
+        simNumber: documents.simNumber,
+        subscriptionNumber: documents.subscriptionNumber,
+        settlementAmount: documents.settlementAmount,
+        manualSettlementAmount: documents.manualSettlementAmount,
+        policyDetails: documents.policyDetails,
+        isDeleted: documents.isDeleted
+      }).from(documents);
       console.log('Raw database result sample:', result.slice(0,2).map(doc => ({ 
         id: doc.id, 
         activationStatus: doc.activationStatus,
