@@ -1587,12 +1587,14 @@ export function Settlements() {
                                       <TooltipProvider>
                                         <Tooltip>
                                           <TooltipTrigger asChild>
-                                            <Badge 
-                                              variant={policyAdjustment > 0 ? "default" : "destructive"} 
-                                              className="text-xs cursor-help"
-                                            >
-                                              {policyAdjustment > 0 ? '+' : ''}{policyAdjustment.toLocaleString()}원
-                                            </Badge>
+                                            <div className="inline-block cursor-help">
+                                              <Badge 
+                                                variant={policyAdjustment > 0 ? "default" : "destructive"} 
+                                                className="text-xs"
+                                              >
+                                                {policyAdjustment > 0 ? '+' : ''}{policyAdjustment.toLocaleString()}원
+                                              </Badge>
+                                            </div>
                                           </TooltipTrigger>
                                           <TooltipContent>
                                             <div className="max-w-xs">
