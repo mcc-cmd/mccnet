@@ -3761,6 +3761,43 @@ router.get('/api/contact-codes/search/:code', requireAuth, async (req: any, res)
   }
 });
 
+// 판매점 생성 API
+router.post('/api/dealers', requireAuth, async (req: any, res) => {
+  try {
+    const { userId, userType } = req.session;
+    
+    if (userType !== 'admin') {
+      return res.status(403).json({ error: '관리자만 접근 가능합니다.' });
+    }
+
+    const { name, username, password, contactEmail, contactPhone, location } = req.body;
+    
+    if (!name || !username || !password || !contactEmail || !contactPhone || !location) {
+      return res.status(400).json({ error: '모든 필드를 입력해주세요.' });
+    }
+
+    // 사용자명 중복 검사
+    const existingDealer = await storage.getDealerByUsername(username);
+    if (existingDealer) {
+      return res.status(400).json({ error: '이미 존재하는 아이디입니다.' });
+    }
+
+    const dealer = await storage.createDealer({
+      name,
+      username,
+      password,
+      contactEmail,
+      contactPhone,
+      location,
+    });
+
+    res.json(dealer);
+  } catch (error: any) {
+    console.error('Create dealer error:', error);
+    res.status(500).json({ error: '판매점 생성에 실패했습니다.' });
+  }
+});
+
 // 접점코드 다중 검색 API (부분 일치)
 router.get('/api/contact-codes/search', requireAuth, async (req: any, res) => {
   try {

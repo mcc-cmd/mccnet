@@ -5,7 +5,8 @@ import { db } from './db';
 import { 
   admins, salesTeams, salesManagers, contactCodeMappings, contactCodes,
   carriers, servicePlans, additionalServices, documents, users, settlementUnitPrices,
-  authSessions, carrierServicePolicies, settlementServicePolicyLogs
+  authSessions, carrierServicePolicies, settlementServicePolicyLogs,
+  dealerRegistrations, chatRooms, chatMessages
 } from '../shared/schema-sqlite';
 import type {
   Admin,
@@ -2702,6 +2703,115 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error('Get worker stats error:', error);
       return [];
+    }
+  }
+
+  // 채팅방 관련 메서드
+  async getChatRoom(documentId: number): Promise<any> {
+    try {
+      const result = await db.select()
+        .from(chatRooms)
+        .where(eq(chatRooms.documentId, documentId))
+        .limit(1);
+      
+      return result[0] || null;
+    } catch (error) {
+      console.error('Get chat room error:', error);
+      return null;
+    }
+  }
+
+  async createChatRoom(documentId: number, workerId?: number): Promise<any> {
+    try {
+      const [chatRoom] = await db.insert(chatRooms)
+        .values({
+          documentId,
+          workerId: workerId || null,
+          createdAt: new Date()
+        })
+        .returning();
+      
+      return chatRoom;
+    } catch (error) {
+      console.error('Create chat room error:', error);
+      throw error;
+    }
+  }
+
+  async getChatMessages(chatRoomId: number): Promise<any[]> {
+    try {
+      const messages = await db.select()
+        .from(chatMessages)
+        .where(eq(chatMessages.chatRoomId, chatRoomId))
+        .orderBy(chatMessages.createdAt);
+      
+      return messages;
+    } catch (error) {
+      console.error('Get chat messages error:', error);
+      return [];
+    }
+  }
+
+  async createChatMessage(chatRoomId: number, senderId: number, senderType: string, message: string): Promise<any> {
+    try {
+      const [chatMessage] = await db.insert(chatMessages)
+        .values({
+          chatRoomId,
+          senderId,
+          senderType,
+          message,
+          createdAt: new Date()
+        })
+        .returning();
+      
+      return chatMessage;
+    } catch (error) {
+      console.error('Create chat message error:', error);
+      throw error;
+    }
+  }
+
+  // 판매점 관련 메서드
+  async getDealerByUsername(username: string): Promise<any> {
+    try {
+      const [dealer] = await db.select()
+        .from(dealerRegistrations)
+        .where(eq(dealerRegistrations.username, username))
+        .limit(1);
+      
+      return dealer || null;
+    } catch (error) {
+      console.error('Get dealer by username error:', error);
+      return null;
+    }
+  }
+
+  async createDealer(dealerData: any): Promise<any> {
+    try {
+      const bcrypt = await import('bcrypt');
+      const saltRounds = 10;
+      const hashedPassword = await bcrypt.hash(dealerData.password, saltRounds);
+
+      const [dealer] = await db.insert(dealerRegistrations)
+        .values({
+          businessName: dealerData.name,
+          representativeName: dealerData.name,
+          businessNumber: `BIZ${Date.now()}`, // 임시 사업자번호
+          username: dealerData.username,
+          password: hashedPassword,
+          contactEmail: dealerData.contactEmail,
+          contactPhone: dealerData.contactPhone,
+          address: dealerData.location,
+          status: '승인', // 관리자가 직접 생성하므로 바로 승인
+          isActive: true,
+          createdAt: new Date()
+        })
+        .returning();
+      
+      return dealer;
+    } catch (error) {
+      console.error('Create dealer error:', error);
+      throw error;
     }
   }
 

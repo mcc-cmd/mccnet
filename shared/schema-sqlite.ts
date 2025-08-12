@@ -487,3 +487,55 @@ export const POLICY_TYPES = {
   deduction: { name: '차감', id: 'deduction' },
   addition: { name: '추가', id: 'addition' },
 } as const;
+
+// 판매점 자체 가입 테이블
+export const dealerRegistrations = sqliteTable("dealer_registrations", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  businessName: text("business_name").notNull(), // 사업체명
+  representativeName: text("representative_name").notNull(), // 대표자명
+  businessNumber: text("business_number").notNull(), // 사업자번호
+  contactPhone: text("contact_phone").notNull(),
+  contactEmail: text("contact_email").notNull(),
+  address: text("address").notNull(), // 사업장 주소
+  bankAccount: text("bank_account"), // 정산 계좌
+  bankName: text("bank_name"), // 은행명
+  accountHolder: text("account_holder"), // 예금주
+  // 로그인 정보
+  username: text("username").notNull(),
+  password: text("password").notNull(),
+  // 승인 상태
+  status: text("status").notNull().default('대기'), // '대기', '승인', '거부'
+  approvedBy: integer("approved_by").references(() => admins.id),
+  approvedAt: text("approved_at"),
+  rejectionReason: text("rejection_reason"),
+  isActive: integer("is_active", { mode: 'boolean' }).default(1),
+  createdAt: text("created_at").default(sql`CURRENT_TIMESTAMP`),
+  updatedAt: text("updated_at").default(sql`CURRENT_TIMESTAMP`),
+}, (table) => ({
+  businessNumberIdx: uniqueIndex("business_number_unique").on(table.businessNumber),
+  usernameIdx: uniqueIndex("dealer_username_unique").on(table.username),
+  emailIdx: uniqueIndex("dealer_email_unique").on(table.contactEmail),
+}));
+
+// 채팅방 테이블
+export const chatRooms = sqliteTable("chat_rooms", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  documentId: integer("document_id").references(() => documents.id).notNull(),
+  dealerId: integer("dealer_id"), // 판매점 ID
+  isActive: integer("is_active", { mode: 'boolean' }).default(1),
+  createdAt: text("created_at").default(sql`CURRENT_TIMESTAMP`),
+  updatedAt: text("updated_at").default(sql`CURRENT_TIMESTAMP`),
+});
+
+// 채팅 메시지 테이블
+export const chatMessages = sqliteTable("chat_messages", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  chatRoomId: integer("chat_room_id").references(() => chatRooms.id).notNull(),
+  senderId: integer("sender_id").notNull(), // 발송자 ID
+  senderType: text("sender_type").notNull(), // 'dealer', 'worker', 'admin'
+  senderName: text("sender_name").notNull(), // 발송자 이름
+  message: text("message").notNull(),
+  messageType: text("message_type").default('text'), // 'text', 'image', 'file'
+  isRead: integer("is_read", { mode: 'boolean' }).default(0),
+  createdAt: text("created_at").default(sql`CURRENT_TIMESTAMP`),
+});

@@ -46,9 +46,11 @@ import { ko } from 'date-fns/locale';
 
 type CreateDealerForm = {
   name: string;
-  location: string;
+  username: string;
+  password: string;
   contactEmail: string;
   contactPhone: string;
+  location: string;
 };
 
 type CreateUserForm = {
@@ -1494,7 +1496,54 @@ export function AdminPanel() {
   const [selectedWorker, setSelectedWorker] = useState<{ id: number; name: string } | null>(null);
   const [selectedCarrier, setSelectedCarrier] = useState<string>('');
   const [workerCarrierDetails, setWorkerCarrierDetails] = useState<Array<{ carrier: string; count: number }>>([]);
+
+  // 판매점 생성 폼
+  const dealerForm = useForm<CreateDealerForm>({
+    resolver: zodResolver(z.object({
+      name: z.string().min(1, '판매점명은 필수입니다'),
+      username: z.string().min(1, '아이디는 필수입니다'),
+      password: z.string().min(6, '비밀번호는 최소 6자 이상이어야 합니다'),
+      contactEmail: z.string().email('올바른 이메일 형식이 아닙니다'),
+      contactPhone: z.string().min(1, '전화번호는 필수입니다'),
+      location: z.string().min(1, '위치는 필수입니다'),
+    })),
+    defaultValues: {
+      name: '',
+      username: '',
+      password: '',
+      contactEmail: '',
+      contactPhone: '',
+      location: '',
+    },
+  });
   const [carrierDealerDetails, setCarrierDealerDetails] = useState<Array<{ dealerName: string; count: number }>>([]);
+
+  // 판매점 생성 뮤테이션
+  const createDealerMutation = useMutation({
+    mutationFn: (data: CreateDealerForm) => apiRequest('/api/dealers', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    }),
+    onSuccess: () => {
+      dealerForm.reset();
+      setDealerDialogOpen(false);
+      toast({
+        title: '판매점 생성 완료',
+        description: '새 판매점 계정이 성공적으로 생성되었습니다.',
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: '판매점 생성 실패',
+        description: error.message || '판매점 생성에 실패했습니다.',
+        variant: 'destructive',
+      });
+    },
+  });
+
+  const handleCreateDealer = (data: CreateDealerForm) => {
+    createDealerMutation.mutate(data);
+  };
 
   // User management states
   
@@ -1648,16 +1697,6 @@ export function AdminPanel() {
 
 
   // Forms
-  const dealerForm = useForm<CreateDealerForm>({
-    resolver: zodResolver(createDealerSchema),
-    defaultValues: {
-      name: '',
-      location: '',
-      contactEmail: '',
-      contactPhone: '',
-    },
-  });
-
   const userForm = useForm<CreateUserForm>({
     resolver: zodResolver(createUserSchema),
     defaultValues: {
@@ -1810,29 +1849,6 @@ export function AdminPanel() {
   });
 
   // Mutations
-  const createDealerMutation = useMutation({
-    mutationFn: (data: CreateDealerForm) => apiRequest('/api/admin/dealers', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/admin/dealers'] });
-      setDealerDialogOpen(false);
-      dealerForm.reset();
-      toast({
-        title: '성공',
-        description: '대리점이 성공적으로 생성되었습니다.',
-      });
-    },
-    onError: (error: Error) => {
-      toast({
-        title: '오류',
-        description: error.message,
-        variant: 'destructive',
-      });
-    },
-  });
-
   const createUserMutation = useMutation({
     mutationFn: (data: CreateUserForm) => apiRequest('/api/admin/users', {
       method: 'POST',
@@ -2163,10 +2179,6 @@ export function AdminPanel() {
   });
 
   // Event handlers
-  const handleCreateDealer = (data: CreateDealerForm) => {
-    createDealerMutation.mutate(data);
-  };
-
   const handleCreateUser = (data: CreateUserForm) => {
     // role을 userType으로 변환
     const userData = {
@@ -3759,6 +3771,109 @@ export function AdminPanel() {
                   </CardDescription>
                 </div>
                 <div className="flex items-center space-x-2">
+                  <Dialog open={dealerDialogOpen} onOpenChange={setDealerDialogOpen}>
+                    <DialogTrigger asChild>
+                      <Button variant="outline">
+                        <Building2 className="mr-2 h-4 w-4" />
+                        판매점 생성
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>새 판매점 계정 생성</DialogTitle>
+                      </DialogHeader>
+                      <Form {...dealerForm}>
+                        <form onSubmit={dealerForm.handleSubmit(handleCreateDealer)} className="space-y-4">
+                          <FormField
+                            control={dealerForm.control}
+                            name="name"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>판매점명</FormLabel>
+                                <FormControl>
+                                  <Input placeholder="판매점명을 입력하세요" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={dealerForm.control}
+                            name="username"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>아이디</FormLabel>
+                                <FormControl>
+                                  <Input type="text" placeholder="아이디를 입력하세요" autoComplete="off" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={dealerForm.control}
+                            name="password"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>비밀번호</FormLabel>
+                                <FormControl>
+                                  <Input type="password" placeholder="비밀번호를 입력하세요" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={dealerForm.control}
+                            name="contactEmail"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>연락처 이메일</FormLabel>
+                                <FormControl>
+                                  <Input type="email" placeholder="이메일을 입력하세요" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={dealerForm.control}
+                            name="contactPhone"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>연락처 전화번호</FormLabel>
+                                <FormControl>
+                                  <Input placeholder="전화번호를 입력하세요" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={dealerForm.control}
+                            name="location"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>위치</FormLabel>
+                                <FormControl>
+                                  <Input placeholder="위치를 입력하세요" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <div className="flex justify-end space-x-2">
+                            <Button type="button" variant="outline" onClick={() => setDealerDialogOpen(false)}>
+                              취소
+                            </Button>
+                            <Button type="submit" disabled={createDealerMutation.isPending}>
+                              {createDealerMutation.isPending ? '생성 중...' : '생성'}
+                            </Button>
+                          </div>
+                        </form>
+                      </Form>
+                    </DialogContent>
+                  </Dialog>
                   <Dialog open={adminDialogOpen} onOpenChange={setAdminDialogOpen}>
                     <DialogTrigger asChild>
                       <Button variant="outline">
