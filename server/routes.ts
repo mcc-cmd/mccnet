@@ -3789,7 +3789,7 @@ router.post('/api/dealers', requireAuth, async (req: any, res) => {
       contactEmail,
       contactPhone,
       location,
-      carrierCodes: carrierCodes || {},
+      carrierCodes: JSON.stringify(carrierCodes || {}),
     });
 
     res.json(dealer);

@@ -2809,8 +2809,21 @@ export class DatabaseStorage implements IStorage {
         .returning();
 
       // 통신사별 접점코드 저장
-      if (dealerData.carrierCodes && typeof dealerData.carrierCodes === 'object') {
-        for (const [carrier, contactCode] of Object.entries(dealerData.carrierCodes)) {
+      let carrierCodesObj = {};
+      if (dealerData.carrierCodes) {
+        if (typeof dealerData.carrierCodes === 'string') {
+          try {
+            carrierCodesObj = JSON.parse(dealerData.carrierCodes);
+          } catch (e) {
+            console.error('Failed to parse carrierCodes JSON:', e);
+          }
+        } else if (typeof dealerData.carrierCodes === 'object') {
+          carrierCodesObj = dealerData.carrierCodes;
+        }
+      }
+      
+      if (carrierCodesObj && typeof carrierCodesObj === 'object') {
+        for (const [carrier, contactCode] of Object.entries(carrierCodesObj)) {
           if (contactCode && typeof contactCode === 'string' && contactCode.trim() !== '') {
             await db.run(sql`
               INSERT INTO dealer_carrier_codes (dealer_id, carrier, contact_code, created_at, updated_at)
