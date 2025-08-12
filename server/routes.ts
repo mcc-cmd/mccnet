@@ -3848,71 +3848,66 @@ router.post('/api/dealers/upload-excel', requireAuth, requireAdmin, contactCodeU
     let duplicatesSkipped = 0;
     const errors: string[] = [];
 
+    // 활성화된 통신사 목록 조회
+    const carriers = await storage.getCarriers();
+    const activeCarriers = carriers.filter(carrier => carrier.isActive);
+
     for (let i = 0; i < data.length; i++) {
       const row = data[i] as any;
       try {
         // 필수 필드 검증
-        const name = String(row['사업체명'] || row['name'] || '').trim();
-        const ownerName = String(row['대표자명'] || row['ownerName'] || '').trim();
-        const businessNumber = String(row['사업자번호'] || row['businessNumber'] || '').trim();
-        const username = String(row['아이디'] || row['username'] || '').trim();
-        const password = String(row['비밀번호'] || row['password'] || '').trim();
-        
-        // 선택적 필드
-        const contactEmail = String(row['연락처이메일'] || row['contactEmail'] || '').trim();
-        const contactPhone = String(row['연락처전화번호'] || row['contactPhone'] || '').trim();
-        const location = String(row['위치'] || row['location'] || '').trim();
-        
-        // 통신사별 접점코드
-        const skContactCode = String(row['SK접점코드'] || row['skContactCode'] || '').trim();
-        const ktContactCode = String(row['KT접점코드'] || row['ktContactCode'] || '').trim();
-        const lguContactCode = String(row['LGU+접점코드'] || row['lguContactCode'] || '').trim();
+        const dealerName = String(row['판매점명'] || row['name'] || '').trim();
+        const realSalesPOS = String(row['실판매POS'] || row['realSalesPOS'] || '').trim();
+        const salesManagerName = String(row['영업과장'] || row['salesManager'] || '').trim();
 
         // 필수 필드 검증
-        if (!name) {
-          errors.push(`행 ${i + 2}: 사업체명이 필요합니다.`);
-          continue;
-        }
-        if (!username) {
-          errors.push(`행 ${i + 2}: 아이디가 필요합니다.`);
-          continue;
-        }
-        if (!password || password.length < 6) {
-          errors.push(`행 ${i + 2}: 비밀번호는 최소 6자 이상이어야 합니다.`);
+        if (!dealerName) {
+          errors.push(`행 ${i + 2}: 판매점명이 필요합니다.`);
           continue;
         }
 
-        // 중복 체크 (아이디 기준)
-        const existingDealer = await storage.getDealerByUsername(username);
+        // 중복 체크 (판매점명 기준)
+        const existingDealer = await storage.findDealerByName(dealerName);
         if (existingDealer) {
           duplicatesSkipped++;
           continue;
         }
 
-        // 이메일 형식 검증 (선택사항이지만 입력된 경우)
-        if (contactEmail && !contactEmail.includes('@')) {
-          errors.push(`행 ${i + 2}: 올바른 이메일 형식이 아닙니다.`);
-          continue;
+        // 통신사별 접점코드 수집
+        const contactCodes: any[] = [];
+        
+        for (const carrier of activeCarriers) {
+          const contactCodeKey = `${carrier.name}접점코드`;
+          const contactCode = String(row[contactCodeKey] || '').trim();
+          
+          if (contactCode) {
+            // 접점코드가 있는 경우에만 생성
+            contactCodes.push({
+              code: contactCode,
+              dealerName: dealerName,
+              realSalesPOS: realSalesPOS || null,
+              carrier: carrier.name,
+              isActive: true,
+              salesManagerName: salesManagerName || null
+            });
+          }
         }
 
-        // 통신사별 접점코드 구성
-        const carrierCodes: Record<string, string> = {};
-        if (skContactCode) carrierCodes['SK'] = skContactCode;
-        if (ktContactCode) carrierCodes['KT'] = ktContactCode;
-        if (lguContactCode) carrierCodes['LGU+'] = lguContactCode;
-
-        // 판매점 생성
+        // 판매점 생성 (기본 정보만)
         const dealerData = {
-          name,
-          username,
-          password,
-          contactEmail: contactEmail || null,
-          contactPhone: contactPhone || null,
-          location: location || null,
-          carrierCodes: JSON.stringify(carrierCodes)
+          name: dealerName,
+          location: '자동생성',
+          contactEmail: null,
+          contactPhone: null
         };
 
-        await storage.createDealer(dealerData);
+        const dealer = await storage.createDealer(dealerData);
+
+        // 접점코드 생성
+        for (const contactCodeData of contactCodes) {
+          await storage.createContactCode(contactCodeData);
+        }
+
         addedDealers++;
 
       } catch (error: any) {
@@ -3944,35 +3939,33 @@ router.post('/api/dealers/upload-excel', requireAuth, requireAdmin, contactCodeU
 // 판매점 엑셀 템플릿 다운로드 API
 router.get('/api/dealers/template', requireAuth, requireAdmin, async (req: any, res) => {
   try {
-    // CSV 템플릿 생성
+    // 활성화된 통신사 목록 조회
+    const carriers = await storage.getCarriers();
+    const activeCarriers = carriers.filter(carrier => carrier.isActive);
+
+    // 기본 헤더 생성
     const csvHeaders = [
-      '사업체명',
-      '대표자명',
-      '사업자번호',
-      '아이디',
-      '비밀번호',
-      '연락처이메일',
-      '연락처전화번호',
-      '위치',
-      'SK접점코드',
-      'KT접점코드',
-      'LGU+접점코드'
+      '판매점명',
+      '실판매POS',
+      '영업과장'
     ];
 
-    // 샘플 데이터
+    // 통신사별 접점코드 컬럼 추가
+    activeCarriers.forEach(carrier => {
+      csvHeaders.push(`${carrier.name}접점코드`);
+    });
+
+    // 샘플 데이터 생성
     const sampleData = [
       '샘플판매점',
-      '홍길동',
-      '123-45-67890',
-      'sample_dealer',
-      'password123',
-      'sample@example.com',
-      '010-1234-5678',
-      '서울시 강남구',
-      'SK001',
-      'KT001',
-      'LG001'
+      'POS001',
+      '홍길동'
     ];
+
+    // 통신사별 샘플 접점코드 추가
+    activeCarriers.forEach((carrier, index) => {
+      sampleData.push(`${carrier.name.substring(0, 2).toUpperCase()}${(index + 1).toString().padStart(3, '0')}`);
+    });
 
     // CSV 내용 생성 (UTF-8 BOM 포함)
     let csvContent = '\uFEFF'; // UTF-8 BOM

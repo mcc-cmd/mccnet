@@ -4388,15 +4388,16 @@ export function AdminPanel() {
                     <p className="mb-2">1. 위의 "양식 다운로드" 버튼을 클릭하여 템플릿을 다운로드하세요.</p>
                     <p className="mb-2">2. 다운로드한 파일에 판매점 데이터를 입력하세요:</p>
                     <ul className="list-disc list-inside ml-4 space-y-1 mb-2">
-                      <li><strong>사업체명</strong>: 판매점 이름 (필수)</li>
-                      <li><strong>대표자명</strong>: 대표자 성명 (필수)</li>
-                      <li><strong>사업자번호</strong>: 사업자등록번호 (필수)</li>
-                      <li><strong>아이디</strong>: 로그인용 아이디 (필수)</li>
-                      <li><strong>비밀번호</strong>: 로그인용 비밀번호 (필수)</li>
-                      <li><strong>연락처이메일</strong>: 이메일 주소 (선택사항)</li>
-                      <li><strong>연락처전화번호</strong>: 전화번호 (선택사항)</li>
-                      <li><strong>위치</strong>: 소재지 (선택사항)</li>
-                      <li><strong>SK접점코드, KT접점코드, LGU+접점코드</strong>: 각 통신사별 접점코드 (선택사항)</li>
+                      <li><strong>판매점명</strong>: 판매점 이름 (필수)</li>
+                      <li><strong>실판매POS</strong>: 실판매 POS 정보 (선택사항)</li>
+                      <li><strong>영업과장</strong>: 담당 영업과장 이름 (선택사항)</li>
+                      <li><strong>통신사별 접점코드</strong>: 시스템에 등록된 통신사별 접점코드 (선택사항)</li>
+                    </ul>
+                    <p className="mb-2"><strong>주의사항:</strong></p>
+                    <ul className="list-disc list-inside ml-4 space-y-1 mb-2">
+                      <li>통신사별 접점코드 컬럼은 시스템에 등록된 통신사에 따라 자동으로 생성됩니다.</li>
+                      <li>접점코드는 해당 통신사에 대해서만 입력 가능합니다.</li>
+                      <li>동일한 판매점명이 이미 존재하는 경우 건너뜁니다.</li>
                     </ul>
                     <p>3. 작성이 완료되면 "엑셀 업로드" 버튼을 클릭하여 파일을 업로드하세요.</p>
                   </div>
