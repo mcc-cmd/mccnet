@@ -3781,7 +3781,7 @@ export function AdminPanel() {
                         판매점 생성
                       </Button>
                     </DialogTrigger>
-                    <DialogContent>
+                    <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
                       <DialogHeader>
                         <DialogTitle>새 판매점 계정 생성</DialogTitle>
                       </DialogHeader>
