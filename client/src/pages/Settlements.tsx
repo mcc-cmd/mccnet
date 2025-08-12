@@ -1735,11 +1735,19 @@ export function Settlements() {
                             <div className="mt-1">
                               {(() => {
                                 const backendAmount = (doc as any).calculatedSettlementAmount;
+                                console.log(`Policy check - Doc ${doc.id}: backend=${backendAmount}, manual=${doc.settlementAmount}, servicePlanId=${doc.servicePlanId}`);
+                                console.log(`Settlement prices sample:`, settlementPrices?.slice(0, 2));
                                 
                                 if (backendAmount !== undefined && backendAmount !== null) {
-                                  const servicePlan = settlementPrices?.find((p: any) => 
-                                    p.servicePlanId === doc.servicePlanId && p.isActive
-                                  );
+                                  // servicePlanId를 숫자로 변환하여 비교
+                                  const docServicePlanId = typeof doc.servicePlanId === 'string' ? parseFloat(doc.servicePlanId) : doc.servicePlanId;
+                                  
+                                  const servicePlan = settlementPrices?.find((p: any) => {
+                                    const priceServicePlanId = typeof p.servicePlanId === 'string' ? parseFloat(p.servicePlanId) : p.servicePlanId;
+                                    return priceServicePlanId === docServicePlanId && p.isActive;
+                                  });
+                                  
+                                  console.log(`Policy check - Doc ${doc.id}: servicePlan found=${!!servicePlan}, servicePlan=`, servicePlan);
                                   
                                   if (servicePlan) {
                                     const basePrice = (doc as any).customerType === 'port-in' ? 
@@ -1748,6 +1756,8 @@ export function Settlements() {
                                     
                                     if (!isNaN(actualAmount) && !isNaN(basePrice)) {
                                       const policyAdjustment = actualAmount - basePrice;
+                                      console.log(`Policy adjustment - Doc ${doc.id}: actual=${actualAmount}, base=${basePrice}, adjustment=${policyAdjustment}`);
+                                      
                                       if (policyAdjustment !== 0) {
                                         return (
                                           <Badge 
