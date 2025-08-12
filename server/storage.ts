@@ -2053,20 +2053,47 @@ export class DatabaseStorage implements IStorage {
       let finalAmount = baseAmount;
       let appliedPolicies = 0;
       
+      // 해당 통신사의 부가서비스 목록 조회
+      const additionalServicesQuery = await db.select().from(additionalServices)
+        .where(eq(additionalServices.carrier, carrier));
+      
+      console.log(`Found ${additionalServicesQuery.length} additional services for carrier ${carrier}`);
+      
       for (const policy of policies) {
         let shouldApplyPolicy = false;
         
-        // 정책 유형에 따른 적용 조건 검사
-        if (policy.policyName.includes('TV결합') || policy.policyName.includes('TV 결합')) {
-          // TV 결합 관련: bundleApplied가 체크되어 있으면 인센티브 적용
-          shouldApplyPolicy = document.bundleApplied === 1 || document.bundleApplied === true;
-        } else if (policy.policyName.includes('보안서비스') || policy.policyName.includes('보안')) {
-          // 보안서비스 관련: additionalServices에 보안 관련 서비스가 있으면 적용
-          const additionalServices = document.additionalServices || '';
-          shouldApplyPolicy = additionalServices.includes('보안') || additionalServices.includes('안심');
-        } else if (policy.policyName.includes('모바일 결합') && policy.policyType === 'deduction') {
-          // 모바일 결합 미유치 차감: bundleApplied가 체크되지 않았을 때 차감 적용
-          shouldApplyPolicy = !(document.bundleApplied === 1 || document.bundleApplied === true);
+        // 문서의 선택된 부가서비스 확인
+        const selectedServices = document.additionalServices || '';
+        console.log(`Document ${documentId} selected services: "${selectedServices}"`);
+        
+        if (policy.policyType === 'deduction') {
+          // 차감 정책: 해당 부가서비스가 선택되지 않았을 때 적용
+          const relatedService = additionalServicesQuery.find(service => 
+            policy.policyName.includes(service.serviceName) || 
+            policy.description?.includes(service.serviceName)
+          );
+          
+          if (relatedService) {
+            // 부가서비스가 선택되지 않았으면 차감 적용
+            shouldApplyPolicy = !selectedServices.includes(relatedService.serviceName);
+            console.log(`Deduction policy "${policy.policyName}" for service "${relatedService.serviceName}": shouldApply=${shouldApplyPolicy} (service not selected)`);
+          } else {
+            // 관련 서비스를 찾을 수 없으면 항상 차감 적용 (기본 차감)
+            shouldApplyPolicy = true;
+            console.log(`Deduction policy "${policy.policyName}": applied as default deduction (no related service found)`);
+          }
+        } else if (policy.policyType === 'addition') {
+          // 추가 정책: 해당 부가서비스가 선택되었을 때 적용
+          const relatedService = additionalServicesQuery.find(service => 
+            policy.policyName.includes(service.serviceName) || 
+            policy.description?.includes(service.serviceName)
+          );
+          
+          if (relatedService) {
+            // 부가서비스가 선택되었으면 추가 적용
+            shouldApplyPolicy = selectedServices.includes(relatedService.serviceName);
+            console.log(`Addition policy "${policy.policyName}" for service "${relatedService.serviceName}": shouldApply=${shouldApplyPolicy} (service selected)`);
+          }
         }
         
         if (shouldApplyPolicy) {
