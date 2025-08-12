@@ -1565,10 +1565,22 @@ export function Settlements() {
                           {getStatusBadge(doc.bundleApplied, doc.bundleNotApplied)}
                         </TableCell>
                         <TableCell className="whitespace-nowrap text-xs">
-                          {Number(doc.registrationFeePrepaid) === 1 || Number(doc.registrationFeePostpaid) === 1 ? '적용' : '미적용'}
+                          {(() => {
+                            const fees = [];
+                            if (Number(doc.registrationFeePrepaid) === 1) fees.push('선납');
+                            if (Number(doc.registrationFeePostpaid) === 1) fees.push('후납');
+                            if (Number((doc as any).registrationFeeInstallment) === 1) fees.push('본납');
+                            return fees.length > 0 ? fees.join(', ') : '미적용';
+                          })()}
                         </TableCell>
                         <TableCell className="whitespace-nowrap text-xs">
-                          {Number(doc.simFeePrepaid) === 1 || Number(doc.simFeePostpaid) === 1 ? '적용' : '미적용'}
+                          {(() => {
+                            const fees = [];
+                            if (Number(doc.simFeePrepaid) === 1) fees.push('선납');
+                            if (Number(doc.simFeePostpaid) === 1) fees.push('후납');
+                            if (Number((doc as any).simFeeInstallment) === 1) fees.push('본납');
+                            return fees.length > 0 ? fees.join(', ') : '미적용';
+                          })()}
                         </TableCell>
                         <TableCell className="whitespace-nowrap">
                           {(() => {
@@ -1747,6 +1759,30 @@ export function Settlements() {
                           <div>
                             <span className="text-muted-foreground">결합여부:</span>
                             <div className="mt-1">{getStatusBadge(doc.bundleApplied, doc.bundleNotApplied)}</div>
+                          </div>
+                          <div>
+                            <span className="text-muted-foreground">가입비:</span>
+                            <p className="font-medium text-xs">
+                              {(() => {
+                                const fees = [];
+                                if (Number(doc.registrationFeePrepaid) === 1) fees.push('선납');
+                                if (Number(doc.registrationFeePostpaid) === 1) fees.push('후납');
+                                if (Number((doc as any).registrationFeeInstallment) === 1) fees.push('본납');
+                                return fees.length > 0 ? fees.join(', ') : '미적용';
+                              })()}
+                            </p>
+                          </div>
+                          <div>
+                            <span className="text-muted-foreground">유심비:</span>
+                            <p className="font-medium text-xs">
+                              {(() => {
+                                const fees = [];
+                                if (Number(doc.simFeePrepaid) === 1) fees.push('선납');
+                                if (Number(doc.simFeePostpaid) === 1) fees.push('후납');
+                                if (Number((doc as any).simFeeInstallment) === 1) fees.push('본납');
+                                return fees.length > 0 ? fees.join(', ') : '미적용';
+                              })()}
+                            </p>
                           </div>
                           <div>
                             <span className="text-muted-foreground">부가 차감:</span>

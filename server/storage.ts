@@ -1670,8 +1670,10 @@ export class DatabaseStorage implements IStorage {
             // 정산 관련 필드 매핑
             registrationFeePrepaid: doc.registrationFeePrepaid || 0,
             registrationFeePostpaid: doc.registrationFeePostpaid || 0,
+            registrationFeeInstallment: doc.registrationFeeInstallment || 0,
             simFeePrepaid: doc.simFeePrepaid || 0,
             simFeePostpaid: doc.simFeePostpaid || 0,
+            simFeeInstallment: doc.simFeeInstallment || 0,
             bundleApplied: doc.bundleApplied || 0,
             bundleNotApplied: doc.bundleNotApplied || 0,
             additionalServiceIds: doc.additionalServiceIds || '',
