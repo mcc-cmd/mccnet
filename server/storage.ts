@@ -2187,13 +2187,13 @@ export class DatabaseStorage implements IStorage {
                                        policy.description?.includes('bundle');
           
           if (isBundleRelatedPolicy) {
-            // 결합 관련 차감은 결합 가능한 요금제이고 미결합 상태일 때만 적용
-            if (servicePlanCombinationEligible && document.bundleNotApplied && !document.bundleApplied) {
+            // 결합 관련 차감은 결합이 적용되지 않은 경우 적용 (미결합 선택했거나 아무것도 선택하지 않음)
+            if (!document.bundleApplied) {
               shouldApplyPolicy = true;
-              console.log(`Bundle deduction policy "${policy.policyName}": applied (combination eligible plan with bundle not applied)`);
+              console.log(`Bundle deduction policy "${policy.policyName}": applied (bundle not applied - bundleApplied: ${document.bundleApplied}, bundleNotApplied: ${document.bundleNotApplied})`);
             } else {
               shouldApplyPolicy = false;
-              console.log(`Bundle deduction policy "${policy.policyName}": not applied (plan not combination eligible or bundle applied)`);
+              console.log(`Bundle deduction policy "${policy.policyName}": not applied (bundle is applied)`);
             }
           } else if (relatedService) {
             // 일반 부가서비스 차감: 해당 부가서비스가 선택되지 않았을 때 적용
