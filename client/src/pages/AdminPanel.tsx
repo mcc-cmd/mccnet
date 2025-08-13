@@ -1562,6 +1562,37 @@ export function AdminPanel() {
   });
   const [carrierDealerDetails, setCarrierDealerDetails] = useState<Array<{ dealerName: string; count: number }>>([]);
 
+  // 메인 테이블에서 판매점 삭제 처리
+  const deleteDealerInTableMutation = useMutation({
+    mutationFn: (dealerId: number) => 
+      apiRequest(`/api/admin/dealers/${dealerId}`, {
+        method: 'DELETE'
+      }),
+    onSuccess: () => {
+      toast({
+        title: "삭제 완료",
+        description: "판매점이 성공적으로 삭제되었습니다.",
+        variant: "default"
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/dealers'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/contact-codes'] });
+    },
+    onError: (error: any) => {
+      console.error('Delete dealer error:', error);
+      toast({
+        title: "삭제 실패",
+        description: error.message || "판매점 삭제에 실패했습니다.",
+        variant: "destructive"
+      });
+    }
+  });
+
+  const handleDeleteDealerInTable = (dealerId: number, dealerName: string) => {
+    if (window.confirm(`정말로 "${dealerName}" 판매점을 삭제하시겠습니까?\n\n이 작업은 되돌릴 수 없으며, 해당 판매점의 모든 접점코드도 함께 삭제됩니다.`)) {
+      deleteDealerInTableMutation.mutate(dealerId);
+    }
+  };
+
   // 판매점 생성 뮤테이션
   const createDealerMutation = useMutation({
     mutationFn: (data: CreateDealerForm) => apiRequest('/api/dealers', {
@@ -4598,6 +4629,9 @@ export function AdminPanel() {
                             <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                               생성일
                             </th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                              관리
+                            </th>
                           </tr>
                         </thead>
                         <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
@@ -4663,6 +4697,16 @@ export function AdminPanel() {
                                 </td>
                                 <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                                   {dealer.createdAt ? format(new Date(dealer.createdAt), 'yyyy-MM-dd', { locale: ko }) : '미상'}
+                                </td>
+                                <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
+                                  <Button
+                                    variant="destructive"
+                                    size="sm"
+                                    onClick={() => handleDeleteDealerInTable(dealer.id, dealer.businessName || dealer.name)}
+                                    className="text-red-600 hover:text-red-700"
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
                                 </td>
                               </tr>
                             );
