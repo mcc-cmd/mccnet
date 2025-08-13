@@ -42,13 +42,22 @@ export function DealerLogin() {
     },
     onSuccess: async (data) => {
       console.log("Dealer login successful:", data);
+      
+      // 세션ID 저장
+      if (data.sessionId) {
+        localStorage.setItem('sessionId', data.sessionId);
+      }
+      
+      // auth 상태 업데이트
+      await checkAuth();
+      
       toast({
         title: "로그인 성공",
         description: `${data.user.name}님, 환영합니다!`,
       });
       
-      // 판매점 로그인은 별도 처리 - 페이지 새로고침으로 강제 라우팅
-      window.location.href = "/";
+      // 판매점 대시보드로 이동
+      setLocation("/dealer");
     },
     onError: (error: any) => {
       console.error("Dealer login error:", error);

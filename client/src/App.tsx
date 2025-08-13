@@ -23,6 +23,11 @@ import { DealerRegistration } from '@/pages/DealerRegistration';
 import { DealerLogin } from '@/pages/DealerLogin';
 import { DealerDashboard } from '@/pages/DealerDashboard';
 import { DealerChat } from '@/pages/DealerChat';
+import { DealerApplications } from '@/pages/DealerApplications';
+import { DealerWorkRequests } from '@/pages/DealerWorkRequests';
+import { DealerCompletedManagement } from '@/pages/DealerCompletedManagement';
+import { DealerOtherCompleted } from '@/pages/DealerOtherCompleted';
+import { DealerCancelledHistory } from '@/pages/DealerCancelledHistory';
 
 import { TestPage } from '@/pages/TestPage';
 import WorkRequests from '@/pages/WorkRequests';
@@ -86,11 +91,11 @@ function AppRoutes() {
         <Route path="/" component={() => <Redirect to="/dealer" />} />
         <Route path="/dealer" component={DealerDashboard} />
         <Route path="/dealer/submit-application" component={SubmitApplication} />
-        <Route path="/dealer/applications" component={DealerDashboard} />
-        <Route path="/dealer/completed" component={DealerDashboard} />
-        <Route path="/dealer/other-completed" component={DealerDashboard} />
-        <Route path="/dealer/cancelled" component={DealerDashboard} />
-        <Route path="/dealer/discarded" component={DealerDashboard} />
+        <Route path="/dealer/applications" component={DealerApplications} />
+        <Route path="/dealer/work-requests" component={DealerWorkRequests} />
+        <Route path="/dealer/completed" component={DealerCompletedManagement} />
+        <Route path="/dealer/other-completed" component={DealerOtherCompleted} />
+        <Route path="/dealer/cancelled" component={DealerCancelledHistory} />
         <Route path="/dealer-chat/:documentId" component={DealerChat} />
         <Route component={() => <Redirect to="/dealer" />} />
       </Switch>

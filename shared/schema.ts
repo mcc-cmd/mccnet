@@ -550,7 +550,7 @@ export interface WorkerStats {
 export interface AuthSession {
   id: string;
   userId: number;
-  userType: 'admin' | 'user' | 'sales_manager'; // 영업과장 추가
+  userType: 'admin' | 'user' | 'sales_manager' | 'dealer'; // 판매점 추가
   userRole?: string;
   dealerId?: number;
   managerId?: number; // 영업과장 ID 추가

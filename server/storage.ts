@@ -52,6 +52,10 @@ export interface IStorage {
   // 영업과장 인증
   authenticateSalesManager(username: string, password: string): Promise<SalesManager | null>;
   
+  // 판매점 인증
+  authenticateDealer(username: string, password: string): Promise<any | null>;
+  getDealerById(id: number): Promise<any | undefined>;
+  
   // 기존 시스템과의 호환성을 위한 메서드들
   getContactCodes(): Promise<any[]>;
   
@@ -493,7 +497,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   // 세션 관리 메서드 (데이터베이스 기반)
-  async createSession(userId: number, userType: 'admin' | 'sales_manager' | 'user', managerId?: number, teamId?: number, userRole?: string): Promise<string> {
+  async createSession(userId: number, userType: 'admin' | 'sales_manager' | 'user' | 'dealer', managerId?: number, teamId?: number, userRole?: string): Promise<string> {
     const sessionId = nanoid();
     const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24시간 후 만료
     
@@ -3723,6 +3727,46 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error('Sales manager auth error:', error);
       return null;
+    }
+  }
+
+  async authenticateDealer(username: string, password: string): Promise<any | null> {
+    try {
+      console.log('Authenticating dealer:', username);
+      const [dealer] = await db.select().from(dealerRegistrations).where(
+        and(
+          eq(dealerRegistrations.dealerId, username),
+          eq(dealerRegistrations.status, 'approved')
+        )
+      );
+      console.log('Dealer found:', dealer ? 'yes' : 'no');
+      
+      if (!dealer) return null;
+      
+      const isValidPassword = await bcrypt.compare(password, dealer.password);
+      console.log('Password valid:', isValidPassword);
+      
+      if (!isValidPassword) return null;
+      
+      return dealer;
+    } catch (error) {
+      console.error('Dealer auth error:', error);
+      return null;
+    }
+  }
+
+  async getDealerById(id: number): Promise<any | undefined> {
+    try {
+      const [dealer] = await db.select().from(dealerRegistrations).where(
+        and(
+          eq(dealerRegistrations.id, id),
+          eq(dealerRegistrations.status, 'approved')
+        )
+      );
+      return dealer;
+    } catch (error) {
+      console.error('Get dealer by ID error:', error);
+      return undefined;
     }
   }
 

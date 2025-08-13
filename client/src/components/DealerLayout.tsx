@@ -6,7 +6,7 @@ import {
   CheckSquare, 
   FileCheck, 
   XCircle, 
-  Trash, 
+  Clock,
   Menu, 
   X, 
   LogOut 
@@ -18,40 +18,40 @@ import mccLogoPath from "@assets/image_1755073542806.png";
 // 판매점 전용 사이드바 메뉴 정의
 const dealerMenuItems = [
   {
-    title: "접수 신청",
+    title: "접수신청",
     icon: PlusCircle,
     href: "/dealer/submit-application",
     description: "새로운 고객 접수 신청"
   },
   {
-    title: "접수 관리",
+    title: "접수관리",
     icon: FolderOpen,
     href: "/dealer/applications",
     description: "접수된 신청서 관리"
   },
   {
-    title: "개통완료",
+    title: "업무요청중",
+    icon: Clock,
+    href: "/dealer/work-requests",
+    description: "업무 요청 중인 신청서"
+  },
+  {
+    title: "개통완료 관리",
     icon: CheckSquare,
     href: "/dealer/completed",
     description: "개통 완료된 신청서"
   },
   {
-    title: "기타 완료",
+    title: "기타완료",
     icon: FileCheck,
     href: "/dealer/other-completed",
     description: "기타 완료된 신청서"
   },
   {
-    title: "개통 취소",
+    title: "개통취소내역",
     icon: XCircle,
     href: "/dealer/cancelled",
     description: "취소된 신청서"
-  },
-  {
-    title: "폐기",
-    icon: Trash,
-    href: "/dealer/discarded",
-    description: "폐기된 신청서"
   }
 ];
 

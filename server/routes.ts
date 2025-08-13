@@ -344,6 +344,20 @@ router.get('/api/auth/me', requireAuth, async (req: any, res) => {
         };
         return res.json(response);
       }
+    } else if (userType === 'dealer') {
+      const dealer = await storage.getDealerById(userId);
+      if (dealer) {
+        const response: AuthResponse = {
+          success: true,
+          user: {
+            id: dealer.id,
+            name: dealer.businessName,
+            username: dealer.dealerId,
+            userType: 'dealer'
+          }
+        };
+        return res.json(response);
+      }
     } else {
       const user = await storage.getUserById(userId);
       if (user) {
@@ -364,6 +378,48 @@ router.get('/api/auth/me', requireAuth, async (req: any, res) => {
   } catch (error: any) {
     console.error('Auth me error:', error);
     res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// 판매점 로그인 API 
+router.post('/api/dealer-login', async (req, res) => {
+  try {
+    console.log('Dealer login attempt - body:', req.body);
+    const { username, password } = loginSchema.parse(req.body);
+    console.log('Dealer login attempt - parsed:', { username, password: password ? '***' : 'empty' });
+    
+    // Try dealer login
+    const dealer = await storage.authenticateDealer(username, password);
+    console.log('Dealer auth result:', dealer ? 'success' : 'failed');
+    
+    if (dealer) {
+      const sessionId = await storage.createSession(dealer.id, 'dealer');
+      console.log('Dealer session created:', sessionId);
+      
+      const response: AuthResponse = {
+        success: true,
+        user: {
+          id: dealer.id,
+          name: dealer.businessName,
+          username: dealer.dealerId,
+          userType: 'dealer'
+        },
+        sessionId
+      };
+      
+      res.json(response);
+    } else {
+      res.status(401).json({ 
+        success: false, 
+        error: '아이디 또는 비밀번호가 올바르지 않습니다.' 
+      });
+    }
+  } catch (error: any) {
+    console.error('Dealer login error:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: '로그인 처리 중 오류가 발생했습니다.' 
+    });
   }
 });
 
