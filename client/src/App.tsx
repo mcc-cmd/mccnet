@@ -51,11 +51,17 @@ function AppRoutes() {
 
   useEffect(() => {
     const initAuth = async () => {
-      // 새로고침 시 기존 세션이 있으면 인증 확인
-      if (sessionId && !isAuthenticated) {
-        console.log('App init: Checking existing session');
+      console.log('App init: Starting auth check');
+      
+      // localStorage에서 sessionId 확인하고 인증 상태 복원
+      const storedSessionId = localStorage.getItem('sessionId');
+      if (storedSessionId || sessionId) {
+        console.log('App init: Found sessionId, checking auth');
         await checkAuth();
+      } else {
+        console.log('App init: No sessionId found');
       }
+      
       setIsLoading(false);
     };
     initAuth();
