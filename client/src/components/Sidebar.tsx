@@ -14,7 +14,9 @@ import {
   Clock,
   Star,
   Trash2,
-  Users
+  Users,
+  PlusCircle,
+  FolderOpen
 } from 'lucide-react';
 import logoImage from '@assets/KakaoTalk_20250626_162541112-removebg-preview_1751604392501.png';
 
@@ -36,6 +38,16 @@ const adminNavigation = [
   { name: '영업조직 관리', href: '/sales-team-management', icon: Users },
 ];
 
+const dealerNavigation = [
+  { name: '대시보드', href: '/dealer', icon: LayoutDashboard },
+  { name: '접수신청', href: '/dealer/submit-application', icon: PlusCircle },
+  { name: '접수관리', href: '/dealer/applications', icon: FolderOpen },
+  { name: '업무요청중', href: '/dealer/work-requests', icon: Clock },
+  { name: '개통완료 관리', href: '/dealer/completed', icon: CheckCircle },
+  { name: '기타완료', href: '/dealer/other-completed', icon: Star },
+  { name: '개통취소내역', href: '/dealer/cancelled', icon: X },
+];
+
 interface SidebarProps {
   isOpen?: boolean;
   onClose?: () => void;
@@ -46,23 +58,31 @@ export function Sidebar({ isOpen = true, onClose }: SidebarProps) {
   const { user } = useAuth();
 
   const isAdmin = user?.userType === 'admin';
-  const isSalesManager = user?.userType === 'sales_manager';
+  const isSalesManager = user?.userType === 'user' && user?.role === 'sales_manager';
   const isWorker = user?.role === 'dealer_worker';
+  const isDealer = user?.userType === 'dealer' || (user?.userType === 'user' && user?.role === 'dealer_worker');
   
-  // 영업과장은 읽기 전용 메뉴만 접근 가능 (접수 신청 제외)
-  let baseNavigation = navigation;
-  if (isSalesManager) {
-    // 영업과장은 읽기 전용 메뉴만 (접수 신청, 정산 관리 제외)
-    baseNavigation = navigation.filter(item => 
-      item.name !== '접수 신청' && item.name !== '정산 관리'
-    );
-  } else if (!isAdmin) {
-    // 관리자가 아닌 경우 정산 관리 제외
-    baseNavigation = navigation.filter(item => item.name !== '정산 관리');
+  let currentNavigation;
+  
+  if (isDealer) {
+    // 판매점은 판매점 전용 메뉴 사용
+    currentNavigation = dealerNavigation;
+  } else {
+    // 기존 관리자/근무자 메뉴 로직
+    let baseNavigation = navigation;
+    if (isSalesManager) {
+      // 영업과장은 읽기 전용 메뉴만 (접수 신청, 정산 관리 제외)
+      baseNavigation = navigation.filter(item => 
+        item.name !== '접수 신청' && item.name !== '정산 관리'
+      );
+    } else if (!isAdmin) {
+      // 관리자가 아닌 경우 정산 관리 제외
+      baseNavigation = navigation.filter(item => item.name !== '정산 관리');
+    }
+    
+    // 관리자만 관리자 패널 접근 가능
+    currentNavigation = isAdmin ? [...baseNavigation, ...adminNavigation] : baseNavigation;
   }
-  
-  // 관리자만 관리자 패널 접근 가능
-  const currentNavigation = isAdmin ? [...baseNavigation, ...adminNavigation] : baseNavigation;
 
   return (
     <>
@@ -82,7 +102,7 @@ export function Sidebar({ isOpen = true, onClose }: SidebarProps) {
         <div className="flex flex-col h-full overflow-hidden">
           {/* Logo */}
           <div className="flex flex-col items-center flex-shrink-0 px-4 py-6 border-b border-gray-700">
-            <Link href="/dashboard" className="flex flex-col items-center cursor-pointer hover:opacity-80 transition-opacity">
+            <Link href={isDealer ? "/dealer" : "/dashboard"} className="flex flex-col items-center cursor-pointer hover:opacity-80 transition-opacity">
               <img 
                 src={logoImage} 
                 alt="MCC네트월드 로고" 
