@@ -1266,7 +1266,16 @@ export class DatabaseStorage implements IStorage {
   }
   
   async getDealers(): Promise<any[]> {
-    return [];
+    try {
+      const dealers = await db.select()
+        .from(dealerRegistrations)
+        .orderBy(dealerRegistrations.createdAt);
+      
+      return dealers;
+    } catch (error) {
+      console.error('Get dealers error:', error);
+      return [];
+    }
   }
   
   async getUsers(): Promise<any[]> {
