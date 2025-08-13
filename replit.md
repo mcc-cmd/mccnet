@@ -4,6 +4,12 @@
 This project is a document management system for MCC네트월드 telecommunications dealers. Its main purpose is to streamline the handling of customer reception documents, offering capabilities such as role-based authentication, secure file uploads, comprehensive document tracking, and administrative functionalities. The system aims to enhance efficiency in managing customer activations and related processes.
 
 ## Recent Changes (January 2025)
+- **2025-01-13**: Added comprehensive dealer management interface with contact code integration
+  - IMPLEMENTED: Dealer information display in admin panel user management tab showing dealer ID, name, contact info, and status
+  - ENHANCED: Contact code display now includes associated dealer information with dealer username/ID mapping
+  - INTEGRATED: Cross-reference between dealers and contact codes for complete visibility
+  - RESOLVED: SQLite data type compatibility issues preventing dealer creation (Date objects converted to proper format)
+  - VERIFIED: Dealers table shows contact code connections and allows admin to view all dealer-to-contact-code relationships
 - **2025-01-12**: Completed dealer Excel bulk upload functionality with contact code integration
   - IMPLEMENTED: Dealer Excel upload template with dynamic carrier columns based on registered carriers
   - RESTRUCTURED: Simplified dealer upload format to match contact code management (판매점명, 실판매POS, 영업과장, 아이디, 비밀번호 + 통신사별 접점코드)

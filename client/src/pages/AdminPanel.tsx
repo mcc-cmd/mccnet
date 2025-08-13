@@ -3802,6 +3802,17 @@ export function AdminPanel() {
                                     담당: {(code as any).salesManagerName}
                                   </p>
                                 )}
+                                {/* 연결된 판매점 아이디 표시 */}
+                                {(() => {
+                                  const relatedDealer = dealers?.find((dealer: any) => 
+                                    dealer.businessName === code.dealerName || dealer.representativeName === code.dealerName
+                                  );
+                                  return relatedDealer ? (
+                                    <p className="text-xs text-green-600 dark:text-green-400 mt-1">
+                                      판매점 ID: {relatedDealer.username}
+                                    </p>
+                                  ) : null;
+                                })()}
                               </div>
                               <Badge variant="outline">{code.carrier}</Badge>
                             </div>
@@ -4504,6 +4515,127 @@ export function AdminPanel() {
                     <Users className="mx-auto h-12 w-12 text-gray-400" />
                     <h3 className="mt-2 text-sm font-medium text-gray-900">사용자가 없습니다</h3>
                     <p className="mt-1 text-sm text-gray-500">첫 번째 사용자를 추가해보세요.</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Dealers Management Section */}
+            <Card className="mt-6">
+              <CardHeader>
+                <CardTitle>판매점 관리</CardTitle>
+                <CardDescription>
+                  시스템에 등록된 판매점 정보를 확인하고 접점 코드와 연동 상태를 관리할 수 있습니다.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {dealersLoading ? (
+                  <div className="text-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-accent mx-auto"></div>
+                    <p className="mt-2 text-sm text-gray-500">판매점 정보 로딩 중...</p>
+                  </div>
+                ) : dealers && dealers.length > 0 ? (
+                  <div className="space-y-4">
+                    <div className="max-h-[600px] overflow-y-auto border border-gray-200 rounded-lg">
+                      <table className="w-full">
+                        <thead className="bg-gray-50 dark:bg-gray-800 sticky top-0">
+                          <tr>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                              판매점명
+                            </th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                              아이디
+                            </th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                              연락처
+                            </th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                              상태
+                            </th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                              접점코드 연동
+                            </th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                              생성일
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
+                          {dealers.map((dealer: any) => {
+                            // 해당 판매점과 연결된 접점 코드들 찾기
+                            const dealerContactCodes = contactCodes?.filter(
+                              (code: any) => code.dealerName === dealer.businessName || code.dealerName === dealer.representativeName
+                            ) || [];
+
+                            return (
+                              <tr key={dealer.id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
+                                <td className="px-4 py-4 whitespace-nowrap">
+                                  <div>
+                                    <div className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                                      {dealer.businessName}
+                                    </div>
+                                    {dealer.representativeName !== dealer.businessName && (
+                                      <div className="text-sm text-gray-500 dark:text-gray-400">
+                                        대표: {dealer.representativeName}
+                                      </div>
+                                    )}
+                                  </div>
+                                </td>
+                                <td className="px-4 py-4 whitespace-nowrap">
+                                  <div className="text-sm text-gray-900 dark:text-gray-100">
+                                    {dealer.username}
+                                  </div>
+                                </td>
+                                <td className="px-4 py-4 whitespace-nowrap">
+                                  <div className="text-sm text-gray-900 dark:text-gray-100">
+                                    {dealer.contactPhone || '미등록'}
+                                  </div>
+                                  {dealer.contactEmail && (
+                                    <div className="text-sm text-gray-500 dark:text-gray-400">
+                                      {dealer.contactEmail}
+                                    </div>
+                                  )}
+                                </td>
+                                <td className="px-4 py-4 whitespace-nowrap">
+                                  <Badge variant={dealer.status === '승인' ? 'default' : dealer.status === '대기' ? 'secondary' : 'destructive'}>
+                                    {dealer.status}
+                                  </Badge>
+                                </td>
+                                <td className="px-4 py-4 whitespace-nowrap">
+                                  <div className="space-y-1">
+                                    {dealerContactCodes.length > 0 ? (
+                                      dealerContactCodes.map((code: any, index: number) => (
+                                        <div key={index} className="flex items-center space-x-2">
+                                          <Badge variant="outline" className="text-xs">
+                                            {code.carrier}
+                                          </Badge>
+                                          <span className="text-xs text-gray-600 dark:text-gray-400">
+                                            {code.code}
+                                          </span>
+                                        </div>
+                                      ))
+                                    ) : (
+                                      <span className="text-xs text-gray-500 dark:text-gray-400">
+                                        미연동
+                                      </span>
+                                    )}
+                                  </div>
+                                </td>
+                                <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                                  {dealer.createdAt ? format(new Date(dealer.createdAt), 'yyyy-MM-dd', { locale: ko }) : '미상'}
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <Building2 className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                    <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">판매점이 없습니다</h3>
+                    <p className="text-gray-500 dark:text-gray-400">첫 번째 판매점을 추가해보세요.</p>
                   </div>
                 )}
               </CardContent>
