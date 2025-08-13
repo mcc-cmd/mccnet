@@ -13,6 +13,7 @@ import { useLocation } from "wouter";
 import { Building, LogIn, UserPlus } from "lucide-react";
 import { Link } from "wouter";
 import { useAuth } from "@/lib/auth";
+import mccLogoPath from "@assets/image_1755073542806.png";
 
 const dealerLoginSchema = z.object({
   username: z.string().min(1, "아이디를 입력해주세요"),
@@ -68,8 +69,12 @@ export function DealerLogin() {
       <div className="w-full max-w-md space-y-6">
         <Card>
           <CardHeader className="text-center">
-            <div className="mx-auto mb-4 w-16 h-16 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center">
-              <Building className="h-8 w-8 text-blue-600 dark:text-blue-400" />
+            <div className="mx-auto mb-4 flex items-center justify-center">
+              <img 
+                src={mccLogoPath} 
+                alt="MCC 로고" 
+                className="h-16 w-auto object-contain"
+              />
             </div>
             <CardTitle className="text-2xl">판매점 로그인</CardTitle>
             <CardDescription>

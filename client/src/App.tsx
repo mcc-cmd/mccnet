@@ -83,10 +83,16 @@ function AppRoutes() {
   if (user?.userType === 'dealer') {
     return (
       <Switch>
-        <Route path="/" component={() => <Redirect to="/dealer-dashboard" />} />
-        <Route path="/dealer-dashboard" component={DealerDashboard} />
+        <Route path="/" component={() => <Redirect to="/dealer" />} />
+        <Route path="/dealer" component={DealerDashboard} />
+        <Route path="/dealer/submit-application" component={SubmitApplication} />
+        <Route path="/dealer/applications" component={DealerDashboard} />
+        <Route path="/dealer/completed" component={DealerDashboard} />
+        <Route path="/dealer/other-completed" component={DealerDashboard} />
+        <Route path="/dealer/cancelled" component={DealerDashboard} />
+        <Route path="/dealer/discarded" component={DealerDashboard} />
         <Route path="/dealer-chat/:documentId" component={DealerChat} />
-        <Route component={() => <Redirect to="/dealer-dashboard" />} />
+        <Route component={() => <Redirect to="/dealer" />} />
       </Switch>
     );
   }
