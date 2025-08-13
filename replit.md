@@ -3,6 +3,16 @@
 ## Overview
 This project is a document management system designed for MCC네트월드 telecommunications dealers. Its primary goal is to streamline the handling of customer reception documents, offering key capabilities such as role-based authentication, secure file uploads, comprehensive document tracking, and administrative functionalities. The system aims to significantly enhance efficiency in managing customer activations and related processes, providing a robust platform for document management within the telecommunications sector.
 
+## Recent Changes (Aug 13, 2025)
+- **Authentication System**: MCC0001 dealer login fully functional with proper session persistence
+- **Schema Fixes**: Resolved all dealer table field mapping issues (username vs dealerId)
+- **API Endpoints**: Eliminated duplicate /api/auth/me endpoints and 401 errors
+- **Form Restoration**: Working on restoring SubmitApplication.tsx to original 8-hour-old structure
+  - User wants original complex form with Layout component (not DealerLayout)
+  - Should include useState formData management, contact code search, duplicate check dialog
+  - Must have file upload capabilities and carrier-specific dynamic fields
+- **Current Issue**: Need to find and restore exact original form structure from git history
+
 ## User Preferences
 Preferred communication style: Simple, everyday language.
 Code preservation: Keep existing code and settings intact during modifications. Only modify specific requested changes without resetting or initializing other parts.
