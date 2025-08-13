@@ -1596,6 +1596,7 @@ export function AdminPanel() {
 
   // 판매점 편집 관련 상태
   const [editingDealer, setEditingDealer] = useState<any>(null);
+  const [editDealerDialogOpen, setEditDealerDialogOpen] = useState(false);
 
   // 판매점 편집 폼
   const editDealerForm = useForm<CreateDealerForm>({
@@ -1630,8 +1631,8 @@ export function AdminPanel() {
       }),
     onSuccess: () => {
       editDealerForm.reset();
-      setEditDealerDialogOpen(false);
       setEditingDealer(null);
+      setEditDealerDialogOpen(false);
       toast({
         title: '판매점 수정 완료',
         description: '판매점 정보가 성공적으로 수정되었습니다.',
@@ -4775,7 +4776,7 @@ export function AdminPanel() {
                                 </td>
                                 <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
                                   <div className="flex space-x-2">
-                                    <Dialog>
+                                    <Dialog open={editDealerDialogOpen} onOpenChange={setEditDealerDialogOpen}>
                                       <DialogTrigger asChild>
                                         <Button
                                           variant="outline"
@@ -4793,6 +4794,7 @@ export function AdminPanel() {
                                               carrierCodes: {},
                                             });
                                             setEditingDealer(dealer);
+                                            setEditDealerDialogOpen(true);
                                           }}
                                         >
                                           <Edit2 className="h-4 w-4" />
@@ -6630,7 +6632,7 @@ export function AdminPanel() {
                           </div>
                         </div>
                         <div className="flex space-x-2">
-                          <Dialog>
+                          <Dialog open={editDealerDialogOpen} onOpenChange={setEditDealerDialogOpen}>
                             <DialogTrigger asChild>
                               <Button
                                 variant="outline"
@@ -6647,6 +6649,7 @@ export function AdminPanel() {
                                     carrierCodes: {},
                                   });
                                   setEditingDealer(dealer);
+                                  setEditDealerDialogOpen(true);
                                 }}
                               >
                                 <Edit className="w-4 h-4 mr-1" />
