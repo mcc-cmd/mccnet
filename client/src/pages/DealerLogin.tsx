@@ -72,6 +72,8 @@ export function DealerLogin() {
   });
 
   function onSubmit(data: DealerLoginForm) {
+    console.log('Form submitted with data:', data);
+    console.log('Form errors:', form.formState.errors);
     loginMutation.mutate(data);
   }
 
@@ -136,6 +138,11 @@ export function DealerLogin() {
                   type="submit" 
                   className="w-full" 
                   disabled={loginMutation.isPending}
+                  onClick={(e) => {
+                    console.log('Button clicked!');
+                    console.log('Form valid:', form.formState.isValid);
+                    console.log('Form values:', form.getValues());
+                  }}
                 >
                   <LogIn className="mr-2 h-4 w-4" />
                   {loginMutation.isPending ? "로그인 중..." : "로그인"}
