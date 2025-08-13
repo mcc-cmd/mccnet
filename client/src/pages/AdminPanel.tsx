@@ -1622,28 +1622,25 @@ export function AdminPanel() {
 
   const handleEditDealerInTable = (dealer: any) => {
     console.log('Edit dealer clicked:', dealer);
-    console.log('Current editDealerDialogOpen state:', editDealerDialogOpen);
+    
+    // 먼저 편집 중인 판매점 설정
     setEditingDealer(dealer);
     
-    // 폼에 기존 데이터 설정
-    editDealerForm.reset({
-      name: (dealer as any).businessName || (dealer as any).name || '',
-      username: (dealer as any).username || '',
-      password: '',
-      contactEmail: (dealer as any).contactEmail || '',
-      contactPhone: (dealer as any).contactPhone || '',
-      location: (dealer as any).address || (dealer as any).location || '',
-      carrierCodes: {},
-    });
-    
-    console.log('Opening edit dialog...');
-    setEditDealerDialogOpen(true);
-    console.log('Edit dialog state set to true for dealer:', dealer.businessName);
-    
-    // 강제로 다음 틴에 상태 확인
+    // 다음 렌더링 사이클에서 폼 리셋과 다이얼로그 열기
     setTimeout(() => {
-      console.log('Dialog state after timeout:', editDealerDialogOpen);
-    }, 100);
+      editDealerForm.reset({
+        name: (dealer as any).businessName || (dealer as any).name || '',
+        username: (dealer as any).username || '',
+        password: '',
+        contactEmail: (dealer as any).contactEmail || '',
+        contactPhone: (dealer as any).contactPhone || '',
+        location: (dealer as any).address || (dealer as any).location || '',
+        carrierCodes: {},
+      });
+      
+      setEditDealerDialogOpen(true);
+      console.log('Edit dialog opened for dealer:', dealer.businessName);
+    }, 10);
   };
 
   // 판매점 수정 뮤테이션
@@ -6564,7 +6561,14 @@ export function AdminPanel() {
             </Card>
 
             {/* 판매점 수정 다이얼로그 */}
-            <Dialog open={editDealerDialogOpen} onOpenChange={setEditDealerDialogOpen}>
+            <Dialog open={editDealerDialogOpen} onOpenChange={(open) => {
+              console.log('Dialog onOpenChange called with:', open);
+              setEditDealerDialogOpen(open);
+              if (!open) {
+                setEditingDealer(null);
+                editDealerForm.reset();
+              }
+            }}>
               <DialogContent className="max-w-md">
                 <DialogHeader>
                   <DialogTitle>판매점 정보 수정</DialogTitle>
