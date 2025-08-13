@@ -49,27 +49,38 @@ export function DealerLogin() {
     }
 
     setIsLoading(true);
+    console.log('Attempting login with credentials');
+    
     try {
-      const response = await apiRequest("POST", "/api/dealer-login", {
-        username,
-        password
+      const response = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ username, password }),
       });
+
+      console.log('Login response status:', response.status, response.ok);
       const data = await response.json();
       
-      // 기존 세션 제거 후 새 세션 저장
-      localStorage.removeItem('sessionId');
-      if (data.sessionId) {
+      if (response.ok && data.success && data.sessionId) {
         localStorage.setItem('sessionId', data.sessionId);
+        
+        toast({
+          title: "로그인 성공",
+          description: `${data.user.name}님, 환영합니다!`,
+        });
+        
+        // 새로고침하여 auth state 업데이트
+        window.location.href = "/dealer";
+        return;
+      } else {
+        console.log('Login failed:', data);
+        throw new Error(data.error || "로그인에 실패했습니다.");
       }
       
-      toast({
-        title: "로그인 성공",
-        description: `${data.user.name}님, 환영합니다!`,
-      });
-      
-      // 즉시 판매점 대시보드로 리디렉션
-      window.location.href = "/dealer";
     } catch (error: any) {
+      console.log('Login error:', error);
       toast({
         title: "로그인 실패",
         description: error.message || "로그인 중 오류가 발생했습니다.",

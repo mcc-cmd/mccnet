@@ -302,6 +302,29 @@ router.post('/api/auth/login', async (req, res) => {
       return res.json(response);
     }
 
+    // Try dealer login
+    console.log('Authenticating dealer:', username);
+    const dealer = await storage.authenticateDealer(username, password);
+    console.log('Dealer found:', dealer ? 'yes' : 'no');
+    console.log('Dealer auth result:', dealer ? 'success' : 'failed');
+    
+    if (dealer) {
+      const sessionId = await storage.createSession(dealer.id, 'dealer');
+      console.log('Dealer session created:', sessionId);
+      
+      const response: AuthResponse = {
+        success: true,
+        user: {
+          id: dealer.id,
+          name: dealer.businessName,
+          username: dealer.dealerId,
+          userType: 'dealer'
+        },
+        sessionId
+      };
+      return res.json(response);
+    }
+
     res.status(401).json({ success: false, error: '아이디 또는 비밀번호가 올바르지 않습니다.' });
   } catch (error: any) {
     res.status(400).json({ success: false, error: error.message });
