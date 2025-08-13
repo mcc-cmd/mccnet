@@ -22,7 +22,7 @@ export function TopNavigation({ title, onMenuClick }: TopNavigationProps) {
   };
 
   return (
-    <div className="relative z-10 flex-shrink-0 flex h-12 bg-white shadow">
+    <div className="relative z-10 flex-shrink-0 flex h-6 bg-white shadow">
       {/* Mobile menu button */}
       <button
         type="button"

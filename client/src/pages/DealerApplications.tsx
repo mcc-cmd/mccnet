@@ -83,7 +83,7 @@ export function DealerApplications() {
 
   return (
     <DealerLayout title="접수관리" description="접수된 신청서 관리 및 상태 확인">
-      <div className="p-1 space-y-2">
+      <div className="p-2 space-y-2">
         {/* 필터 및 검색 */}
         <Card>
           <CardHeader>

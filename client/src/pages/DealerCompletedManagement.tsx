@@ -115,7 +115,7 @@ export function DealerCompletedManagement() {
 
   return (
     <DealerLayout title="개통완료 관리" description="개통 완료된 신청서 관리 및 이력 확인">
-      <div className="p-6 space-y-6">
+      <div className="p-2 space-y-2">
         {/* 헤더 카드 */}
         <Card>
           <CardHeader>
