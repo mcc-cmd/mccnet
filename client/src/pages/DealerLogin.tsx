@@ -37,7 +37,9 @@ export function DealerLogin() {
 
   const loginMutation = useMutation({
     mutationFn: async (data: DealerLoginForm) => {
+      console.log('Making API request to /api/dealer-login with data:', data);
       const response = await apiRequest("POST", "/api/dealer-login", data);
+      console.log('API response received:', response);
       return response.json();
     },
     onSuccess: async (data) => {
