@@ -4801,6 +4801,9 @@ export function AdminPanel() {
                                       <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
                                         <DialogHeader>
                                           <DialogTitle>판매점 정보 수정</DialogTitle>
+                                          <DialogDescription>
+                                            판매점의 기본 정보를 수정할 수 있습니다.
+                                          </DialogDescription>
                                         </DialogHeader>
                                         <Form {...editDealerForm}>
                                           <form onSubmit={editDealerForm.handleSubmit(handleUpdateDealer)} className="space-y-4">
@@ -6653,6 +6656,9 @@ export function AdminPanel() {
                             <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
                               <DialogHeader>
                                 <DialogTitle>판매점 정보 수정</DialogTitle>
+                                <DialogDescription>
+                                  판매점의 기본 정보를 수정할 수 있습니다.
+                                </DialogDescription>
                               </DialogHeader>
                               <Form {...editDealerForm}>
                                 <form onSubmit={editDealerForm.handleSubmit(handleUpdateDealer)} className="space-y-4">

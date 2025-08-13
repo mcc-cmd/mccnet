@@ -538,7 +538,6 @@ router.put('/api/admin/dealers/:id', requireAdmin, async (req, res) => {
 
     // 비밀번호가 제공된 경우만 포함
     if (password && password.trim() !== '') {
-      const bcrypt = require('bcrypt');
       updateData.password = await bcrypt.hash(password, 10);
     }
 
