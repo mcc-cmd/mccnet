@@ -497,6 +497,20 @@ router.get('/api/admin/dealers', requireAdmin, async (req, res) => {
   }
 });
 
+router.delete('/api/admin/dealers/:id', requireAdmin, async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) {
+      return res.status(400).json({ error: '잘못된 판매점 ID입니다.' });
+    }
+    
+    await storage.deleteDealer(id);
+    res.json({ success: true, message: '판매점이 성공적으로 삭제되었습니다.' });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 router.post('/api/admin/users', requireAdmin, async (req, res) => {
   try {
     const data = createUserSchema.parse(req.body);

@@ -1277,6 +1277,24 @@ export class DatabaseStorage implements IStorage {
       return [];
     }
   }
+
+  async deleteDealer(id: number): Promise<void> {
+    try {
+      // 관련된 접점코드 매핑도 함께 삭제
+      await db.run(sql`
+        DELETE FROM dealer_carrier_codes WHERE dealer_id = ${id}
+      `);
+      
+      // 판매점 삭제
+      await db.delete(dealerRegistrations)
+        .where(eq(dealerRegistrations.id, id));
+      
+      console.log(`Dealer ${id} and related carrier codes deleted successfully`);
+    } catch (error) {
+      console.error('Delete dealer error:', error);
+      throw new Error('판매점 삭제에 실패했습니다.');
+    }
+  }
   
   async getUsers(): Promise<any[]> {
     try {

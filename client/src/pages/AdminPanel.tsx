@@ -1331,6 +1331,36 @@ function ContactCodeManagement({ dealer }: { dealer: Dealer }) {
     }
   });
 
+  // 판매점 삭제 mutation
+  const deleteDealerMutation = useMutation({
+    mutationFn: (dealerId: number) => 
+      apiRequest(`/api/admin/dealers/${dealerId}`, {
+        method: 'DELETE'
+      }),
+    onSuccess: () => {
+      toast({
+        title: "삭제 완료",
+        description: "판매점이 성공적으로 삭제되었습니다.",
+        variant: "default"
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/dealers'] });
+    },
+    onError: (error: any) => {
+      console.error('Delete dealer error:', error);
+      toast({
+        title: "삭제 실패",
+        description: error.message || "판매점 삭제에 실패했습니다.",
+        variant: "destructive"
+      });
+    }
+  });
+
+  const handleDeleteDealer = () => {
+    if (window.confirm(`정말로 "${dealer.businessName || dealer.name}" 판매점을 삭제하시겠습니까?\n\n이 작업은 되돌릴 수 없으며, 해당 판매점의 모든 접점코드도 함께 삭제됩니다.`)) {
+      deleteDealerMutation.mutate(dealer.id);
+    }
+  };
+
   const handleSave = () => {
     saveContactCodesMutation.mutate(tempContactCodes);
   };
@@ -1385,9 +1415,19 @@ function ContactCodeManagement({ dealer }: { dealer: Dealer }) {
               </Button>
             </>
           ) : (
-            <Button size="sm" onClick={() => setIsEditing(true)}>
-              편집
-            </Button>
+            <>
+              <Button size="sm" onClick={() => setIsEditing(true)}>
+                편집
+              </Button>
+              <Button 
+                variant="destructive" 
+                size="sm" 
+                onClick={handleDeleteDealer}
+                disabled={deleteDealerMutation.isPending}
+              >
+                {deleteDealerMutation.isPending ? '삭제 중...' : '삭제'}
+              </Button>
+            </>
           )}
         </div>
       </div>
