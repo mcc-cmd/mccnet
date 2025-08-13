@@ -497,30 +497,6 @@ router.get('/api/admin/dealers', requireAdmin, async (req, res) => {
   }
 });
 
-// 판매점 수정
-router.put('/api/admin/dealers/:id', requireAdmin, async (req, res) => {
-  try {
-    const dealerId = parseInt(req.params.id);
-    const dealerData = req.body;
-    
-    const updatedDealer = await storage.updateDealer(dealerId, dealerData);
-    res.json(updatedDealer);
-  } catch (error: any) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// 판매점 삭제
-router.delete('/api/admin/dealers/:id', requireAdmin, async (req, res) => {
-  try {
-    const dealerId = parseInt(req.params.id);
-    await storage.deleteDealer(dealerId);
-    res.json({ success: true });
-  } catch (error: any) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
 router.post('/api/admin/users', requireAdmin, async (req, res) => {
   try {
     const data = createUserSchema.parse(req.body);

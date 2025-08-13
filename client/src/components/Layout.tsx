@@ -28,5 +28,3 @@ export function Layout({ children, title }: LayoutProps) {
     </div>
   );
 }
-
-export default Layout;
