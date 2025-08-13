@@ -1622,6 +1622,7 @@ export function AdminPanel() {
 
   const handleEditDealerInTable = (dealer: any) => {
     console.log('Edit dealer clicked:', dealer);
+    console.log('Current dialog state before:', editDealerDialogOpen);
     setEditingDealer(dealer);
     // 폼에 기존 데이터 설정
     editDealerForm.reset({
@@ -1633,8 +1634,12 @@ export function AdminPanel() {
       location: dealer.location || '',
       carrierCodes: {}, // 접점코드는 별도 관리
     });
-    setEditDealerDialogOpen(true);
-    console.log('Dialog should be open:', true);
+    
+    // 강제로 다이얼로그 열기
+    setTimeout(() => {
+      setEditDealerDialogOpen(true);
+      console.log('Dialog set to true after timeout');
+    }, 100);
   };
 
   // 판매점 수정 뮤테이션
@@ -6504,8 +6509,16 @@ export function AdminPanel() {
                     </DialogContent>
                   </Dialog>
 
+                  {/* 디버깅용 상태 표시 */}
+                  <div className="fixed top-4 right-4 bg-red-500 text-white p-2 text-xs z-50">
+                    Dialog State: {editDealerDialogOpen ? 'OPEN' : 'CLOSED'}
+                  </div>
+
                   {/* 판매점 수정 다이얼로그 */}
-                  <Dialog open={editDealerDialogOpen} onOpenChange={setEditDealerDialogOpen}>
+                  <Dialog open={editDealerDialogOpen} onOpenChange={(open) => {
+                    console.log('Dialog open change:', open);
+                    setEditDealerDialogOpen(open);
+                  }}>
                     <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
                       <DialogHeader>
                         <DialogTitle>판매점 정보 수정</DialogTitle>
