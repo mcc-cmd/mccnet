@@ -34,11 +34,8 @@ export function DealerLogin() {
 
   const loginMutation = useMutation({
     mutationFn: async (data: DealerLoginForm) => {
-      return apiRequest("/api/dealer-login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-      });
+      const response = await apiRequest("POST", "/api/dealer-login", data);
+      return response.json();
     },
     onSuccess: (data) => {
       console.log("Dealer login successful:", data);
@@ -46,8 +43,7 @@ export function DealerLogin() {
         title: "로그인 성공",
         description: `${data.user.name}님, 환영합니다!`,
       });
-      // 판매점 전용 대시보드로 이동
-      setLocation("/dealer-dashboard");
+      // 화면 변경하지 않고 현재 페이지에서 성공 메시지만 표시
     },
     onError: (error: any) => {
       console.error("Dealer login error:", error);
