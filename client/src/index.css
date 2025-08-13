@@ -109,6 +109,15 @@ body {
   scrollbar-color: hsl(var(--muted-foreground)) hsl(var(--muted));
 }
 
+/* 커서 깜빡임 제거 */
+input:not(:focus) {
+  caret-color: transparent;
+}
+
+input:focus {
+  caret-color: hsl(var(--primary));
+}
+
 ::-webkit-scrollbar-thumb {
   background: hsl(var(--muted-foreground));
   border-radius: 3px;

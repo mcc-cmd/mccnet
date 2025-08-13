@@ -56,8 +56,10 @@ export function DealerLogin() {
         description: `${data.user.name}님, 환영합니다!`,
       });
       
-      // 판매점 대시보드로 이동
-      setLocation("/dealer");
+      // 짧은 지연 후 판매점 대시보드로 이동
+      setTimeout(() => {
+        window.location.href = "/dealer";
+      }, 1000);
     },
     onError: (error: any) => {
       console.error("Dealer login error:", error);

@@ -143,6 +143,8 @@ function SalesManagerRoutes() {
 
 // 메인 앱 라우터
 function MainApp() {
+  const { isAuthenticated, user } = useAuth();
+  
   return (
     <Switch>
       {/* 판매점 관련 라우트 (인증 없이 접근 가능) */}
@@ -151,6 +153,21 @@ function MainApp() {
       
       {/* 영업과장 대시보드 (인증 우회) */}
       <Route path="/sales-manager-dashboard" component={SalesManagerDashboard} />
+      
+      {/* 판매점 전용 라우트 - 인증된 판매점만 접근 가능 */}
+      {isAuthenticated && user?.userType === 'dealer' && (
+        <>
+          <Route path="/" component={() => <Redirect to="/dealer" />} />
+          <Route path="/dealer" component={DealerDashboard} />
+          <Route path="/dealer/submit-application" component={SubmitApplication} />
+          <Route path="/dealer/applications" component={DealerApplications} />
+          <Route path="/dealer/work-requests" component={DealerWorkRequests} />
+          <Route path="/dealer/completed" component={DealerCompletedManagement} />
+          <Route path="/dealer/other-completed" component={DealerOtherCompleted} />
+          <Route path="/dealer/cancelled" component={DealerCancelledHistory} />
+          <Route path="/dealer-chat/:documentId" component={DealerChat} />
+        </>
+      )}
       
       {/* 기존 인증이 필요한 라우트 */}
       <Route>
