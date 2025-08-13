@@ -12,6 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
 import { Building, LogIn, UserPlus } from "lucide-react";
 import { Link } from "wouter";
+import { useAuth } from "@/lib/auth";
 
 const dealerLoginSchema = z.object({
   username: z.string().min(1, "아이디를 입력해주세요"),
@@ -23,6 +24,7 @@ type DealerLoginForm = z.infer<typeof dealerLoginSchema>;
 export function DealerLogin() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+  const { checkAuth } = useAuth();
 
   const form = useForm<DealerLoginForm>({
     resolver: zodResolver(dealerLoginSchema),
@@ -37,13 +39,15 @@ export function DealerLogin() {
       const response = await apiRequest("POST", "/api/dealer-login", data);
       return response.json();
     },
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
       console.log("Dealer login successful:", data);
       toast({
         title: "로그인 성공",
         description: `${data.user.name}님, 환영합니다!`,
       });
-      // 화면 변경하지 않고 현재 페이지에서 성공 메시지만 표시
+      
+      // 판매점 로그인은 별도 처리 - 페이지 새로고침으로 강제 라우팅
+      window.location.href = "/";
     },
     onError: (error: any) => {
       console.error("Dealer login error:", error);
@@ -125,22 +129,7 @@ export function DealerLogin() {
           </CardContent>
         </Card>
 
-        {/* 등록 안내 */}
-        <Card>
-          <CardContent className="pt-6">
-            <div className="text-center space-y-2">
-              <p className="text-sm text-muted-foreground">
-                아직 계정이 없으신가요?
-              </p>
-              <Link href="/dealer-registration">
-                <Button variant="outline" className="w-full">
-                  <UserPlus className="mr-2 h-4 w-4" />
-                  판매점 등록
-                </Button>
-              </Link>
-            </div>
-          </CardContent>
-        </Card>
+
 
         {/* 직원 로그인 링크 */}
         <div className="text-center">

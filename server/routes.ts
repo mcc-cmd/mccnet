@@ -5247,6 +5247,7 @@ router.post('/api/dealer-login', async (req, res) => {
 
     res.json({
       success: true,
+      sessionId: req.sessionID,
       user: {
         id: dealer.id,
         name: dealer.representativeName,
