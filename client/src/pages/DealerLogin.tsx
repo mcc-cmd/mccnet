@@ -61,18 +61,13 @@ export function DealerLogin() {
         localStorage.setItem('sessionId', data.sessionId);
       }
       
-      // auth 상태 업데이트
-      await checkAuth();
-      
       toast({
         title: "로그인 성공",
         description: `${data.user.name}님, 환영합니다!`,
       });
       
-      // 페이지 새로고침으로 확실한 리디렉션
-      setTimeout(() => {
-        window.location.replace("/dealer");
-      }, 1500);
+      // 즉시 판매점 대시보드로 리디렉션
+      window.location.href = "/dealer";
     } catch (error: any) {
       toast({
         title: "로그인 실패",
