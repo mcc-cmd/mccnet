@@ -6509,17 +6509,33 @@ export function AdminPanel() {
                     </DialogContent>
                   </Dialog>
 
-                  {/* 디버깅용 상태 표시 */}
-                  <div className="fixed top-4 right-4 bg-red-500 text-white p-2 text-xs z-50">
+                  {/* 디버깅용 상태 표시 - 임시 */}
+                  <div className="fixed top-4 right-4 bg-red-500 text-white p-2 text-xs z-[10000]">
                     Dialog State: {editDealerDialogOpen ? 'OPEN' : 'CLOSED'}
                   </div>
+                  
+                  {/* 강제 테스트 다이얼로그 */}
+                  {editDealerDialogOpen && (
+                    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[10001]">
+                      <div className="bg-white dark:bg-gray-900 p-6 rounded-lg shadow-xl max-w-2xl w-full mx-4">
+                        <h2 className="text-lg font-semibold mb-4">판매점 정보 수정 (강제 표시)</h2>
+                        <p>이 다이얼로그가 보이면 상태는 정상적으로 작동하는 것입니다.</p>
+                        <button 
+                          onClick={() => setEditDealerDialogOpen(false)}
+                          className="mt-4 px-4 py-2 bg-red-500 text-white rounded"
+                        >
+                          닫기
+                        </button>
+                      </div>
+                    </div>
+                  )}
 
                   {/* 판매점 수정 다이얼로그 */}
                   <Dialog open={editDealerDialogOpen} onOpenChange={(open) => {
                     console.log('Dialog open change:', open);
                     setEditDealerDialogOpen(open);
                   }}>
-                    <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+                    <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white dark:bg-gray-900 border shadow-lg z-[9999]">
                       <DialogHeader>
                         <DialogTitle>판매점 정보 수정</DialogTitle>
                         <DialogDescription>
