@@ -1622,21 +1622,28 @@ export function AdminPanel() {
 
   const handleEditDealerInTable = (dealer: any) => {
     console.log('Edit dealer clicked:', dealer);
+    console.log('Current editDealerDialogOpen state:', editDealerDialogOpen);
     setEditingDealer(dealer);
     
     // 폼에 기존 데이터 설정
     editDealerForm.reset({
-      name: dealer.businessName || dealer.name || '',
-      username: dealer.username || '',
+      name: (dealer as any).businessName || (dealer as any).name || '',
+      username: (dealer as any).username || '',
       password: '',
-      contactEmail: dealer.contactEmail || '',
-      contactPhone: dealer.contactPhone || '',
-      location: dealer.address || dealer.location || '',
+      contactEmail: (dealer as any).contactEmail || '',
+      contactPhone: (dealer as any).contactPhone || '',
+      location: (dealer as any).address || (dealer as any).location || '',
       carrierCodes: {},
     });
     
+    console.log('Opening edit dialog...');
     setEditDealerDialogOpen(true);
-    console.log('Edit dialog opened for dealer:', dealer.businessName);
+    console.log('Edit dialog state set to true for dealer:', dealer.businessName);
+    
+    // 강제로 다음 틴에 상태 확인
+    setTimeout(() => {
+      console.log('Dialog state after timeout:', editDealerDialogOpen);
+    }, 100);
   };
 
   // 판매점 수정 뮤테이션
@@ -6515,12 +6522,12 @@ export function AdminPanel() {
                         <div className="flex-1">
                           <div className="flex items-center space-x-4">
                             <div>
-                              <h4 className="font-medium">{dealer.businessName || dealer.name}</h4>
+                              <h4 className="font-medium">{(dealer as any).businessName || (dealer as any).name || '판매점명 없음'}</h4>
                               <p className="text-sm text-gray-500">
-                                아이디: {dealer.username} | 연락처: {dealer.contactPhone || '미입력'}
+                                아이디: {(dealer as any).username || '미입력'} | 연락처: {(dealer as any).contactPhone || '미입력'}
                               </p>
                               <p className="text-sm text-gray-500">
-                                위치: {dealer.address || dealer.location || '미입력'} | 이메일: {dealer.contactEmail || '미입력'}
+                                위치: {(dealer as any).address || (dealer as any).location || '미입력'} | 이메일: {(dealer as any).contactEmail || '미입력'}
                               </p>
                             </div>
                           </div>
@@ -6537,7 +6544,7 @@ export function AdminPanel() {
                           <Button
                             variant="destructive" 
                             size="sm"
-                            onClick={() => handleDeleteDealerInTable(dealer.id, dealer.businessName || dealer.name)}
+                            onClick={() => handleDeleteDealerInTable(dealer.id, (dealer as any).businessName || (dealer as any).name || '판매점')}
                           >
                             <Trash2 className="w-4 h-4 mr-1" />
                             삭제
