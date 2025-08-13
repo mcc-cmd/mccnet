@@ -26,6 +26,9 @@ export function DealerLogin() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const { checkAuth } = useAuth();
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
   const form = useForm<DealerLoginForm>({
     resolver: zodResolver(dealerLoginSchema),
@@ -35,15 +38,23 @@ export function DealerLogin() {
     },
   });
 
-  const loginMutation = useMutation({
-    mutationFn: async (data: DealerLoginForm) => {
-      console.log('Making API request to /api/dealer-login with data:', data);
-      const response = await apiRequest("POST", "/api/dealer-login", data);
-      console.log('API response received:', response);
-      return response.json();
-    },
-    onSuccess: async (data) => {
-      console.log("Dealer login successful:", data);
+  async function handleLogin() {
+    if (!username || !password) {
+      toast({
+        title: "입력 오류",
+        description: "아이디와 비밀번호를 모두 입력해주세요.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const response = await apiRequest("POST", "/api/dealer-login", {
+        username,
+        password
+      });
+      const data = await response.json();
       
       // 세션ID 저장
       if (data.sessionId) {
@@ -62,27 +73,19 @@ export function DealerLogin() {
       setTimeout(() => {
         window.location.replace("/dealer");
       }, 1500);
-    },
-    onError: (error: any) => {
-      console.error("Dealer login error:", error);
+    } catch (error: any) {
       toast({
         title: "로그인 실패",
         description: error.message || "로그인 중 오류가 발생했습니다.",
         variant: "destructive",
       });
-    },
-  });
+    } finally {
+      setIsLoading(false);
+    }
+  }
 
   async function onSubmit(data: DealerLoginForm) {
-    try {
-      loginMutation.mutate(data);
-    } catch (error) {
-      toast({
-        title: "로그인 오류",
-        description: "로그인 처리 중 오류가 발생했습니다.",
-        variant: "destructive",
-      });
-    }
+    await handleLogin();
   }
 
   return (
@@ -105,64 +108,49 @@ export function DealerLogin() {
           <CardContent>
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                <FormField
-                  control={form.control}
-                  name="username"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>아이디</FormLabel>
-                      <FormControl>
-                        <Input 
-                          placeholder="아이디를 입력하세요"
-                          autoComplete="username"
-                          {...field} 
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                <div className="space-y-4">
+                  <div>
+                    <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                      아이디
+                    </label>
+                    <Input 
+                      value={username}
+                      onChange={(e) => setUsername(e.target.value)}
+                      placeholder="아이디를 입력하세요"
+                      autoComplete="username"
+                      className="mt-1"
+                    />
+                  </div>
 
-                <FormField
-                  control={form.control}
-                  name="password"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>비밀번호</FormLabel>
-                      <FormControl>
-                        <Input 
-                          type="password"
-                          placeholder="비밀번호를 입력하세요"
-                          autoComplete="current-password"
-                          {...field} 
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                  <div>
+                    <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                      비밀번호
+                    </label>
+                    <Input 
+                      type="password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="비밀번호를 입력하세요"
+                      autoComplete="current-password"
+                      className="mt-1"
+                      onKeyPress={(e) => {
+                        if (e.key === 'Enter') {
+                          handleLogin();
+                        }
+                      }}
+                    />
+                  </div>
 
-                <Button 
-                  type="button" 
-                  className="w-full" 
-                  disabled={loginMutation.isPending}
-                  onClick={async (e) => {
-                    e.preventDefault();
-                    const formData = form.getValues();
-                    if (!formData.username || !formData.password) {
-                      toast({
-                        title: "입력 오류",
-                        description: "아이디와 비밀번호를 모두 입력해주세요.",
-                        variant: "destructive",
-                      });
-                      return;
-                    }
-                    await form.handleSubmit(onSubmit)();
-                  }}
-                >
-                  <LogIn className="mr-2 h-4 w-4" />
-                  {loginMutation.isPending ? "로그인 중..." : "로그인"}
-                </Button>
+                  <Button 
+                    type="button" 
+                    className="w-full" 
+                    disabled={isLoading}
+                    onClick={handleLogin}
+                  >
+                    <LogIn className="mr-2 h-4 w-4" />
+                    {isLoading ? "로그인 중..." : "로그인"}
+                  </Button>
+                </div>
               </form>
             </Form>
           </CardContent>

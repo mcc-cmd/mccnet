@@ -152,6 +152,10 @@ function SalesManagerRoutes() {
 function MainApp() {
   return (
     <Switch>
+      {/* 판매점 관련 페이지 (인증 우회) */}
+      <Route path="/dealer-registration" component={DealerRegistration} />
+      <Route path="/dealer-login" component={DealerLogin} />
+      
       {/* 영업과장 대시보드 (인증 우회) */}
       <Route path="/sales-manager-dashboard" component={SalesManagerDashboard} />
       
