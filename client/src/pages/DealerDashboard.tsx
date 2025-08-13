@@ -30,10 +30,10 @@ interface DealerApplication {
 export function DealerDashboard() {
   
   // 판매점의 신청 문서 목록 조회 (추후 구현)
-  const { data: applications = [], isLoading } = useQuery({
-    queryKey: ["/api/dealer/applications"],
-    enabled: false // 추후 API 구현 시 활성화
-  });
+  // const { data: applications = [], isLoading } = useQuery({
+  //   queryKey: ["/api/dealer/applications"],
+  //   enabled: false // 추후 API 구현 시 활성화
+  // });
 
   // 임시 데이터
   const mockApplications: DealerApplication[] = [
@@ -80,7 +80,7 @@ export function DealerDashboard() {
 
   return (
     <DealerLayout title="대시보드" description="접수 현황 및 관리">
-      <div className="p-6 space-y-6">
+      <div className="p-4 space-y-4">
           {/* 통계 카드 */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <Card>

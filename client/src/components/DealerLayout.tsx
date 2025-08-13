@@ -13,7 +13,8 @@ import {
 } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { cn } from "@/lib/utils";
-import mccLogoPath from "@assets/image_1755073542806.png";
+import { useQuery } from "@tanstack/react-query";
+import mccLogoPath from "@assets/image_1755076636262.png";
 
 // 판매점 전용 사이드바 메뉴 정의
 const dealerMenuItems = [
@@ -64,6 +65,15 @@ interface DealerLayoutProps {
 export function DealerLayout({ children, title, description }: DealerLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [location] = useLocation();
+  
+  // 현재 로그인한 판매점 정보 조회
+  // const { data: dealerInfo } = useQuery({
+  //   queryKey: ["/api/auth/user"],
+  //   enabled: false // 임시로 비활성화, 실제 API 구현 시 활성화
+  // });
+
+  // 임시 판매점 이름 (실제로는 dealerInfo에서 가져올 예정)
+  const dealerName = "테스트 판매점";
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
@@ -87,7 +97,7 @@ export function DealerLayout({ children, title, description }: DealerLayoutProps
               <img src={mccLogoPath} alt="MCC 로고" className="h-8 w-auto" />
               <div>
                 <h1 className="text-lg font-semibold">판매점 포털</h1>
-                <p className="text-xs text-muted-foreground">MCC네트월드</p>
+                <p className="text-xs text-muted-foreground">{dealerName}</p>
               </div>
             </div>
             <Button
