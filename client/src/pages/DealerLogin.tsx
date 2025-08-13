@@ -73,10 +73,16 @@ export function DealerLogin() {
     },
   });
 
-  function onSubmit(data: DealerLoginForm) {
-    console.log('Form submitted with data:', data);
-    console.log('Form errors:', form.formState.errors);
-    loginMutation.mutate(data);
+  async function onSubmit(data: DealerLoginForm) {
+    try {
+      loginMutation.mutate(data);
+    } catch (error) {
+      toast({
+        title: "로그인 오류",
+        description: "로그인 처리 중 오류가 발생했습니다.",
+        variant: "destructive",
+      });
+    }
   }
 
   return (
@@ -137,13 +143,21 @@ export function DealerLogin() {
                 />
 
                 <Button 
-                  type="submit" 
+                  type="button" 
                   className="w-full" 
                   disabled={loginMutation.isPending}
-                  onClick={(e) => {
-                    console.log('Button clicked!');
-                    console.log('Form valid:', form.formState.isValid);
-                    console.log('Form values:', form.getValues());
+                  onClick={async (e) => {
+                    e.preventDefault();
+                    const formData = form.getValues();
+                    if (!formData.username || !formData.password) {
+                      toast({
+                        title: "입력 오류",
+                        description: "아이디와 비밀번호를 모두 입력해주세요.",
+                        variant: "destructive",
+                      });
+                      return;
+                    }
+                    await form.handleSubmit(onSubmit)();
                   }}
                 >
                   <LogIn className="mr-2 h-4 w-4" />
