@@ -13,7 +13,7 @@ import { useLocation } from "wouter";
 import { Building, LogIn, UserPlus } from "lucide-react";
 import { Link } from "wouter";
 import { useAuth } from "@/lib/auth";
-import mccLogoPath from "@assets/image_1755073542806.png";
+import mccLogoPath from "@assets/image_1755075135342.png";
 
 const dealerLoginSchema = z.object({
   username: z.string().min(1, "아이디를 입력해주세요"),
