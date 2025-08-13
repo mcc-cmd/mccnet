@@ -2848,6 +2848,84 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
+  async updateDealer(dealerId: number, dealerData: any): Promise<any> {
+    try {
+      const updateData: any = {
+        businessName: dealerData.name,
+        representativeName: dealerData.name,
+        username: dealerData.username,
+        contactEmail: dealerData.contactEmail,
+        contactPhone: dealerData.contactPhone,
+        address: dealerData.location,
+        updatedAt: new Date().toISOString()
+      };
+
+      // 비밀번호가 제공된 경우만 암호화하여 업데이트
+      if (dealerData.password && dealerData.password.trim() !== '') {
+        const bcrypt = await import('bcrypt');
+        const saltRounds = 10;
+        updateData.password = await bcrypt.hash(dealerData.password, saltRounds);
+      }
+
+      const [dealer] = await db.update(dealerRegistrations)
+        .set(updateData)
+        .where(eq(dealerRegistrations.id, dealerId))
+        .returning();
+
+      // 통신사별 접점코드 업데이트
+      if (dealerData.carrierCodes) {
+        // 기존 접점코드 삭제
+        await db.run(sql`DELETE FROM dealer_carrier_codes WHERE dealer_id = ${dealerId}`);
+        
+        let carrierCodesObj = {};
+        if (typeof dealerData.carrierCodes === 'string') {
+          try {
+            carrierCodesObj = JSON.parse(dealerData.carrierCodes);
+          } catch (e) {
+            console.error('Failed to parse carrierCodes JSON:', e);
+          }
+        } else if (typeof dealerData.carrierCodes === 'object') {
+          carrierCodesObj = dealerData.carrierCodes;
+        }
+        
+        if (carrierCodesObj && typeof carrierCodesObj === 'object') {
+          for (const [carrier, contactCode] of Object.entries(carrierCodesObj)) {
+            if (contactCode && typeof contactCode === 'string' && contactCode.trim() !== '') {
+              await db.run(sql`
+                INSERT INTO dealer_carrier_codes (dealer_id, carrier, contact_code, created_at, updated_at)
+                VALUES (${dealerId}, ${carrier}, ${contactCode.trim()}, ${new Date().toISOString()}, ${new Date().toISOString()})
+              `);
+            }
+          }
+        }
+      }
+      
+      return dealer;
+    } catch (error) {
+      console.error('Update dealer error:', error);
+      throw error;
+    }
+  }
+
+  async deleteDealer(dealerId: number): Promise<void> {
+    try {
+      // 관련된 채팅방과 메시지 삭제 (foreign key constraint 때문)
+      await db.run(sql`DELETE FROM chat_messages WHERE chat_room_id IN (SELECT id FROM chat_rooms WHERE dealer_id = ${dealerId})`);
+      await db.run(sql`DELETE FROM chat_rooms WHERE dealer_id = ${dealerId}`);
+      
+      // 통신사별 접점코드 삭제
+      await db.run(sql`DELETE FROM dealer_carrier_codes WHERE dealer_id = ${dealerId}`);
+      
+      // 판매점 삭제
+      await db.delete(dealerRegistrations)
+        .where(eq(dealerRegistrations.id, dealerId));
+        
+    } catch (error) {
+      console.error('Delete dealer error:', error);
+      throw error;
+    }
+  }
+
   // 당월 개통현황 조회 (근무자별)
   async getMonthlyActivationStats(workerId?: number, salesManagerId?: number): Promise<any> {
     try {

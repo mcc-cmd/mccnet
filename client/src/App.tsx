@@ -15,7 +15,7 @@ import { DiscardedDocuments } from '@/pages/DiscardedDocuments';
 import { OtherCompletions } from '@/pages/OtherCompletions';
 import { SubmitApplication } from '@/pages/SubmitApplication';
 import { Downloads } from '@/pages/Downloads';
-import { AdminPanel } from '@/pages/AdminPanel';
+import AdminPanel from '@/pages/AdminPanel';
 import { Settlements } from '@/pages/Settlements';
 
 // 판매점 관련 페이지
