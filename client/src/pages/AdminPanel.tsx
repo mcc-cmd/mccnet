@@ -1631,7 +1631,7 @@ export function AdminPanel() {
       password: '',
       contactEmail: dealer.contactEmail || '',
       contactPhone: dealer.contactPhone || '',
-      location: dealer.location || '',
+      location: dealer.address || dealer.location || '',
       carrierCodes: {},
     });
     
@@ -6515,12 +6515,12 @@ export function AdminPanel() {
                         <div className="flex-1">
                           <div className="flex items-center space-x-4">
                             <div>
-                              <h4 className="font-medium">{dealer.name}</h4>
+                              <h4 className="font-medium">{dealer.businessName || dealer.name}</h4>
                               <p className="text-sm text-gray-500">
-                                아이디: {dealer.username} | 연락처: {dealer.contactPhone}
+                                아이디: {dealer.username} | 연락처: {dealer.contactPhone || '미입력'}
                               </p>
                               <p className="text-sm text-gray-500">
-                                위치: {dealer.location} | 이메일: {dealer.contactEmail}
+                                위치: {dealer.address || dealer.location || '미입력'} | 이메일: {dealer.contactEmail || '미입력'}
                               </p>
                             </div>
                           </div>
@@ -6529,26 +6529,15 @@ export function AdminPanel() {
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => {
-                              setSelectedDealer(dealer);
-                              editDealerForm.reset({
-                                name: dealer.name,
-                                username: dealer.username,
-                                password: '',
-                                contactEmail: dealer.contactEmail,
-                                contactPhone: dealer.contactPhone,
-                                location: dealer.location
-                              });
-                              setEditDealerDialogOpen(true);
-                            }}
+                            onClick={() => handleEditDealerInTable(dealer)}
                           >
                             <Edit className="w-4 h-4 mr-1" />
                             편집
                           </Button>
                           <Button
-                            variant="destructive"
+                            variant="destructive" 
                             size="sm"
-                            onClick={() => handleDeleteDealer(dealer.id)}
+                            onClick={() => handleDeleteDealerInTable(dealer.id, dealer.businessName || dealer.name)}
                           >
                             <Trash2 className="w-4 h-4 mr-1" />
                             삭제
