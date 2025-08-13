@@ -146,7 +146,7 @@ export function Downloads() {
 
   return (
     <Layout title="서식지 다운로드">
-      <div className="space-y-6">
+      <div className="space-y-2">
         {/* Header */}
         <div>
           <h3 className="text-lg font-medium text-gray-900">서식지 다운로드</h3>

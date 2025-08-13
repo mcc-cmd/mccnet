@@ -593,7 +593,7 @@ export function Documents() {
 
   return (
     <Layout title="접수 관리">
-      <div className="space-y-6">
+      <div className="space-y-2">
         {/* Header with Upload Button */}
         <div className="flex justify-between items-center">
           <div>

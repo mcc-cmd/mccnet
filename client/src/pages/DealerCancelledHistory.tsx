@@ -134,7 +134,7 @@ export function DealerCancelledHistory() {
 
   return (
     <DealerLayout title="개통취소내역" description="개통이 취소된 신청서 내역 관리">
-      <div className="p-3 space-y-3">
+      <div className="p-1 space-y-2">
         {/* 헤더 카드 */}
         <Card>
           <CardHeader>

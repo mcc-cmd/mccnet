@@ -80,7 +80,7 @@ export function DealerDashboard() {
 
   return (
     <DealerLayout title="대시보드" description="접수 현황 및 관리">
-      <div className="p-3 space-y-3">
+      <div className="p-1 space-y-2">
           {/* 통계 카드 */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
             <Card>

@@ -18,10 +18,8 @@ export function Layout({ children, title }: LayoutProps) {
         <TopNavigation title={title} onMenuClick={() => setSidebarOpen(true)} />
         
         <main className="flex-1 relative overflow-y-auto overflow-x-auto focus:outline-none">
-          <div className="py-3">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
-              {children}
-            </div>
+          <div className="p-2">
+            {children}
           </div>
         </main>
       </div>

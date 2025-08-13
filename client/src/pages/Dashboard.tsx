@@ -172,7 +172,7 @@ export function Dashboard() {
 
   return (
     <Layout title="대시보드">
-      <div className="space-y-6">
+      <div className="space-y-2">
 
         {/* Main Content Grid - 당일 현황을 전체 너비로 확장 */}
         <div className="space-y-6">

@@ -89,7 +89,7 @@ export default function SalesManagerDashboard() {
   if (todayLoading || carrierLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex">
-        <div className="flex-1 p-6">
+        <div className="flex-1 p-2">
           <div className="text-center py-8">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-accent mx-auto"></div>
             <p className="mt-2 text-sm text-gray-500">실적 데이터 로딩 중...</p>
@@ -319,7 +319,7 @@ export default function SalesManagerDashboard() {
       </div>
 
       {/* 메인 콘텐츠 */}
-      <div className="flex-1 p-6">
+      <div className="flex-1 p-2">
         <div className="max-w-7xl mx-auto">
           <div className="mb-6">
             <h1 className="text-2xl font-bold text-gray-900">대시보드</h1>
