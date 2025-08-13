@@ -156,6 +156,16 @@ function MainApp() {
       <Route path="/dealer-registration" component={DealerRegistration} />
       <Route path="/dealer-login" component={DealerLogin} />
       
+      {/* 판매점 전용 라우트 (인증 우회) */}
+      <Route path="/dealer" component={DealerDashboard} />
+      <Route path="/dealer/submit-application" component={SubmitApplication} />
+      <Route path="/dealer/applications" component={DealerApplications} />
+      <Route path="/dealer/work-requests" component={DealerWorkRequests} />
+      <Route path="/dealer/completed" component={DealerCompletedManagement} />
+      <Route path="/dealer/other-completed" component={DealerOtherCompleted} />
+      <Route path="/dealer/cancelled" component={DealerCancelledHistory} />
+      <Route path="/dealer-chat/:documentId" component={DealerChat} />
+      
       {/* 영업과장 대시보드 (인증 우회) */}
       <Route path="/sales-manager-dashboard" component={SalesManagerDashboard} />
       

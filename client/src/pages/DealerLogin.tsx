@@ -56,7 +56,8 @@ export function DealerLogin() {
       });
       const data = await response.json();
       
-      // 세션ID 저장
+      // 기존 세션 제거 후 새 세션 저장
+      localStorage.removeItem('sessionId');
       if (data.sessionId) {
         localStorage.setItem('sessionId', data.sessionId);
       }
