@@ -2803,8 +2803,7 @@ export class DatabaseStorage implements IStorage {
           contactPhone: dealerData.contactPhone,
           address: dealerData.location,
           status: '승인', // 관리자가 직접 생성하므로 바로 승인
-          isActive: true,
-          createdAt: new Date()
+          isActive: 1
         })
         .returning();
 
