@@ -3759,12 +3759,10 @@ export class DatabaseStorage implements IStorage {
     try {
       console.log('getDealerById called with id:', id);
       const [dealer] = await db.select().from(dealerRegistrations).where(
-        and(
-          eq(dealerRegistrations.id, id),
-          eq(dealerRegistrations.status, 'approved')
-        )
+        eq(dealerRegistrations.id, id)
       );
       console.log('getDealerById query result:', dealer);
+      console.log('getDealerById status:', dealer?.status);
       return dealer;
     } catch (error) {
       console.error('Get dealer by ID error:', error);
