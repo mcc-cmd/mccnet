@@ -6508,10 +6508,54 @@ export function AdminPanel() {
                 </div>
               </CardHeader>
               <CardContent>
-                {dealerGroups?.length ? (
+                {dealers?.length ? (
                   <div className="space-y-4">
-                    {/* 판매점 목록을 여기에 표시 */}
-                    판매점 관리 기능이 여기에 표시됩니다.
+                    {dealers.map(dealer => (
+                      <div key={dealer.id} className="flex items-center justify-between p-4 border rounded-lg">
+                        <div className="flex-1">
+                          <div className="flex items-center space-x-4">
+                            <div>
+                              <h4 className="font-medium">{dealer.name}</h4>
+                              <p className="text-sm text-gray-500">
+                                아이디: {dealer.username} | 연락처: {dealer.contactPhone}
+                              </p>
+                              <p className="text-sm text-gray-500">
+                                위치: {dealer.location} | 이메일: {dealer.contactEmail}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex space-x-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              setSelectedDealer(dealer);
+                              editDealerForm.reset({
+                                name: dealer.name,
+                                username: dealer.username,
+                                password: '',
+                                contactEmail: dealer.contactEmail,
+                                contactPhone: dealer.contactPhone,
+                                location: dealer.location
+                              });
+                              setEditDealerDialogOpen(true);
+                            }}
+                          >
+                            <Edit className="w-4 h-4 mr-1" />
+                            편집
+                          </Button>
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => handleDeleteDealer(dealer.id)}
+                          >
+                            <Trash2 className="w-4 h-4 mr-1" />
+                            삭제
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 ) : (
                   <div className="text-center py-8">
