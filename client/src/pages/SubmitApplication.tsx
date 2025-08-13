@@ -8,7 +8,8 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { User } from "lucide-react";
+import { User, Building } from "lucide-react";
+import { Link } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import { DealerLayout } from "@/components/DealerLayout";
 
@@ -70,7 +71,7 @@ export function SubmitApplication() {
   return (
     <DealerLayout title="접수 신청">
       <div className="space-y-6">
-        <Card className="max-w-2xl mx-auto">
+        <Card className="max-w-4xl mx-auto">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <User className="h-5 w-5" />
@@ -82,136 +83,160 @@ export function SubmitApplication() {
           </CardHeader>
           <CardContent>
             <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                <FormField
-                  control={form.control}
-                  name="customerName"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>고객명 *</FormLabel>
-                      <FormControl>
-                        <Input placeholder="고객명을 입력하세요" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                {/* 고객 정보 섹션 */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-medium flex items-center gap-2">
+                    <User className="h-4 w-4" />
+                    고객 정보
+                  </h3>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="customerName"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>고객명 *</FormLabel>
+                          <FormControl>
+                            <Input placeholder="고객명을 입력하세요" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
 
-                <FormField
-                  control={form.control}
-                  name="customerPhone"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>연락처 *</FormLabel>
-                      <FormControl>
-                        <Input placeholder="010-0000-0000" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                    <FormField
+                      control={form.control}
+                      name="customerPhone"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>연락처 *</FormLabel>
+                          <FormControl>
+                            <Input placeholder="010-0000-0000" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
 
-                <FormField
-                  control={form.control}
-                  name="customerIdNumber"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>주민등록번호 *</FormLabel>
-                      <FormControl>
-                        <Input placeholder="000000-0000000" type="password" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="carrier"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>통신사 *</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
+                  <FormField
+                    control={form.control}
+                    name="customerIdNumber"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>주민등록번호 *</FormLabel>
                         <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="통신사를 선택하세요" />
-                          </SelectTrigger>
+                          <Input placeholder="000000-0000000" type="password" {...field} />
                         </FormControl>
-                        <SelectContent>
-                          <SelectItem value="SKT">SKT</SelectItem>
-                          <SelectItem value="KT">KT</SelectItem>
-                          <SelectItem value="LGU+">LG U+</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
 
-                <FormField
-                  control={form.control}
-                  name="serviceType"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>서비스 유형 *</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
+                {/* 서비스 정보 섹션 */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-medium flex items-center gap-2">
+                    <Building className="h-4 w-4" />
+                    서비스 정보
+                  </h3>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="carrier"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>통신사 *</FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="통신사를 선택하세요" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="SKT">SKT</SelectItem>
+                              <SelectItem value="KT">KT</SelectItem>
+                              <SelectItem value="LGU+">LG U+</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="serviceType"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>서비스 유형 *</FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="서비스 유형을 선택하세요" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="신규">신규</SelectItem>
+                              <SelectItem value="번호이동">번호이동</SelectItem>
+                              <SelectItem value="기기변경">기기변경</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  <FormField
+                    control={form.control}
+                    name="servicePlan"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>요금제 *</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="요금제를 선택하세요" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="5G 프리미엄">5G 프리미엄</SelectItem>
+                            <SelectItem value="5G 스탠다드">5G 스탠다드</SelectItem>
+                            <SelectItem value="LTE 플러스">LTE 플러스</SelectItem>
+                            <SelectItem value="LTE 베이직">LTE 베이직</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                {/* 추가 정보 섹션 */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-medium">추가 정보</h3>
+                  <FormField
+                    control={form.control}
+                    name="memo"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>메모</FormLabel>
                         <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="서비스 유형을 선택하세요" />
-                          </SelectTrigger>
+                          <Textarea 
+                            placeholder="추가 요청사항이나 특이사항을 입력하세요" 
+                            className="min-h-[100px]" 
+                            {...field} 
+                          />
                         </FormControl>
-                        <SelectContent>
-                          <SelectItem value="신규">신규</SelectItem>
-                          <SelectItem value="번호이동">번호이동</SelectItem>
-                          <SelectItem value="기기변경">기기변경</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="servicePlan"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>요금제 *</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="요금제를 선택하세요" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="5G 프리미엄">5G 프리미엄</SelectItem>
-                          <SelectItem value="5G 스탠다드">5G 스탠다드</SelectItem>
-                          <SelectItem value="LTE 플러스">LTE 플러스</SelectItem>
-                          <SelectItem value="LTE 베이직">LTE 베이직</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="memo"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>메모</FormLabel>
-                      <FormControl>
-                        <Textarea 
-                          placeholder="추가 요청사항이나 특이사항을 입력하세요" 
-                          className="min-h-[100px]" 
-                          {...field} 
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
 
                 <div className="flex gap-2 pt-4">
                   <Button type="submit" disabled={isSubmitting} className="flex-1">
