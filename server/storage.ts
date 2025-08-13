@@ -1295,6 +1295,40 @@ export class DatabaseStorage implements IStorage {
       throw new Error('판매점 삭제에 실패했습니다.');
     }
   }
+
+  async updateDealer(id: number, data: {
+    name?: string;
+    contactEmail?: string;
+    contactPhone?: string;
+    location?: string;
+    password?: string;
+  }): Promise<void> {
+    try {
+      const updateData: any = {
+        updatedAt: new Date().toISOString()
+      };
+
+      if (data.name) updateData.businessName = data.name;
+      if (data.contactEmail !== undefined) updateData.contactEmail = data.contactEmail;
+      if (data.contactPhone !== undefined) updateData.contactPhone = data.contactPhone;
+      if (data.location !== undefined) updateData.location = data.location;
+      
+      // 비밀번호가 제공된 경우에만 해시화하여 업데이트
+      if (data.password && data.password.trim()) {
+        const bcrypt = require('bcrypt');
+        updateData.password = await bcrypt.hash(data.password, 10);
+      }
+
+      await db.update(dealerRegistrations)
+        .set(updateData)
+        .where(eq(dealerRegistrations.id, id));
+      
+      console.log(`Dealer ${id} updated successfully`);
+    } catch (error) {
+      console.error('Update dealer error:', error);
+      throw new Error('판매점 수정에 실패했습니다.');
+    }
+  }
   
   async getUsers(): Promise<any[]> {
     try {

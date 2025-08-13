@@ -1593,6 +1593,94 @@ export function AdminPanel() {
     }
   };
 
+  // 판매점 편집 관련 상태
+  const [editingDealer, setEditingDealer] = useState<any>(null);
+  const [editDealerDialogOpen, setEditDealerDialogOpen] = useState(false);
+
+  // 판매점 편집 폼
+  const editDealerForm = useForm<CreateDealerForm>({
+    resolver: zodResolver(z.object({
+      name: z.string().min(1, '판매점명은 필수입니다'),
+      username: z.string().min(1, '아이디는 필수입니다'),
+      password: z.string().optional(),
+      contactEmail: z.string().email('올바른 이메일 형식이 아닙니다').optional().or(z.literal('')),
+      contactPhone: z.string().optional(),
+      location: z.string().optional(),
+      carrierCodes: z.record(z.string()),
+    })),
+    defaultValues: {
+      name: '',
+      username: '',
+      password: '',
+      contactEmail: '',
+      contactPhone: '',
+      location: '',
+      carrierCodes: {},
+    },
+  });
+
+  const handleEditDealerInTable = (dealer: any) => {
+    setEditingDealer(dealer);
+    // 폼에 기존 데이터 설정
+    editDealerForm.reset({
+      name: dealer.businessName || dealer.name || '',
+      username: dealer.username || '',
+      password: '', // 비밀번호는 비워둠
+      contactEmail: dealer.contactEmail || '',
+      contactPhone: dealer.contactPhone || '',
+      location: dealer.location || '',
+      carrierCodes: {}, // 접점코드는 별도 관리
+    });
+    setEditDealerDialogOpen(true);
+  };
+
+  // 판매점 수정 뮤테이션
+  const updateDealerMutation = useMutation({
+    mutationFn: (data: { id: number; updateData: Partial<CreateDealerForm> }) => 
+      apiRequest(`/api/admin/dealers/${data.id}`, {
+        method: 'PUT',
+        body: JSON.stringify(data.updateData)
+      }),
+    onSuccess: () => {
+      editDealerForm.reset();
+      setEditDealerDialogOpen(false);
+      setEditingDealer(null);
+      toast({
+        title: '판매점 수정 완료',
+        description: '판매점 정보가 성공적으로 수정되었습니다.',
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/dealers'] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: '수정 실패',
+        description: error.message || '판매점 수정에 실패했습니다.',
+        variant: 'destructive',
+      });
+    },
+  });
+
+  const handleUpdateDealer = (data: CreateDealerForm) => {
+    if (!editingDealer) return;
+    
+    const updateData: Partial<CreateDealerForm> = {
+      name: data.name,
+      contactEmail: data.contactEmail,
+      contactPhone: data.contactPhone,
+      location: data.location,
+    };
+    
+    // 비밀번호가 입력된 경우에만 포함
+    if (data.password && data.password.trim()) {
+      updateData.password = data.password;
+    }
+    
+    updateDealerMutation.mutate({
+      id: editingDealer.id,
+      updateData
+    });
+  };
+
   // 판매점 생성 뮤테이션
   const createDealerMutation = useMutation({
     mutationFn: (data: CreateDealerForm) => apiRequest('/api/dealers', {
@@ -4699,14 +4787,24 @@ export function AdminPanel() {
                                   {dealer.createdAt ? format(new Date(dealer.createdAt), 'yyyy-MM-dd', { locale: ko }) : '미상'}
                                 </td>
                                 <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
-                                  <Button
-                                    variant="destructive"
-                                    size="sm"
-                                    onClick={() => handleDeleteDealerInTable(dealer.id, dealer.businessName || dealer.name)}
-                                    className="text-red-600 hover:text-red-700"
-                                  >
-                                    <Trash2 className="h-4 w-4" />
-                                  </Button>
+                                  <div className="flex space-x-2">
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => handleEditDealerInTable(dealer)}
+                                      className="text-blue-600 hover:text-blue-700 border-blue-600"
+                                    >
+                                      <Edit2 className="h-4 w-4" />
+                                    </Button>
+                                    <Button
+                                      variant="destructive"
+                                      size="sm"
+                                      onClick={() => handleDeleteDealerInTable(dealer.id, dealer.businessName || dealer.name)}
+                                      className="text-red-600 hover:text-red-700"
+                                    >
+                                      <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                  </div>
                                 </td>
                               </tr>
                             );
@@ -6396,6 +6494,123 @@ export function AdminPanel() {
                             </Button>
                             <Button type="submit" disabled={createSettlementPriceMutation.isPending || updateSettlementPriceMutation.isPending}>
                               {(createSettlementPriceMutation.isPending || updateSettlementPriceMutation.isPending) ? '저장 중...' : '저장'}
+                            </Button>
+                          </div>
+                        </form>
+                      </Form>
+                    </DialogContent>
+                  </Dialog>
+
+                  {/* 판매점 수정 다이얼로그 */}
+                  <Dialog open={editDealerDialogOpen} onOpenChange={setEditDealerDialogOpen}>
+                    <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+                      <DialogHeader>
+                        <DialogTitle>판매점 정보 수정</DialogTitle>
+                        <DialogDescription>
+                          판매점의 기본 정보를 수정할 수 있습니다. 비밀번호는 변경하고 싶을 때만 입력하세요.
+                        </DialogDescription>
+                      </DialogHeader>
+                      <Form {...editDealerForm}>
+                        <form onSubmit={editDealerForm.handleSubmit(handleUpdateDealer)} className="space-y-4">
+                          <FormField
+                            control={editDealerForm.control}
+                            name="name"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>판매점명</FormLabel>
+                                <FormControl>
+                                  <Input placeholder="판매점명" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          
+                          <FormField
+                            control={editDealerForm.control}
+                            name="username"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>아이디</FormLabel>
+                                <FormControl>
+                                  <Input placeholder="아이디" {...field} disabled />
+                                </FormControl>
+                                <FormDescription>
+                                  아이디는 수정할 수 없습니다.
+                                </FormDescription>
+                              </FormItem>
+                            )}
+                          />
+
+                          <FormField
+                            control={editDealerForm.control}
+                            name="password"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>비밀번호 (선택사항)</FormLabel>
+                                <FormControl>
+                                  <Input 
+                                    type="password" 
+                                    placeholder="새 비밀번호 (변경하지 않으려면 비워두세요)" 
+                                    {...field} 
+                                  />
+                                </FormControl>
+                                <FormDescription>
+                                  비밀번호를 변경하고 싶을 때만 입력하세요.
+                                </FormDescription>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+
+                          <FormField
+                            control={editDealerForm.control}
+                            name="contactEmail"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>이메일</FormLabel>
+                                <FormControl>
+                                  <Input placeholder="이메일" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+
+                          <FormField
+                            control={editDealerForm.control}
+                            name="contactPhone"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>연락처</FormLabel>
+                                <FormControl>
+                                  <Input placeholder="연락처" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+
+                          <FormField
+                            control={editDealerForm.control}
+                            name="location"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>위치</FormLabel>
+                                <FormControl>
+                                  <Input placeholder="위치" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+
+                          <div className="flex justify-end space-x-2">
+                            <Button type="button" variant="outline" onClick={() => setEditDealerDialogOpen(false)}>
+                              취소
+                            </Button>
+                            <Button type="submit" disabled={updateDealerMutation.isPending}>
+                              {updateDealerMutation.isPending ? '수정 중...' : '수정'}
                             </Button>
                           </div>
                         </form>

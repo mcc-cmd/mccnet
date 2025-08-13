@@ -511,6 +511,30 @@ router.delete('/api/admin/dealers/:id', requireAdmin, async (req, res) => {
   }
 });
 
+// 판매점 수정 (관리자 전용)
+router.put('/api/admin/dealers/:id', requireAdmin, async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) {
+      return res.status(400).json({ error: '잘못된 판매점 ID입니다.' });
+    }
+
+    const { name, contactEmail, contactPhone, location, password } = req.body;
+
+    await storage.updateDealer(id, {
+      name,
+      contactEmail,
+      contactPhone,
+      location,
+      password
+    });
+
+    res.json({ success: true, message: '판매점 정보가 성공적으로 수정되었습니다.' });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 router.post('/api/admin/users', requireAdmin, async (req, res) => {
   try {
     const data = createUserSchema.parse(req.body);
