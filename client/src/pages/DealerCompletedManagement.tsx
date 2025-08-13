@@ -114,8 +114,8 @@ export function DealerCompletedManagement() {
   const totalMonthlyRevenue = filteredApplications.reduce((sum, app) => sum + app.monthlyFee, 0);
 
   return (
-    <DealerLayout title="개통완료 관리" description="개통 완료된 신청서 관리 및 이력 확인">
-      <div className="p-2 space-y-2">
+    <DealerLayout title="개통완료 관리">
+      <div className="space-y-6">
         {/* 헤더 카드 */}
         <Card>
           <CardHeader>

@@ -70,8 +70,8 @@ export function DealerWorkRequests() {
   };
 
   return (
-    <DealerLayout title="업무요청중" description="업무 요청 중인 신청서 관리">
-      <div className="p-2 space-y-2">
+    <DealerLayout title="업무요청중">
+      <div className="space-y-6">
         {/* 헤더 카드 */}
         <Card>
           <CardHeader>

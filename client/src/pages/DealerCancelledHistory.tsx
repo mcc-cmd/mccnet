@@ -133,8 +133,8 @@ export function DealerCancelledHistory() {
   const totalRefundAmount = filteredApplications.reduce((sum, app) => sum + app.refundAmount, 0);
 
   return (
-    <DealerLayout title="개통취소내역" description="개통이 취소된 신청서 내역 관리">
-      <div className="p-2 space-y-2">
+    <DealerLayout title="개통취소내역">
+      <div className="space-y-6">
         {/* 헤더 카드 */}
         <Card>
           <CardHeader>
