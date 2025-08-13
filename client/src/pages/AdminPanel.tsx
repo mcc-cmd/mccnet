@@ -6561,14 +6561,15 @@ export function AdminPanel() {
             </Card>
 
             {/* 판매점 수정 다이얼로그 */}
-            <Dialog open={editDealerDialogOpen} onOpenChange={(open) => {
-              console.log('Dialog onOpenChange called with:', open);
-              setEditDealerDialogOpen(open);
-              if (!open) {
-                setEditingDealer(null);
-                editDealerForm.reset();
-              }
-            }}>
+            {editingDealer && (
+              <Dialog open={editDealerDialogOpen} onOpenChange={(open) => {
+                console.log('Dialog onOpenChange called with:', open);
+                setEditDealerDialogOpen(open);
+                if (!open) {
+                  setEditingDealer(null);
+                  editDealerForm.reset();
+                }
+              }}>
               <DialogContent className="max-w-md">
                 <DialogHeader>
                   <DialogTitle>판매점 정보 수정</DialogTitle>
@@ -6687,6 +6688,7 @@ export function AdminPanel() {
                 </Form>
               </DialogContent>
             </Dialog>
+            )}
           </TabsContent>
 
                 {/* 정산 관리 탭 */}
