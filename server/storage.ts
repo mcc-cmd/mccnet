@@ -3757,12 +3757,14 @@ export class DatabaseStorage implements IStorage {
 
   async getDealerById(id: number): Promise<any | undefined> {
     try {
+      console.log('getDealerById called with id:', id);
       const [dealer] = await db.select().from(dealerRegistrations).where(
         and(
           eq(dealerRegistrations.id, id),
           eq(dealerRegistrations.status, 'approved')
         )
       );
+      console.log('getDealerById query result:', dealer);
       return dealer;
     } catch (error) {
       console.error('Get dealer by ID error:', error);

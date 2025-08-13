@@ -317,7 +317,7 @@ router.post('/api/auth/login', async (req, res) => {
         user: {
           id: dealer.id,
           name: dealer.businessName,
-          username: dealer.dealerId,
+          username: dealer.username,
           userType: 'dealer'
         },
         sessionId
@@ -378,7 +378,7 @@ router.get('/api/auth/me', requireAuth, async (req: any, res) => {
           user: {
             id: dealer.id,
             name: dealer.businessName,
-            username: dealer.dealerId,
+            username: dealer.username,
             userType: 'dealer'
           }
         };
