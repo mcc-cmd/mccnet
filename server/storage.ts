@@ -1315,7 +1315,6 @@ export class DatabaseStorage implements IStorage {
       
       // 비밀번호가 제공된 경우에만 해시화하여 업데이트
       if (data.password && data.password.trim()) {
-        const bcrypt = require('bcrypt');
         updateData.password = await bcrypt.hash(data.password, 10);
       }
 
