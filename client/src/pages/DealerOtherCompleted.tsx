@@ -108,7 +108,7 @@ export function DealerOtherCompleted() {
 
   return (
     <DealerLayout title="기타완료" description="기타 사유로 완료된 신청서 관리">
-      <div className="p-6 space-y-6">
+      <div className="p-3 space-y-3">
         {/* 헤더 카드 */}
         <Card>
           <CardHeader>

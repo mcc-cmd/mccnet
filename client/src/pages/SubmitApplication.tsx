@@ -70,7 +70,7 @@ export function SubmitApplication() {
 
   return (
     <DealerLayout title="접수 신청" description="새로운 고객 접수 신청">
-      <div className="p-6">
+      <div className="p-3">
           <Card className="max-w-2xl mx-auto">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
