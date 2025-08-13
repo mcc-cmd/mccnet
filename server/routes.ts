@@ -368,7 +368,10 @@ router.get('/api/auth/me', requireAuth, async (req: any, res) => {
         return res.json(response);
       }
     } else if (userType === 'dealer') {
+      console.log('Auth me - looking for dealer with userId:', userId);
       const dealer = await storage.getDealerById(userId);
+      console.log('Found dealer for auth me:', dealer ? 'yes' : 'no');
+      console.log('Dealer data:', dealer);
       if (dealer) {
         const response: AuthResponse = {
           success: true,
@@ -379,7 +382,11 @@ router.get('/api/auth/me', requireAuth, async (req: any, res) => {
             userType: 'dealer'
           }
         };
+        console.log('Returning dealer auth response:', response);
         return res.json(response);
+      } else {
+        console.log('Dealer not found, returning 401');
+        return res.status(401).json({ success: false, error: '판매점을 찾을 수 없습니다.' });
       }
     } else {
       const user = await storage.getUserById(userId);
@@ -496,65 +503,7 @@ router.post('/api/auth/logout', requireAuth, async (req: any, res) => {
   }
 });
 
-router.get('/api/auth/me', requireAuth, async (req: any, res) => {
-  try {
-    const session = req.session;
-    
-    if (session.userType === 'admin') {
-      const admin = await storage.getAdminById(session.userId);
-      if (admin) {
-        res.json({
-          success: true,
-          user: {
-            id: admin.id,
-            name: admin.name,
-            username: admin.username,
-            userType: 'admin'
-          }
-        });
-      } else {
-        res.status(404).json({ error: '사용자를 찾을 수 없습니다.' });
-      }
-    } else if (session.userType === 'sales_manager') {
-      const manager = await storage.getSalesManagerById(session.userId);
-      if (manager) {
-        res.json({
-          success: true,
-          user: {
-            id: manager.id,
-            name: manager.managerName,
-            username: manager.username,
-            userType: 'sales_manager',
-            teamId: manager.teamId,
-            managerCode: manager.managerCode,
-            position: manager.position
-          }
-        });
-      } else {
-        res.status(404).json({ error: '영업과장을 찾을 수 없습니다.' });
-      }
-    } else {
-      const user = await storage.getUserById(session.userId);
-      if (user) {
-        res.json({
-          success: true,
-          user: {
-            id: user.id,
-            name: user.name,
-            username: user.username,
-            userType: 'user',
-            dealerId: user.dealerId,
-            dealerName: user.dealerName
-          }
-        });
-      } else {
-        res.status(404).json({ error: '사용자를 찾을 수 없습니다.' });
-      }
-    }
-  } catch (error: any) {
-    res.status(500).json({ error: error.message });
-  }
-});
+
 
 // Admin routes
 router.post('/api/admin/dealers', requireAdmin, async (req, res) => {
