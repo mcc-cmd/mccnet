@@ -80,49 +80,49 @@ export function DealerDashboard() {
 
   return (
     <DealerLayout title="대시보드" description="접수 현황 및 관리">
-      <div className="p-4 space-y-4">
+      <div className="p-3 space-y-3">
           {/* 통계 카드 */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
             <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1">
                 <CardTitle className="text-sm font-medium">전체 신청</CardTitle>
                 <FileText className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{mockApplications.length}</div>
+              <CardContent className="pt-2">
+                <div className="text-xl font-bold">{mockApplications.length}</div>
                 <p className="text-xs text-muted-foreground">총 신청 건수</p>
               </CardContent>
             </Card>
 
             <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1">
                 <CardTitle className="text-sm font-medium">대기중</CardTitle>
                 <Clock className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{getStatusCount("대기")}</div>
+              <CardContent className="pt-2">
+                <div className="text-xl font-bold">{getStatusCount("대기")}</div>
                 <p className="text-xs text-muted-foreground">처리 대기</p>
               </CardContent>
             </Card>
 
             <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1">
                 <CardTitle className="text-sm font-medium">진행중</CardTitle>
                 <AlertCircle className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{getStatusCount("진행중")}</div>
+              <CardContent className="pt-2">
+                <div className="text-xl font-bold">{getStatusCount("진행중")}</div>
                 <p className="text-xs text-muted-foreground">처리 진행중</p>
               </CardContent>
             </Card>
 
             <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1">
                 <CardTitle className="text-sm font-medium">완료</CardTitle>
                 <CheckCircle className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{getStatusCount("개통완료")}</div>
+              <CardContent className="pt-2">
+                <div className="text-xl font-bold">{getStatusCount("개통완료")}</div>
                 <p className="text-xs text-muted-foreground">개통 완료</p>
               </CardContent>
             </Card>

@@ -153,7 +153,7 @@ export function DealerLayout({ children, title, description }: DealerLayoutProps
         {/* 상단 헤더 */}
         <div className="bg-white dark:bg-gray-800 border-b lg:border-l">
           <div className="px-4 sm:px-6 lg:px-8">
-            <div className="flex items-center justify-between h-16">
+            <div className="flex items-center justify-between h-12">
               <div className="flex items-center gap-3">
                 <Button
                   variant="ghost"
@@ -164,8 +164,8 @@ export function DealerLayout({ children, title, description }: DealerLayoutProps
                   <Menu className="h-5 w-5" />
                 </Button>
                 <div>
-                  <h1 className="text-xl font-semibold">{title || "대시보드"}</h1>
-                  <p className="text-sm text-muted-foreground">{description || "접수 현황 및 관리"}</p>
+                  <h1 className="text-lg font-semibold">{title || "대시보드"}</h1>
+                  <p className="text-xs text-muted-foreground">{description || "접수 현황 및 관리"}</p>
                 </div>
               </div>
             </div>
