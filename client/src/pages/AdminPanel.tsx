@@ -1623,24 +1623,30 @@ export function AdminPanel() {
   const handleEditDealerInTable = (dealer: any) => {
     console.log('Edit dealer clicked:', dealer);
     
-    // 먼저 편집 중인 판매점 설정
+    // 편집 중인 판매점 설정
     setEditingDealer(dealer);
     
-    // 다음 렌더링 사이클에서 폼 리셋과 다이얼로그 열기
+    // 폼 데이터 설정
+    editDealerForm.reset({
+      name: (dealer as any).businessName || (dealer as any).name || '',
+      username: (dealer as any).username || '',
+      password: '',
+      contactEmail: (dealer as any).contactEmail || '',
+      contactPhone: (dealer as any).contactPhone || '',
+      location: (dealer as any).address || (dealer as any).location || '',
+      carrierCodes: {},
+    });
+    
+    // 다이얼로그 열기
+    setEditDealerDialogOpen(true);
+    console.log('Edit dialog opened for dealer:', (dealer as any).businessName || (dealer as any).name);
+    console.log('Dialog state should be:', true);
+    console.log('editDealerDialogOpen state before:', editDealerDialogOpen);
+    
+    // 강제로 다이얼로그 상태 확인
     setTimeout(() => {
-      editDealerForm.reset({
-        name: (dealer as any).businessName || (dealer as any).name || '',
-        username: (dealer as any).username || '',
-        password: '',
-        contactEmail: (dealer as any).contactEmail || '',
-        contactPhone: (dealer as any).contactPhone || '',
-        location: (dealer as any).address || (dealer as any).location || '',
-        carrierCodes: {},
-      });
-      
-      setEditDealerDialogOpen(true);
-      console.log('Edit dialog opened for dealer:', dealer.businessName);
-    }, 10);
+      console.log('editDealerDialogOpen state after:', editDealerDialogOpen);
+    }, 100);
   };
 
   // 판매점 수정 뮤테이션
