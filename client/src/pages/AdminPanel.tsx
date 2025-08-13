@@ -6561,16 +6561,8 @@ export function AdminPanel() {
             </Card>
 
             {/* 판매점 수정 다이얼로그 */}
-            {editingDealer && (
-              <Dialog open={editDealerDialogOpen} onOpenChange={(open) => {
-                console.log('Dialog onOpenChange called with:', open);
-                setEditDealerDialogOpen(open);
-                if (!open) {
-                  setEditingDealer(null);
-                  editDealerForm.reset();
-                }
-              }}>
-              <DialogContent className="max-w-md">
+            <Dialog open={editDealerDialogOpen} onOpenChange={setEditDealerDialogOpen}>
+              <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
                 <DialogHeader>
                   <DialogTitle>판매점 정보 수정</DialogTitle>
                   <DialogDescription>
@@ -6586,7 +6578,7 @@ export function AdminPanel() {
                         <FormItem>
                           <FormLabel>판매점명</FormLabel>
                           <FormControl>
-                            <Input placeholder="판매점명" {...field} />
+                            <Input placeholder="판매점명을 입력하세요" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -6614,12 +6606,12 @@ export function AdminPanel() {
                       name="password"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>비밀번호 (선택사항)</FormLabel>
+                          <FormLabel>새 비밀번호 (선택사항)</FormLabel>
                           <FormControl>
-                            <Input type="password" placeholder="새 비밀번호" {...field} />
+                            <Input type="password" placeholder="새 비밀번호를 입력하세요" {...field} />
                           </FormControl>
                           <FormDescription>
-                            비밀번호를 변경하려면 새 비밀번호를 입력하세요.
+                            비밀번호를 변경하려면 새 비밀번호를 입력하세요. 공백으로 두면 기존 비밀번호를 유지합니다.
                           </FormDescription>
                           <FormMessage />
                         </FormItem>
@@ -6633,7 +6625,7 @@ export function AdminPanel() {
                         <FormItem>
                           <FormLabel>이메일</FormLabel>
                           <FormControl>
-                            <Input type="email" placeholder="이메일 주소" {...field} />
+                            <Input type="email" placeholder="이메일 주소를 입력하세요" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -6647,7 +6639,7 @@ export function AdminPanel() {
                         <FormItem>
                           <FormLabel>연락처</FormLabel>
                           <FormControl>
-                            <Input placeholder="연락처" {...field} />
+                            <Input type="tel" placeholder="연락처를 입력하세요" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -6661,7 +6653,7 @@ export function AdminPanel() {
                         <FormItem>
                           <FormLabel>위치</FormLabel>
                           <FormControl>
-                            <Input placeholder="위치" {...field} />
+                            <Input placeholder="위치를 입력하세요" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -6688,7 +6680,6 @@ export function AdminPanel() {
                 </Form>
               </DialogContent>
             </Dialog>
-            )}
           </TabsContent>
 
                 {/* 정산 관리 탭 */}
