@@ -1588,6 +1588,7 @@ export function AdminPanel() {
   });
 
   const handleDeleteDealerInTable = (dealerId: number, dealerName: string) => {
+    console.log('Delete dealer clicked:', dealerId, dealerName);
     if (window.confirm(`정말로 "${dealerName}" 판매점을 삭제하시겠습니까?\n\n이 작업은 되돌릴 수 없으며, 해당 판매점의 모든 접점코드도 함께 삭제됩니다.`)) {
       deleteDealerInTableMutation.mutate(dealerId);
     }
@@ -1620,6 +1621,7 @@ export function AdminPanel() {
   });
 
   const handleEditDealerInTable = (dealer: any) => {
+    console.log('Edit dealer clicked:', dealer);
     setEditingDealer(dealer);
     // 폼에 기존 데이터 설정
     editDealerForm.reset({
@@ -1632,6 +1634,7 @@ export function AdminPanel() {
       carrierCodes: {}, // 접점코드는 별도 관리
     });
     setEditDealerDialogOpen(true);
+    console.log('Dialog should be open:', true);
   };
 
   // 판매점 수정 뮤테이션
@@ -4792,15 +4795,15 @@ export function AdminPanel() {
                                       variant="outline"
                                       size="sm"
                                       onClick={() => handleEditDealerInTable(dealer)}
-                                      className="text-blue-600 hover:text-blue-700 border-blue-600"
+                                      className="text-blue-600 hover:text-blue-700 border-blue-600 hover:bg-blue-50"
                                     >
                                       <Edit2 className="h-4 w-4" />
                                     </Button>
                                     <Button
-                                      variant="destructive"
+                                      variant="outline"
                                       size="sm"
                                       onClick={() => handleDeleteDealerInTable(dealer.id, dealer.businessName || dealer.name)}
-                                      className="text-red-600 hover:text-red-700"
+                                      className="text-white bg-red-600 hover:bg-red-700 border-red-600"
                                     >
                                       <Trash2 className="h-4 w-4" />
                                     </Button>
