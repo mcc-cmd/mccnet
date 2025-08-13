@@ -91,8 +91,8 @@ function AppRoutes() {
     );
   }
 
-  // 판매점은 판매점 전용 대시보드로 리다이렉트
-  if (user?.userType === 'dealer') {
+  // 판매점과 근무자는 판매점 전용 대시보드로 리다이렉트
+  if (user?.userType === 'dealer' || (user?.userType === 'user' && user?.role === 'dealer_worker')) {
     return (
       <Switch>
         <Route path="/" component={() => <Redirect to="/dealer" />} />

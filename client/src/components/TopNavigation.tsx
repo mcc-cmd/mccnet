@@ -22,7 +22,7 @@ export function TopNavigation({ title, onMenuClick }: TopNavigationProps) {
   };
 
   return (
-    <div className="relative z-10 flex-shrink-0 flex h-6 bg-white shadow">
+    <div className="relative z-10 flex-shrink-0 flex h-4 bg-white shadow">
       {/* Mobile menu button */}
       <button
         type="button"
@@ -34,16 +34,16 @@ export function TopNavigation({ title, onMenuClick }: TopNavigationProps) {
       
       <div className="flex-1 px-4 flex justify-between items-center">
         <div className="flex-1 flex">
-          <h2 className="text-lg font-semibold text-gray-900">{title}</h2>
+          <h2 className="text-sm font-semibold text-gray-900">{title}</h2>
         </div>
         
         <div className="ml-4 flex items-center md:ml-6">
           {/* User info */}
           <div className="flex items-center">
             {user?.dealerName && (
-              <span className="text-sm text-gray-500 mr-4">{user.dealerName}</span>
+              <span className="text-xs text-gray-500 mr-2">{user.dealerName}</span>
             )}
-            <span className="text-sm font-medium text-gray-900 mr-4">{user?.name}</span>
+            <span className="text-xs font-medium text-gray-900 mr-2">{user?.name}</span>
           </div>
           
           {/* User menu */}
