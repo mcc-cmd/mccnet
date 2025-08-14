@@ -60,7 +60,7 @@ export function SubmitApplication() {
   const { data: allCarriers = [], isLoading: carriersLoading } = useQuery<Carrier[]>({
     queryKey: ['/api/carriers'],
     queryFn: () => apiRequest('/api/carriers'),
-    staleTime: 5 * 60 * 1000, // 5분간 캐시 유지
+    staleTime: 10 * 60 * 1000, // 10분간 캐시 유지 - 성능 개선
     refetchOnWindowFocus: false // 창 포커스 시 새로고침 비활성화 - 사용자 입력 보호
   });
 
@@ -69,6 +69,7 @@ export function SubmitApplication() {
 
   // 통신사 검색 상태
   const [carrierSearchTerm, setCarrierSearchTerm] = useState('');
+  const [contactCodeSearchTerm, setContactCodeSearchTerm] = useState('');
   
   // 검색된 통신사 목록
   const filteredCarriers = carriers.filter(carrier => 
@@ -121,19 +122,22 @@ export function SubmitApplication() {
     'SK', 'KT', 'LG', 'SK알뜰', 'KT알뜰', 'LG알뜰'
   ];
 
-  // 접점코드 목록 가져오기
-  const { data: contactCodes = [] } = useQuery({
+  // 모든 접점코드 가져오기 (관리자 및 근무자용 드롭다운)
+  const { data: allContactCodes = [] } = useQuery({
     queryKey: ['/api/contact-codes'],
-    queryFn: () => apiRequest('/api/contact-codes')
+    queryFn: () => apiRequest('/api/contact-codes'),
+    staleTime: 5 * 60 * 1000, // 5분간 캐시 유지 - 성능 개선
+    refetchOnWindowFocus: false, // 포커스 시 새로고침 방지
+    enabled: user && 'userType' in user && user.userType !== 'dealer' // 딜러가 아닌 경우에만 로드
   });
 
-  // 필터링된 접점코드 목록
-  const filteredContactCodes = contactCodes.filter((contact: any) => {
-    if (!contact?.contactCode || !contact?.storeName || !formData.contactCode) return false;
-    const searchTerm = formData.contactCode.toLowerCase();
-    return contact.contactCode.toLowerCase().includes(searchTerm) ||
-           contact.storeName.toLowerCase().includes(searchTerm);
-  });
+  // 접점코드 검색 필터링 (이름 또는 코드로 검색)
+  const contactCodes = allContactCodes.filter((contact: any) => 
+    !contactCodeSearchTerm || 
+    contact?.code?.toLowerCase().includes(contactCodeSearchTerm?.toLowerCase() || '') ||
+    contact?.dealerName?.toLowerCase().includes(contactCodeSearchTerm?.toLowerCase() || '') ||
+    false
+  );
   
   // 선택된 통신사의 정보 가져오기 (Boolean 값 변환) - 활성화된 통신사에서만 검색
   const selectedCarrier = carriers.find(c => c.name === formData.carrier);
@@ -249,9 +253,8 @@ export function SubmitApplication() {
       });
     },
     onSuccess: () => {
-      // 접수 성공 후에만 관련 쿼리 무효화
+      // 접수 성공 후에만 관련 쿼리 무효화 - 불필요한 무효화 제거로 성능 개선
       queryClient.invalidateQueries({ queryKey: ['/api/documents'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/dashboard/stats'] });
       
       toast({
         title: "접수 완료",
@@ -279,6 +282,10 @@ export function SubmitApplication() {
         desiredNumber: '',
         notes: ''
       });
+      
+      // 검색어도 초기화
+      setContactCodeSearchTerm('');
+      setCarrierSearchTerm('');
     },
     onError: (error: Error) => {
       toast({
@@ -499,32 +506,7 @@ export function SubmitApplication() {
                   </div>
                 )}
 
-                {/* 이전 통신사 입력 (번호이동 선택 시에만 표시) */}
-                {formData.customerType === 'port-in' && carrierSettings?.requirePreviousCarrier && (
-                  <div className="relative">
-                    <Label 
-                      htmlFor="previousCarrier" 
-                      className={getLabelStyle(true)}
-                    >
-                      이전 통신사 *
-                    </Label>
-                    <Select 
-                      value={formData.previousCarrier} 
-                      onValueChange={(value) => setFormData(prev => ({ ...prev, previousCarrier: value }))}
-                    >
-                      <SelectTrigger className={getFieldStyle(true)}>
-                        <SelectValue placeholder="이전 통신사를 선택하세요" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {previousCarriers.map((carrier) => (
-                          <SelectItem key={carrier} value={carrier}>
-                            {carrier}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                )}
+
               </div>
 
               {/* 통신사 선택 섹션 - 고객 정보 위로 이동 */}
@@ -534,71 +516,42 @@ export function SubmitApplication() {
                   통신사 선택
                 </h3>
                 
-                <div className="grid grid-cols-2 gap-4">
-                  {/* 통신사 */}
-                  <div className="relative">
-                    <Label 
-                      htmlFor="carrier" 
-                      className="text-sm font-medium text-red-600 dark:text-red-400"
-                    >
-                      통신사 *
-                    </Label>
-                    <Select 
-                      value={formData.carrier} 
-                      onValueChange={(value) => {
-                        setFormData(prev => ({ ...prev, carrier: value }));
-                        setCarrierSearchTerm(''); // 선택 후 검색어 초기화
-                      }}
-                    >
-                      <SelectTrigger className="border-red-300 focus:border-red-500">
-                        <SelectValue placeholder="후불)프리텔LG" />
-                      </SelectTrigger>
-                      <SelectContent className="max-h-[300px]">
-                        <div className="px-3 py-2 sticky top-0 bg-white dark:bg-gray-800 border-b">
-                          <Input
-                            placeholder="통신사를 검색하세요"
-                            value={carrierSearchTerm}
-                            onChange={(e) => setCarrierSearchTerm(e.target.value)}
-                            className="mb-2"
-                          />
-                        </div>
-                        <div className="max-h-[200px] overflow-y-auto">
-                          {filteredCarriers.map((carrier) => (
-                            <SelectItem key={carrier.id} value={carrier.name}>
-                              {carrier.name}
-                            </SelectItem>
-                          ))}
-                        </div>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  {/* 이전통신사 */}
-                  <div>
-                    <Label 
-                      htmlFor="previousCarrier2" 
-                      className="text-sm font-medium text-red-600 dark:text-red-400"
-                    >
-                      이전통신사 *
-                    </Label>
-                    <Select 
-                      value={formData.previousCarrier} 
-                      onValueChange={(value) => {
-                        setFormData(prev => ({ ...prev, previousCarrier: value }));
-                      }}
-                    >
-                      <SelectTrigger className="border-red-300 focus:border-red-500">
-                        <SelectValue placeholder="이전통신사를 선택해주세요" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {Array.from(new Set(carriers.map(c => c.name))).map((carrierName) => (
-                          <SelectItem key={carrierName} value={carrierName}>
-                            {carrierName}
+                {/* 통신사 */}
+                <div className="relative">
+                  <Label 
+                    htmlFor="carrier" 
+                    className="text-sm font-medium text-red-600 dark:text-red-400"
+                  >
+                    통신사 *
+                  </Label>
+                  <Select 
+                    value={formData.carrier} 
+                    onValueChange={(value) => {
+                      setFormData(prev => ({ ...prev, carrier: value }));
+                      setCarrierSearchTerm(''); // 선택 후 검색어 초기화
+                    }}
+                  >
+                    <SelectTrigger className="border-red-300 focus:border-red-500">
+                      <SelectValue placeholder="후불)프리텔LG" />
+                    </SelectTrigger>
+                    <SelectContent className="max-h-[300px]">
+                      <div className="px-3 py-2 sticky top-0 bg-white dark:bg-gray-800 border-b">
+                        <Input
+                          placeholder="통신사를 검색하세요"
+                          value={carrierSearchTerm}
+                          onChange={(e) => setCarrierSearchTerm(e.target.value)}
+                          className="mb-2"
+                        />
+                      </div>
+                      <div className="max-h-[200px] overflow-y-auto">
+                        {filteredCarriers.map((carrier) => (
+                          <SelectItem key={carrier.id} value={carrier.name}>
+                            {carrier.name}
                           </SelectItem>
                         ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
+                      </div>
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 {/* 접점 코드 */}
@@ -637,11 +590,9 @@ export function SubmitApplication() {
                       <SelectContent className="max-h-[300px]">
                         <div className="px-3 py-2 sticky top-0 bg-white dark:bg-gray-800 border-b">
                           <Input
-                            placeholder="접점 코드를 검색하세요"
-                            onChange={(e) => {
-                              const searchTerm = e.target.value;
-                              // 실시간 검색 필터링 로직 추가 가능
-                            }}
+                            placeholder="접점 코드 또는 딜러명으로 검색"
+                            value={contactCodeSearchTerm}
+                            onChange={(e) => setContactCodeSearchTerm(e.target.value)}
                             className="mb-2"
                           />
                         </div>

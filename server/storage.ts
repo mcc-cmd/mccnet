@@ -906,7 +906,12 @@ export class DatabaseStorage implements IStorage {
 
   async getContactCodes(): Promise<ContactCode[]> {
     try {
-      const result = await db.select().from(contactCodes).where(eq(contactCodes.isActive, true)).orderBy(contactCodes.createdAt);
+      // 성능 최적화: 인덱스를 활용한 빠른 조회
+      const result = await db.select().from(contactCodes)
+        .where(eq(contactCodes.isActive, true))
+        .orderBy(contactCodes.code) // 코드 순으로 정렬하여 검색 성능 개선
+        .limit(500); // 결과 수 제한으로 성능 개선
+      
       return result;
     } catch (error) {
       console.error('Get contact codes error:', error);
