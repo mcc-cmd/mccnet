@@ -66,6 +66,19 @@ export const useAuth = create<AuthState>()(
 
       logout: async () => {
         const { sessionId } = get();
+        
+        // 먼저 상태를 초기화
+        set({
+          user: null,
+          sessionId: null,
+          isAuthenticated: false,
+        });
+        
+        // localStorage 정리
+        localStorage.removeItem('sessionId');
+        localStorage.removeItem('auth-storage');
+        
+        // 서버에 로그아웃 요청
         if (sessionId) {
           try {
             await fetch('/api/auth/logout', {
@@ -78,14 +91,9 @@ export const useAuth = create<AuthState>()(
             console.error('Logout error:', error);
           }
         }
-
-        // localStorage와 zustand 상태 모두 정리
-        localStorage.removeItem('sessionId');
-        set({
-          user: null,
-          sessionId: null,
-          isAuthenticated: false,
-        });
+        
+        // 페이지 새로고침으로 확실히 초기화
+        window.location.href = '/';
       },
 
       checkAuth: async () => {

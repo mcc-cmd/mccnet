@@ -1554,9 +1554,10 @@ router.get('/api/documents', requireAuth, async (req: any, res) => {
       userRole: req.session.userRole 
     });
     
-    // 관리자는 모든 문서를, 근무자는 자신이 처리한 문서만, 판매점은 해당 대리점 문서만 조회
+    // 관리자는 모든 문서를, 근무자는 자신이 처리한 문서만, 판매점은 본인 접수건만 조회
     const isWorker = req.session.userRole === 'dealer_worker';
     const isAdmin = req.session.userType === 'admin';
+    const isDealer = req.session.userType === 'dealer';
     
     // 한국어 디코딩 처리 먼저 수행
     let decodedActivationStatus = activationStatus as string;
@@ -1573,6 +1574,8 @@ router.get('/api/documents', requireAuth, async (req: any, res) => {
     
     if (isAdmin) {
       dealerId = undefined; // 관리자는 모든 문서를 볼 수 있음
+    } else if (isDealer) {
+      dealerId = req.session.userId; // 판매점은 자신의 접수건만 조회
     } else if (isWorker) {
       // allWorkers=true인 경우 (접수 관리에서 호출) 또는 개통완료 조회 시 모든 서류를 볼 수 있도록 함
       if (allWorkers === 'true' || decodedActivationStatus === '개통') {
@@ -1906,9 +1909,18 @@ router.post('/api/documents/check-duplicate', requireAuth, async (req: any, res)
 router.post('/api/documents', requireDealerOrWorker, upload.single('file'), async (req: any, res) => {
   try {
     const data = uploadDocumentSchema.parse(req.body);
+    
+    // 판매점인 경우 dealerId를 본인 ID로 설정
+    let dealerId = req.session.dealerId;
+    if (req.session.userType === 'dealer') {
+      dealerId = req.session.userId;
+    }
+    
+    console.log('Document upload - userType:', req.session.userType, 'userId:', req.session.userId, 'dealerId:', dealerId);
+    
     const document = await storage.uploadDocument({
       ...data,
-      dealerId: req.session.dealerId,
+      dealerId: dealerId,
       userId: req.session.userId,
       filePath: req.file?.path || null,
       fileName: req.file?.originalname || null,

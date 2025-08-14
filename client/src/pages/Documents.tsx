@@ -97,9 +97,11 @@ export function Documents() {
       params.append('activationStatus', '대기,진행중');
       params.append('excludeDeleted', 'true');
       
-      // 근무자는 자신이 접수한 문서만 조회, 관리자는 모든 문서 조회
+      // 근무자는 자신이 접수한 문서만 조회, 관리자는 모든 문서 조회, 판매점은 본인 접수건만
       if (user?.userRole === 'dealer_worker') {
         params.append('workerFilter', 'my'); // 자신이 접수한 문서만
+      } else if (user?.userType === 'dealer') {
+        // 판매점은 별도 필터링 없이 자동으로 본인 문서만 조회됨
       } else {
         params.append('allWorkers', 'true'); // 관리자는 모든 문서
       }

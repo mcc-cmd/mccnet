@@ -33,6 +33,7 @@ import { TestPage } from '@/pages/TestPage';
 import WorkRequests from '@/pages/WorkRequests';
 import NotFound from '@/pages/not-found';
 import SalesTeamManagement from '@/pages/SalesTeamManagement';
+import { WorkerDashboard } from '@/pages/WorkerDashboard';
 
 import SalesManagerDashboard from '@/pages/SalesManagerDashboard';
 
@@ -111,6 +112,24 @@ function AppRoutes() {
         <Route path="/dealer/cancelled" component={DealerCancelledHistory} />
         <Route path="/dealer-chat/:documentId" component={DealerChat} />
         <Route component={() => <Redirect to="/dealer" />} />
+      </Switch>
+    );
+  }
+
+  // 근무자(dealer_worker)는 WorkerDashboard로 리다이렉트
+  if (user?.userRole === 'dealer_worker') {
+    return (
+      <Switch>
+        <Route path="/" component={() => <Redirect to="/worker-dashboard" />} />
+        <Route path="/worker-dashboard" component={WorkerDashboard} />
+        <Route path="/documents" component={Documents} />
+        <Route path="/work-requests" component={WorkRequests} />
+        <Route path="/completed" component={CompletedActivations} />
+        <Route path="/cancelled" component={CancelledActivations} />
+        <Route path="/discarded" component={DiscardedDocuments} />
+        <Route path="/other-completions" component={OtherCompletions} />
+        <Route path="/downloads" component={Downloads} />
+        <Route component={() => <Redirect to="/worker-dashboard" />} />
       </Switch>
     );
   }
