@@ -696,8 +696,8 @@ export interface AuthResponse {
   user?: {
     id: number;
     name: string;
-    username: string;
-    userType: 'admin' | 'user';
+    username?: string;
+    userType: string;
     dealerId?: number;
     dealerName?: string;
     role?: string;

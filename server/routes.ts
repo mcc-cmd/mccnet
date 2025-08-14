@@ -389,18 +389,41 @@ router.get('/api/auth/me', requireAuth, async (req: any, res) => {
         return res.status(401).json({ success: false, error: '판매점을 찾을 수 없습니다.' });
       }
     } else {
-      const user = await storage.getUserById(userId);
-      if (user) {
-        const response: AuthResponse = {
-          success: true,
-          user: {
-            id: user.id,
-            name: user.name,
-            username: user.username,
-            userType: user.userType || 'user'
-          }
-        };
-        return res.json(response);
+      // Check if it's a worker (user with role)
+      const userRole = req.session.userRole;
+      console.log('Auth me - userRole:', userRole);
+      
+      if (userRole === 'dealer_worker' || userRole === 'worker') {
+        // For workers, get user data
+        const user = await storage.getUserById(userId);
+        if (user) {
+          const response: AuthResponse = {
+            success: true,
+            user: {
+              id: user.id,
+              name: user.name,
+              username: user.username,
+              userType: 'user',
+              role: userRole
+            }
+          };
+          return res.json(response);
+        }
+      } else {
+        // For regular users
+        const user = await storage.getUserById(userId);
+        if (user) {
+          const response: AuthResponse = {
+            success: true,
+            user: {
+              id: user.id,
+              name: user.name,
+              username: user.username,
+              userType: user.userType || 'user'
+            }
+          };
+          return res.json(response);
+        }
       }
     }
     
