@@ -455,9 +455,14 @@ router.get('/api/auth/me', requireAuth, async (req: any, res) => {
         res.status(404).json({ error: '영업과장을 찾을 수 없습니다.' });
       }
     } else {
-      const user = await storage.getUserById(session.userId);
+      console.log('🔍 /api/auth/me - Fetching SPECIFIC USER data for userId:', session.userId, 'userType:', session.userType);
+      
+      // 🔒 CRITICAL FIX: userType을 고려해서 정확한 테이블에서만 검색
+      const user = await storage.getUserByIdAndType(session.userId, session.userType || 'user');
+      console.log('🔍 /api/auth/me - User data from storage:', JSON.stringify(user, null, 2));
+      
       if (user) {
-        res.json({
+        const responseData = {
           success: true,
           user: {
             id: user.id,
@@ -467,8 +472,11 @@ router.get('/api/auth/me', requireAuth, async (req: any, res) => {
             dealerId: user.dealerId,
             dealerName: user.dealerName
           }
-        });
+        };
+        console.log('🔍 /api/auth/me - Sending response data:', JSON.stringify(responseData, null, 2));
+        res.json(responseData);
       } else {
+        console.log('🔍 /api/auth/me - No user found for userId:', session.userId);
         res.status(404).json({ error: '사용자를 찾을 수 없습니다.' });
       }
     }

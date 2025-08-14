@@ -570,6 +570,80 @@ export class DatabaseStorage implements IStorage {
   }
 
   // 사용자 정보 조회 메서드 (개통처리자 이름 조회용)
+  // 🔒 CRITICAL NEW METHOD: userType을 고려한 정확한 사용자 검색
+  async getUserByIdAndType(userId: number, userType: string): Promise<{ id: number; name: string; username: string; userType: string } | null> {
+    try {
+      console.log('🔍 getUserByIdAndType called with userId:', userId, 'userType:', userType);
+      
+      if (userType === 'admin') {
+        // 관리자 테이블에서만 조회
+        const adminResults = await db.select({
+          id: admins.id,
+          name: admins.name,
+          username: admins.username
+        })
+        .from(admins)
+        .where(eq(admins.id, userId))
+        .limit(1);
+
+        if (adminResults.length > 0) {
+          const admin = adminResults[0];
+          console.log('🔍 getUserByIdAndType - Admin found:', JSON.stringify(admin, null, 2));
+          return {
+            ...admin,
+            userType: 'admin'
+          };
+        }
+      } else if (userType === 'sales_manager') {
+        // 영업과장 테이블에서만 조회
+        const salesManagerResults = await db.select({
+          id: salesManagers.id,
+          name: salesManagers.managerName,
+          username: salesManagers.username
+        })
+        .from(salesManagers)
+        .where(eq(salesManagers.id, userId))
+        .limit(1);
+
+        if (salesManagerResults.length > 0) {
+          const manager = salesManagerResults[0];
+          console.log('🔍 getUserByIdAndType - Sales Manager found:', JSON.stringify(manager, null, 2));
+          return {
+            id: manager.id,
+            name: manager.name,
+            username: manager.username,
+            userType: 'sales_manager'
+          };
+        }
+      } else {
+        // 일반 사용자 테이블에서만 조회
+        const userResults = await db.select({
+          id: users.id,
+          name: users.name,
+          username: users.username
+        })
+        .from(users)
+        .where(eq(users.id, userId))
+        .limit(1);
+
+        if (userResults.length > 0) {
+          const user = userResults[0];
+          console.log('🔍 getUserByIdAndType - User found:', JSON.stringify(user, null, 2));
+          return {
+            ...user,
+            userType: 'user'
+          };
+        }
+      }
+
+      console.log('🔍 getUserByIdAndType - No user found with ID:', userId, 'and type:', userType);
+      return null;
+    } catch (error) {
+      console.error('getUserByIdAndType error:', error);
+      return null;
+    }
+  }
+
   async getUserById(userId: number): Promise<{ id: number; name: string; username: string; userType: string } | null> {
     try {
       console.log('getUserById called with userId:', userId);
@@ -626,10 +700,11 @@ export class DatabaseStorage implements IStorage {
       .where(eq(users.id, userId))
       .limit(1);
 
-      console.log('User query results:', userResults);
+      console.log('🔍 getUserById - User query results:', userResults);
 
       if (userResults.length > 0) {
         const user = userResults[0];
+        console.log('🔍 getUserById - Returning user data:', JSON.stringify(user, null, 2));
         return {
           ...user,
           userType: 'user'
