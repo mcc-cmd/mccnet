@@ -3842,6 +3842,34 @@ router.get('/api/contact-codes/search/:code', requireAuth, async (req: any, res)
   }
 });
 
+// 딜러의 통신사별 접점코드 조회 API
+router.get('/api/dealer/contact-codes/:carrier', requireAuth, async (req: any, res) => {
+  try {
+    const { carrier } = req.params;
+    const userId = req.session.userId;
+    const userType = req.session.userType;
+    
+    if (userType !== 'dealer') {
+      return res.status(403).json({ error: '딜러만 접근 가능합니다.' });
+    }
+
+    console.log('Dealer contact codes request - userId:', userId, 'carrier:', carrier);
+    
+    const dealer = await storage.getDealerById(userId);
+    if (!dealer) {
+      return res.status(404).json({ error: '딜러 정보를 찾을 수 없습니다.' });
+    }
+
+    const contactCodes = await storage.getDealerContactCodesByCarrier(dealer.username, carrier);
+    console.log('Dealer contact codes result:', contactCodes);
+    
+    res.json(contactCodes);
+  } catch (error: any) {
+    console.error('Dealer contact codes error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // 판매점 생성 API
 router.post('/api/dealers', requireAuth, async (req: any, res) => {
   try {

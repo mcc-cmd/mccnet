@@ -74,6 +74,34 @@ export function SubmitApplication() {
   const filteredCarriers = carriers.filter(carrier => 
     carrier?.name?.toLowerCase().includes(carrierSearchTerm?.toLowerCase() || '') || false
   );
+
+  // 딜러의 접점코드 자동 조회 - 통신사 선택 시
+  useEffect(() => {
+    if (formData.carrier && user?.userType === 'dealer') {
+      fetchDealerContactCodes();
+    }
+  }, [formData.carrier, user]);
+
+  const fetchDealerContactCodes = async () => {
+    if (!formData.carrier) return;
+    
+    try {
+      const dealerCodes = await apiRequest(`/api/dealer/contact-codes/${encodeURIComponent(formData.carrier)}`);
+      console.log('Dealer contact codes for carrier:', formData.carrier, dealerCodes);
+      
+      // 첫 번째 접점코드를 자동으로 설정
+      if (dealerCodes && dealerCodes.length > 0) {
+        const firstCode = dealerCodes[0];
+        setFormData(prev => ({
+          ...prev,
+          contactCode: firstCode.contactCode,
+          storeName: firstCode.storeName || firstCode.dealerName
+        }));
+      }
+    } catch (error) {
+      console.warn('딜러 접점코드 조회 실패:', error);
+    }
+  };
   
   // 이전통신사 목록
   const previousCarriers = [
@@ -565,7 +593,7 @@ export function SubmitApplication() {
                             className="px-3 py-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 border-b last:border-b-0"
                             onClick={() => {
                               setFormData(prev => ({ ...prev, carrier: carrier.name }));
-                              setCarrierSearchTerm(carrier.name);
+                              // 검색 내용을 유지 - carrierSearchTerm을 초기화하지 않음
                             }}
                           >
                             {carrier.name}
