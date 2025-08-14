@@ -2426,7 +2426,14 @@ export function AdminPanel() {
       queryClient.invalidateQueries({ queryKey: ['/api/admin/users'] });
       setEditUserDialogOpen(false);
       setEditingUser(null);
-      editUserForm.reset();
+      editUserForm.reset({
+        username: '',
+        password: '',
+        name: '',
+        role: 'worker',
+        userType: 'user',
+        team: '',
+      });
       toast({
         title: '성공',
         description: '사용자 정보가 업데이트되었습니다.',
@@ -2447,16 +2454,19 @@ export function AdminPanel() {
     if (!editingUser) return;
     
     const updateData: any = {};
+    const originalName = editingUser.name || editingUser.displayName || '';
+    
     if (data.username !== editingUser.username) updateData.username = data.username;
     if (data.password && data.password.trim() !== '') updateData.password = data.password;
-    if (data.name !== editingUser.name) updateData.name = data.name;
+    if (data.name !== originalName && data.name.trim() !== '') updateData.name = data.name;
     if (data.role !== editingUser.role && data.role !== editingUser.userType) updateData.role = data.role;
     if (data.userType && data.userType !== editingUser.userType) updateData.userType = data.userType;
     if (data.team !== editingUser.team) updateData.team = data.team;
     
-    console.log('handleUpdateUser - editingUser:', editingUser);
-    console.log('handleUpdateUser - formData:', data);
-    console.log('handleUpdateUser - updateData:', updateData);
+    console.log('handleUpdateUser - editingUser:', JSON.stringify(editingUser, null, 2));
+    console.log('handleUpdateUser - originalName:', originalName);
+    console.log('handleUpdateUser - formData:', JSON.stringify(data, null, 2));
+    console.log('handleUpdateUser - updateData:', JSON.stringify(updateData, null, 2));
     
     if (Object.keys(updateData).length === 0) {
       toast({
@@ -2470,16 +2480,27 @@ export function AdminPanel() {
   };
 
   const openEditUserDialog = (user: any) => {
-    console.log('openEditUserDialog - user:', user);
-    setEditingUser(user);
-    editUserForm.reset({
-      username: user.username || '',
+    console.log('openEditUserDialog - user data:', JSON.stringify(user, null, 2));
+    console.log('openEditUserDialog - user.name:', user.name);
+    console.log('openEditUserDialog - user.displayName:', user.displayName);
+    
+    // 사용자 정보 원본 보존
+    const originalUser = { ...user };
+    setEditingUser(originalUser);
+    
+    // 안전한 폼 초기화
+    const formData = {
+      username: originalUser.username || '',
       password: '',
-      name: user.name || '',
-      role: user.role || user.userType || 'worker',
-      userType: user.userType || 'user',
-      team: user.team || '',
-    });
+      name: originalUser.name || originalUser.displayName || '',
+      role: originalUser.role || originalUser.userType || 'worker',
+      userType: originalUser.userType || 'user',
+      team: originalUser.team || '',
+    };
+    
+    console.log('openEditUserDialog - formData:', JSON.stringify(formData, null, 2));
+    
+    editUserForm.reset(formData);
     setEditUserDialogOpen(true);
   };
 
