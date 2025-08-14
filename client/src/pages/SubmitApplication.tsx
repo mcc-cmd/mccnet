@@ -101,7 +101,7 @@ export function SubmitApplication() {
   
   // 검색된 통신사 목록
   const filteredCarriers = carriers.filter(carrier => 
-    carrier.name.toLowerCase().includes(carrierSearchTerm.toLowerCase())
+    carrier?.name?.toLowerCase().includes(carrierSearchTerm?.toLowerCase() || '') || false
   );
   
   // 이전통신사 목록
@@ -116,10 +116,12 @@ export function SubmitApplication() {
   });
 
   // 필터링된 접점코드 목록
-  const filteredContactCodes = contactCodes.filter((contact: any) => 
-    contact.contactCode.toLowerCase().includes(formData.contactCode.toLowerCase()) ||
-    contact.storeName.toLowerCase().includes(formData.contactCode.toLowerCase())
-  );
+  const filteredContactCodes = contactCodes.filter((contact: any) => {
+    if (!contact?.contactCode || !contact?.storeName || !formData.contactCode) return false;
+    const searchTerm = formData.contactCode.toLowerCase();
+    return contact.contactCode.toLowerCase().includes(searchTerm) ||
+           contact.storeName.toLowerCase().includes(searchTerm);
+  });
   
   // 선택된 통신사의 정보 가져오기 (Boolean 값 변환) - 활성화된 통신사에서만 검색
   const selectedCarrier = carriers.find(c => c.name === formData.carrier);
