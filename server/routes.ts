@@ -251,10 +251,11 @@ router.post('/api/auth/login', async (req, res) => {
     console.log('Login attempt - parsed:', { username, password: password ? '***' : 'empty' });
     
     // Try admin login first
-    console.log('Authenticating admin:', username);
+    console.log('🔐 Authenticating admin:', username);
+    console.log('🔐 Password attempt:', password ? '***' + password.slice(-2) : 'empty');
     const admin = await storage.authenticateAdmin(username, password);
-    console.log('Admin found:', admin ? 'yes' : 'no');
-    console.log('Admin auth result:', admin ? 'success' : 'failed');
+    console.log('🔐 Admin found:', admin ? 'yes' : 'no');
+    console.log('🔐 Admin auth result:', admin ? 'success' : 'failed');
     
     if (admin) {
       const sessionId = await storage.createSession(admin.id, 'admin');
