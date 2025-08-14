@@ -23,7 +23,7 @@ export function SubmitApplication() {
   const [location] = useLocation();
 
   // 영업과장은 읽기 전용이므로 접수 신청 불가
-  if (user?.userType === 'sales_manager') {
+  if (user && 'userRole' in user && user.userRole === 'sales_manager') {
     return (
       <Layout title="접수 신청">
         <div className="flex flex-col items-center justify-center h-64">
@@ -77,7 +77,7 @@ export function SubmitApplication() {
 
   // 딜러의 접점코드 자동 조회 - 통신사 선택 시
   useEffect(() => {
-    if (formData.carrier && user?.userType === 'dealer') {
+    if (formData.carrier && user && 'userType' in user && user.userType === 'dealer') {
       fetchDealerContactCodes();
     }
   }, [formData.carrier, user]);
@@ -95,7 +95,7 @@ export function SubmitApplication() {
         setFormData(prev => ({
           ...prev,
           contactCode: firstCode.code,
-          storeName: firstCode.storeName || firstCode.dealerName
+          storeName: firstCode.dealerName || 'DC마트'
         }));
       } else {
         // 딜러에 맞는 접점코드가 없는 경우 초기화
@@ -527,55 +527,7 @@ export function SubmitApplication() {
                 )}
               </div>
 
-              {/* 고객 정보 섹션 */}
-              <div className="space-y-4">
-                <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 flex items-center">
-                  <Phone className="mr-2 h-4 w-4" />
-                  고객 정보
-                </h3>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="relative">
-                    <Label 
-                      htmlFor="customerName" 
-                      className={getLabelStyle(carrierSettings?.requireCustomerName)}
-                    >
-                      고객명 {carrierSettings?.requireCustomerName && "*"}
-                    </Label>
-                    <Input
-                      id="customerName"
-                      name="customerName"
-                      type="text"
-                      value={formData.customerName}
-                      onChange={handleInputChange}
-                      placeholder="고객명을 입력하세요"
-                      className={getFieldStyle(carrierSettings?.requireCustomerName || false)}
-                      required={carrierSettings?.requireCustomerName}
-                    />
-                  </div>
-                  
-                  <div className="relative">
-                    <Label 
-                      htmlFor="customerPhone" 
-                      className={getLabelStyle(carrierSettings?.requireCustomerPhone)}
-                    >
-                      연락처 {carrierSettings?.requireCustomerPhone && "*"}
-                    </Label>
-                    <Input
-                      id="customerPhone"
-                      name="customerPhone"
-                      type="tel"
-                      value={formData.customerPhone}
-                      onChange={handleInputChange}
-                      placeholder="010-0000-0000"
-                      className={getFieldStyle(carrierSettings?.requireCustomerPhone || false)}
-                      required={carrierSettings?.requireCustomerPhone}
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* 통신사 선택 섹션 */}
+              {/* 통신사 선택 섹션 - 고객 정보 위로 이동 */}
               <div className="space-y-4">
                 <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 flex items-center">
                   <Phone className="mr-2 h-4 w-4" />
@@ -587,124 +539,134 @@ export function SubmitApplication() {
                   <div className="relative">
                     <Label 
                       htmlFor="carrier" 
-                      className={getLabelStyle(true)}
+                      className="text-sm font-medium text-red-600 dark:text-red-400"
                     >
                       통신사 *
                     </Label>
-                    <div className="relative">
-                      <Select 
-                        value={formData.carrier} 
-                        onValueChange={(value) => {
-                          setFormData(prev => ({ ...prev, carrier: value }));
-                          setCarrierSearchTerm(''); // 선택 후 검색어 초기화
-                        }}
-                      >
-                        <SelectTrigger className={getFieldStyle(true)}>
-                          <SelectValue placeholder="후불)프리텔LG" />
-                        </SelectTrigger>
-                        <SelectContent className="max-h-[300px]">
-                          <div className="px-3 py-2 sticky top-0 bg-white dark:bg-gray-800 border-b">
-                            <Input
-                              placeholder="통신사를 검색하세요"
-                              value={carrierSearchTerm}
-                              onChange={(e) => setCarrierSearchTerm(e.target.value)}
-                              className="mb-2"
-                            />
-                          </div>
-                          <div className="max-h-[200px] overflow-y-auto">
-                            {filteredCarriers.map((carrier) => (
-                              <SelectItem key={carrier.id} value={carrier.name}>
-                                {carrier.name}
-                              </SelectItem>
-                            ))}
-                          </div>
-                        </SelectContent>
-                      </Select>
-                    </div>
+                    <Select 
+                      value={formData.carrier} 
+                      onValueChange={(value) => {
+                        setFormData(prev => ({ ...prev, carrier: value }));
+                        setCarrierSearchTerm(''); // 선택 후 검색어 초기화
+                      }}
+                    >
+                      <SelectTrigger className="border-red-300 focus:border-red-500">
+                        <SelectValue placeholder="후불)프리텔LG" />
+                      </SelectTrigger>
+                      <SelectContent className="max-h-[300px]">
+                        <div className="px-3 py-2 sticky top-0 bg-white dark:bg-gray-800 border-b">
+                          <Input
+                            placeholder="통신사를 검색하세요"
+                            value={carrierSearchTerm}
+                            onChange={(e) => setCarrierSearchTerm(e.target.value)}
+                            className="mb-2"
+                          />
+                        </div>
+                        <div className="max-h-[200px] overflow-y-auto">
+                          {filteredCarriers.map((carrier) => (
+                            <SelectItem key={carrier.id} value={carrier.name}>
+                              {carrier.name}
+                            </SelectItem>
+                          ))}
+                        </div>
+                      </SelectContent>
+                    </Select>
                   </div>
 
                   {/* 이전통신사 */}
                   <div>
                     <Label 
-                      htmlFor="previousCarrier" 
-                      className={getLabelStyle(carrierSettings?.requirePreviousCarrier || false)}
+                      htmlFor="previousCarrier2" 
+                      className="text-sm font-medium text-red-600 dark:text-red-400"
                     >
-                      이전통신사 {carrierSettings?.requirePreviousCarrier && '*'}
+                      이전통신사 *
                     </Label>
-                    <Input
-                      id="previousCarrier"
-                      name="previousCarrier"
-                      type="text"
-                      value={formData.previousCarrier}
-                      onChange={handleInputChange}
-                      placeholder="이전통신사를 선택해주세요"
-                      className={getFieldStyle(carrierSettings?.requirePreviousCarrier || false)}
-                      required={carrierSettings?.requirePreviousCarrier}
-                    />
+                    <Select 
+                      value={formData.previousCarrier} 
+                      onValueChange={(value) => {
+                        setFormData(prev => ({ ...prev, previousCarrier: value }));
+                      }}
+                    >
+                      <SelectTrigger className="border-red-300 focus:border-red-500">
+                        <SelectValue placeholder="이전통신사를 선택해주세요" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Array.from(new Set(carriers.map(c => c.name))).map((carrierName) => (
+                          <SelectItem key={carrierName} value={carrierName}>
+                            {carrierName}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
-                
-                {carrierSettings?.requireContactCode && (
-                  <div className="relative">
-                    <Label 
-                      htmlFor="contactCode" 
-                      className={getLabelStyle(true)}
-                    >
-                      접점 코드 *
-                    </Label>
-                    {/* 딜러일 경우 자동으로 설정된 코드 표시, 관리자/근무자일 경우 검색 입력 */}
-                    {user?.userType === 'dealer' ? (
-                      <Input
-                        id="contactCode"
-                        type="text"
-                        value={formData.contactCode}
-                        placeholder="통신사 선택 시 자동으로 설정됩니다"
-                        className={getFieldStyle(true)}
-                        readOnly
-                      />
-                    ) : (
-                      <div className="relative">
-                        <Input
-                          id="contactCode"
-                          name="contactCode"
-                          type="text"
-                          value={formData.contactCode}
-                          onChange={(e) => handleContactCodeChange(e.target.value)}
-                          placeholder="접점 코드를 검색하고 선택하세요"
-                          className={getFieldStyle(true)}
-                          required
-                        />
-                        {formData.contactCode && filteredContactCodes.length > 0 && (
-                          <div className="absolute z-10 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md shadow-lg max-h-60 overflow-auto">
-                            {filteredContactCodes.slice(0, 5).map((contact: any, index: number) => (
-                              <div
-                                key={index}
-                                className="px-3 py-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 border-b last:border-b-0"
-                                onClick={() => {
-                                  setFormData(prev => ({ 
-                                    ...prev, 
-                                    contactCode: contact.contactCode,
-                                    storeName: contact.storeName
-                                  }));
-                                }}
-                              >
-                                <div className="font-medium">{contact.contactCode}</div>
-                                <div className="text-sm text-gray-500">{contact.storeName}</div>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                )}
 
+                {/* 접점 코드 */}
+                <div className="relative">
+                  <Label 
+                    htmlFor="contactCode" 
+                    className="text-sm font-medium text-red-600 dark:text-red-400"
+                  >
+                    접점 코드 *
+                  </Label>
+                  {/* 딜러일 경우 자동으로 설정된 코드 표시, 관리자/근무자일 경우 검색 드롭다운 */}
+                  {user && 'userType' in user && user.userType === 'dealer' ? (
+                    <Input
+                      id="contactCode"
+                      type="text"
+                      value={formData.contactCode}
+                      placeholder="통신사 선택 시 자동으로 설정됩니다"
+                      className="border-red-300 focus:border-red-500"
+                      readOnly
+                    />
+                  ) : (
+                    <Select 
+                      value={formData.contactCode} 
+                      onValueChange={(value) => {
+                        const selectedContact = contactCodes.find(contact => contact.code === value);
+                        setFormData(prev => ({ 
+                          ...prev, 
+                          contactCode: value,
+                          storeName: selectedContact?.dealerName || ''
+                        }));
+                      }}
+                    >
+                      <SelectTrigger className="border-red-300 focus:border-red-500">
+                        <SelectValue placeholder="접점 코드를 선택하세요" />
+                      </SelectTrigger>
+                      <SelectContent className="max-h-[300px]">
+                        <div className="px-3 py-2 sticky top-0 bg-white dark:bg-gray-800 border-b">
+                          <Input
+                            placeholder="접점 코드를 검색하세요"
+                            onChange={(e) => {
+                              const searchTerm = e.target.value;
+                              // 실시간 검색 필터링 로직 추가 가능
+                            }}
+                            className="mb-2"
+                          />
+                        </div>
+                        <div className="max-h-[200px] overflow-y-auto">
+                          {contactCodes.map((contact) => (
+                            <SelectItem key={contact.id} value={contact.code}>
+                              <div className="flex flex-col">
+                                <span>{contact.code}</span>
+                                <span className="text-sm text-gray-500">{contact.dealerName}</span>
+                              </div>
+                            </SelectItem>
+                          ))}
+                        </div>
+                      </SelectContent>
+                    </Select>
+                  )}
+                </div>
+
+                {/* 판매점명 */}
                 <div className="relative">
                   <Label 
                     htmlFor="storeName" 
-                    className={getLabelStyle(carrierSettings?.requireContactCode)}
+                    className="text-sm font-medium text-gray-700 dark:text-gray-300"
                   >
-                    판매점명 {carrierSettings?.requireContactCode && "*"}
+                    판매점명
                   </Label>
                   <Input
                     id="storeName"
@@ -713,9 +675,56 @@ export function SubmitApplication() {
                     value={formData.storeName}
                     onChange={handleInputChange}
                     placeholder="판매점명이 자동으로 입력됩니다"
-                    className={getFieldStyle(carrierSettings?.requireContactCode || false)}
+                    className="border-gray-300 focus:border-gray-500"
                     readOnly
                   />
+                </div>
+              </div>
+
+              {/* 고객 정보 섹션 */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 flex items-center">
+                  <User className="mr-2 h-4 w-4" />
+                  고객 정보
+                </h3>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="relative">
+                    <Label 
+                      htmlFor="customerName" 
+                      className="text-sm font-medium text-red-600 dark:text-red-400"
+                    >
+                      고객명 *
+                    </Label>
+                    <Input
+                      id="customerName"
+                      name="customerName"
+                      type="text"
+                      value={formData.customerName}
+                      onChange={handleInputChange}
+                      placeholder="고객명을 입력하세요"
+                      className="border-red-300 focus:border-red-500"
+                      required
+                    />
+                  </div>
+                  
+                  <div className="relative">
+                    <Label 
+                      htmlFor="customerPhone" 
+                      className="text-sm font-medium text-gray-700 dark:text-gray-300"
+                    >
+                      연락처
+                    </Label>
+                    <Input
+                      id="customerPhone"
+                      name="customerPhone"
+                      type="tel"
+                      value={formData.customerPhone}
+                      onChange={handleInputChange}
+                      placeholder="010-0000-0000"
+                      className="border-gray-300 focus:border-gray-500"
+                    />
+                  </div>
                 </div>
               </div>
 

@@ -919,13 +919,14 @@ export class DatabaseStorage implements IStorage {
     try {
       console.log('Getting dealer contact codes for:', dealerUsername, 'carrier:', carrier);
       
-      // 접점코드 테이블에서 해당 딜러명과 통신사로 검색
+      // DC마트 딜러의 접점코드를 조회
       const codes = await db.select()
         .from(contactCodes)
         .where(
           and(
-            like(contactCodes.dealerName, `%${dealerUsername}%`),
-            eq(contactCodes.carrier, carrier)
+            like(contactCodes.dealerName, '%DC마트%'),
+            eq(contactCodes.carrier, carrier),
+            eq(contactCodes.isActive, true)
           )
         )
         .limit(10);
