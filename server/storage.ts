@@ -920,20 +920,15 @@ export class DatabaseStorage implements IStorage {
       console.log('Getting dealer contact codes for:', dealerUsername, 'carrier:', carrier);
       
       // 접점코드 테이블에서 해당 딜러명과 통신사로 검색
-      const codes = await db.select({
-        contactCode: contactCodes.code,
-        dealerName: contactCodes.dealerName,
-        carrier: contactCodes.carrier,
-        storeName: contactCodes.storeName
-      })
-      .from(contactCodes)
-      .where(
-        and(
-          like(contactCodes.dealerName, `%${dealerUsername}%`),
-          eq(contactCodes.carrier, carrier)
+      const codes = await db.select()
+        .from(contactCodes)
+        .where(
+          and(
+            like(contactCodes.dealerName, `%${dealerUsername}%`),
+            eq(contactCodes.carrier, carrier)
+          )
         )
-      )
-      .limit(10);
+        .limit(10);
       
       console.log('Found contact codes:', codes);
       return codes;
