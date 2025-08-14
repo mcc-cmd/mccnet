@@ -530,15 +530,16 @@ router.put('/api/admin/dealers/:id', requireAdmin, async (req, res) => {
 
     // 업데이트할 데이터 준비
     const updateData: any = {
-      name, // storage.updateDealer에서 businessName으로 매핑됨
+      businessName: name, // name을 businessName으로 매핑
       contactEmail,
       contactPhone,
-      location // storage.updateDealer에서 address로 매핑됨
+      address: location // location을 address로 매핑
     };
 
-    // 비밀번호가 제공된 경우만 포함 (storage.updateDealer에서 해시화됨)
+    // 비밀번호가 제공된 경우만 포함
     if (password && password.trim() !== '') {
-      updateData.password = password;
+      const bcrypt = require('bcrypt');
+      updateData.password = await bcrypt.hash(password, 10);
     }
 
     await storage.updateDealer(id, updateData);
@@ -5221,11 +5222,7 @@ router.post('/api/dealer-registration', async (req, res) => {
 // 판매점 로그인
 router.post('/api/dealer-login', async (req, res) => {
   try {
-    console.log('Dealer login route hit - headers:', req.headers);
-    console.log('Dealer login attempt - body:', req.body);
-    console.log('Dealer login attempt - body type:', typeof req.body);
     const { username, password } = dealerLoginSchema.parse(req.body);
-    console.log('Dealer login attempt - parsed:', { username, password: '***' });
     const dealer = await storage.authenticateDealer(username, password);
     
     if (!dealer) {
@@ -5236,9 +5233,6 @@ router.post('/api/dealer-login', async (req, res) => {
     }
 
     // 세션 설정
-    if (!req.session) {
-      req.session = {} as any;
-    }
     req.session.userId = dealer.id;
     req.session.userType = 'dealer';
     req.session.username = dealer.username;
