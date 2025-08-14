@@ -1304,6 +1304,8 @@ export class DatabaseStorage implements IStorage {
     password?: string;
   }): Promise<void> {
     try {
+      console.log('updateDealer called with:', { id, data: { ...data, password: data.password ? '***' : undefined } });
+      
       const updateData: any = {
         updatedAt: new Date().toISOString()
       };
@@ -1315,8 +1317,9 @@ export class DatabaseStorage implements IStorage {
       
       // 비밀번호가 제공된 경우에만 해시화하여 업데이트
       if (data.password && data.password.trim()) {
-        const bcrypt = require('bcrypt');
+        console.log('Hashing password:', data.password);
         updateData.password = await bcrypt.hash(data.password, 10);
+        console.log('Password hashed:', updateData.password);
       }
 
       await db.update(dealerRegistrations)
@@ -4185,14 +4188,18 @@ export class DatabaseStorage implements IStorage {
 
   async authenticateDealer(username: string, password: string): Promise<any> {
     try {
+      console.log(`Dealer authentication attempt: ${username}`);
+      
       const dealer = await db.get(sql`
         SELECT * FROM dealer_registrations 
         WHERE username = ${username} AND status = '승인' AND is_active = 1
       `);
 
+      console.log(`Dealer found:`, dealer ? 'yes' : 'no');
       if (!dealer) return null;
 
       const isValidPassword = await bcrypt.compare(password, dealer.password);
+      console.log(`Password valid:`, isValidPassword ? 'yes' : 'no');
       if (!isValidPassword) return null;
 
       // 판매점의 통신사별 접점코드 조회
