@@ -2456,20 +2456,21 @@ export function AdminPanel() {
     const updateData: any = {};
     const originalName = editingUser.name || editingUser.displayName || '';
     
-    // ⚠️ CRITICAL: username은 절대 변경하지 않음 - 평가 시스템 무결성 보장
+    // 🔒 CRITICAL PROTECTION: username과 name 절대 변경 금지 - 평가 시스템 무결성 보장
     // if (data.username !== editingUser.username) updateData.username = data.username; // 제거됨
+    // if (data.name !== originalName && data.name.trim() !== '') updateData.name = data.name; // 제거됨
     
     if (data.password && data.password.trim() !== '') updateData.password = data.password;
-    if (data.name !== originalName && data.name.trim() !== '') updateData.name = data.name;
     if (data.role !== editingUser.role && data.role !== editingUser.userType) updateData.role = data.role;
     if (data.userType && data.userType !== editingUser.userType) updateData.userType = data.userType;
     if (data.team !== editingUser.team) updateData.team = data.team;
     
-    console.log('handleUpdateUser - editingUser:', JSON.stringify(editingUser, null, 2));
-    console.log('handleUpdateUser - originalName:', originalName);
-    console.log('handleUpdateUser - formData:', JSON.stringify(data, null, 2));
-    console.log('handleUpdateUser - updateData:', JSON.stringify(updateData, null, 2));
-    console.log('handleUpdateUser - username PROTECTION: username will NOT be updated');
+    console.log('🔒 handleUpdateUser - PROTECTION ACTIVE');
+    console.log('🔒 editingUser:', JSON.stringify(editingUser, null, 2));
+    console.log('🔒 originalName PROTECTED:', originalName);
+    console.log('🔒 formData:', JSON.stringify(data, null, 2));
+    console.log('🔒 updateData:', JSON.stringify(updateData, null, 2));
+    console.log('🔒 CRITICAL PROTECTION: username AND name will NOT be updated');
     
     if (Object.keys(updateData).length === 0) {
       toast({
@@ -2483,25 +2484,30 @@ export function AdminPanel() {
   };
 
   const openEditUserDialog = (user: any) => {
-    console.log('openEditUserDialog - user data:', JSON.stringify(user, null, 2));
-    console.log('openEditUserDialog - user.name:', user.name);
-    console.log('openEditUserDialog - user.displayName:', user.displayName);
+    console.log('🔍 openEditUserDialog - ORIGINAL user data:', JSON.stringify(user, null, 2));
+    console.log('🔍 openEditUserDialog - user.name:', user.name);
+    console.log('🔍 openEditUserDialog - user.displayName:', user.displayName);
     
-    // 사용자 정보 원본 보존
-    const originalUser = { ...user };
+    // 🔒 사용자 정보 원본 강력 보존 - 깊은 복사
+    const originalUser = JSON.parse(JSON.stringify(user));
     setEditingUser(originalUser);
     
-    // 안전한 폼 초기화
+    // 🔒 CRITICAL: 이름 필드 강력 보호
+    const safeName = originalUser.name || originalUser.displayName || '이름없음';
+    console.log('🔒 PROTECTED NAME:', safeName);
+    
+    // 🔒 안전한 폼 초기화 - 원본 데이터 보존
     const formData = {
       username: originalUser.username || '',
       password: '',
-      name: originalUser.name || originalUser.displayName || '',
+      name: safeName, // 강력한 이름 보호
       role: originalUser.role || originalUser.userType || 'worker',
       userType: originalUser.userType || 'user',
       team: originalUser.team || '',
     };
     
-    console.log('openEditUserDialog - formData:', JSON.stringify(formData, null, 2));
+    console.log('🔍 openEditUserDialog - PROTECTED formData:', JSON.stringify(formData, null, 2));
+    console.log('🔒 NAME PROTECTION ACTIVE - Original name preserved:', safeName);
     
     editUserForm.reset(formData);
     setEditUserDialogOpen(true);
@@ -6847,9 +6853,14 @@ export function AdminPanel() {
                     <FormItem>
                       <FormLabel>이름</FormLabel>
                       <FormControl>
-                        <Input placeholder="이름을 입력하세요" {...field} />
+                        <Input 
+                          placeholder="이름을 입력하세요" 
+                          {...field} 
+                          disabled={true}
+                        />
                       </FormControl>
                       <FormMessage />
+                      <p className="text-xs text-gray-500">이름은 평가 시스템 보호를 위해 변경할 수 없습니다.</p>
                     </FormItem>
                   )}
                 />

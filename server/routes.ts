@@ -813,19 +813,19 @@ router.put('/api/admin/users/:id', requireAdmin, async (req, res) => {
     const id = parseInt(req.params.id);
     const { username, password, name, role, userType, team } = req.body;
     
-    console.log('Updating user:', id, 'with data:', { username: '⚠️ BLOCKED', password: password ? '***' : undefined, name, role, userType, team });
+    console.log('Updating user:', id, 'with data:', { username: '🔒 BLOCKED', password: password ? '***' : undefined, name: '🔒 BLOCKED', role, userType, team });
     
     const updateData: any = {};
-    // ⚠️ CRITICAL SECURITY: username 변경 완전 차단 - 평가 시스템 무결성 보장
+    // 🔒 CRITICAL SECURITY: username과 name 변경 완전 차단 - 평가 시스템 무결성 보장
     // if (username) updateData.username = username; // 제거됨 - 사용자 아이디는 절대 변경 불가
+    // if (name) updateData.name = name; // 제거됨 - 사용자 이름도 절대 변경 불가
     
     if (password && password.trim() !== '') updateData.password = password;
-    if (name) updateData.name = name;
     if (role) updateData.role = role;
     if (userType) updateData.userType = userType;
     if (team !== undefined) updateData.team = team; // team이 null일 수도 있으므로 !== undefined 체크
     
-    console.log('🔒 USERNAME PROTECTION: username field is permanently blocked from updates');
+    console.log('🔒 CRITICAL PROTECTION: username AND name fields are permanently blocked from updates');
     
     const user = await storage.updateUser(id, updateData);
     res.json({ success: true, message: '사용자 정보가 성공적으로 업데이트되었습니다.' });
