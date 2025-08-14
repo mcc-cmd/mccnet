@@ -52,10 +52,6 @@ export interface IStorage {
   // 영업과장 인증
   authenticateSalesManager(username: string, password: string): Promise<SalesManager | null>;
   
-  // 판매점 인증
-  authenticateDealer(username: string, password: string): Promise<any | null>;
-  getDealerById(id: number): Promise<any | undefined>;
-  
   // 기존 시스템과의 호환성을 위한 메서드들
   getContactCodes(): Promise<any[]>;
   
@@ -497,7 +493,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   // 세션 관리 메서드 (데이터베이스 기반)
-  async createSession(userId: number, userType: 'admin' | 'sales_manager' | 'user' | 'dealer', managerId?: number, teamId?: number, userRole?: string): Promise<string> {
+  async createSession(userId: number, userType: 'admin' | 'sales_manager' | 'user', managerId?: number, teamId?: number, userRole?: string): Promise<string> {
     const sessionId = nanoid();
     const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24시간 후 만료
     
@@ -906,40 +902,10 @@ export class DatabaseStorage implements IStorage {
 
   async getContactCodes(): Promise<ContactCode[]> {
     try {
-      // 성능 최적화: 인덱스를 활용한 빠른 조회
-      const result = await db.select().from(contactCodes)
-        .where(eq(contactCodes.isActive, true))
-        .orderBy(contactCodes.code) // 코드 순으로 정렬하여 검색 성능 개선
-        .limit(500); // 결과 수 제한으로 성능 개선
-      
+      const result = await db.select().from(contactCodes).where(eq(contactCodes.isActive, true)).orderBy(contactCodes.createdAt);
       return result;
     } catch (error) {
       console.error('Get contact codes error:', error);
-      return [];
-    }
-  }
-
-  // 딜러의 통신사별 접점코드 조회
-  async getDealerContactCodesByCarrier(dealerUsername: string, carrier: string): Promise<any[]> {
-    try {
-      console.log('Getting dealer contact codes for:', dealerUsername, 'carrier:', carrier);
-      
-      // DC마트 딜러의 접점코드를 조회
-      const codes = await db.select()
-        .from(contactCodes)
-        .where(
-          and(
-            like(contactCodes.dealerName, '%DC마트%'),
-            eq(contactCodes.carrier, carrier),
-            eq(contactCodes.isActive, true)
-          )
-        )
-        .limit(10);
-      
-      console.log('Found contact codes:', codes);
-      return codes;
-    } catch (error) {
-      console.error('Get dealer contact codes error:', error);
       return [];
     }
   }
@@ -1338,8 +1304,6 @@ export class DatabaseStorage implements IStorage {
     password?: string;
   }): Promise<void> {
     try {
-      console.log('updateDealer called with:', { id, data: { ...data, password: data.password ? '***' : undefined } });
-      
       const updateData: any = {
         updatedAt: new Date().toISOString()
       };
@@ -1351,9 +1315,8 @@ export class DatabaseStorage implements IStorage {
       
       // 비밀번호가 제공된 경우에만 해시화하여 업데이트
       if (data.password && data.password.trim()) {
-        console.log('Hashing password:', data.password);
+        const bcrypt = require('bcrypt');
         updateData.password = await bcrypt.hash(data.password, 10);
-        console.log('Password hashed:', updateData.password);
       }
 
       await db.update(dealerRegistrations)
@@ -3760,46 +3723,6 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async authenticateDealer(username: string, password: string): Promise<any | null> {
-    try {
-      console.log('Authenticating dealer:', username);
-      const [dealer] = await db.select().from(dealerRegistrations).where(
-        and(
-          eq(dealerRegistrations.dealerId, username),
-          eq(dealerRegistrations.status, 'approved')
-        )
-      );
-      console.log('Dealer found:', dealer ? 'yes' : 'no');
-      
-      if (!dealer) return null;
-      
-      const isValidPassword = await bcrypt.compare(password, dealer.password);
-      console.log('Password valid:', isValidPassword);
-      
-      if (!isValidPassword) return null;
-      
-      return dealer;
-    } catch (error) {
-      console.error('Dealer auth error:', error);
-      return null;
-    }
-  }
-
-  async getDealerById(id: number): Promise<any | undefined> {
-    try {
-      console.log('getDealerById called with id:', id);
-      const [dealer] = await db.select().from(dealerRegistrations).where(
-        eq(dealerRegistrations.id, id)
-      );
-      console.log('getDealerById query result:', dealer);
-      console.log('getDealerById status:', dealer?.status);
-      return dealer;
-    } catch (error) {
-      console.error('Get dealer by ID error:', error);
-      return undefined;
-    }
-  }
-
   // 문서 관련 업데이트 메서드들
   async updateDocumentNotes(id: number, notes: string): Promise<void> {
     try {
@@ -4262,18 +4185,14 @@ export class DatabaseStorage implements IStorage {
 
   async authenticateDealer(username: string, password: string): Promise<any> {
     try {
-      console.log(`Dealer authentication attempt: ${username}`);
-      
       const dealer = await db.get(sql`
         SELECT * FROM dealer_registrations 
         WHERE username = ${username} AND status = '승인' AND is_active = 1
       `);
 
-      console.log(`Dealer found:`, dealer ? 'yes' : 'no');
       if (!dealer) return null;
 
       const isValidPassword = await bcrypt.compare(password, dealer.password);
-      console.log(`Password valid:`, isValidPassword ? 'yes' : 'no');
       if (!isValidPassword) return null;
 
       // 판매점의 통신사별 접점코드 조회

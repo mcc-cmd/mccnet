@@ -109,24 +109,6 @@ body {
   scrollbar-color: hsl(var(--muted-foreground)) hsl(var(--muted));
 }
 
-/* 커서 깜빡임 제거 */
-input {
-  caret-color: transparent !important;
-}
-
-input:focus {
-  caret-color: hsl(var(--primary)) !important;
-}
-
-/* 텍스트 필드 특별 처리 */
-input[type="text"], input[type="password"], input[type="email"] {
-  caret-color: transparent !important;
-}
-
-input[type="text"]:focus, input[type="password"]:focus, input[type="email"]:focus {
-  caret-color: hsl(var(--primary)) !important;
-}
-
 ::-webkit-scrollbar-thumb {
   background: hsl(var(--muted-foreground));
   border-radius: 3px;

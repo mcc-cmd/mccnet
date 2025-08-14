@@ -245,17 +245,6 @@ export function Login() {
                   </Button>
                 </form>
                 
-                {/* 판매점 로그인 링크 */}
-                <div className="mt-4 text-center">
-                  <p className="text-sm text-gray-600 mb-2">판매점이신가요?</p>
-                  <Button 
-                    variant="outline" 
-                    className="w-full"
-                    onClick={() => setLocation('/dealer-login')}
-                  >
-                    판매점 로그인
-                  </Button>
-                </div>
 
 
 

@@ -31,7 +31,6 @@ export function Documents() {
     status: '',
     search: '',
     contactCode: '',
-    carrier: '', // 통신사 검색 필드 추가
     startDate: '',
     endDate: ''
   });
@@ -82,13 +81,6 @@ export function Documents() {
     subscriptionNumber: ''
   });
 
-  // 등록된 통신사 목록 조회
-  const { data: carriers } = useQuery({
-    queryKey: ['/api/carriers/from-documents'],
-    queryFn: () => apiRequest('/api/carriers/from-documents') as Promise<string[]>,
-    staleTime: 5 * 60 * 1000
-  });
-
   const { data: documents, isLoading } = useQuery({
     queryKey: ['/api/documents', filters, user?.id],
     queryFn: () => {
@@ -97,11 +89,9 @@ export function Documents() {
       params.append('activationStatus', '대기,진행중');
       params.append('excludeDeleted', 'true');
       
-      // 근무자는 자신이 접수한 문서만 조회, 관리자는 모든 문서 조회, 판매점은 본인 접수건만
+      // 근무자는 자신이 접수한 문서만 조회, 관리자는 모든 문서 조회
       if (user?.userRole === 'dealer_worker') {
         params.append('workerFilter', 'my'); // 자신이 접수한 문서만
-      } else if (user?.userType === 'dealer') {
-        // 판매점은 별도 필터링 없이 자동으로 본인 문서만 조회됨
       } else {
         params.append('allWorkers', 'true'); // 관리자는 모든 문서
       }
@@ -603,7 +593,7 @@ export function Documents() {
 
   return (
     <Layout title="접수 관리">
-      <div className="space-y-2">
+      <div className="space-y-6">
         {/* Header with Upload Button */}
         <div className="flex justify-between items-center">
           <div>
@@ -1429,25 +1419,6 @@ export function Documents() {
                     onChange={(e) => setFilters(prev => ({ ...prev, contactCode: e.target.value }))}
                     className="w-48"
                   />
-                </div>
-                <div className="flex items-center space-x-2">
-                  <span className="text-sm text-muted-foreground">통신사:</span>
-                  <Select
-                    value={filters.carrier}
-                    onValueChange={(value) => setFilters(prev => ({ ...prev, carrier: value }))}
-                  >
-                    <SelectTrigger className="w-32">
-                      <SelectValue placeholder="통신사 선택" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="">전체</SelectItem>
-                      {carriers?.map((carrier) => (
-                        <SelectItem key={carrier} value={carrier}>
-                          {carrier}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
                 </div>
                 <div className="flex items-center space-x-2">
                   <span className="text-sm text-muted-foreground">상태:</span>

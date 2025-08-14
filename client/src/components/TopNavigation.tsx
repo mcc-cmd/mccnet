@@ -29,12 +29,12 @@ export function TopNavigation({ title, onMenuClick }: TopNavigationProps) {
         className="px-4 border-r border-gray-200 text-gray-500 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-accent md:hidden"
         onClick={onMenuClick}
       >
-        <Menu className="h-5 w-5" />
+        <Menu className="h-6 w-6" />
       </button>
       
       <div className="flex-1 px-4 flex justify-between items-center">
         <div className="flex-1 flex">
-          <h2 className="text-xl font-semibold text-gray-900">{title}</h2>
+          <h2 className="text-2xl font-semibold text-gray-900">{title}</h2>
         </div>
         
         <div className="ml-4 flex items-center md:ml-6">

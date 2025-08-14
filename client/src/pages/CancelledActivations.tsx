@@ -153,7 +153,7 @@ export function CancelledActivations() {
 
   return (
     <Layout>
-      <div className="space-y-2">
+      <div className="space-y-6">
         <div className="flex justify-between items-center">
           <h1 className="text-3xl font-bold">개통취소 관리</h1>
           <div className="flex items-center space-x-2">

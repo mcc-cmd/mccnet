@@ -23,17 +23,11 @@ import { DealerRegistration } from '@/pages/DealerRegistration';
 import { DealerLogin } from '@/pages/DealerLogin';
 import { DealerDashboard } from '@/pages/DealerDashboard';
 import { DealerChat } from '@/pages/DealerChat';
-import { DealerApplications } from '@/pages/DealerApplications';
-import { DealerWorkRequests } from '@/pages/DealerWorkRequests';
-import { DealerCompletedManagement } from '@/pages/DealerCompletedManagement';
-import { DealerOtherCompleted } from '@/pages/DealerOtherCompleted';
-import { DealerCancelledHistory } from '@/pages/DealerCancelledHistory';
 
 import { TestPage } from '@/pages/TestPage';
 import WorkRequests from '@/pages/WorkRequests';
 import NotFound from '@/pages/not-found';
 import SalesTeamManagement from '@/pages/SalesTeamManagement';
-import { WorkerDashboard } from '@/pages/WorkerDashboard';
 
 import SalesManagerDashboard from '@/pages/SalesManagerDashboard';
 
@@ -52,17 +46,11 @@ function AppRoutes() {
 
   useEffect(() => {
     const initAuth = async () => {
-      console.log('App init: Starting auth check');
-      
-      // localStorage에서 sessionId 확인하고 인증 상태 복원
-      const storedSessionId = localStorage.getItem('sessionId');
-      if (storedSessionId || sessionId) {
-        console.log('App init: Found sessionId, checking auth');
+      // 새로고침 시 기존 세션이 있으면 인증 확인
+      if (sessionId && !isAuthenticated) {
+        console.log('App init: Checking existing session');
         await checkAuth();
-      } else {
-        console.log('App init: No sessionId found');
       }
-      
       setIsLoading(false);
     };
     initAuth();
@@ -76,15 +64,8 @@ function AppRoutes() {
     );
   }
 
-  // 미인증 상태에서는 로그인 페이지 표시 (단, 판매점 관련 페이지 제외)
   if (!isAuthenticated) {
-    return (
-      <Switch>
-        <Route path="/dealer-registration" component={DealerRegistration} />
-        <Route path="/dealer-login" component={DealerLogin} />
-        <Route component={Login} />
-      </Switch>
-    );
+    return <Login />;
   }
 
   // 영업과장은 실적 대시보드로 리다이렉트
@@ -102,34 +83,10 @@ function AppRoutes() {
   if (user?.userType === 'dealer') {
     return (
       <Switch>
-        <Route path="/" component={() => <Redirect to="/dealer" />} />
-        <Route path="/dealer" component={DealerDashboard} />
-        <Route path="/dealer/submit-application" component={SubmitApplication} />
-        <Route path="/dealer/applications" component={DealerApplications} />
-        <Route path="/dealer/work-requests" component={DealerWorkRequests} />
-        <Route path="/dealer/completed" component={DealerCompletedManagement} />
-        <Route path="/dealer/other-completed" component={DealerOtherCompleted} />
-        <Route path="/dealer/cancelled" component={DealerCancelledHistory} />
+        <Route path="/" component={() => <Redirect to="/dealer-dashboard" />} />
+        <Route path="/dealer-dashboard" component={DealerDashboard} />
         <Route path="/dealer-chat/:documentId" component={DealerChat} />
-        <Route component={() => <Redirect to="/dealer" />} />
-      </Switch>
-    );
-  }
-
-  // 근무자(dealer_worker)는 WorkerDashboard로 리다이렉트
-  if (user?.userRole === 'dealer_worker') {
-    return (
-      <Switch>
-        <Route path="/" component={() => <Redirect to="/worker-dashboard" />} />
-        <Route path="/worker-dashboard" component={WorkerDashboard} />
-        <Route path="/documents" component={Documents} />
-        <Route path="/work-requests" component={WorkRequests} />
-        <Route path="/completed" component={CompletedActivations} />
-        <Route path="/cancelled" component={CancelledActivations} />
-        <Route path="/discarded" component={DiscardedDocuments} />
-        <Route path="/other-completions" component={OtherCompletions} />
-        <Route path="/downloads" component={Downloads} />
-        <Route component={() => <Redirect to="/worker-dashboard" />} />
+        <Route component={() => <Redirect to="/dealer-dashboard" />} />
       </Switch>
     );
   }
@@ -177,19 +134,9 @@ function SalesManagerRoutes() {
 function MainApp() {
   return (
     <Switch>
-      {/* 판매점 관련 페이지 (인증 우회) */}
+      {/* 판매점 관련 라우트 (인증 없이 접근 가능) */}
       <Route path="/dealer-registration" component={DealerRegistration} />
       <Route path="/dealer-login" component={DealerLogin} />
-      
-      {/* 판매점 전용 라우트 (인증 우회) */}
-      <Route path="/dealer" component={DealerDashboard} />
-      <Route path="/dealer/submit-application" component={SubmitApplication} />
-      <Route path="/dealer/applications" component={DealerApplications} />
-      <Route path="/dealer/work-requests" component={DealerWorkRequests} />
-      <Route path="/dealer/completed" component={DealerCompletedManagement} />
-      <Route path="/dealer/other-completed" component={DealerOtherCompleted} />
-      <Route path="/dealer/cancelled" component={DealerCancelledHistory} />
-      <Route path="/dealer-chat/:documentId" component={DealerChat} />
       
       {/* 영업과장 대시보드 (인증 우회) */}
       <Route path="/sales-manager-dashboard" component={SalesManagerDashboard} />

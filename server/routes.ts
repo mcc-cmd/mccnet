@@ -302,29 +302,6 @@ router.post('/api/auth/login', async (req, res) => {
       return res.json(response);
     }
 
-    // Try dealer login
-    console.log('Authenticating dealer:', username);
-    const dealer = await storage.authenticateDealer(username, password);
-    console.log('Dealer found:', dealer ? 'yes' : 'no');
-    console.log('Dealer auth result:', dealer ? 'success' : 'failed');
-    
-    if (dealer) {
-      const sessionId = await storage.createSession(dealer.id, 'dealer');
-      console.log('Dealer session created:', sessionId);
-      
-      const response: AuthResponse = {
-        success: true,
-        user: {
-          id: dealer.id,
-          name: dealer.businessName,
-          username: dealer.username,
-          userType: 'dealer'
-        },
-        sessionId
-      };
-      return res.json(response);
-    }
-
     res.status(401).json({ success: false, error: '아이디 또는 비밀번호가 올바르지 않습니다.' });
   } catch (error: any) {
     res.status(400).json({ success: false, error: error.message });
@@ -367,63 +344,19 @@ router.get('/api/auth/me', requireAuth, async (req: any, res) => {
         };
         return res.json(response);
       }
-    } else if (userType === 'dealer') {
-      console.log('Auth me - looking for dealer with userId:', userId);
-      const dealer = await storage.getDealerById(userId);
-      console.log('Found dealer for auth me:', dealer ? 'yes' : 'no');
-      console.log('Dealer data:', dealer);
-      if (dealer) {
+    } else {
+      const user = await storage.getUserById(userId);
+      if (user) {
         const response: AuthResponse = {
           success: true,
           user: {
-            id: dealer.id,
-            name: dealer.businessName,
-            username: dealer.username,
-            userType: 'dealer'
+            id: user.id,
+            name: user.name,
+            username: user.username,
+            userType: user.userType || 'user'
           }
         };
-        console.log('Returning dealer auth response:', response);
         return res.json(response);
-      } else {
-        console.log('Dealer not found, returning 401');
-        return res.status(401).json({ success: false, error: '판매점을 찾을 수 없습니다.' });
-      }
-    } else {
-      // Check if it's a worker (user with role)
-      const userRole = req.session.userRole;
-      console.log('Auth me - userRole:', userRole);
-      
-      if (userRole === 'dealer_worker' || userRole === 'worker') {
-        // For workers, get user data
-        const user = await storage.getUserById(userId);
-        if (user) {
-          const response: AuthResponse = {
-            success: true,
-            user: {
-              id: user.id,
-              name: user.name,
-              username: user.username,
-              userType: 'user',
-              role: userRole
-            }
-          };
-          return res.json(response);
-        }
-      } else {
-        // For regular users
-        const user = await storage.getUserById(userId);
-        if (user) {
-          const response: AuthResponse = {
-            success: true,
-            user: {
-              id: user.id,
-              name: user.name,
-              username: user.username,
-              userType: user.userType || 'user'
-            }
-          };
-          return res.json(response);
-        }
       }
     }
     
@@ -431,48 +364,6 @@ router.get('/api/auth/me', requireAuth, async (req: any, res) => {
   } catch (error: any) {
     console.error('Auth me error:', error);
     res.status(500).json({ success: false, error: error.message });
-  }
-});
-
-// 판매점 로그인 API 
-router.post('/api/dealer-login', async (req, res) => {
-  try {
-    console.log('Dealer login attempt - body:', req.body);
-    const { username, password } = loginSchema.parse(req.body);
-    console.log('Dealer login attempt - parsed:', { username, password: password ? '***' : 'empty' });
-    
-    // Try dealer login
-    const dealer = await storage.authenticateDealer(username, password);
-    console.log('Dealer auth result:', dealer ? 'success' : 'failed');
-    
-    if (dealer) {
-      const sessionId = await storage.createSession(dealer.id, 'dealer');
-      console.log('Dealer session created:', sessionId);
-      
-      const response: AuthResponse = {
-        success: true,
-        user: {
-          id: dealer.id,
-          name: dealer.businessName,
-          username: dealer.dealerId,
-          userType: 'dealer'
-        },
-        sessionId
-      };
-      
-      res.json(response);
-    } else {
-      res.status(401).json({ 
-        success: false, 
-        error: '아이디 또는 비밀번호가 올바르지 않습니다.' 
-      });
-    }
-  } catch (error: any) {
-    console.error('Dealer login error:', error);
-    res.status(500).json({ 
-      success: false, 
-      error: '로그인 처리 중 오류가 발생했습니다.' 
-    });
   }
 });
 
@@ -526,7 +417,65 @@ router.post('/api/auth/logout', requireAuth, async (req: any, res) => {
   }
 });
 
-
+router.get('/api/auth/me', requireAuth, async (req: any, res) => {
+  try {
+    const session = req.session;
+    
+    if (session.userType === 'admin') {
+      const admin = await storage.getAdminById(session.userId);
+      if (admin) {
+        res.json({
+          success: true,
+          user: {
+            id: admin.id,
+            name: admin.name,
+            username: admin.username,
+            userType: 'admin'
+          }
+        });
+      } else {
+        res.status(404).json({ error: '사용자를 찾을 수 없습니다.' });
+      }
+    } else if (session.userType === 'sales_manager') {
+      const manager = await storage.getSalesManagerById(session.userId);
+      if (manager) {
+        res.json({
+          success: true,
+          user: {
+            id: manager.id,
+            name: manager.managerName,
+            username: manager.username,
+            userType: 'sales_manager',
+            teamId: manager.teamId,
+            managerCode: manager.managerCode,
+            position: manager.position
+          }
+        });
+      } else {
+        res.status(404).json({ error: '영업과장을 찾을 수 없습니다.' });
+      }
+    } else {
+      const user = await storage.getUserById(session.userId);
+      if (user) {
+        res.json({
+          success: true,
+          user: {
+            id: user.id,
+            name: user.name,
+            username: user.username,
+            userType: 'user',
+            dealerId: user.dealerId,
+            dealerName: user.dealerName
+          }
+        });
+      } else {
+        res.status(404).json({ error: '사용자를 찾을 수 없습니다.' });
+      }
+    }
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
 
 // Admin routes
 router.post('/api/admin/dealers', requireAdmin, async (req, res) => {
@@ -572,31 +521,16 @@ router.put('/api/admin/dealers/:id', requireAdmin, async (req, res) => {
 
     const { name, contactEmail, contactPhone, location, password } = req.body;
 
-    // 기존 판매점 정보 조회 - getDealerById가 없으므로 getDealers로 대체
-    const allDealers = await storage.getDealers();
-    const existingDealer = allDealers.find(dealer => dealer.id === id);
-    if (!existingDealer) {
-      return res.status(404).json({ error: '판매점을 찾을 수 없습니다.' });
-    }
-
-    // 업데이트할 데이터 준비
-    const updateData: any = {
-      name, // storage.updateDealer에서 businessName으로 매핑됨
+    await storage.updateDealer(id, {
+      name,
       contactEmail,
       contactPhone,
-      location // storage.updateDealer에서 address로 매핑됨
-    };
-
-    // 비밀번호가 제공된 경우만 포함 (storage.updateDealer에서 해시화됨)
-    if (password && password.trim() !== '') {
-      updateData.password = password;
-    }
-
-    await storage.updateDealer(id, updateData);
+      location,
+      password
+    });
 
     res.json({ success: true, message: '판매점 정보가 성공적으로 수정되었습니다.' });
   } catch (error: any) {
-    console.error('Update dealer error:', error);
     res.status(500).json({ error: error.message });
   }
 });
@@ -1554,10 +1488,9 @@ router.get('/api/documents', requireAuth, async (req: any, res) => {
       userRole: req.session.userRole 
     });
     
-    // 관리자는 모든 문서를, 근무자는 자신이 처리한 문서만, 판매점은 본인 접수건만 조회
+    // 관리자는 모든 문서를, 근무자는 자신이 처리한 문서만, 판매점은 해당 대리점 문서만 조회
     const isWorker = req.session.userRole === 'dealer_worker';
     const isAdmin = req.session.userType === 'admin';
-    const isDealer = req.session.userType === 'dealer';
     
     // 한국어 디코딩 처리 먼저 수행
     let decodedActivationStatus = activationStatus as string;
@@ -1574,8 +1507,6 @@ router.get('/api/documents', requireAuth, async (req: any, res) => {
     
     if (isAdmin) {
       dealerId = undefined; // 관리자는 모든 문서를 볼 수 있음
-    } else if (isDealer) {
-      dealerId = req.session.userId; // 판매점은 자신의 접수건만 조회
     } else if (isWorker) {
       // allWorkers=true인 경우 (접수 관리에서 호출) 또는 개통완료 조회 시 모든 서류를 볼 수 있도록 함
       if (allWorkers === 'true' || decodedActivationStatus === '개통') {
@@ -1909,18 +1840,9 @@ router.post('/api/documents/check-duplicate', requireAuth, async (req: any, res)
 router.post('/api/documents', requireDealerOrWorker, upload.single('file'), async (req: any, res) => {
   try {
     const data = uploadDocumentSchema.parse(req.body);
-    
-    // 판매점인 경우 dealerId를 본인 ID로 설정
-    let dealerId = req.session.dealerId;
-    if (req.session.userType === 'dealer') {
-      dealerId = req.session.userId;
-    }
-    
-    console.log('Document upload - userType:', req.session.userType, 'userId:', req.session.userId, 'dealerId:', dealerId);
-    
     const document = await storage.uploadDocument({
       ...data,
-      dealerId: dealerId,
+      dealerId: req.session.dealerId,
       userId: req.session.userId,
       filePath: req.file?.path || null,
       fileName: req.file?.originalname || null,
@@ -3877,34 +3799,6 @@ router.get('/api/contact-codes/search/:code', requireAuth, async (req: any, res)
   }
 });
 
-// 딜러의 통신사별 접점코드 조회 API
-router.get('/api/dealer/contact-codes/:carrier', requireAuth, async (req: any, res) => {
-  try {
-    const { carrier } = req.params;
-    const userId = req.session.userId;
-    const userType = req.session.userType;
-    
-    if (userType !== 'dealer') {
-      return res.status(403).json({ error: '딜러만 접근 가능합니다.' });
-    }
-
-    console.log('Dealer contact codes request - userId:', userId, 'carrier:', carrier);
-    
-    const dealer = await storage.getDealerById(userId);
-    if (!dealer) {
-      return res.status(404).json({ error: '딜러 정보를 찾을 수 없습니다.' });
-    }
-
-    const contactCodes = await storage.getDealerContactCodesByCarrier(dealer.username, carrier);
-    console.log('Dealer contact codes result:', contactCodes);
-    
-    res.json(contactCodes);
-  } catch (error: any) {
-    console.error('Dealer contact codes error:', error);
-    res.status(500).json({ error: error.message });
-  }
-});
-
 // 판매점 생성 API
 router.post('/api/dealers', requireAuth, async (req: any, res) => {
   try {
@@ -5312,11 +5206,7 @@ router.post('/api/dealer-registration', async (req, res) => {
 // 판매점 로그인
 router.post('/api/dealer-login', async (req, res) => {
   try {
-    console.log('Dealer login route hit - headers:', req.headers);
-    console.log('Dealer login attempt - body:', req.body);
-    console.log('Dealer login attempt - body type:', typeof req.body);
     const { username, password } = dealerLoginSchema.parse(req.body);
-    console.log('Dealer login attempt - parsed:', { username, password: '***' });
     const dealer = await storage.authenticateDealer(username, password);
     
     if (!dealer) {
@@ -5327,9 +5217,6 @@ router.post('/api/dealer-login', async (req, res) => {
     }
 
     // 세션 설정
-    if (!req.session) {
-      req.session = {} as any;
-    }
     req.session.userId = dealer.id;
     req.session.userType = 'dealer';
     req.session.username = dealer.username;
@@ -5338,7 +5225,6 @@ router.post('/api/dealer-login', async (req, res) => {
 
     res.json({
       success: true,
-      sessionId: req.sessionID,
       user: {
         id: dealer.id,
         name: dealer.representativeName,

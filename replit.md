@@ -3,36 +3,6 @@
 ## Overview
 This project is a document management system designed for MCC네트월드 telecommunications dealers. Its primary goal is to streamline the handling of customer reception documents, offering key capabilities such as role-based authentication, secure file uploads, comprehensive document tracking, and administrative functionalities. The system aims to significantly enhance efficiency in managing customer activations and related processes, providing a robust platform for document management within the telecommunications sector.
 
-## Recent Changes (Aug 14, 2025)
-- **Authentication System**: MCC0001 dealer login fully functional with proper session persistence
-- **Schema Fixes**: Resolved all dealer table field mapping issues (username vs dealerId)
-- **API Endpoints**: Eliminated duplicate /api/auth/me endpoints and 401 errors
-- **Form Restoration COMPLETED**: Successfully restored SubmitApplication.tsx to original December 12th afternoon design
-  - ✓ Layout component (not DealerLayout) properly implemented
-  - ✓ Card-based interface with "접수 정보 입력" title and FileText icon
-  - ✓ Original description text and section organization
-  - ✓ Email field removed (admin panel only, not basic form)
-  - ✓ 2-column layout for customer name and phone (고객명, 연락처)
-  - ✓ Searchable carrier dropdown with real-time filtering
-  - ✓ Searchable contact code dropdown with store name display
-  - ✓ Complex useState formData management for all fields
-  - ✓ Contact code search and automatic dealer name lookup
-  - ✓ Duplicate check dialog with override functionality
-  - ✓ File upload with drag-and-drop support
-  - ✓ Carrier-specific dynamic field validation and display
-  - ✓ Customer type selection (신규/번호이동) with conditional fields
-  - ✓ Bundle information, desired number, previous carrier fields
-  - ✓ Complete form validation and error handling
-- **Layout Fix COMPLETED**: Completely replaced with original December 12th afternoon structure
-  - ✓ max-w-2xl container width (not max-w-4xl)
-  - ✓ "새 접수 신청" page title with description
-  - ✓ Card with "접수 정보 입력" title and FileText icon
-  - ✓ Original section order: 고객 유형 → 고객 정보 → 통신사 정보
-  - ✓ Clean 2-column layout for customer name and phone
-  - ✓ Proper email field removal (not in formData)
-  - ✓ All search functionality preserved
-- **Current Status**: December 12th afternoon original layout fully restored, all errors resolved
-
 ## User Preferences
 Preferred communication style: Simple, everyday language.
 Code preservation: Keep existing code and settings intact during modifications. Only modify specific requested changes without resetting or initializing other parts.

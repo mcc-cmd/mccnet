@@ -66,19 +66,6 @@ export const useAuth = create<AuthState>()(
 
       logout: async () => {
         const { sessionId } = get();
-        
-        // 먼저 상태를 초기화
-        set({
-          user: null,
-          sessionId: null,
-          isAuthenticated: false,
-        });
-        
-        // localStorage 정리
-        localStorage.removeItem('sessionId');
-        localStorage.removeItem('auth-storage');
-        
-        // 서버에 로그아웃 요청
         if (sessionId) {
           try {
             await fetch('/api/auth/logout', {
@@ -91,24 +78,16 @@ export const useAuth = create<AuthState>()(
             console.error('Logout error:', error);
           }
         }
-        
-        // 페이지 새로고침으로 확실히 초기화
-        window.location.href = '/';
+
+        set({
+          user: null,
+          sessionId: null,
+          isAuthenticated: false,
+        });
       },
 
       checkAuth: async () => {
-        let { sessionId } = get();
-        
-        // localStorage에서 sessionId 확인 (페이지 새로고침 후 복원용)
-        if (!sessionId) {
-          const storedSessionId = localStorage.getItem('sessionId');
-          console.log('Retrieved sessionId from auth-storage:', storedSessionId || 'missing');
-          if (storedSessionId) {
-            sessionId = storedSessionId;
-            set({ sessionId: storedSessionId });
-          }
-        }
-        
+        const { sessionId } = get();
         if (!sessionId) {
           set({
             user: null,
@@ -134,7 +113,6 @@ export const useAuth = create<AuthState>()(
             if (data.success && data.user) {
               set({
                 user: data.user,
-                sessionId: sessionId,
                 isAuthenticated: true,
               });
               return true;
@@ -146,7 +124,6 @@ export const useAuth = create<AuthState>()(
           // 401 오류(인증 실패)만 로그아웃 처리, 다른 오류는 세션 유지
           if (response.status === 401) {
             console.log('Auth failed - clearing session');
-            localStorage.removeItem('sessionId');
             set({
               user: null,
               sessionId: null,

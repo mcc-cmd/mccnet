@@ -354,7 +354,7 @@ export default function SalesTeamManagement() {
     <div className="flex h-screen bg-background">
       <Sidebar />
       <div className="flex-1 overflow-auto">
-        <div className="container mx-auto px-4 py-2">
+        <div className="container mx-auto px-4 py-8">
           <div className="flex justify-between items-center mb-6">
             <h1 className="text-3xl font-bold">영업조직 관리</h1>
           </div>

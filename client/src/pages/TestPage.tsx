@@ -121,7 +121,7 @@ export function TestPage() {
 
   return (
     <Layout title="테스트 페이지">
-      <div className="space-y-2">
+      <div className="space-y-6">
         <Alert>
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>

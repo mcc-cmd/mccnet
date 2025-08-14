@@ -377,31 +377,15 @@ export interface ContactCodeMapping {
   updatedAt: Date;
 }
 
-// 판매점 정보 인터페이스 (dealerRegistrations 테이블 기반)
 export interface Dealer {
   id: number;
-  businessName: string;
-  representativeName: string;
-  businessNumber: string;
-  contactPhone: string | null;
-  contactEmail: string | null;
-  address: string | null;
-  bankAccount: string | null;
-  bankName: string | null;
-  accountHolder: string | null;
-  username: string;
-  password: string;
-  status: string;
-  approvedBy: number | null;
-  approvedAt: string | null;
-  rejectionReason: string | null;
-  isActive: boolean;
-  createdAt: string;
-  updatedAt: string;
-  contactCode?: string | null; // 추가 필드
-  // 하위 호환성을 위한 별칭
-  name?: string; // businessName의 별칭
-  location?: string; // address의 별칭
+  name: string;
+  location: string;
+  contactEmail: string;
+  contactPhone: string;
+  kpNumber?: string; // KP번호 추가
+  contactCodes?: string; // 통신사별 접점 코드 (JSON 형태로 저장)
+  createdAt: Date;
 }
 
 export interface KPDealerInfo {
@@ -550,7 +534,7 @@ export interface WorkerStats {
 export interface AuthSession {
   id: string;
   userId: number;
-  userType: 'admin' | 'user' | 'sales_manager' | 'dealer'; // 판매점 추가
+  userType: 'admin' | 'user' | 'sales_manager'; // 영업과장 추가
   userRole?: string;
   dealerId?: number;
   managerId?: number; // 영업과장 ID 추가
@@ -696,8 +680,8 @@ export interface AuthResponse {
   user?: {
     id: number;
     name: string;
-    username?: string;
-    userType: string;
+    username: string;
+    userType: 'admin' | 'user';
     dealerId?: number;
     dealerName?: string;
     role?: string;

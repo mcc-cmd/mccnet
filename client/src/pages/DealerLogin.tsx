@@ -12,8 +12,6 @@ import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
 import { Building, LogIn, UserPlus } from "lucide-react";
 import { Link } from "wouter";
-import { useAuth } from "@/lib/auth";
-import mccLogoPath from "@assets/image_1755075135342.png";
 
 const dealerLoginSchema = z.object({
   username: z.string().min(1, "아이디를 입력해주세요"),
@@ -25,10 +23,6 @@ type DealerLoginForm = z.infer<typeof dealerLoginSchema>;
 export function DealerLogin() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
-  const { checkAuth } = useAuth();
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
 
   const form = useForm<DealerLoginForm>({
     resolver: zodResolver(dealerLoginSchema),
@@ -38,61 +32,35 @@ export function DealerLogin() {
     },
   });
 
-  async function handleLogin() {
-    if (!username || !password) {
-      toast({
-        title: "입력 오류",
-        description: "아이디와 비밀번호를 모두 입력해주세요.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setIsLoading(true);
-    console.log('Attempting login with credentials');
-    
-    try {
-      const response = await fetch("/api/auth/login", {
+  const loginMutation = useMutation({
+    mutationFn: async (data: DealerLoginForm) => {
+      return apiRequest("/api/dealer-login", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ username, password }),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
       });
-
-      console.log('Login response status:', response.status, response.ok);
-      const data = await response.json();
-      
-      if (response.ok && data.success && data.sessionId) {
-        localStorage.setItem('sessionId', data.sessionId);
-        
-        toast({
-          title: "로그인 성공",
-          description: `${data.user.name}님, 환영합니다!`,
-        });
-        
-        // 새로고침하여 auth state 업데이트
-        window.location.href = "/dealer";
-        return;
-      } else {
-        console.log('Login failed:', data);
-        throw new Error(data.error || "로그인에 실패했습니다.");
-      }
-      
-    } catch (error: any) {
-      console.log('Login error:', error);
+    },
+    onSuccess: (data) => {
+      console.log("Dealer login successful:", data);
+      toast({
+        title: "로그인 성공",
+        description: `${data.user.name}님, 환영합니다!`,
+      });
+      // 판매점 전용 대시보드로 이동
+      setLocation("/dealer-dashboard");
+    },
+    onError: (error: any) => {
+      console.error("Dealer login error:", error);
       toast({
         title: "로그인 실패",
         description: error.message || "로그인 중 오류가 발생했습니다.",
         variant: "destructive",
       });
-    } finally {
-      setIsLoading(false);
-    }
-  }
+    },
+  });
 
-  async function onSubmit(data: DealerLoginForm) {
-    await handleLogin();
+  function onSubmit(data: DealerLoginForm) {
+    loginMutation.mutate(data);
   }
 
   return (
@@ -100,12 +68,8 @@ export function DealerLogin() {
       <div className="w-full max-w-md space-y-6">
         <Card>
           <CardHeader className="text-center">
-            <div className="mx-auto mb-4 flex items-center justify-center">
-              <img 
-                src={mccLogoPath} 
-                alt="MCC 로고" 
-                className="h-16 w-auto object-contain"
-              />
+            <div className="mx-auto mb-4 w-16 h-16 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center">
+              <Building className="h-8 w-8 text-blue-600 dark:text-blue-400" />
             </div>
             <CardTitle className="text-2xl">판매점 로그인</CardTitle>
             <CardDescription>
@@ -115,55 +79,72 @@ export function DealerLogin() {
           <CardContent>
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                <div className="space-y-4">
-                  <div>
-                    <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                      아이디
-                    </label>
-                    <Input 
-                      value={username}
-                      onChange={(e) => setUsername(e.target.value)}
-                      placeholder="아이디를 입력하세요"
-                      autoComplete="username"
-                      className="mt-1"
-                    />
-                  </div>
+                <FormField
+                  control={form.control}
+                  name="username"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>아이디</FormLabel>
+                      <FormControl>
+                        <Input 
+                          placeholder="아이디를 입력하세요"
+                          autoComplete="username"
+                          {...field} 
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-                  <div>
-                    <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                      비밀번호
-                    </label>
-                    <Input 
-                      type="password"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      placeholder="비밀번호를 입력하세요"
-                      autoComplete="current-password"
-                      className="mt-1"
-                      onKeyPress={(e) => {
-                        if (e.key === 'Enter') {
-                          handleLogin();
-                        }
-                      }}
-                    />
-                  </div>
+                <FormField
+                  control={form.control}
+                  name="password"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>비밀번호</FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="password"
+                          placeholder="비밀번호를 입력하세요"
+                          autoComplete="current-password"
+                          {...field} 
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-                  <Button 
-                    type="button" 
-                    className="w-full" 
-                    disabled={isLoading}
-                    onClick={handleLogin}
-                  >
-                    <LogIn className="mr-2 h-4 w-4" />
-                    {isLoading ? "로그인 중..." : "로그인"}
-                  </Button>
-                </div>
+                <Button 
+                  type="submit" 
+                  className="w-full" 
+                  disabled={loginMutation.isPending}
+                >
+                  <LogIn className="mr-2 h-4 w-4" />
+                  {loginMutation.isPending ? "로그인 중..." : "로그인"}
+                </Button>
               </form>
             </Form>
           </CardContent>
         </Card>
 
-
+        {/* 등록 안내 */}
+        <Card>
+          <CardContent className="pt-6">
+            <div className="text-center space-y-2">
+              <p className="text-sm text-muted-foreground">
+                아직 계정이 없으신가요?
+              </p>
+              <Link href="/dealer-registration">
+                <Button variant="outline" className="w-full">
+                  <UserPlus className="mr-2 h-4 w-4" />
+                  판매점 등록
+                </Button>
+              </Link>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* 직원 로그인 링크 */}
         <div className="text-center">
