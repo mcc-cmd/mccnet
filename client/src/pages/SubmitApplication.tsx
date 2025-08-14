@@ -22,14 +22,14 @@ export function SubmitApplication() {
   const { toast } = useToast();
   const [location] = useLocation();
 
-  // 영업과장은 읽기 전용이므로 접수 신청 불가
-  if (user?.userType === 'sales_manager') {
+  // 관리자 접근 제한 (딜러만 접수 신청 가능)
+  if (user?.userType !== 'dealer') {
     return (
       <Layout title="접수 신청">
         <div className="flex flex-col items-center justify-center h-64">
           <FileText className="h-16 w-16 text-gray-400 mb-4" />
           <h3 className="text-lg font-medium text-gray-900 mb-2">접근 권한이 없습니다</h3>
-          <p className="text-sm text-gray-500">영업과장은 읽기 전용 권한입니다.</p>
+          <p className="text-sm text-gray-500">딜러만 접수 신청이 가능합니다.</p>
         </div>
       </Layout>
     );
@@ -129,13 +129,13 @@ export function SubmitApplication() {
   } : null;
 
   // 필드 스타일 헬퍼 함수
-  const getFieldStyle = (isRequired: boolean) => {
+  const getFieldStyle = (isRequired?: boolean) => {
     return isRequired 
       ? "border-red-500 focus:border-red-600 focus:ring-red-500" 
       : "border-input focus:border-primary focus:ring-primary";
   };
 
-  const getLabelStyle = (isRequired: boolean) => {
+  const getLabelStyle = (isRequired?: boolean) => {
     return isRequired 
       ? "text-red-700 dark:text-red-400 font-medium" 
       : "text-foreground";
@@ -363,71 +363,119 @@ export function SubmitApplication() {
 
   return (
     <Layout title="접수 신청">
-      <div className="max-w-2xl mx-auto">
-        <div className="mb-8">
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">새 접수 신청</h2>
-          <p className="text-gray-600">
-            고객 정보와 필요한 서류를 업로드하여 접수를 신청하세요.
-          </p>
-        </div>
-
-        <Card>
+      <div className="max-w-4xl mx-auto p-6">
+        <Card className="w-full">
           <CardHeader>
-            <CardTitle className="flex items-center">
+            <CardTitle className="flex items-center text-xl font-medium">
               <FileText className="mr-2 h-5 w-5" />
               접수 정보 입력
             </CardTitle>
             <CardDescription>
-              정확한 정보를 입력해주세요. 모든 필수 항목을 작성해야 합니다.
+              정확한 정보를 입력해주세요. 모든 항목 항목을 작성해야 합니다.
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-6">
-              {/* 고객 유형 선택 섹션 */}
-              <div className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-8">
+              {/* 고객 정보 섹션 */}
+              <div className="space-y-6">
                 <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 flex items-center">
-                  <User className="mr-2 h-4 w-4" />
-                  고객 유형
+                  <User className="mr-2 h-5 w-5" />
+                  고객 정보
                 </h3>
                 
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="flex items-center space-x-2">
-                    <input
-                      type="radio"
-                      id="customer-type-new"
-                      name="customerType"
-                      value="new"
-                      checked={formData.customerType === 'new'}
-                      onChange={(e) => handleCustomerTypeChange(e.target.value as 'new' | 'port-in')}
-                      disabled={!availableCustomerTypes.new}
-                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
-                    />
-                    <Label 
-                      htmlFor="customer-type-new" 
-                      className={`text-sm font-medium ${availableCustomerTypes.new ? 'text-gray-700' : 'text-gray-400'}`}
-                    >
-                      신규
-                      {!availableCustomerTypes.new && " (지원안함)"}
+                {/* 고객명 필드 */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="relative">
+                    <Label htmlFor="customerName" className={getLabelStyle(carrierSettings?.requireCustomerName)}>
+                      고객명 {carrierSettings?.requireCustomerName && '*'}
                     </Label>
+                    <Input
+                      id="customerName"
+                      name="customerName"
+                      type="text"
+                      value={formData.customerName}
+                      onChange={handleInputChange}
+                      placeholder="고객명을 입력하세요"
+                      className={getFieldStyle(carrierSettings?.requireCustomerName)}
+                      required={carrierSettings?.requireCustomerName}
+                    />
                   </div>
-                  <div className="flex items-center space-x-2">
-                    <input
-                      type="radio"
-                      id="customer-type-port-in"
-                      name="customerType"
-                      value="port-in"
-                      checked={formData.customerType === 'port-in'}
-                      onChange={(e) => handleCustomerTypeChange(e.target.value as 'new' | 'port-in')}
-                      disabled={!availableCustomerTypes.portIn}
-                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
-                    />
-                    <Label 
-                      htmlFor="customer-type-port-in" 
-                      className={`text-sm font-medium ${availableCustomerTypes.portIn ? 'text-gray-700' : 'text-gray-400'}`}
-                    >
-                      번호이동
-                      {!availableCustomerTypes.portIn && " (지원안함)"}
+                  
+                  <div className="relative">
+                    <Label htmlFor="customerPhone" className={getLabelStyle(carrierSettings?.requireCustomerPhone)}>
+                      연락처 {carrierSettings?.requireCustomerPhone && '*'}
                     </Label>
+                    <Input
+                      id="customerPhone"
+                      name="customerPhone"
+                      type="text"
+                      value={formData.customerPhone}
+                      onChange={handleInputChange}
+                      placeholder="01012345678"
+                      className={getFieldStyle(carrierSettings?.requireCustomerPhone)}
+                      required={carrierSettings?.requireCustomerPhone}
+                    />
+                  </div>
+                  
+                  <div className="relative">
+                    <Label htmlFor="customerEmail" className={getLabelStyle(carrierSettings?.requireCustomerEmail)}>
+                      이메일 {carrierSettings?.requireCustomerEmail && '*'}
+                    </Label>
+                    <Input
+                      id="customerEmail"
+                      name="customerEmail"
+                      type="email"
+                      value={formData.customerEmail}
+                      onChange={handleInputChange}
+                      placeholder="example@email.com"
+                      className={getFieldStyle(carrierSettings?.requireCustomerEmail)}
+                      required={carrierSettings?.requireCustomerEmail}
+                    />
+                  </div>
+                </div>
+                
+                {/* 고객 유형 선택 */}
+                <div className="space-y-4">
+                  <h4 className="text-md font-medium text-gray-700 dark:text-gray-300">고객 유형</h4>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="radio"
+                        id="customer-type-new"
+                        name="customerType"
+                        value="new"
+                        checked={formData.customerType === 'new'}
+                        onChange={(e) => handleCustomerTypeChange(e.target.value as 'new' | 'port-in')}
+                        disabled={!availableCustomerTypes.new}
+                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                      />
+                      <Label 
+                        htmlFor="customer-type-new" 
+                        className={`text-sm font-medium ${availableCustomerTypes.new ? 'text-gray-700' : 'text-gray-400'}`}
+                      >
+                        신규
+                        {!availableCustomerTypes.new && " (지원안함)"}
+                      </Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="radio"
+                        id="customer-type-port-in"
+                        name="customerType"
+                        value="port-in"
+                        checked={formData.customerType === 'port-in'}
+                        onChange={(e) => handleCustomerTypeChange(e.target.value as 'new' | 'port-in')}
+                        disabled={!availableCustomerTypes.portIn}
+                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                      />
+                      <Label 
+                        htmlFor="customer-type-port-in" 
+                        className={`text-sm font-medium ${availableCustomerTypes.portIn ? 'text-gray-700' : 'text-gray-400'}`}
+                      >
+                        번호이동
+                        {!availableCustomerTypes.portIn && " (지원안함)"}
+                      </Label>
+                    </div>
                   </div>
                 </div>
                 
@@ -671,13 +719,12 @@ export function SubmitApplication() {
                 </div>
               )}
 
-              {/* 파일 업로드 섹션 */}
-              {carrierSettings?.requireDocumentUpload && (
-                <div className="space-y-4">
-                  <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 flex items-center">
-                    <Upload className="mr-2 h-4 w-4" />
-                    서류 업로드 *
-                  </h3>
+              {/* 서류 업로드 섹션 */}
+              <div className="space-y-6">
+                <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 flex items-center">
+                  <Upload className="mr-2 h-5 w-5" />
+                  서류 업로드 (선택사항)
+                </h3>
                   
                   <div 
                     className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors duration-200 ${
@@ -737,7 +784,6 @@ export function SubmitApplication() {
                     )}
                   </div>
                 </div>
-              )}
 
               {/* 추가 정보 섹션 */}
               <div className="space-y-4">
