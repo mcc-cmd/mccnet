@@ -486,23 +486,49 @@ export function SubmitApplication() {
                 </div>
                 
                 {/* 희망번호 입력 (신규 선택 시에만 표시) */}
-                {formData.customerType === 'new' && carrierSettings?.requireDesiredNumber && (
+                {formData.customerType === 'new' && (
                   <div className="relative">
                     <Label 
                       htmlFor="desiredNumber" 
-                      className={getLabelStyle(true)}
+                      className="text-sm font-medium text-gray-700 dark:text-gray-300"
                     >
-                      희망번호 *
+                      희망번호 (선택사항)
                     </Label>
                     <Input
                       id="desiredNumber"
                       type="text"
                       value={formData.desiredNumber}
                       onChange={(e) => setFormData(prev => ({ ...prev, desiredNumber: e.target.value }))}
-                      placeholder="희망하는 전화번호를 입력하세요"
-                      className={getFieldStyle(true)}
-                      required
+                      placeholder="원하는 전화번호를 입력하세요"
+                      className="border-gray-300 focus:border-gray-500"
                     />
+                  </div>
+                )}
+
+                {/* 이전통신사 선택 (번호이동 선택 시에만 표시) */}
+                {formData.customerType === 'port-in' && (
+                  <div className="relative">
+                    <Label 
+                      htmlFor="previousCarrier" 
+                      className="text-sm font-medium text-red-600 dark:text-red-400"
+                    >
+                      이전통신사 *
+                    </Label>
+                    <Select
+                      value={formData.previousCarrier}
+                      onValueChange={(value) => setFormData(prev => ({ ...prev, previousCarrier: value }))}
+                    >
+                      <SelectTrigger className="border-red-300 focus:border-red-500">
+                        <SelectValue placeholder="이전 통신사를 선택하세요" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {previousCarriers.map((carrier) => (
+                          <SelectItem key={carrier} value={carrier}>
+                            {carrier}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                 )}
 

@@ -31,6 +31,7 @@ export function Documents() {
     status: '',
     search: '',
     contactCode: '',
+    carrier: '', // 통신사 검색 필드 추가
     startDate: '',
     endDate: ''
   });
@@ -79,6 +80,13 @@ export function Documents() {
     deviceModel: '',
     simNumber: '',
     subscriptionNumber: ''
+  });
+
+  // 등록된 통신사 목록 조회
+  const { data: carriers } = useQuery({
+    queryKey: ['/api/carriers/from-documents'],
+    queryFn: () => apiRequest('/api/carriers/from-documents') as Promise<string[]>,
+    staleTime: 5 * 60 * 1000
   });
 
   const { data: documents, isLoading } = useQuery({
@@ -1419,6 +1427,25 @@ export function Documents() {
                     onChange={(e) => setFilters(prev => ({ ...prev, contactCode: e.target.value }))}
                     className="w-48"
                   />
+                </div>
+                <div className="flex items-center space-x-2">
+                  <span className="text-sm text-muted-foreground">통신사:</span>
+                  <Select
+                    value={filters.carrier}
+                    onValueChange={(value) => setFilters(prev => ({ ...prev, carrier: value }))}
+                  >
+                    <SelectTrigger className="w-32">
+                      <SelectValue placeholder="통신사 선택" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">전체</SelectItem>
+                      {carriers?.map((carrier) => (
+                        <SelectItem key={carrier} value={carrier}>
+                          {carrier}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div className="flex items-center space-x-2">
                   <span className="text-sm text-muted-foreground">상태:</span>
