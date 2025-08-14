@@ -521,32 +521,16 @@ router.put('/api/admin/dealers/:id', requireAdmin, async (req, res) => {
 
     const { name, contactEmail, contactPhone, location, password } = req.body;
 
-    // 기존 판매점 정보 조회 - getDealerById가 없으므로 getDealers로 대체
-    const allDealers = await storage.getDealers();
-    const existingDealer = allDealers.find(dealer => dealer.id === id);
-    if (!existingDealer) {
-      return res.status(404).json({ error: '판매점을 찾을 수 없습니다.' });
-    }
-
-    // 업데이트할 데이터 준비
-    const updateData: any = {
-      businessName: name, // name을 businessName으로 매핑
+    await storage.updateDealer(id, {
+      name,
       contactEmail,
       contactPhone,
-      address: location // location을 address로 매핑
-    };
-
-    // 비밀번호가 제공된 경우만 포함
-    if (password && password.trim() !== '') {
-      const bcrypt = require('bcrypt');
-      updateData.password = await bcrypt.hash(password, 10);
-    }
-
-    await storage.updateDealer(id, updateData);
+      location,
+      password
+    });
 
     res.json({ success: true, message: '판매점 정보가 성공적으로 수정되었습니다.' });
   } catch (error: any) {
-    console.error('Update dealer error:', error);
     res.status(500).json({ error: error.message });
   }
 });

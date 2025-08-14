@@ -1622,31 +1622,21 @@ export function AdminPanel() {
 
   const handleEditDealerInTable = (dealer: any) => {
     console.log('Edit dealer clicked:', dealer);
-    
-    // 편집 중인 판매점 설정
     setEditingDealer(dealer);
     
-    // 폼 데이터 설정
+    // 폼에 기존 데이터 설정
     editDealerForm.reset({
-      name: (dealer as any).businessName || (dealer as any).name || '',
-      username: (dealer as any).username || '',
+      name: dealer.businessName || dealer.name || '',
+      username: dealer.username || '',
       password: '',
-      contactEmail: (dealer as any).contactEmail || '',
-      contactPhone: (dealer as any).contactPhone || '',
-      location: (dealer as any).address || (dealer as any).location || '',
+      contactEmail: dealer.contactEmail || '',
+      contactPhone: dealer.contactPhone || '',
+      location: dealer.location || '',
       carrierCodes: {},
     });
     
-    // 다이얼로그 열기
     setEditDealerDialogOpen(true);
-    console.log('Edit dialog opened for dealer:', (dealer as any).businessName || (dealer as any).name);
-    console.log('Dialog state should be:', true);
-    console.log('editDealerDialogOpen state before:', editDealerDialogOpen);
-    
-    // 강제로 다이얼로그 상태 확인
-    setTimeout(() => {
-      console.log('editDealerDialogOpen state after:', editDealerDialogOpen);
-    }, 100);
+    console.log('Edit dialog opened for dealer:', dealer.businessName);
   };
 
   // 판매점 수정 뮤테이션
@@ -6518,162 +6508,10 @@ export function AdminPanel() {
                 </div>
               </CardHeader>
               <CardContent>
-                {dealers?.length ? (
+                {dealerGroups?.length ? (
                   <div className="space-y-4">
-                    {dealers.map(dealer => (
-                      <div key={dealer.id} className="flex items-center justify-between p-4 border rounded-lg">
-                        <div className="flex-1">
-                          <div className="flex items-center space-x-4">
-                            <div>
-                              <h4 className="font-medium">{(dealer as any).businessName || (dealer as any).name || '판매점명 없음'}</h4>
-                              <p className="text-sm text-gray-500">
-                                아이디: {(dealer as any).username || '미입력'} | 연락처: {(dealer as any).contactPhone || '미입력'}
-                              </p>
-                              <p className="text-sm text-gray-500">
-                                위치: {(dealer as any).address || (dealer as any).location || '미입력'} | 이메일: {(dealer as any).contactEmail || '미입력'}
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-                        <div className="flex space-x-2">
-                          <Dialog>
-                            <DialogTrigger asChild>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => {
-                                  // 폼 데이터 설정
-                                  editDealerForm.reset({
-                                    name: (dealer as any).businessName || (dealer as any).name || '',
-                                    username: (dealer as any).username || '',
-                                    password: '',
-                                    contactEmail: (dealer as any).contactEmail || '',
-                                    contactPhone: (dealer as any).contactPhone || '',
-                                    location: (dealer as any).address || (dealer as any).location || '',
-                                    carrierCodes: {},
-                                  });
-                                  setEditingDealer(dealer);
-                                }}
-                              >
-                                <Edit className="w-4 h-4 mr-1" />
-                                편집
-                              </Button>
-                            </DialogTrigger>
-                            <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-                              <DialogHeader>
-                                <DialogTitle>판매점 정보 수정</DialogTitle>
-                              </DialogHeader>
-                              <Form {...editDealerForm}>
-                                <form onSubmit={editDealerForm.handleSubmit(handleUpdateDealer)} className="space-y-4">
-                                  <FormField
-                                    control={editDealerForm.control}
-                                    name="name"
-                                    render={({ field }) => (
-                                      <FormItem>
-                                        <FormLabel>판매점명</FormLabel>
-                                        <FormControl>
-                                          <Input placeholder="판매점명을 입력하세요" {...field} />
-                                        </FormControl>
-                                        <FormMessage />
-                                      </FormItem>
-                                    )}
-                                  />
-                                  
-                                  <FormField
-                                    control={editDealerForm.control}
-                                    name="username"
-                                    render={({ field }) => (
-                                      <FormItem>
-                                        <FormLabel>아이디</FormLabel>
-                                        <FormControl>
-                                          <Input placeholder="아이디" {...field} disabled />
-                                        </FormControl>
-                                        <FormDescription>
-                                          아이디는 수정할 수 없습니다.
-                                        </FormDescription>
-                                      </FormItem>
-                                    )}
-                                  />
-
-                                  <FormField
-                                    control={editDealerForm.control}
-                                    name="password"
-                                    render={({ field }) => (
-                                      <FormItem>
-                                        <FormLabel>새 비밀번호 (선택사항)</FormLabel>
-                                        <FormControl>
-                                          <Input type="password" placeholder="새 비밀번호를 입력하세요" {...field} />
-                                        </FormControl>
-                                        <FormDescription>
-                                          비밀번호를 변경하려면 새 비밀번호를 입력하세요. 공백으로 두면 기존 비밀번호를 유지합니다.
-                                        </FormDescription>
-                                        <FormMessage />
-                                      </FormItem>
-                                    )}
-                                  />
-
-                                  <FormField
-                                    control={editDealerForm.control}
-                                    name="contactEmail"
-                                    render={({ field }) => (
-                                      <FormItem>
-                                        <FormLabel>이메일</FormLabel>
-                                        <FormControl>
-                                          <Input type="email" placeholder="이메일 주소를 입력하세요" {...field} />
-                                        </FormControl>
-                                        <FormMessage />
-                                      </FormItem>
-                                    )}
-                                  />
-
-                                  <FormField
-                                    control={editDealerForm.control}
-                                    name="contactPhone"
-                                    render={({ field }) => (
-                                      <FormItem>
-                                        <FormLabel>연락처</FormLabel>
-                                        <FormControl>
-                                          <Input type="tel" placeholder="연락처를 입력하세요" {...field} />
-                                        </FormControl>
-                                        <FormMessage />
-                                      </FormItem>
-                                    )}
-                                  />
-
-                                  <FormField
-                                    control={editDealerForm.control}
-                                    name="location"
-                                    render={({ field }) => (
-                                      <FormItem>
-                                        <FormLabel>위치</FormLabel>
-                                        <FormControl>
-                                          <Input placeholder="위치를 입력하세요" {...field} />
-                                        </FormControl>
-                                        <FormMessage />
-                                      </FormItem>
-                                    )}
-                                  />
-
-                                  <div className="flex justify-end space-x-2 pt-4 border-t">
-                                    <Button type="submit" disabled={updateDealerMutation.isPending}>
-                                      {updateDealerMutation.isPending ? '수정 중...' : '수정'}
-                                    </Button>
-                                  </div>
-                                </form>
-                              </Form>
-                            </DialogContent>
-                          </Dialog>
-                          <Button
-                            variant="destructive" 
-                            size="sm"
-                            onClick={() => handleDeleteDealerInTable(dealer.id, (dealer as any).businessName || (dealer as any).name || '판매점')}
-                          >
-                            <Trash2 className="w-4 h-4 mr-1" />
-                            삭제
-                          </Button>
-                        </div>
-                      </div>
-                    ))}
+                    {/* 판매점 목록을 여기에 표시 */}
+                    판매점 관리 기능이 여기에 표시됩니다.
                   </div>
                 ) : (
                   <div className="text-center py-8">
@@ -6685,7 +6523,126 @@ export function AdminPanel() {
               </CardContent>
             </Card>
 
+            {/* 판매점 수정 다이얼로그 */}
+            <Dialog open={editDealerDialogOpen} onOpenChange={setEditDealerDialogOpen}>
+              <DialogContent className="max-w-md">
+                <DialogHeader>
+                  <DialogTitle>판매점 정보 수정</DialogTitle>
+                  <DialogDescription>
+                    판매점의 기본 정보를 수정할 수 있습니다.
+                  </DialogDescription>
+                </DialogHeader>
+                <Form {...editDealerForm}>
+                  <form onSubmit={editDealerForm.handleSubmit(handleUpdateDealer)} className="space-y-4">
+                    <FormField
+                      control={editDealerForm.control}
+                      name="name"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>판매점명</FormLabel>
+                          <FormControl>
+                            <Input placeholder="판매점명" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={editDealerForm.control}
+                      name="username"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>아이디</FormLabel>
+                          <FormControl>
+                            <Input placeholder="아이디" {...field} disabled />
+                          </FormControl>
+                          <FormDescription>
+                            아이디는 수정할 수 없습니다.
+                          </FormDescription>
+                        </FormItem>
+                      )}
+                    />
 
+                    <FormField
+                      control={editDealerForm.control}
+                      name="password"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>비밀번호 (선택사항)</FormLabel>
+                          <FormControl>
+                            <Input type="password" placeholder="새 비밀번호" {...field} />
+                          </FormControl>
+                          <FormDescription>
+                            비밀번호를 변경하려면 새 비밀번호를 입력하세요.
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={editDealerForm.control}
+                      name="contactEmail"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>이메일</FormLabel>
+                          <FormControl>
+                            <Input type="email" placeholder="이메일 주소" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={editDealerForm.control}
+                      name="contactPhone"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>연락처</FormLabel>
+                          <FormControl>
+                            <Input placeholder="연락처" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={editDealerForm.control}
+                      name="location"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>위치</FormLabel>
+                          <FormControl>
+                            <Input placeholder="위치" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <div className="flex justify-end space-x-2 pt-4 border-t">
+                      <Button 
+                        type="button" 
+                        variant="outline" 
+                        onClick={() => {
+                          setEditDealerDialogOpen(false);
+                          setEditingDealer(null);
+                          editDealerForm.reset();
+                        }}
+                      >
+                        취소
+                      </Button>
+                      <Button type="submit" disabled={updateDealerMutation.isPending}>
+                        {updateDealerMutation.isPending ? '수정 중...' : '수정'}
+                      </Button>
+                    </div>
+                  </form>
+                </Form>
+              </DialogContent>
+            </Dialog>
           </TabsContent>
 
                 {/* 정산 관리 탭 */}
