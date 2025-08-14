@@ -39,7 +39,6 @@ export function SubmitApplication() {
   const [formData, setFormData] = useState({
     customerName: '',
     customerPhone: '',
-    customerEmail: '',
     contactCode: '',
     storeName: '',
     carrier: '',
@@ -109,6 +108,18 @@ export function SubmitApplication() {
   const previousCarriers = [
     'SK', 'KT', 'LG', 'SK알뜰', 'KT알뜰', 'LG알뜰'
   ];
+
+  // 접점코드 목록 가져오기
+  const { data: contactCodes = [] } = useQuery({
+    queryKey: ['/api/contact-codes'],
+    queryFn: () => apiRequest('/api/contact-codes')
+  });
+
+  // 필터링된 접점코드 목록
+  const filteredContactCodes = contactCodes.filter((contact: any) => 
+    contact.contactCode.toLowerCase().includes(formData.contactCode.toLowerCase()) ||
+    contact.storeName.toLowerCase().includes(formData.contactCode.toLowerCase())
+  );
   
   // 선택된 통신사의 정보 가져오기 (Boolean 값 변환) - 활성화된 통신사에서만 검색
   const selectedCarrier = carriers.find(c => c.name === formData.carrier);
@@ -218,7 +229,6 @@ export function SubmitApplication() {
       setFormData({
         customerName: '',
         customerPhone: '',
-        customerEmail: '',
         contactCode: '',
         storeName: '',
         carrier: '',
@@ -252,9 +262,7 @@ export function SubmitApplication() {
       if (selectedCarrier.requireCustomerPhone && !formData.customerPhone) {
         errors.push("연락처");
       }
-      if (selectedCarrier.requireCustomerEmail && !formData.customerEmail) {
-        errors.push("이메일");
-      }
+
       if (selectedCarrier.requireContactCode && !formData.contactCode) {
         errors.push("개통방명 코드");
       }
@@ -301,7 +309,7 @@ export function SubmitApplication() {
     const data = new FormData();
     data.append('customerName', formData.customerName);
     data.append('customerPhone', formData.customerPhone);
-    data.append('customerEmail', formData.customerEmail);
+
     data.append('contactCode', formData.contactCode);
     data.append('storeName', formData.storeName);
     data.append('carrier', formData.carrier);
@@ -384,7 +392,7 @@ export function SubmitApplication() {
                 </h3>
                 
                 {/* 고객명 필드 */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="relative">
                     <Label htmlFor="customerName" className={getLabelStyle(carrierSettings?.requireCustomerName)}>
                       고객명 {carrierSettings?.requireCustomerName && '*'}
@@ -414,22 +422,6 @@ export function SubmitApplication() {
                       placeholder="01012345678"
                       className={getFieldStyle(carrierSettings?.requireCustomerPhone)}
                       required={carrierSettings?.requireCustomerPhone}
-                    />
-                  </div>
-                  
-                  <div className="relative">
-                    <Label htmlFor="customerEmail" className={getLabelStyle(carrierSettings?.requireCustomerEmail)}>
-                      이메일 {carrierSettings?.requireCustomerEmail && '*'}
-                    </Label>
-                    <Input
-                      id="customerEmail"
-                      name="customerEmail"
-                      type="email"
-                      value={formData.customerEmail}
-                      onChange={handleInputChange}
-                      placeholder="example@email.com"
-                      className={getFieldStyle(carrierSettings?.requireCustomerEmail)}
-                      required={carrierSettings?.requireCustomerEmail}
                     />
                   </div>
                 </div>
@@ -572,26 +564,7 @@ export function SubmitApplication() {
                   </div>
                 </div>
                 
-                {carrierSettings?.requireCustomerEmail && (
-                  <div className="relative">
-                    <Label 
-                      htmlFor="customerEmail" 
-                      className={getLabelStyle(true)}
-                    >
-                      이메일 *
-                    </Label>
-                    <Input
-                      id="customerEmail"
-                      name="customerEmail"
-                      type="email"
-                      value={formData.customerEmail}
-                      onChange={handleInputChange}
-                      placeholder="이메일을 입력하세요"
-                      className={getFieldStyle(true)}
-                      required
-                    />
-                  </div>
-                )}
+
               </div>
 
               {/* 통신사/판매점 정보 섹션 */}
@@ -608,18 +581,37 @@ export function SubmitApplication() {
                   >
                     통신사 *
                   </Label>
-                  <Select value={formData.carrier} onValueChange={(value) => setFormData(prev => ({ ...prev, carrier: value }))}>
-                    <SelectTrigger className={getFieldStyle(true)}>
-                      <SelectValue placeholder="통신사를 선택하세요" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {filteredCarriers.map((carrier) => (
-                        <SelectItem key={carrier.id} value={carrier.name}>
-                          {carrier.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <div className="relative">
+                    <Input
+                      id="carrier"
+                      type="text"
+                      value={carrierSearchTerm}
+                      onChange={(e) => setCarrierSearchTerm(e.target.value)}
+                      placeholder="통신사를 검색하고 선택하세요"
+                      className={getFieldStyle(true)}
+                    />
+                    {carrierSearchTerm && filteredCarriers.length > 0 && (
+                      <div className="absolute z-10 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md shadow-lg max-h-60 overflow-auto">
+                        {filteredCarriers.map((carrier) => (
+                          <div
+                            key={carrier.id}
+                            className="px-3 py-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 border-b last:border-b-0"
+                            onClick={() => {
+                              setFormData(prev => ({ ...prev, carrier: carrier.name }));
+                              setCarrierSearchTerm(carrier.name);
+                            }}
+                          >
+                            {carrier.name}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    {formData.carrier && (
+                      <div className="mt-2 text-sm text-green-600 dark:text-green-400">
+                        선택됨: {formData.carrier}
+                      </div>
+                    )}
+                  </div>
                 </div>
                 
                 {carrierSettings?.requireContactCode && (
@@ -630,16 +622,38 @@ export function SubmitApplication() {
                     >
                       개통방명 코드 *
                     </Label>
-                    <Input
-                      id="contactCode"
-                      name="contactCode"
-                      type="text"
-                      value={formData.contactCode}
-                      onChange={(e) => handleContactCodeChange(e.target.value)}
-                      placeholder="개통방명 코드를 입력하세요"
-                      className={getFieldStyle(true)}
-                      required
-                    />
+                    <div className="relative">
+                      <Input
+                        id="contactCode"
+                        name="contactCode"
+                        type="text"
+                        value={formData.contactCode}
+                        onChange={(e) => handleContactCodeChange(e.target.value)}
+                        placeholder="개통방명 코드를 검색하세요"
+                        className={getFieldStyle(true)}
+                        required
+                      />
+                      {formData.contactCode && filteredContactCodes.length > 0 && (
+                        <div className="absolute z-10 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md shadow-lg max-h-60 overflow-auto">
+                          {filteredContactCodes.map((contact) => (
+                            <div
+                              key={contact.id}
+                              className="px-3 py-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 border-b last:border-b-0"
+                              onClick={() => {
+                                setFormData(prev => ({ 
+                                  ...prev, 
+                                  contactCode: contact.contactCode,
+                                  storeName: contact.storeName 
+                                }));
+                              }}
+                            >
+                              <div className="font-medium">{contact.contactCode}</div>
+                              <div className="text-sm text-gray-500">{contact.storeName}</div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   </div>
                 )}
                 
