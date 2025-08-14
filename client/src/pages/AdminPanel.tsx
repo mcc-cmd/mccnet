@@ -2456,7 +2456,9 @@ export function AdminPanel() {
     const updateData: any = {};
     const originalName = editingUser.name || editingUser.displayName || '';
     
-    if (data.username !== editingUser.username) updateData.username = data.username;
+    // ⚠️ CRITICAL: username은 절대 변경하지 않음 - 평가 시스템 무결성 보장
+    // if (data.username !== editingUser.username) updateData.username = data.username; // 제거됨
+    
     if (data.password && data.password.trim() !== '') updateData.password = data.password;
     if (data.name !== originalName && data.name.trim() !== '') updateData.name = data.name;
     if (data.role !== editingUser.role && data.role !== editingUser.userType) updateData.role = data.role;
@@ -2467,6 +2469,7 @@ export function AdminPanel() {
     console.log('handleUpdateUser - originalName:', originalName);
     console.log('handleUpdateUser - formData:', JSON.stringify(data, null, 2));
     console.log('handleUpdateUser - updateData:', JSON.stringify(updateData, null, 2));
+    console.log('handleUpdateUser - username PROTECTION: username will NOT be updated');
     
     if (Object.keys(updateData).length === 0) {
       toast({
