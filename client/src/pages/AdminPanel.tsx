@@ -1148,6 +1148,24 @@ function CarrierManagement() {
                         </FormItem>
                       )}
                     />
+                    <FormField
+                      control={carrierForm.control}
+                      name="requireDocumentUpload"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
+                          <div className="space-y-0.5">
+                            <FormLabel className="text-sm">서류 첨부</FormLabel>
+                            <FormDescription className="text-xs">접수 시 서류 첨부 필수 여부</FormDescription>
+                          </div>
+                          <FormControl>
+                            <Switch
+                              checked={field.value}
+                              onCheckedChange={field.onChange}
+                            />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
                   </div>
                 </div>
                 
@@ -1223,6 +1241,7 @@ function CarrierManagement() {
                               <p>결합 통신사: {carrier.bundleCarrier}</p>
                             )}
                             <p>서류 필수: {carrier.documentRequired ? '예' : '아니오'}</p>
+                            <p>서류 첨부: {(carrier as any).requireDocumentUpload ? '필수' : '선택'}</p>
                           </div>
                         </div>
                       </div>

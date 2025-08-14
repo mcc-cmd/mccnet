@@ -758,12 +758,18 @@ export function SubmitApplication() {
                 </div>
               )}
 
-              {/* 파일 업로드 섹션 */}
-              <div className="space-y-4">
-                <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 flex items-center">
-                  <Upload className="mr-2 h-4 w-4" />
-                  서류 첨부 {carrierSettings?.requireDocumentUpload && <span className="text-red-500 ml-1">*</span>}
-                </h3>
+              {/* 파일 업로드 섹션 - 통신사별 설정에 따라 조건부 표시 */}
+              {formData.carrier && (
+                <div className="space-y-4">
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 flex items-center">
+                    <Upload className="mr-2 h-4 w-4" />
+                    서류 첨부 
+                    {carrierSettings?.requireDocumentUpload ? (
+                      <span className="text-red-500 ml-1">* (필수)</span>
+                    ) : (
+                      <span className="text-gray-500 ml-1">(선택사항)</span>
+                    )}
+                  </h3>
                 
                 <div
                   className={`border-2 border-dashed rounded-lg p-6 transition-colors ${
@@ -819,7 +825,8 @@ export function SubmitApplication() {
                     </div>
                   </div>
                 )}
-              </div>
+                </div>
+              )}
 
               {/* 비고 섹션 */}
               <div className="space-y-4">
