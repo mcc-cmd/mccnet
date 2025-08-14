@@ -22,14 +22,14 @@ export function SubmitApplication() {
   const { toast } = useToast();
   const [location] = useLocation();
 
-  // 관리자 접근 제한 (딜러만 접수 신청 가능)
-  if (user?.userType !== 'dealer') {
+  // 영업과장은 읽기 전용이므로 접수 신청 불가
+  if (user?.userType === 'sales_manager') {
     return (
       <Layout title="접수 신청">
         <div className="flex flex-col items-center justify-center h-64">
           <FileText className="h-16 w-16 text-gray-400 mb-4" />
           <h3 className="text-lg font-medium text-gray-900 mb-2">접근 권한이 없습니다</h3>
-          <p className="text-sm text-gray-500">딜러만 접수 신청이 가능합니다.</p>
+          <p className="text-sm text-gray-500">영업과장은 읽기 전용 권한입니다.</p>
         </div>
       </Layout>
     );
@@ -50,35 +50,6 @@ export function SubmitApplication() {
     notes: ''
   });
 
-  // 저장 기능 완전 제거 - 사용자가 입력한 데이터는 페이지에 있는 동안만 유지
-
-  // 접점코드 변경 시 판매점명 자동 조회
-  const handleContactCodeChange = async (contactCode: string) => {
-    setFormData(prev => {
-      const newData = { ...prev, contactCode };
-      
-      // 기타 통신사인 경우 즉시 접점코드명을 판매점명으로 설정
-      if (newData.carrier.includes('기타') && contactCode.trim()) {
-        newData.storeName = contactCode;
-      }
-      
-      return newData;
-    });
-    
-    if (contactCode.trim() && !formData.carrier.includes('기타')) {
-      try {
-        const response = await apiRequest(`/api/contact-codes/search/${contactCode}`);
-        if (response?.dealerName) {
-          setFormData(prev => ({ ...prev, storeName: response.dealerName }));
-        }
-        // 응답이 없어도 기존 데이터는 보존 - 초기화하지 않음
-      } catch (error) {
-        // 오류가 있어도 기존 데이터는 보존 - 초기화하지 않음
-        console.warn('접점코드 조회 실패:', error);
-      }
-    }
-    // 접점코드가 비어있어도 기존 데이터는 보존 - 초기화하지 않음
-  };
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [dragActive, setDragActive] = useState(false);
   const [duplicateCheckDialog, setDuplicateCheckDialog] = useState(false);
@@ -142,13 +113,13 @@ export function SubmitApplication() {
   } : null;
 
   // 필드 스타일 헬퍼 함수
-  const getFieldStyle = (isRequired?: boolean) => {
+  const getFieldStyle = (isRequired: boolean) => {
     return isRequired 
       ? "border-red-500 focus:border-red-600 focus:ring-red-500" 
       : "border-input focus:border-primary focus:ring-primary";
   };
 
-  const getLabelStyle = (isRequired?: boolean) => {
+  const getLabelStyle = (isRequired: boolean) => {
     return isRequired 
       ? "text-red-700 dark:text-red-400 font-medium" 
       : "text-foreground";
@@ -160,11 +131,37 @@ export function SubmitApplication() {
     portIn: carrierSettings?.allowPortIn !== false
   };
 
-  // 자동 초기화 로직 제거 - 사용자 입력 보존
-
   // 고객 유형 변경 (필드 초기화 없음)
   const handleCustomerTypeChange = (newType: 'new' | 'port-in') => {
     setFormData(prev => ({ ...prev, customerType: newType }));
+  };
+
+  // 접점코드 변경 시 판매점명 자동 조회
+  const handleContactCodeChange = async (contactCode: string) => {
+    setFormData(prev => {
+      const newData = { ...prev, contactCode };
+      
+      // 기타 통신사인 경우 즉시 접점코드명을 판매점명으로 설정
+      if (newData.carrier.includes('기타') && contactCode.trim()) {
+        newData.storeName = contactCode;
+      }
+      
+      return newData;
+    });
+    
+    if (contactCode.trim() && !formData.carrier.includes('기타')) {
+      try {
+        const response = await apiRequest(`/api/contact-codes/search/${contactCode}`);
+        if (response?.dealerName) {
+          setFormData(prev => ({ ...prev, storeName: response.dealerName }));
+        }
+        // 응답이 없어도 기존 데이터는 보존 - 초기화하지 않음
+      } catch (error) {
+        // 오류가 있어도 기존 데이터는 보존 - 초기화하지 않음
+        console.warn('접점코드 조회 실패:', error);
+      }
+    }
+    // 접점코드가 비어있어도 기존 데이터는 보존 - 초기화하지 않음
   };
 
   // 중복 체크 함수
@@ -264,7 +261,6 @@ export function SubmitApplication() {
       if (selectedCarrier.requireCustomerPhone && !formData.customerPhone) {
         errors.push("연락처");
       }
-
       if (selectedCarrier.requireContactCode && !formData.contactCode) {
         errors.push("개통방명 코드");
       }
@@ -373,103 +369,71 @@ export function SubmitApplication() {
 
   return (
     <Layout title="접수 신청">
-      <div className="max-w-4xl mx-auto p-6">
-        <Card className="w-full">
+      <div className="max-w-2xl mx-auto">
+        <div className="mb-8">
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">새 접수 신청</h2>
+          <p className="text-gray-600">
+            고객 정보와 필요한 서류를 업로드하여 접수를 신청하세요.
+          </p>
+        </div>
+
+        <Card>
           <CardHeader>
-            <CardTitle className="flex items-center text-xl font-medium">
+            <CardTitle className="flex items-center">
               <FileText className="mr-2 h-5 w-5" />
               접수 정보 입력
             </CardTitle>
             <CardDescription>
-              정확한 정보를 입력해주세요. 모든 항목 항목을 작성해야 합니다.
+              정확한 정보를 입력해주세요. 모든 필수 항목을 작성해야 합니다.
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-8">
-              {/* 고객 정보 섹션 */}
-              <div className="space-y-6">
+            <form onSubmit={handleSubmit} className="space-y-6">
+              {/* 고객 유형 선택 섹션 */}
+              <div className="space-y-4">
                 <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 flex items-center">
-                  <User className="mr-2 h-5 w-5" />
-                  고객 정보
+                  <User className="mr-2 h-4 w-4" />
+                  고객 유형
                 </h3>
                 
-                {/* 고객명 필드 */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="relative">
-                    <Label htmlFor="customerName" className={getLabelStyle(carrierSettings?.requireCustomerName)}>
-                      고객명 {carrierSettings?.requireCustomerName && '*'}
-                    </Label>
-                    <Input
-                      id="customerName"
-                      name="customerName"
-                      type="text"
-                      value={formData.customerName}
-                      onChange={handleInputChange}
-                      placeholder="고객명을 입력하세요"
-                      className={getFieldStyle(carrierSettings?.requireCustomerName)}
-                      required={carrierSettings?.requireCustomerName}
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="radio"
+                      id="customer-type-new"
+                      name="customerType"
+                      value="new"
+                      checked={formData.customerType === 'new'}
+                      onChange={(e) => handleCustomerTypeChange(e.target.value as 'new' | 'port-in')}
+                      disabled={!availableCustomerTypes.new}
+                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
                     />
-                  </div>
-                  
-                  <div className="relative">
-                    <Label htmlFor="customerPhone" className={getLabelStyle(carrierSettings?.requireCustomerPhone)}>
-                      연락처 {carrierSettings?.requireCustomerPhone && '*'}
+                    <Label 
+                      htmlFor="customer-type-new" 
+                      className={`text-sm font-medium ${availableCustomerTypes.new ? 'text-gray-700' : 'text-gray-400'}`}
+                    >
+                      신규
+                      {!availableCustomerTypes.new && " (지원안함)"}
                     </Label>
-                    <Input
-                      id="customerPhone"
-                      name="customerPhone"
-                      type="text"
-                      value={formData.customerPhone}
-                      onChange={handleInputChange}
-                      placeholder="01012345678"
-                      className={getFieldStyle(carrierSettings?.requireCustomerPhone)}
-                      required={carrierSettings?.requireCustomerPhone}
-                    />
                   </div>
-                </div>
-                
-                {/* 고객 유형 선택 */}
-                <div className="space-y-4">
-                  <h4 className="text-md font-medium text-gray-700 dark:text-gray-300">고객 유형</h4>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="flex items-center space-x-2">
-                      <input
-                        type="radio"
-                        id="customer-type-new"
-                        name="customerType"
-                        value="new"
-                        checked={formData.customerType === 'new'}
-                        onChange={(e) => handleCustomerTypeChange(e.target.value as 'new' | 'port-in')}
-                        disabled={!availableCustomerTypes.new}
-                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
-                      />
-                      <Label 
-                        htmlFor="customer-type-new" 
-                        className={`text-sm font-medium ${availableCustomerTypes.new ? 'text-gray-700' : 'text-gray-400'}`}
-                      >
-                        신규
-                        {!availableCustomerTypes.new && " (지원안함)"}
-                      </Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <input
-                        type="radio"
-                        id="customer-type-port-in"
-                        name="customerType"
-                        value="port-in"
-                        checked={formData.customerType === 'port-in'}
-                        onChange={(e) => handleCustomerTypeChange(e.target.value as 'new' | 'port-in')}
-                        disabled={!availableCustomerTypes.portIn}
-                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
-                      />
-                      <Label 
-                        htmlFor="customer-type-port-in" 
-                        className={`text-sm font-medium ${availableCustomerTypes.portIn ? 'text-gray-700' : 'text-gray-400'}`}
-                      >
-                        번호이동
-                        {!availableCustomerTypes.portIn && " (지원안함)"}
-                      </Label>
-                    </div>
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="radio"
+                      id="customer-type-port-in"
+                      name="customerType"
+                      value="port-in"
+                      checked={formData.customerType === 'port-in'}
+                      onChange={(e) => handleCustomerTypeChange(e.target.value as 'new' | 'port-in')}
+                      disabled={!availableCustomerTypes.portIn}
+                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                    />
+                    <Label 
+                      htmlFor="customer-type-port-in" 
+                      className={`text-sm font-medium ${availableCustomerTypes.portIn ? 'text-gray-700' : 'text-gray-400'}`}
+                    >
+                      번호이동
+                      {!availableCustomerTypes.portIn && " (지원안함)"}
+                    </Label>
                   </div>
                 </div>
                 
@@ -487,14 +451,14 @@ export function SubmitApplication() {
                       type="text"
                       value={formData.desiredNumber}
                       onChange={(e) => setFormData(prev => ({ ...prev, desiredNumber: e.target.value }))}
-                      placeholder="010-0000-0000"
+                      placeholder="희망하는 전화번호를 입력하세요"
                       className={getFieldStyle(true)}
                       required
                     />
                   </div>
                 )}
-                
-                {/* 이전 통신사 선택 (번호이동 선택 시에만 표시) */}
+
+                {/* 이전 통신사 입력 (번호이동 선택 시에만 표시) */}
                 {formData.customerType === 'port-in' && carrierSettings?.requirePreviousCarrier && (
                   <div className="relative">
                     <Label 
@@ -503,7 +467,10 @@ export function SubmitApplication() {
                     >
                       이전 통신사 *
                     </Label>
-                    <Select value={formData.previousCarrier} onValueChange={(value) => setFormData(prev => ({ ...prev, previousCarrier: value }))}>
+                    <Select 
+                      value={formData.previousCarrier} 
+                      onValueChange={(value) => setFormData(prev => ({ ...prev, previousCarrier: value }))}
+                    >
                       <SelectTrigger className={getFieldStyle(true)}>
                         <SelectValue placeholder="이전 통신사를 선택하세요" />
                       </SelectTrigger>
@@ -519,11 +486,11 @@ export function SubmitApplication() {
                 )}
               </div>
 
-              {/* 기본 정보 섹션 */}
+              {/* 고객 정보 섹션 */}
               <div className="space-y-4">
                 <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 flex items-center">
                   <Phone className="mr-2 h-4 w-4" />
-                  기본 정보
+                  고객 정보
                 </h3>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -565,8 +532,6 @@ export function SubmitApplication() {
                     />
                   </div>
                 </div>
-                
-
               </div>
 
               {/* 통신사/판매점 정보 섹션 */}
@@ -631,21 +596,21 @@ export function SubmitApplication() {
                         type="text"
                         value={formData.contactCode}
                         onChange={(e) => handleContactCodeChange(e.target.value)}
-                        placeholder="개통방명 코드를 검색하세요"
+                        placeholder="개통방명 코드를 검색하고 선택하세요"
                         className={getFieldStyle(true)}
                         required
                       />
                       {formData.contactCode && filteredContactCodes.length > 0 && (
                         <div className="absolute z-10 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md shadow-lg max-h-60 overflow-auto">
-                          {filteredContactCodes.map((contact) => (
+                          {filteredContactCodes.slice(0, 5).map((contact: any, index: number) => (
                             <div
-                              key={contact.id}
+                              key={index}
                               className="px-3 py-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 border-b last:border-b-0"
                               onClick={() => {
                                 setFormData(prev => ({ 
                                   ...prev, 
                                   contactCode: contact.contactCode,
-                                  storeName: contact.storeName 
+                                  storeName: contact.storeName
                                 }));
                               }}
                             >
@@ -658,13 +623,13 @@ export function SubmitApplication() {
                     </div>
                   </div>
                 )}
-                
+
                 <div className="relative">
                   <Label 
                     htmlFor="storeName" 
-                    className={getLabelStyle(true)}
+                    className={getLabelStyle(carrierSettings?.requireContactCode)}
                   >
-                    판매점명 *
+                    판매점명 {carrierSettings?.requireContactCode && "*"}
                   </Label>
                   <Input
                     id="storeName"
@@ -672,23 +637,22 @@ export function SubmitApplication() {
                     type="text"
                     value={formData.storeName}
                     onChange={handleInputChange}
-                    placeholder="판매점명을 입력하세요"
-                    className={getFieldStyle(true)}
-                    required
+                    placeholder="판매점명이 자동으로 입력됩니다"
+                    className={getFieldStyle(carrierSettings?.requireContactCode || false)}
+                    readOnly
                   />
                 </div>
               </div>
 
-              {/* 결합 정보 섹션 (필요한 경우에만 표시) */}
+              {/* 결합 정보 섹션 */}
               {(carrierSettings?.requireBundleNumber || carrierSettings?.requireBundleCarrier) && (
                 <div className="space-y-4">
-                  <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 flex items-center">
-                    <ChevronDown className="mr-2 h-4 w-4" />
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100">
                     결합 정보
                   </h3>
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {carrierSettings.requireBundleNumber && (
+                    {carrierSettings?.requireBundleNumber && (
                       <div className="relative">
                         <Label 
                           htmlFor="bundleNumber" 
@@ -708,8 +672,8 @@ export function SubmitApplication() {
                         />
                       </div>
                     )}
-                    
-                    {carrierSettings.requireBundleCarrier && (
+
+                    {carrierSettings?.requireBundleCarrier && (
                       <div className="relative">
                         <Label 
                           htmlFor="bundleCarrier" 
@@ -717,186 +681,169 @@ export function SubmitApplication() {
                         >
                           결합통신사 *
                         </Label>
-                        <Select value={formData.bundleCarrier} onValueChange={(value) => setFormData(prev => ({ ...prev, bundleCarrier: value }))}>
-                          <SelectTrigger className={getFieldStyle(true)}>
-                            <SelectValue placeholder="결합통신사를 선택하세요" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {previousCarriers.map((carrier) => (
-                              <SelectItem key={carrier} value={carrier}>
-                                {carrier}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                        <Input
+                          id="bundleCarrier"
+                          name="bundleCarrier"
+                          type="text"
+                          value={formData.bundleCarrier}
+                          onChange={handleInputChange}
+                          placeholder="결합통신사를 입력하세요"
+                          className={getFieldStyle(true)}
+                          required
+                        />
                       </div>
                     )}
                   </div>
                 </div>
               )}
 
-              {/* 서류 업로드 섹션 */}
-              <div className="space-y-6">
+              {/* 파일 업로드 섹션 */}
+              <div className="space-y-4">
                 <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 flex items-center">
-                  <Upload className="mr-2 h-5 w-5" />
-                  서류 업로드 (선택사항)
+                  <Upload className="mr-2 h-4 w-4" />
+                  서류 첨부 {carrierSettings?.requireDocumentUpload && <span className="text-red-500 ml-1">*</span>}
                 </h3>
-                  
-                  <div 
-                    className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors duration-200 ${
-                      dragActive 
-                        ? 'border-blue-400 bg-blue-50' 
-                        : selectedFile 
-                          ? 'border-green-400 bg-green-50' 
-                          : 'border-gray-300 hover:border-gray-400'
-                    }`}
-                    onDrop={handleDrop}
-                    onDragOver={handleDragOver}
-                    onDragLeave={handleDragLeave}
-                  >
-                    <input
-                      type="file"
-                      id="file-upload"
-                      className="hidden"
-                      onChange={handleFileSelect}
-                      accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
-                    />
-                    
-                    <Upload className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-                    
-                    {selectedFile ? (
-                      <div className="space-y-2">
-                        <p className="text-sm font-medium text-green-700">
-                          업로드된 파일: {selectedFile.name}
-                        </p>
-                        <p className="text-xs text-gray-500">
-                          크기: {formatFileSize(selectedFile.size)}
-                        </p>
-                        <Button 
-                          type="button"
-                          variant="outline" 
-                          size="sm"
-                          onClick={() => setSelectedFile(null)}
-                        >
-                          파일 삭제
-                        </Button>
-                      </div>
-                    ) : (
-                      <div className="space-y-2">
-                        <p className="text-sm text-gray-600">
-                          파일을 드래그하여 업로드하거나 클릭하여 선택하세요
-                        </p>
-                        <p className="text-xs text-gray-500">
-                          PDF, Word, 이미지 파일 (최대 10MB)
-                        </p>
-                        <Button 
-                          type="button"
-                          variant="outline"
-                          onClick={() => document.getElementById('file-upload')?.click()}
-                        >
-                          파일 선택
-                        </Button>
-                      </div>
-                    )}
+                
+                <div
+                  className={`border-2 border-dashed rounded-lg p-6 transition-colors ${
+                    dragActive
+                      ? 'border-primary bg-primary/5'
+                      : 'border-gray-300 hover:border-gray-400'
+                  }`}
+                  onDrop={handleDrop}
+                  onDragOver={handleDragOver}
+                  onDragLeave={handleDragLeave}
+                >
+                  <div className="text-center">
+                    <Upload className="mx-auto h-12 w-12 text-gray-400" />
+                    <div className="mt-4">
+                      <Label htmlFor="file-upload" className="cursor-pointer">
+                        <span className="mt-2 block text-sm font-medium text-gray-900">
+                          파일을 드래그하거나 클릭하여 업로드
+                        </span>
+                        <span className="mt-1 block text-xs text-gray-500">
+                          PDF, DOC, DOCX, JPG, PNG (최대 10MB)
+                        </span>
+                      </Label>
+                      <input
+                        id="file-upload"
+                        name="file-upload"
+                        type="file"
+                        className="sr-only"
+                        onChange={handleFileSelect}
+                        accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                      />
+                    </div>
                   </div>
                 </div>
 
-              {/* 추가 정보 섹션 */}
+                {selectedFile && (
+                  <div className="mt-4">
+                    <div className="flex items-center justify-between p-3 bg-gray-50 rounded-md">
+                      <div className="flex items-center">
+                        <FileText className="h-4 w-4 text-gray-500 mr-2" />
+                        <span className="text-sm font-medium">{selectedFile.name}</span>
+                        <span className="text-xs text-gray-500 ml-2">
+                          ({formatFileSize(selectedFile.size)})
+                        </span>
+                      </div>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setSelectedFile(null)}
+                      >
+                        삭제
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* 비고 섹션 */}
               <div className="space-y-4">
-                <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 flex items-center">
-                  <FileText className="mr-2 h-4 w-4" />
-                  추가 정보
+                <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100">
+                  비고
                 </h3>
                 
-                <div className="relative">
-                  <Label htmlFor="notes" className="text-foreground">
-                    메모 (선택사항)
-                  </Label>
-                  <Textarea
-                    id="notes"
-                    name="notes"
-                    value={formData.notes}
-                    onChange={handleInputChange}
-                    placeholder="추가로 전달할 내용이나 특이사항을 입력하세요"
-                    rows={3}
-                    className="resize-none"
-                  />
-                </div>
+                <Textarea
+                  name="notes"
+                  value={formData.notes}
+                  onChange={handleInputChange}
+                  placeholder="추가 정보나 특이사항이 있으면 입력하세요"
+                  rows={3}
+                />
               </div>
 
               {/* 제출 버튼 */}
-              <div className="pt-6">
+              <div className="flex justify-end space-x-3">
                 <Button
                   type="submit"
-                  className="w-full"
                   disabled={uploadMutation.isPending || isCheckingDuplicate}
+                  className="min-w-[120px]"
                 >
-                  {(uploadMutation.isPending || isCheckingDuplicate) && (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  {uploadMutation.isPending || isCheckingDuplicate ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      {isCheckingDuplicate ? '중복 확인 중...' : '접수 중...'}
+                    </>
+                  ) : (
+                    '접수 신청'
                   )}
-                  {isCheckingDuplicate ? '중복 확인 중...' : uploadMutation.isPending ? '접수 중...' : '접수 신청'}
                 </Button>
               </div>
             </form>
           </CardContent>
         </Card>
-      </div>
 
-      {/* 중복 확인 다이얼로그 */}
-      <Dialog open={duplicateCheckDialog} onOpenChange={setDuplicateCheckDialog}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle className="flex items-center text-yellow-600">
-              <AlertTriangle className="mr-2 h-5 w-5" />
-              중복 접수 확인
-            </DialogTitle>
-            <DialogDescription>
-              동일한 고객 정보로 접수된 문서가 발견되었습니다.
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="py-4">
-            <div className="space-y-3">
-              {duplicateData.map((duplicate, index) => (
-                <Alert key={index} variant="destructive">
-                  <AlertDescription>
-                    <div className="space-y-1">
-                      <div><strong>접수번호:</strong> {duplicate.id}</div>
-                      <div><strong>고객명:</strong> {duplicate.customerName}</div>
-                      <div><strong>연락처:</strong> {duplicate.customerPhone}</div>
-                      <div><strong>통신사:</strong> {duplicate.carrier}</div>
-                      <div><strong>상태:</strong> {duplicate.status}</div>
-                      <div><strong>접수일:</strong> {new Date(duplicate.createdAt).toLocaleString('ko-KR')}</div>
+        {/* 중복 확인 다이얼로그 */}
+        <Dialog open={duplicateCheckDialog} onOpenChange={setDuplicateCheckDialog}>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle className="flex items-center">
+                <AlertTriangle className="mr-2 h-5 w-5 text-amber-500" />
+                중복 데이터 발견
+              </DialogTitle>
+              <DialogDescription>
+                동일한 고객 정보로 등록된 접수가 있습니다. 계속 진행하시겠습니까?
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="space-y-4">
+              <div className="max-h-60 overflow-y-auto">
+                {duplicateData.map((item, index) => (
+                  <div key={index} className="p-3 border rounded-md bg-gray-50">
+                    <div className="text-sm">
+                      <div><strong>고객명:</strong> {item.customerName}</div>
+                      <div><strong>연락처:</strong> {item.customerPhone}</div>
+                      <div><strong>통신사:</strong> {item.carrier}</div>
+                      <div><strong>상태:</strong> {item.status}</div>
+                      <div><strong>등록일:</strong> {new Date(item.createdAt).toLocaleDateString()}</div>
                     </div>
-                  </AlertDescription>
-                </Alert>
-              ))}
+                  </div>
+                ))}
+              </div>
+              
+              <div className="flex justify-end space-x-2">
+                <Button
+                  variant="outline"
+                  onClick={() => setDuplicateCheckDialog(false)}
+                >
+                  취소
+                </Button>
+                <Button
+                  onClick={() => {
+                    setDuplicateCheckDialog(false);
+                    submitForm();
+                  }}
+                >
+                  계속 진행
+                </Button>
+              </div>
             </div>
-          </div>
-          
-          <div className="flex justify-end space-x-2">
-            <Button 
-              variant="outline" 
-              onClick={() => {
-                setDuplicateCheckDialog(false);
-                setDuplicateData([]);
-              }}
-            >
-              취소
-            </Button>
-            <Button 
-              onClick={() => {
-                setDuplicateCheckDialog(false);
-                submitForm();
-              }}
-              disabled={uploadMutation.isPending}
-            >
-              {uploadMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              그래도 접수
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+          </DialogContent>
+        </Dialog>
+      </div>
     </Layout>
   );
 }
